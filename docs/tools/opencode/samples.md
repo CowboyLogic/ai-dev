@@ -18,7 +18,7 @@ Model Context Protocol (MCP) servers extend OpenCode with additional capabilitie
 
 ### Docker-Based MCP Server
 
-Located at: `opencode/sample-configs/sample-docker-mcp.json`
+Located at: `mcp/sample-configs/sample-docker-mcp.json`
 
 ```json
 {
@@ -101,7 +101,7 @@ Located at: `opencode/sample-configs/sample-docker-mcp.json`
 
 ### NPX-Based MCP Server (Snyk)
 
-Located at: `opencode/sample-configs/sample-npx-mcp.json`
+Located at: `mcp/sample-configs/sample-npx-mcp.json`
 
 ```json
 {
@@ -550,6 +550,102 @@ for line in sys.stdin:
 - **[MCP Specification](https://modelcontextprotocol.io)** - Protocol details
 - **[MCP SDK](https://github.com/modelcontextprotocol/sdk)** - Official SDKs
 - **Example Servers** - Reference implementations
+
+## Modular Agent Configuration
+
+The `modular-config/` directory provides an alternative to traditional agent configuration, where specialized agents are defined in individual markdown files.
+
+### Overview
+
+Instead of defining all agents in `opencode.json`, each agent is a separate markdown file with YAML frontmatter:
+
+**Traditional Approach:**
+```json
+{
+  "agent": {
+    "security": {
+      "description": "Security audits",
+      "mode": "subagent",
+      "model": "github-copilot/claude-sonnet-4",
+      "temperature": 0.1
+    },
+    "database": { /* ... */ },
+    "devops": { /* ... */ }
+    // Many more agents...
+  }
+}
+```
+
+**Modular Approach:**
+
+`agent/security.md`:
+```markdown
+---
+description: Security audits, vulnerability scanning, and best practices
+mode: subagent
+model: github-copilot/claude-sonnet-4
+temperature: 0.1
+tools:
+  bash: true
+---
+
+# Agent Purpose
+The Security agent focuses on identifying vulnerabilities...
+```
+
+### Available Agents
+
+The modular configuration includes **13 specialized agents**:
+
+- **`@api`** - REST/GraphQL API design, OpenAPI specs
+- **`@architect`** - System architecture and design decisions
+- **`@cloud`** - AWS/Azure/GCP, Infrastructure as Code
+- **`@data`** - Data analysis, ETL pipelines
+- **`@database`** - Schema design, query optimization
+- **`@devops`** - CI/CD, Docker, Kubernetes
+- **`@documentation`** - Technical docs, API documentation
+- **`@performance`** - Performance profiling and optimization
+- **`@research`** - Technical discovery and analysis
+- **`@reviewer`** - Code review and best practices
+- **`@security`** - Security audits and vulnerability scanning
+- **`@testing`** - Unit tests, integration tests
+- **`@uxui`** - UI/UX design and accessibility
+
+### Usage Examples
+
+```bash
+# API design
+opencode @api "Design REST API for user management"
+
+# Security audit
+opencode @security "Review authentication system for vulnerabilities"
+
+# Database optimization
+opencode @database "Optimize query performance in user_stats"
+
+# Cloud infrastructure
+opencode @cloud "Create Terraform module for ECS deployment"
+
+# DevOps automation
+opencode @devops "Set up GitHub Actions for CI/CD"
+```
+
+### Benefits
+
+- **Modularity** - Add agents by adding markdown files
+- **Maintainability** - Each agent is self-contained
+- **Documentation** - Agent purpose documented inline
+- **Reusability** - Share individual agents across projects
+- **Scalability** - Manage complex multi-agent workflows
+
+### Getting Started
+
+1. Copy `opencode/modular-config/` to your project
+2. Review available agents in `agent/` directory
+3. Add/remove agent files as needed
+4. Use `@agentname` to invoke specific agents
+
+See `opencode/modular-config/README.md` for comprehensive documentation.
 
 ## Next Steps
 

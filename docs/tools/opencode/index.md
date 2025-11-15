@@ -11,9 +11,11 @@ OpenCode CLI is an AI-assisted development tool that integrates multiple AI mode
 The `opencode/` directory contains:
 
 - **`opencode.json`** - Main configuration file
-- **`sample-configs/`** - Example configurations for various scenarios
+- **`modular-config/`** - Advanced modular subagent configuration
 - **`README.md`** - Human-readable guide
 - **`AGENTS.md`** - Technical documentation for AI assistants
+
+See also **`mcp/sample-configs/`** for MCP server configuration examples.
 
 ## Quick Start
 
@@ -104,6 +106,24 @@ Pre-configured agents optimize for specific workflows:
 - **Model**: Advanced (claude-sonnet-4-5)
 - **Access**: Write docs only (no bash)
 - **Use for**: README files, API docs, guides
+
+### 🧩 Modular Agent Configuration
+
+For complex projects, the `modular-config/` directory demonstrates an advanced pattern:
+
+- **13 specialized subagents** in individual markdown files
+- **Automatic discovery** via YAML frontmatter
+- **Modular and maintainable** approach
+- **Specialized agents**: API design, security, DevOps, cloud infrastructure, database, testing, documentation, UI/UX, and more
+
+Example agents:
+- `@api` - REST/GraphQL API design and integration
+- `@security` - Security audits and vulnerability scanning
+- `@database` - Schema design and query optimization
+- `@devops` - CI/CD pipelines and deployment automation
+- `@cloud` - AWS/Azure/GCP and Infrastructure as Code
+
+[Learn more about modular configuration →](configuration.md#modular-agent-configuration)
 
 ### ⚡ Custom Commands
 

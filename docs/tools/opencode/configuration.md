@@ -398,6 +398,132 @@ Model Context Protocol servers extend OpenCode with additional capabilities.
 - Add project-specific rules
 - Reference documentation files
 
+## Modular Agent Configuration
+
+For complex projects with many specialized agents, the `modular-config/` directory demonstrates an advanced pattern where each agent is defined in its own markdown file with YAML frontmatter.
+
+### Architecture
+
+**Main Configuration** (`modular-config/opencode.json`):
+- Defines only **primary agents** (plan, build)
+- Minimal configuration focused on workflow orchestration
+- Delegates to specialized subagents automatically
+
+**Agent Definitions** (`modular-config/agent/*.md`):
+- Each agent in a separate markdown file
+- YAML frontmatter contains configuration
+- Automatic discovery via instruction loading
+
+### Example Agent File
+
+**`agent/security.md`:**
+```markdown
+---
+description: Security audits, vulnerability scanning, and best practices
+mode: subagent
+model: github-copilot/claude-sonnet-4
+temperature: 0.1
+tools:
+  bash: true
+---
+
+# Agent Purpose
+
+The Security agent focuses on identifying vulnerabilities and ensuring
+best practices for secure coding and infrastructure.
+
+## Core Responsibilities
+
+- Conduct security audits
+- Identify and mitigate vulnerabilities
+- Provide recommendations for secure coding practices
+```
+
+### Configuration Properties
+
+**YAML Frontmatter:**
+
+**Required:**
+- `description` - Agent's purpose and capabilities
+- `mode` - `subagent` for specialized agents
+
+**Optional:**
+- `model` - AI model in `provider/model-name` format
+- `temperature` - Creativity level (0.0-1.0)
+- `tools` - Permission object with `write`, `edit`, `bash` properties
+
+### Available Modular Agents
+
+| Agent | Focus | Model | Access |
+|-------|-------|-------|--------|
+| `api` | REST/GraphQL API design | GPT-4o | Full |
+| `architect` | System architecture | Qwen2.5-Coder:32b | Read-only |
+| `cloud` | AWS/Azure/GCP, IaC | GPT-4o | Full |
+| `data` | Data analysis, ETL | GPT-5-mini | Full |
+| `database` | Schema design, optimization | GPT-4o | Full |
+| `devops` | CI/CD, Docker, Kubernetes | GPT-5-mini | Full |
+| `documentation` | Technical docs, API docs | Claude Haiku 4.5 | Docs only |
+| `performance` | Profiling, optimization | GPT-4o | Full |
+| `research` | Technical discovery | GPT-5-mini | Read-only |
+| `reviewer` | Code review | Claude Sonnet 4 | Read-only |
+| `security` | Security audits | Claude Sonnet 4 | Bash only |
+| `testing` | Unit/integration tests | GPT-5-mini | Full |
+| `uxui` | UI/UX design, accessibility | Gemini 2.5 Pro | No bash |
+
+### Usage
+
+**Direct Invocation:**
+```bash
+opencode @api "Design REST API for user authentication"
+opencode @security "Audit authentication system for vulnerabilities"
+opencode @database "Optimize slow query in user_stats table"
+opencode @devops "Create GitHub Actions workflow for deployment"
+```
+
+**Primary Agent Delegation:**
+```bash
+# Plan agent automatically delegates to relevant subagents
+opencode @plan "Design microservices architecture"
+
+# Build agent implements with subagent support
+opencode @build "Implement user authentication API"
+```
+
+### Adding New Agents
+
+1. Create `agent/yourname.md`
+2. Add YAML frontmatter with configuration
+3. Document purpose and responsibilities
+4. Agent automatically available as `@yourname`
+
+**Example:**
+```markdown
+---
+description: Mobile app development for iOS and Android
+mode: subagent
+model: github-copilot/gpt-4o
+temperature: 0.2
+tools:
+  write: true
+  edit: true
+  bash: true
+---
+
+# Agent Purpose
+
+Specializes in mobile app development...
+```
+
+### Benefits
+
+- **Modularity** - Add/remove agents by adding/removing files
+- **Maintainability** - Each agent is self-contained
+- **Discoverability** - OpenCode automatically finds agents
+- **Reusability** - Share agents across projects
+- **Version Control** - Track changes independently
+
+See `opencode/modular-config/README.md` for comprehensive documentation.
+
 ### 9. Additional Settings
 
 ```json

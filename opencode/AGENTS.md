@@ -15,9 +15,24 @@ The guidelines below are OpenCode-specific and should be applied **in addition t
 ```
 opencode/
 ├── opencode.json              # Main configuration file
-├── sample-configs/
-│   ├── sample-docker-mcp.json # Example: Docker-based MCP server
-│   └── sample-npx-mcp.json    # Example: NPX-based MCP server (Snyk)
+├── modular-config/            # Advanced modular subagent configuration
+│   ├── opencode.json          # Minimal primary agent config
+│   ├── agent/                 # Individual subagent definitions
+│   │   ├── api.md             # API design and integration
+│   │   ├── architect.md       # System architecture
+│   │   ├── cloud.md           # Cloud infrastructure
+│   │   ├── data.md            # Data analysis and ETL
+│   │   ├── database.md        # Database design and optimization
+│   │   ├── devops.md          # CI/CD and deployment
+│   │   ├── documentation.md   # Technical documentation
+│   │   ├── performance.md     # Performance optimization
+│   │   ├── research.md        # Technical research
+│   │   ├── reviewer.md        # Code review
+│   │   ├── security.md        # Security audits
+│   │   ├── testing.md         # Test development
+│   │   └── uxui.md            # UI/UX design
+│   └── README.md              # Modular config documentation
+├── README.md                  # User guide
 └── AGENTS.md                  # This file
 ```
 
@@ -140,6 +155,114 @@ Demonstrates how to configure an **NPX-based MCP server** (Snyk example):
 - Common pattern for Node.js-based MCP servers
 - Remember to enable the tool in the `tools` section
 
+## Modular Subagent Configuration
+
+The `modular-config/` directory demonstrates an **advanced modular pattern** for managing specialized subagents. Instead of defining all agents in `opencode.json`, this approach uses individual markdown files with YAML frontmatter to configure agents.
+
+### How It Works
+
+**Main Configuration** (`modular-config/opencode.json`):
+- Defines only **primary agents** (plan, build)
+- Minimal configuration focused on top-level workflow
+
+**Agent Definitions** (`modular-config/agent/*.md`):
+- Each specialized agent in its own markdown file
+- YAML frontmatter contains OpenCode configuration
+- Automatic discovery and loading via instruction system
+
+**Example Agent File** (`agent/api.md`):
+```markdown
+---
+description: REST/GraphQL API design, OpenAPI specs, and API integration
+mode: subagent
+model: github-copilot/gpt-4o
+temperature: 0.2
+tools:
+  write: true
+  edit: true
+  bash: true
+---
+
+# Agent Purpose
+
+The API agent is designed to assist with API design, documentation, and integration...
+```
+
+### Available Modular Subagents
+
+| Agent | Focus | Model | Temp | Access |
+|-------|-------|-------|------|--------|
+| `api` | REST/GraphQL API design, OpenAPI | GPT-4o | 0.2 | Full |
+| `architect` | System design, architecture | Qwen2.5-Coder:32b | 0.2 | Read-only |
+| `cloud` | AWS/Azure/GCP, IaC | GPT-4o | 0.1 | Full |
+| `data` | Data analysis, ETL | GPT-5-mini | 0.2 | Full |
+| `database` | Schema design, query optimization | GPT-4o | 0.1 | Full |
+| `devops` | CI/CD, Docker, Kubernetes | GPT-5-mini | 0.2 | Full |
+| `documentation` | Technical docs, API docs | Claude Haiku 4.5 | 0.3 | Docs only |
+| `performance` | Performance profiling, optimization | GPT-4o | 0.1 | Full |
+| `research` | Technical discovery, doc analysis | GPT-5-mini | 0.2 | Read-only |
+| `reviewer` | Code review, best practices | Claude Sonnet 4 | 0.1 | Read-only |
+| `security` | Security audits, vulnerabilities | Claude Sonnet 4 | 0.1 | Bash only |
+| `testing` | Unit/integration tests | GPT-5-mini | 0.2 | Full |
+| `uxui` | UI/UX design, accessibility | Gemini 2.5 Pro | 0.3 | No bash |
+
+### Benefits of Modular Configuration
+
+- **Modularity**: Add/remove agents by adding/removing markdown files
+- **Maintainability**: Each agent is self-contained and documented
+- **Discoverability**: OpenCode automatically finds and loads agents
+- **Version Control**: Track changes to individual agents independently
+- **Reusability**: Share specific agent configurations across projects
+
+### Agent Configuration Properties (YAML Frontmatter)
+
+**Required**:
+- `description`: Agent's purpose and capabilities
+- `mode`: `subagent` for specialized agents
+
+**Optional**:
+- `model`: AI model to use (provider/model-name format)
+- `temperature`: Creativity level (0.0-1.0)
+- `tools`: Permissions object (`write`, `edit`, `bash`)
+
+### Usage Examples
+
+```bash
+# Invoke specific subagents
+opencode @api "Design a REST API for user authentication"
+opencode @security "Audit authentication for vulnerabilities"
+opencode @database "Optimize slow query in user_stats table"
+opencode @uxui "Improve accessibility of login form"
+opencode @cloud "Create Terraform module for AWS ECS"
+
+# Primary agents auto-delegate to subagents
+opencode @plan "Design microservices architecture"
+opencode @build "Implement user authentication API"
+```
+
+### Adding New Modular Agents
+
+1. Create `agent/yourname.md` with YAML frontmatter
+2. Define `description`, `mode`, `model`, `temperature`, `tools`
+3. Add documentation about purpose and usage
+4. Agent is automatically available as `@yourname`
+
+See `modular-config/README.md` for comprehensive documentation.
+
+## Traditional Configuration vs Modular Configuration
+
+**Traditional** (`opencode.json`):
+- All agents defined in single configuration file
+- Suitable for simple setups with few agents
+- Direct, straightforward configuration
+- Examples: `quick`, `reviewer`, `docs` agents
+
+**Modular** (`modular-config/`):
+- Agents defined in individual markdown files
+- Ideal for complex workflows with many specialized agents
+- Modular, scalable, maintainable
+- Examples: 13 specialized agents (api, security, devops, etc.)
+
 ## Working with This Configuration
 
 ### When Modifying `opencode.json`:
@@ -228,11 +351,13 @@ Any changes to the main configuration file require updates to:
 
 ### When Adding/Modifying Sample Configurations
 
-Changes to files in `opencode/sample-configs/`:
+Changes to files in `mcp/sample-configs/` or `opencode/modular-config/`:
 
 1. **`opencode/README.md`** - Add examples and usage instructions
 2. **`opencode/AGENTS.md`** - Update sample configuration explanations
-3. **`docs/opencode/samples.md`** - Comprehensive sample documentation
+3. **`docs/tools/opencode/samples.md`** - Comprehensive sample documentation
+4. **`docs/mcp/overview.md`** - MCP-specific documentation
+5. **`modular-config/README.md`** - Update if modular config changes
 
 ### Common Update Scenarios
 

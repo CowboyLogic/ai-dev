@@ -126,7 +126,7 @@ Then create a Pull Request via GitHub UI.
 
 #### Location
 
-- **OpenCode configs** → `opencode/sample-configs/`
+- **MCP server configs** → `mcp/sample-configs/`
 - **Other tool configs** → Create appropriate directory
 - **Shared configs** → `agents/` for cross-tool configurations
 

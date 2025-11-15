@@ -25,6 +25,7 @@ The **[OpenCode](tools/opencode/index.md)** directory contains comprehensive con
 
 - **Tiered AI Models** - Smart model selection for different task types
 - **Specialized Agents** - Pre-configured agents for quick fixes, code review, and documentation
+- **Modular Agent Configuration** - Advanced pattern with 13 specialized subagents in individual files
 - **Custom Commands** - Ready-to-use commands for common workflows
 - **MCP Server Integration** - Examples for Docker and NPX-based Model Context Protocol servers
 
@@ -53,7 +54,7 @@ Directory-specific `AGENTS.md` files provide targeted guidance for AI assistants
 ### For Developers
 
 1. Browse the configurations in the **[OpenCode](tools/opencode/index.md)** directory
-2. Review sample configurations in `opencode/sample-configs/`
+2. Review sample MCP configurations in `mcp/sample-configs/`
 3. Adapt configurations to your development workflow
 4. Reference the baseline behaviors when configuring your AI tools
 
@@ -92,9 +93,12 @@ ai-dev/
 │   └── AGENTS.md                   # Agent configuration guidelines
 ├── opencode/
 │   ├── opencode.json               # Main OpenCode configuration
-│   ├── sample-configs/             # Example MCP server setups
+│   ├── modular-config/             # Modular subagent configuration
 │   ├── README.md                   # Human-readable guide
 │   └── AGENTS.md                   # AI assistant guide
+├── mcp/
+│   ├── sample-configs/             # Example MCP server setups
+│   └── README.md                   # MCP overview
 ├── docs/                           # MkDocs documentation
 ├── AGENTS.md                       # Root agent guidelines
 ├── README.md                       # Repository overview
