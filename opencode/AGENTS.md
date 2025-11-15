@@ -1,0 +1,199 @@
+# OpenCode Configuration Guide for AI Assistants
+
+This directory contains configuration files and examples for the OpenCode CLI tool, a powerful AI-assisted development environment.
+
+## Behavioral Foundation
+
+**All AI assistants must first follow the baseline behavioral model:**
+
+📋 **[`../agents/LLM-BaselineBehaviors.md`](../agents/LLM-BaselineBehaviors.md)**
+
+The guidelines below are OpenCode-specific and should be applied **in addition to** the baseline behaviors. When conflicts arise, the baseline behaviors take precedence unless explicitly overridden by user directives.
+
+## Directory Structure
+
+```
+opencode/
+├── opencode.json              # Main configuration file
+├── sample-configs/
+│   ├── sample-docker-mcp.json # Example: Docker-based MCP server
+│   └── sample-npx-mcp.json    # Example: NPX-based MCP server (Snyk)
+└── AGENTS.md                  # This file
+```
+
+## Main Configuration File: `opencode.json`
+
+The `opencode.json` file is the primary configuration for the OpenCode CLI. It defines:
+
+### 1. **Model Configuration**
+- **Primary Model**: `anthropic/claude-sonnet-4-5-20250929` (balanced performance)
+- **Small Model**: `xai/grok-2-mini` (fast operations)
+- **Provider**: GitHub Copilot with multiple model options (GPT-4o, GPT-5, Claude variants, Gemini, Grok)
+
+### 2. **Specialized Agents**
+The configuration defines tiered agents for different use cases:
+
+#### `quick` Agent
+- **Purpose**: Fast general tasks (code formatting, simple queries, quick fixes)
+- **Model**: `xai/grok-2-mini`
+- **Mode**: `primary`
+- **Temperature**: 0.1 (deterministic)
+- **Tools**: Full access (write, edit, bash, read, list, glob, grep)
+
+#### `reviewer` Agent
+- **Purpose**: Code review and analysis (read-only, no modifications)
+- **Model**: `anthropic/claude-sonnet-4-5-20250929`
+- **Mode**: `subagent`
+- **Temperature**: 0.1
+- **Tools**: Read-only (read, list, glob, grep, webfetch) - NO write/edit/bash
+
+#### `docs` Agent
+- **Purpose**: Documentation creation and maintenance
+- **Model**: `anthropic/claude-sonnet-4-5-20250929`
+- **Mode**: `subagent`
+- **Temperature**: 0.3 (slightly more creative)
+- **Tools**: Documentation-focused (write, edit, read, list, glob, grep, webfetch) - NO bash
+
+### 3. **Custom Commands**
+Pre-defined commands that leverage the tiered agent approach:
+
+| Command | Agent | Purpose |
+|---------|-------|---------|
+| `quick-fix` | `quick` | Fast, simple fixes |
+| `analyze` | `reasoning` | Deep architecture/pattern analysis |
+| `build` | (default) | Build and test project |
+| `review` | `reviewer` | Code quality/security review (read-only) |
+| `document` | `docs` | Create/update documentation |
+| `test` | (default) | Run and fix tests |
+| `deploy` | (default) | Deployment tasks |
+| `refactor` | `reasoning` | Advanced code refactoring |
+
+**Command Template Variables**: Use `$ARGUMENTS` in templates to reference user input.
+
+### 4. **Tool Permissions**
+All tools enabled by default:
+- File operations: `write`, `edit`, `read`, `list`
+- System: `bash`
+- Search: `glob`, `grep`
+- Network: `webfetch`
+- Task management: `task`, `todowrite`, `todoread`
+
+**Permissions**: `bash`, `write`, and `edit` set to `allow` (execute without prompting).
+
+### 5. **MCP (Model Context Protocol) Servers**
+Remote MCP server configured:
+- **GitHub MCP**: Connected via GitHub Copilot API
+  - URL: `https://api.githubcopilot.com/mcp/`
+  - Authentication: Bearer token via `${GITHUB_TOKEN}` environment variable
+
+### 6. **Instructions Loading**
+The configuration automatically loads project-specific instructions from:
+- `AGENTS.md`
+- `.cursor/rules/*.md`
+- `README.md`
+
+## Sample Configurations
+
+### `sample-docker-mcp.json`
+Demonstrates how to configure a **local Docker-based MCP server**:
+
+```json
+"mcp": {
+  "docker-mcp-sample": {
+    "type": "local",
+    "command": ["docker", "run", "--rm", "-i", "my-mcp-server:latest"],
+    "enabled": true,
+    "environment": {
+      "API_KEY": "${MY_API_KEY}",
+      "DEBUG": "true"
+    },
+    "timeout": 10000
+  }
+}
+```
+
+**Key Points**:
+- Use `type: "local"` for local servers
+- Command must be an array of strings
+- Environment variables can reference shell variables using `${VAR_NAME}`
+- Timeout in milliseconds
+
+### `sample-npx-mcp.json`
+Demonstrates how to configure an **NPX-based MCP server** (Snyk example):
+
+```json
+"mcp": {
+  "snyk": {
+    "type": "local",
+    "command": ["npx", "-y", "@snyk/mcp-server"],
+    "enabled": true,
+    "environment": {
+      "SNYK_TOKEN": "${SNYK_TOKEN}"
+    },
+    "timeout": 15000
+  }
+}
+```
+
+**Key Points**:
+- Use `npx -y` to automatically install and run npm packages
+- Common pattern for Node.js-based MCP servers
+- Remember to enable the tool in the `tools` section
+
+## Working with This Configuration
+
+### When Modifying `opencode.json`:
+
+1. **Adding New Agents**:
+   - Define under the `agent` section
+   - Choose appropriate `mode`: `primary` or `subagent`
+   - Set model based on complexity needs
+   - Configure `temperature` (0.1 for deterministic, higher for creative)
+   - Specify tool permissions carefully
+
+2. **Adding Custom Commands**:
+   - Define under the `command` section
+   - Use `$ARGUMENTS` for user input
+   - Optionally specify an `agent` to use a specialized model
+   - Include clear `description` for discoverability
+
+3. **Adding MCP Servers**:
+   - Define under the `mcp` section
+   - Set `type`: `"local"` or `"remote"`
+   - For local: provide `command` array
+   - For remote: provide `url` and authentication
+   - Set `enabled: true`
+   - Enable the tool in the `tools` section
+
+4. **Environment Variables**:
+   - Reference using `${VARIABLE_NAME}` syntax
+   - Common variables: `${GITHUB_TOKEN}`, `${SNYK_TOKEN}`, `${API_KEY}`
+
+### Best Practices:
+
+- **Model Selection**: Use smaller/faster models for simple tasks, reserve advanced models for complex reasoning
+- **Agent Modes**: Use `subagent` for specialized tasks, `primary` for general use
+- **Tool Restrictions**: Limit tool access for review/analysis agents to prevent unintended modifications
+- **Temperature Settings**: Keep low (0.1-0.2) for code generation, slightly higher (0.3-0.5) for documentation
+- **MCP Timeouts**: Set appropriate timeouts based on expected server response times
+- **Permissions**: Use `allow` carefully for destructive operations like `bash` and `write`
+
+## Integration Notes
+
+When working with OpenCode configurations:
+- The `$schema` field provides validation and autocomplete in supported editors
+- JSON comments (// and /* */) are supported in this configuration format
+- The `autoupdate` setting keeps OpenCode CLI current
+- `share: "manual"` requires explicit approval before sharing data
+
+## Troubleshooting MCP Servers
+
+Common issues when configuring MCP servers:
+1. **Authentication failures**: Ensure environment variables are set in your shell
+2. **Timeout errors**: Increase the `timeout` value for slow servers
+3. **Command not found**: Verify Docker/NPX is installed and in PATH
+4. **Tool not available**: Check that the tool is enabled in the `tools` section
+
+---
+
+*For OpenCode CLI documentation, visit the official OpenCode documentation.*

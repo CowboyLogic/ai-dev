@@ -1,0 +1,8 @@
+# .gitignore 
+
+# Ignore build output directories
+bin/
+obj/
+
+# mkdocs site output
+site/
