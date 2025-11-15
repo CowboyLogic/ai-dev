@@ -1,0 +1,206 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  
+  // Default model configuration - using Claude Sonnet for balanced performance
+  "model": "anthropic/claude-sonnet-4-5-20250929",
+  "small_model": "xai/grok-2-mini",
+  
+  // GitHub Copilot provider configuration
+  "provider": {
+    "github": {
+      "name": "GitHub Copilot",
+      "models": {
+        "gpt-4o": {
+          "name": "GPT-4o via Copilot"
+        },
+        "gpt-4-1": {
+          "name": "GPT-4.1 via Copilot"
+        },
+        "gpt-5": {
+          "name": "GPT-5 via Copilot"
+        },
+        "gpt-5-mini": {
+          "name": "GPT-5 mini via Copilot"
+        },
+        "gpt-5-codex": {
+          "name": "GPT-5-Codex via Copilot"
+        },
+        "claude-3-5-sonnet": {
+          "name": "Claude 3.5 Sonnet via Copilot"
+        },
+        "claude-haiku-4-5": {
+          "name": "Claude Haiku 4.5 via Copilot"
+        },
+        "claude-opus-4-1": {
+          "name": "Claude Opus 4.1 via Copilot"
+        },
+        "claude-sonnet-4": {
+          "name": "Claude Sonnet 4 via Copilot"
+        },
+        "claude-sonnet-4-5": {
+          "name": "Claude Sonnet 4.5 via Copilot"
+        },
+        "gemini-2-5-pro": {
+          "name": "Gemini 2.5 Pro via Copilot"
+        },
+        "grok-code-fast-1": {
+          "name": "Grok Code Fast 1 via Copilot"
+        },
+        "raptor-mini": {
+          "name": "Raptor mini via Copilot"
+        }
+      }
+    }
+  },
+
+  // Specialized agents for tiered model usage
+  "agent": {
+    // Fast general tasks - using Grok for speed
+    "quick": {
+      "description": "Fast agent for basic tasks like code formatting, simple queries, and quick fixes",
+      "mode": "primary",
+      "model": "xai/grok-2-mini",
+      "temperature": 0.1,
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true,
+        "read": true,
+        "list": true,
+        "glob": true,
+        "grep": true
+      }
+    },
+
+    // Code review agent - read-only with advanced reasoning
+    "reviewer": {
+      "description": "Code review agent that analyzes code without making changes",
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-5-20250929",
+      "temperature": 0.1,
+      "tools": {
+        "write": false,
+        "edit": false,
+        "bash": false,
+        "read": true,
+        "list": true,
+        "glob": true,
+        "grep": true,
+        "webfetch": true
+      }
+    },
+
+    // Documentation agent - specialized for writing docs
+    "docs": {
+      "description": "Documentation agent for creating and maintaining project documentation",
+      "mode": "subagent",
+      "model": "anthropic/claude-sonnet-4-5-20250929",
+      "temperature": 0.3,
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": false,
+        "read": true,
+        "list": true,
+        "glob": true,
+        "grep": true,
+        "webfetch": true
+      }
+    }
+  },
+
+  // Custom commands that leverage the tiered approach
+  "command": {
+    "quick-fix": {
+      "template": "Make a quick fix for: $ARGUMENTS. Keep it simple and fast.",
+      "description": "Quick fixes using fast model",
+      "agent": "quick"
+    },
+    
+    "analyze": {
+      "template": "Perform deep analysis of: $ARGUMENTS. Consider architecture, patterns, and best practices.",
+      "description": "Deep analysis using advanced reasoning",
+      "agent": "reasoning"
+    },
+    
+    "build": {
+      "template": "Build and test the project. Focus on: $ARGUMENTS",
+      "description": "Build tasks optimized for compilation"
+    },
+    
+    "review": {
+      "template": "Review the following code for quality, security, and best practices: $ARGUMENTS",
+      "description": "Code review without modifications",
+      "agent": "reviewer"
+    },
+    
+    "document": {
+      "template": "Create or update documentation for: $ARGUMENTS. Include examples and clear explanations.",
+      "description": "Documentation creation and updates", 
+      "agent": "docs"
+    },
+
+    "test": {
+      "template": "Run tests for $ARGUMENTS. If tests fail, analyze and suggest fixes.",
+      "description": "Run and fix tests"
+    },
+
+    "deploy": {
+      "template": "Deploy the application. Handle: $ARGUMENTS",
+      "description": "Deployment tasks"
+    },
+
+    "refactor": {
+      "template": "Refactor $ARGUMENTS while maintaining functionality. Consider performance and maintainability.",
+      "description": "Code refactoring with advanced analysis",
+      "agent": "reasoning"
+    }
+  },
+
+  // Tool configuration - enable all tools by default
+  "tools": {
+    "write": true,
+    "edit": true, 
+    "read": true,
+    "list": true,
+    "bash": true,
+    "glob": true,
+    "grep": true,
+    "webfetch": true,
+    "task": true,
+    "todowrite": true,
+    "todoread": true
+  },
+
+  // Permission configuration - ask for destructive operations
+  "permission": {
+    "bash": "allow",
+    "write": "allow",
+    "edit": "allow"
+  },
+
+  // Additional configuration
+  "autoupdate": true,
+  "theme": "opencode",
+
+  // Instructions - include project-specific rules
+  "instructions": [
+    "AGENTS.md",
+    ".cursor/rules/*.md",
+    "README.md"
+	],
+  // MCP server configurations
+  "mcp": {
+    "github": {
+      "type": "remote",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "enabled": true,
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_TOKEN}"
+      }
+    }
+  },
+
+  // Sharing configuration
+  "share": "manual"
+}

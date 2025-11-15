@@ -1,0 +1,23 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  
+  // Sample configuration for a local container-based MCP server using Docker
+  "mcp": {
+    "docker-mcp-sample": {
+      "type": "local",
+      "command": ["docker", "run", "--rm", "-i", "my-mcp-server:latest"],
+      "enabled": true,
+      "environment": {
+        "API_KEY": "${MY_API_KEY}",
+        "DEBUG": "true"
+      },
+      "timeout": 10000
+    }
+  },
+
+  // Minimal other config for completeness
+  "model": "anthropic/claude-3-5-sonnet-20241022",
+  "tools": {
+    "docker-mcp-sample": true
+  }
+}

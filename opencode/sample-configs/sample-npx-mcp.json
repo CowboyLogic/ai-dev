@@ -1,0 +1,22 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  
+  // Sample configuration for a local MCP server using npx, similar to Snyk MCP server
+  "mcp": {
+    "snyk": {
+      "type": "local",
+      "command": ["npx", "-y", "@snyk/mcp-server"],
+      "enabled": true,
+      "environment": {
+        "SNYK_TOKEN": "${SNYK_TOKEN}"
+      },
+      "timeout": 15000
+    }
+  },
+
+  // Minimal other config for completeness
+  "model": "anthropic/claude-3-5-sonnet-20241022",
+  "tools": {
+    "snyk": true
+  }
+}
