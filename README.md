@@ -2,6 +2,11 @@
 
 A centralized repository for AI tools, agents, and configurations to streamline AI-assisted development workflows.
 
+> [!IMPORTANT]
+> This repository is both a live repository and a work in progress.
+> It does and will contain information and insights I gain on my journey through the ever-changing AI landscape!
+> Happy Trails! 
+
 ## Purpose
 
 This repository serves as a comprehensive resource for:
