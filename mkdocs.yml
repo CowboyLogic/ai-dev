@@ -71,6 +71,7 @@ markdown_extensions:
 # Plugins
 plugins:
   - callouts:
+      aliases: false
   - search:
       separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
   - tags
