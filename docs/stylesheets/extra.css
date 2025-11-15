@@ -1,0 +1,26 @@
+/* Custom styles for AI Dev documentation site */
+
+/* You can add custom CSS here to override Material theme defaults */
+
+/* Example: Custom color for inline code */
+/*
+code {
+  background-color: #f5f5f5;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+*/
+
+/* Example: Custom styling for admonitions */
+/*
+.admonition {
+  border-left: 4px solid #448aff;
+}
+*/
+
+/* Example: Custom font for headers */
+/*
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+}
+*/

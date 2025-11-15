@@ -194,6 +194,97 @@ Common issues when configuring MCP servers:
 3. **Command not found**: Verify Docker/NPX is installed and in PATH
 4. **Tool not available**: Check that the tool is enabled in the `tools` section
 
+## Documentation Maintenance for OpenCode
+
+**CRITICAL: OpenCode configuration and documentation must remain synchronized.**
+
+### When Modifying `opencode.json`
+
+Any changes to the main configuration file require updates to:
+
+1. **`opencode/README.md`** - Human-readable documentation
+   - Update configuration highlights if models, agents, or commands change
+   - Update examples to match actual configuration
+   - Add/remove sections for new/deleted features
+
+2. **`opencode/AGENTS.md`** (this file) - AI assistant guide
+   - Update specialized agents section with new configurations
+   - Update custom commands table with additions/removals
+   - Update MCP server examples if integration changes
+   - Modify best practices if configuration patterns change
+
+3. **`docs/opencode/configuration.md`** - Detailed MkDocs documentation
+   - Comprehensive documentation of new features
+   - Updated code examples
+   - Usage patterns and best practices
+
+4. **`docs/opencode/index.md`** - OpenCode overview page
+   - High-level changes that affect the overview
+   - Updated feature lists
+
+5. **`docs/index.md`** - Main site landing page
+   - If changes significantly affect OpenCode capabilities
+   - Update feature highlights
+
+### When Adding/Modifying Sample Configurations
+
+Changes to files in `opencode/sample-configs/`:
+
+1. **`opencode/README.md`** - Add examples and usage instructions
+2. **`opencode/AGENTS.md`** - Update sample configuration explanations
+3. **`docs/opencode/samples.md`** - Comprehensive sample documentation
+
+### Common Update Scenarios
+
+**Added a new agent:**
+```
+✓ Update agent table in opencode/AGENTS.md
+✓ Add example usage in opencode/README.md
+✓ Document configuration in docs/opencode/configuration.md
+✓ Update feature list in docs/opencode/index.md if significant
+```
+
+**Changed model configuration:**
+```
+✓ Update model sections in all three OpenCode documentation files
+✓ Update examples that reference model names
+✓ Verify MCP server configurations still match
+```
+
+**Added custom command:**
+```
+✓ Add to custom commands table in opencode/AGENTS.md
+✓ Add usage example in opencode/README.md
+✓ Document in docs/opencode/configuration.md
+```
+
+**Modified MCP server configuration:**
+```
+✓ Update MCP sections in both README.md and AGENTS.md
+✓ Update sample configs if they reference changed configuration
+✓ Update troubleshooting if error patterns change
+```
+
+### Verification Before Completing Changes
+
+- [ ] `opencode.json` matches all documentation examples
+- [ ] All three OpenCode documentation files are updated
+- [ ] Sample configurations reflect current best practices
+- [ ] Code blocks use correct JSON syntax and actual values
+- [ ] Cross-references between documentation files work
+- [ ] Environment variable references are consistent
+- [ ] Version numbers or dates updated if applicable
+
+### Documentation Standards for OpenCode
+
+- **Use actual configuration snippets** from `opencode.json`, not pseudo-code
+- **Test JSON validity** - Ensure all code examples are valid JSON
+- **Maintain consistency** - Agent names, model identifiers, and commands must match exactly
+- **Update timestamps** - If configuration includes dates or version info
+- **Verify links** - Check all internal and external links
+
+**The OpenCode configuration serves as a reference for others - documentation accuracy is paramount.**
+
 ---
 
 *For OpenCode CLI documentation, visit the official OpenCode documentation.*

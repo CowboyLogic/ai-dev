@@ -1,0 +1,102 @@
+site_name: AI Development Tools & Configurations
+site_description: Centralized repository for AI tools, agents, and configurations to streamline AI-assisted development workflows
+site_author: CowboyLogic
+site_url: https://cowboylogic.github.io/ai-dev
+
+# Repository
+repo_name: CowboyLogic/ai-dev
+repo_url: https://github.com/CowboyLogic/ai-dev
+edit_uri: edit/main/docs/
+
+# Copyright
+copyright: Copyright &copy; 2025 CowboyLogic
+
+# Configuration
+theme:
+  name: material
+  palette:
+    # Palette toggle for light mode
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+    - toc.follow
+  language: en
+  icon:
+    repo: fontawesome/brands/github
+
+# Extensions
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - admonition
+  - attr_list
+  - md_in_html
+  - def_list
+  - tables
+  - footnotes
+  - toc:
+      permalink: true
+      title: On this page
+
+# Plugins
+plugins:
+  - search:
+      separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
+  - tags
+
+# Customization
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/CowboyLogic
+  generator: false
+
+# Page tree
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Overview: getting-started/overview.md
+      - Agent Guidelines: getting-started/agent-guidelines.md
+  - Behavioral Baseline:
+      - LLM Baseline Behaviors: agents/baseline-behaviors.md
+      - Agent Configuration: agents/configuration.md
+  - OpenCode:
+      - Overview: opencode/index.md
+      - Configuration Guide: opencode/configuration.md
+      - Sample Configs: opencode/samples.md
+  - Contributing: contributing.md
+  - About: about.md
+
+# Extra CSS
+extra_css:
+  - stylesheets/extra.css
