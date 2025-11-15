@@ -395,8 +395,8 @@ export GITHUB_TOKEN="your-token"
 ## Additional Resources
 
 - **[Baseline Behaviors](baseline-behaviors.md)** - Foundational behavioral model
-- **[OpenCode Configuration](../opencode/configuration.md)** - Practical implementation
-- **[Sample Configurations](../opencode/samples.md)** - Real-world examples
+- **[OpenCode Configuration](../tools/opencode/configuration.md)** - Practical implementation
+- **[Sample Configurations](../tools/opencode/samples.md)** - Real-world examples
 - **[Getting Started](../getting-started/overview.md)** - Quick start guide
 
 ---
@@ -404,6 +404,6 @@ export GITHUB_TOKEN="your-token"
 **Next Steps:**
 
 1. Review the **[Baseline Behaviors](baseline-behaviors.md)** in detail
-2. Explore **[OpenCode Configuration](../opencode/configuration.md)** for practical examples
+2. Explore **[OpenCode Configuration](../tools/opencode/configuration.md)** for practical examples
 3. Try creating your own custom agent configuration
 4. Share successful patterns with the community

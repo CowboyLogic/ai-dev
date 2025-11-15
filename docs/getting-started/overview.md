@@ -1,4 +1,4 @@
-# Getting Started
+# Getting Started Down The Dusty AI trail
 
 Welcome to the AI Development Tools & Configurations repository! This guide will help you quickly understand and start using the resources available here.
 
@@ -25,7 +25,7 @@ If you're an AI assistant (like GitHub Copilot, Claude, GPT-4, etc.) working in 
 
 If you're a developer looking to configure AI tools or standardize AI usage:
 
-1. Browse the **[OpenCode Configuration](../opencode/index.md)** for ready-to-use setups
+1. Browse the **[OpenCode Configuration](../tools/opencode/index.md)** for ready-to-use setups
 2. Review the **[Behavioral Baseline](../agents/baseline-behaviors.md)** to understand AI assistant patterns
 3. Adapt configurations to your workflow
 
@@ -34,14 +34,17 @@ If you're a developer looking to configure AI tools or standardize AI usage:
 If you're standardizing AI tool usage across a team:
 
 1. Adopt the **[LLM Baseline Behaviors](../agents/baseline-behaviors.md)** as your team standard
-2. Customize the **[OpenCode configuration](../opencode/index.md)** for your tech stack
+2. **Customizers:**
+
+1. Review the baseline behaviors
+2. Customize the **[OpenCode configuration](../tools/opencode/index.md)** for your tech stack
 3. Share configurations and patterns with your team
 
 ## Quick Start Paths
 
 ### Path 1: Using OpenCode CLI
 
-1. Review the **[OpenCode Overview](../opencode/index.md)**
+1. Review the **[OpenCode Overview](../tools/opencode/index.md)**
 2. Copy `opencode/opencode.json` to your project
 3. Customize agents and commands for your needs
 4. Set required environment variables (e.g., `GITHUB_TOKEN`)
@@ -57,7 +60,7 @@ If you're standardizing AI tool usage across a team:
 ### Path 3: Learning Best Practices
 
 1. Explore the **[Behavioral Baseline](../agents/baseline-behaviors.md)** to understand effective AI patterns
-2. Review **[Sample Configurations](../opencode/samples.md)** for practical examples
+2. Review **[Sample Configurations](../tools/opencode/samples.md)** for practical examples
 3. Read **[Agent Guidelines](agent-guidelines.md)** for instruction hierarchy
 4. Apply patterns to your own AI tool setup
 
@@ -143,8 +146,8 @@ Choose your path:
 
 - **[Agent Guidelines](agent-guidelines.md)** - Understand the instruction hierarchy and documentation requirements
 - **[LLM Baseline Behaviors](../agents/baseline-behaviors.md)** - Deep dive into the behavioral model
-- **[OpenCode Configuration](../opencode/index.md)** - Explore the OpenCode setup
-- **[Sample Configurations](../opencode/samples.md)** - See practical examples
+- **[OpenCode Configuration](../tools/opencode/index.md)** - Explore the OpenCode setup
+- **[Sample Configurations](../tools/opencode/samples.md)** - See practical examples
 
 ## Getting Help
 

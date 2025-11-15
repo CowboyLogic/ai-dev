@@ -555,7 +555,7 @@ for line in sys.stdin:
 
 - **[Configuration Guide](configuration.md)** - Detailed config documentation
 - **[OpenCode Overview](index.md)** - Feature overview
-- **[Getting Started](../getting-started/overview.md)** - General guide
+- **[Getting Started](../../getting-started/overview.md)** - General guide
 
 ---
 

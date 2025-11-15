@@ -581,7 +581,7 @@ Create `.opencode.json` in project root to override settings:
 
 - **[Sample Configurations](samples.md)** - Real-world MCP server examples
 - **[OpenCode Overview](index.md)** - Feature overview and use cases
-- **[Agent Configuration](../agents/configuration.md)** - General agent configuration guide
+- **[Agent Configuration](../../agents/configuration.md)** - General agent configuration guide
 
 ---
 

@@ -2,8 +2,8 @@
 
 This document is the **authoritative behavioral model** for all AI assistants working in this repository. It defines standard expectations to ensure consistency across different LLM models and platforms.
 
-!!! note "Living Document"
-    This baseline is regularly updated as AI capabilities evolve and best practices emerge. Last updated: November 2025.
+> [!WARNING] Living Document
+    This baseline is regularly updated as AI capabilities evolve and best practices emerge. <br />Last updated: November 2025.
 
 ## Purpose
 
