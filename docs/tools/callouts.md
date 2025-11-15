@@ -2,40 +2,40 @@
 
 ## NOTE Callout/Admonition
 
-> [!NOTE] GitHub Flavored Markdown
-> This is a note!
+> [!NOTE]
+> This is a note in GitHub Flavored Markdown!
 
 !!! note "MKDocs Admonition"
     This is a note!
 
 ## TIP Callout/Admonition
 
-> [!TIP] GitHub Flavored Markdown
-> This is a tip!
+> [!TIP]
+> This is a tip in GitHub Flavored Markdown!
 
 !!! tip "MKDocs Admonition"
     This is a tip!
 
 ## IMPORTANT Callout/Admonition
 
-> [!IMPORTANT] GitHub Flavored Markdown
-> This is important!
+> [!IMPORTANT]
+> This is important in GitHub Flavored Markdown!
 
 !!! important "MKDocs Admonition"
     This is important!
 
 ## WARNING Callout/Admonition
 
-> [!WARNING] GitHub Flavored Markdown
-> This is a warning!
+> [!WARNING]
+> This is a warning in GitHub Flavored Markdown!
 
 !!! warning "MKDocs Admonition"
     This is a warning!
 
 ## CAUTION Callout/Admonition
 
-> [!CAUTION] GitHub Flavored Markdown
-> This is a caution!
+> [!CAUTION]
+> This is a caution in GitHub Flavored Markdown!
 
 !!! caution "MKDocs Admonition"
     This is a caution!
