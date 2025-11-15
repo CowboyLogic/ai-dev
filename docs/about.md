@@ -63,7 +63,7 @@ All AI assistants should follow this baseline as their foundation.
 
 ### OpenCode CLI Configuration
 
-**[`opencode/`](opencode/index.md)** directory contains:
+**[`opencode/`](tools/opencode/index.md)** directory contains:
 
 - **Main configuration** (`opencode.json`) with tiered models and specialized agents
 - **Sample MCP server configs** for Docker-based and NPX-based integrations
@@ -136,7 +136,8 @@ ai-dev/
 │   ├── index.md                     # Main landing page
 │   ├── getting-started/             # Getting started guides
 │   ├── agents/                      # Behavioral baseline docs
-│   ├── opencode/                    # OpenCode documentation
+│   ├── tools/                       # Tool-specific documentation
+│   │   └── opencode/                # OpenCode documentation
 │   ├── contributing.md              # Contribution guidelines
 │   └── about.md                     # This page
 ├── mkdocs.yml                        # MkDocs configuration
@@ -207,4 +208,4 @@ This repository builds on:
 
 ---
 
-**Ready to get started?** Visit the **[Getting Started Guide](getting-started/overview.md)** or explore **[OpenCode Configuration](opencode/index.md)**.
+**Ready to get started?** Visit the **[Getting Started Guide](getting-started/overview.md)** or explore **[OpenCode Configuration](tools/opencode/index.md)**.

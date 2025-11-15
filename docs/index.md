@@ -21,14 +21,14 @@ Key aspects covered:
 
 ### ⚙️ OpenCode CLI Configuration
 
-The **[OpenCode](opencode/index.md)** directory contains comprehensive configurations for the OpenCode CLI tool, including:
+The **[OpenCode](tools/opencode/index.md)** directory contains comprehensive configurations for the OpenCode CLI tool, including:
 
 - **Tiered AI Models** - Smart model selection for different task types
 - **Specialized Agents** - Pre-configured agents for quick fixes, code review, and documentation
 - **Custom Commands** - Ready-to-use commands for common workflows
 - **MCP Server Integration** - Examples for Docker and NPX-based Model Context Protocol servers
 
-[Explore OpenCode Configuration →](opencode/index.md)
+[Explore OpenCode Configuration →](tools/opencode/index.md)
 
 ### 📋 Agent Guidelines
 
@@ -52,7 +52,7 @@ Directory-specific `AGENTS.md` files provide targeted guidance for AI assistants
 
 ### For Developers
 
-1. Browse the configurations in the **[OpenCode](opencode/index.md)** directory
+1. Browse the configurations in the **[OpenCode](tools/opencode/index.md)** directory
 2. Review sample configurations in `opencode/sample-configs/`
 3. Adapt configurations to your development workflow
 4. Reference the baseline behaviors when configuring your AI tools
@@ -141,7 +141,7 @@ Developers can reference these configurations to understand:
 ## Resources
 
 - **[LLM Baseline Behaviors](agents/baseline-behaviors.md)** - Foundational behavioral model
-- **[OpenCode Configuration](opencode/index.md)** - Detailed OpenCode setup guide
+- **[OpenCode Configuration](tools/opencode/index.md)** - Detailed OpenCode setup guide
 - **[GitHub Repository](https://github.com/CowboyLogic/ai-dev)** - Source code and issues
 
 ## About
@@ -150,4 +150,4 @@ This repository is actively maintained and updated as AI development tools evolv
 
 ---
 
-**Ready to get started?** Explore the [Getting Started Guide](getting-started/overview.md) or dive into the [OpenCode Configuration](opencode/index.md).
+**Ready to get started?** Explore the [Getting Started Guide](getting-started/overview.md) or dive into the [OpenCode Configuration](tools/opencode/index.md).

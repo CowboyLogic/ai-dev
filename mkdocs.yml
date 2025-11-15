@@ -70,6 +70,7 @@ markdown_extensions:
 
 # Plugins
 plugins:
+  - callouts:
   - search:
       separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
   - tags
@@ -87,13 +88,17 @@ nav:
   - Getting Started:
       - Overview: getting-started/overview.md
       - Agent Guidelines: getting-started/agent-guidelines.md
-  - Behavioral Baseline:
+  - Agents:
       - LLM Baseline Behaviors: agents/baseline-behaviors.md
       - Agent Configuration: agents/configuration.md
-  - OpenCode:
-      - Overview: opencode/index.md
-      - Configuration Guide: opencode/configuration.md
-      - Sample Configs: opencode/samples.md
+  - Tools:
+      - OpenCode:
+          - Overview: tools/opencode/index.md
+          - Configuration Guide: tools/opencode/configuration.md
+          - Sample Configs: tools/opencode/samples.md
+      - Callouts Testing: tools/callouts.md
+  - MCP:
+      - Overview: mcp/overview.md
   - Contributing: contributing.md
   - About: about.md
 

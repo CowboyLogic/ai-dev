@@ -250,8 +250,8 @@ Choose your path:
 
 - **[Configuration Guide](configuration.md)** - Detailed configuration documentation
 - **[Sample Configurations](samples.md)** - Real-world MCP server examples
-- **[Getting Started](../getting-started/overview.md)** - General repository guide
-- **[Agent Guidelines](../getting-started/agent-guidelines.md)** - Understanding the instruction hierarchy
+- **[Getting Started](../../getting-started/overview.md)** - General repository guide
+- **[Agent Guidelines](../../getting-started/agent-guidelines.md)** - Understanding the instruction hierarchy
 
 ## Additional Resources
 
