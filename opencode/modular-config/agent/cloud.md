@@ -1,7 +1,7 @@
 ---
 description: AWS, Azure, GCP configurations and Infrastructure as Code
 mode: subagent
-model: github-copilot/gpt-4o
+model: github-copilot/grok-code-fast-1
 temperature: 0.1
 tools:
   write: true

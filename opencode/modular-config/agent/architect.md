@@ -1,7 +1,7 @@
 ---
 description: Complex architecture and design decisions
 mode: subagent
-model: ollama/qwen2.5-coder:32b
+model: github-copilot/claude-sonnet-4.5
 temperature: 0.2
 ---
 

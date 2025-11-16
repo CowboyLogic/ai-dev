@@ -1,7 +1,7 @@
 ---
 description: Code review for best practices and issues
 mode: subagent
-model: github-copilot/claude-sonnet-4
+model: github-copilot/claude-sonnet-4.5
 temperature: 0.1
 tools:
   write: false

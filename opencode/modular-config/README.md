@@ -38,7 +38,7 @@ The main configuration file is minimal and defines only **primary agents** (plan
     "build": {
       "mode": "primary",
       "description": "Full development work with all tools enabled, while leveraging subagents...",
-      "model": "github-copilot/gpt-4o",
+      "model": "github-copilot/grok-code-fast-1",
       "temperature": 0.3,
       "tools": {
         "write": true,
@@ -58,7 +58,7 @@ Each specialized agent is defined in a markdown file with YAML frontmatter conta
 ---
 description: REST/GraphQL API design, OpenAPI specs, and API integration
 mode: subagent
-model: github-copilot/gpt-4o
+model: github-copilot/grok-code-fast-1
 temperature: 0.2
 tools:
   write: true
@@ -79,14 +79,14 @@ This configuration includes 13 specialized subagents:
 
 | Agent | Description | Model | Temperature | Write Access |
 |-------|-------------|-------|-------------|--------------|
-| **api** | REST/GraphQL API design, OpenAPI specs, integration | GPT-4o | 0.2 | ✅ Full |
+| **api** | REST/GraphQL API design, OpenAPI specs, integration | Grok Code Fast 1 | 0.2 | ✅ Full |
 | **architect** | System design, architecture decisions | Qwen2.5-Coder:32b | 0.2 | ❌ Read-only |
-| **cloud** | AWS/Azure/GCP configurations, Infrastructure as Code | GPT-4o | 0.1 | ✅ Full |
+| **cloud** | AWS/Azure/GCP configurations, Infrastructure as Code | Grok Code Fast 1 | 0.1 | ✅ Full |
 | **data** | Data analysis, ETL pipelines, data validation | GPT-5-mini | 0.2 | ✅ Full |
-| **database** | Schema design, query optimization, migrations | GPT-4o | 0.1 | ✅ Full |
+| **database** | Schema design, query optimization, migrations | Grok Code Fast 1 | 0.1 | ✅ Full |
 | **devops** | CI/CD pipelines, Docker, Kubernetes, deployment | GPT-5-mini | 0.2 | ✅ Full |
 | **documentation** | Technical docs, API docs, README files | Claude Haiku 4.5 | 0.3 | ✅ Docs only |
-| **performance** | Performance profiling, optimization, analysis | GPT-4o | 0.1 | ✅ Full |
+| **performance** | Performance profiling, optimization, analysis | Grok Code Fast 1 | 0.1 | ✅ Full |
 | **research** | Technical discovery, product research, doc analysis | GPT-5-mini | 0.2 | ❌ Read-only |
 | **reviewer** | Code review for best practices and issues | Claude Sonnet 4 | 0.1 | ❌ Read-only |
 | **security** | Security audits, vulnerability scanning | Claude Sonnet 4 | 0.1 | ❌ Bash only |
@@ -103,7 +103,7 @@ Each agent's YAML frontmatter can include:
 
 #### Optional Properties
 - **`model`**: AI model to use (defaults to main config model if not specified)
-  - Format: `provider/model-name` (e.g., `github-copilot/gpt-4o`)
+  - Format: `provider/model-name` (e.g., `github-copilot/grok-code-fast-1`)
 - **`temperature`**: Creativity level (0.0-1.0)
   - `0.1-0.2`: Deterministic, consistent code generation
   - `0.3-0.4`: Balanced creativity
@@ -172,7 +172,7 @@ To add a new specialized agent:
 ---
 description: Mobile app development for iOS and Android
 mode: subagent
-model: github-copilot/gpt-4o
+model: github-copilot/grok-code-fast-1
 temperature: 0.2
 tools:
   write: true
@@ -221,7 +221,7 @@ For agents that should only analyze without making changes:
 ---
 description: Architecture review and recommendations
 mode: subagent
-model: github-copilot/claude-sonnet-4
+model: github-copilot/claude-sonnet-4.5
 temperature: 0.1
 # No tools defined = read-only access
 ---
@@ -252,7 +252,7 @@ For agents that need complete control:
 ---
 description: Full-stack web development
 mode: subagent
-model: github-copilot/gpt-4o
+model: github-copilot/grok-code-fast-1
 temperature: 0.2
 tools:
   write: true
@@ -268,7 +268,7 @@ tools:
 - **Claude Haiku 4.5**: Fast documentation, simple queries
 
 ### Balanced Performance
-- **GPT-4o**: General development, APIs, databases
+- **Grok Code Fast 1**: General development, APIs, databases
 - **Claude Sonnet 4**: Code review, security analysis
 
 ### Advanced Reasoning
@@ -277,7 +277,7 @@ tools:
 - **Qwen2.5-Coder:32b**: Deep code analysis (local model)
 
 ### Specialized Tasks
-- **Grok 2**: Alternative to GPT-4o for general tasks
+- **Grok 2**: Alternative to Grok Code Fast 1 for general tasks
 - **O1**: Advanced reasoning and problem-solving
 
 ## Best Practices
