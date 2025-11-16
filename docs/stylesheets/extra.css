@@ -33,6 +33,7 @@ h1, h2, h3, h4, h5, h6 {
    GITHUB FLAVORED MARKDOWN CALLOUTS - CUSTOM ICONS
    Template taken from mkdocs-material docs
    SVG icons and colors from GitHub
+   Needed until this feature request is implemented: https://github.com/sondregronas/mkdocs-callouts/issues/27
    ======================================================================== */
 
 :root {

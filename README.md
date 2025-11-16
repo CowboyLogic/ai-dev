@@ -20,7 +20,8 @@ This repository serves as a comprehensive resource for:
 
 - **`agents/`** - Configuration files and documentation for AI agents
 - **`opencode/`** - OpenCode-specific configurations and samples
-  - `sample-configs/` - Example configuration files for different MCP (Model Context Protocol) setups
+- **`mcp/`** - Model Context Protocol (MCP) server configurations
+  - `sample-configs/` - Example configuration files for different MCP setups
 
 ## Getting Started
 

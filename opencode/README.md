@@ -9,10 +9,12 @@ The main configuration file is `opencode.json`. This file defines how OpenCode b
 ### What's Inside
 
 - **`opencode.json`** - Your main OpenCode configuration
-- **`sample-configs/`** - Example configurations for different scenarios
-  - `sample-docker-mcp.json` - Docker-based MCP server setup
-  - `sample-npx-mcp.json` - NPX-based MCP server (Snyk example)
+- **`modular-config/`** - Advanced modular subagent configuration
+  - `opencode.json` - Minimal primary agent config
+  - `agent/` - 13 specialized subagent definitions (API, security, DevOps, etc.)
+  - `README.md` - Comprehensive modular config documentation
 - **`AGENTS.md`** - Technical documentation for AI assistants
+- **`README.md`** - This file
 
 ## Key Features
 
@@ -85,7 +87,7 @@ Model Context Protocol (MCP) servers extend OpenCode with additional capabilitie
 ```
 
 **Add Your Own MCP Servers**:
-- See `sample-configs/` for Docker and NPX examples
+- See `../mcp/sample-configs/` for Docker and NPX examples
 - Popular options: Snyk security scanning, custom tool integrations
 - Set environment variables for authentication (e.g., `SNYK_TOKEN`)
 
@@ -231,11 +233,43 @@ Reference them in config using `${VARIABLE_NAME}` syntax.
 - [OpenCode Documentation](https://opencode.ai) - Official docs and guides
 - [Model Context Protocol](https://modelcontextprotocol.io) - Learn about MCP
 - `AGENTS.md` - Detailed technical documentation for AI assistants
+- `modular-config/README.md` - Advanced modular subagent configuration pattern
+
+## Advanced Configuration Patterns
+
+### Modular Subagent Configuration
+
+For complex projects requiring many specialized agents, see the **modular configuration** in `modular-config/`:
+
+- **13 specialized subagents** defined in individual markdown files
+- **Automatic discovery** via YAML frontmatter
+- **Modular and maintainable** - add/remove agents by adding/removing files
+- **Comprehensive specializations**: API design, security audits, DevOps, cloud infrastructure, database optimization, testing, documentation, UI/UX, and more
+
+**Example**: Instead of defining all agents in `opencode.json`, create `agent/security.md`:
+
+```markdown
+---
+description: Security audits, vulnerability scanning, and best practices
+mode: subagent
+model: github-copilot/claude-sonnet-4
+temperature: 0.1
+tools:
+  bash: true
+---
+
+# Agent Purpose
+The Security agent focuses on identifying vulnerabilities...
+```
+
+Then use: `opencode @security "Audit the authentication system"`
+
+See `modular-config/README.md` for complete documentation and all available agents.
 
 ## Contributing
 
 Found a useful configuration? Create a pull request to share it with others:
-1. Add your config to `sample-configs/`
+1. Add your config to `../mcp/sample-configs/`
 2. Document it in this README
 3. Submit a PR
 

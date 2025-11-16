@@ -129,9 +129,12 @@ ai-dev/
 │   └── AGENTS.md                     # Agent configuration guide
 ├── opencode/                         # OpenCode CLI configurations
 │   ├── opencode.json                # Main configuration
-│   ├── sample-configs/              # Example MCP server configs
+│   ├── modular-config/              # Modular subagent configuration
 │   ├── README.md                    # Human-readable guide
 │   └── AGENTS.md                    # AI assistant guide
+├── mcp/                              # MCP server configurations
+│   ├── sample-configs/              # Example MCP server configs
+│   └── README.md                    # MCP overview
 ├── docs/                             # MkDocs documentation source
 │   ├── index.md                     # Main landing page
 │   ├── getting-started/             # Getting started guides

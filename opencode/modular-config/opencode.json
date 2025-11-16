@@ -1,0 +1,28 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "github-copilot/grok-code-fast-1",
+  "agent": {
+    "plan": {
+      "mode": "primary",
+      "description": "You must use subagents to plan and analyze without making changes. During more moderate and complex plans, write the plan to a Markdown formatted file in the current working directory.",
+      "prompt": "{file:./prompts/plan.txt}",
+      "model": "github-copilot/claude-sonnet-4.5",
+      "temperature": 0.1,
+      "tools": {
+        "write": true,
+        "bash": false
+      }
+    },
+    "build": {
+      "mode": "primary",
+      "description": "Full development work with all tools enabled, while leveraging subagents to optimize operations",
+      "model": "github-copilot/grok-code-fast-1",
+      "temperature": 0.3,
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true
+      }
+    }
+  }
+}
