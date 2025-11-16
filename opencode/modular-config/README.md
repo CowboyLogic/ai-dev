@@ -88,8 +88,8 @@ This configuration includes 13 specialized subagents:
 | **documentation** | Technical docs, API docs, README files | Claude Haiku 4.5 | 0.3 | ✅ Docs only |
 | **performance** | Performance profiling, optimization, analysis | Grok Code Fast 1 | 0.1 | ✅ Full |
 | **research** | Technical discovery, product research, doc analysis | GPT-5-mini | 0.2 | ❌ Read-only |
-| **reviewer** | Code review for best practices and issues | Claude Sonnet 4 | 0.1 | ❌ Read-only |
-| **security** | Security audits, vulnerability scanning | Claude Sonnet 4 | 0.1 | ❌ Bash only |
+| **reviewer** | Code review for best practices and issues | github-copilot/claude-sonnet-4.5 | 0.1 | ❌ Read-only |
+| **security** | Security audits, vulnerability scanning | github-copilot/claude-sonnet-4.5 | 0.1 | ❌ Bash only |
 | **testing** | Unit tests, integration tests, test optimization | GPT-5-mini | 0.2 | ✅ Full |
 | **uxui** | UI/UX design evaluation, accessibility, styling | Gemini 2.5 Pro | 0.3 | ✅ No bash |
 
