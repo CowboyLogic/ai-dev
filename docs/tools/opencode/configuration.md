@@ -501,7 +501,7 @@ opencode @build "Implement user authentication API"
 ---
 description: Mobile app development for iOS and Android
 mode: subagent
-model: github-copilot/gpt-4o
+model: github-copilot/grok-code-fast-1
 temperature: 0.2
 tools:
   write: true
