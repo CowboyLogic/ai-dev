@@ -192,17 +192,17 @@ The API agent is designed to assist with API design, documentation, and integrat
 
 | Agent | Focus | Model | Temp | Access |
 |-------|-------|-------|------|--------|
-| `api` | REST/GraphQL API design, OpenAPI | GPT-4o | 0.2 | Full |
+| `api` | REST/GraphQL API design, OpenAPI | github-copilot/grok-code-fast-1 | 0.2 | Full |
 | `architect` | System design, architecture | Qwen2.5-Coder:32b | 0.2 | Read-only |
-| `cloud` | AWS/Azure/GCP, IaC | GPT-4o | 0.1 | Full |
+| `cloud` | AWS/Azure/GCP, IaC | github-copilot/grok-code-fast-1 | 0.1 | Full |
 | `data` | Data analysis, ETL | GPT-5-mini | 0.2 | Full |
-| `database` | Schema design, query optimization | GPT-4o | 0.1 | Full |
+| `database` | Schema design, query optimization | github-copilot/grok-code-fast-1 | 0.1 | Full |
 | `devops` | CI/CD, Docker, Kubernetes | GPT-5-mini | 0.2 | Full |
 | `documentation` | Technical docs, API docs | Claude Haiku 4.5 | 0.3 | Docs only |
-| `performance` | Performance profiling, optimization | GPT-4o | 0.1 | Full |
+| `performance` | Performance profiling, optimization | github-copilot/grok-code-fast-1 | 0.1 | Full |
 | `research` | Technical discovery, doc analysis | GPT-5-mini | 0.2 | Read-only |
-| `reviewer` | Code review, best practices | Claude Sonnet 4 | 0.1 | Read-only |
-| `security` | Security audits, vulnerabilities | Claude Sonnet 4 | 0.1 | Bash only |
+| `reviewer` | Code review, best practices | github-copilot/claude-sonnet-4.5 | 0.1 | Read-only |
+| `security` | Security audits, vulnerabilities | github-copilot/claude-sonnet-4.5 | 0.1 | Bash only |
 | `testing` | Unit/integration tests | GPT-5-mini | 0.2 | Full |
 | `uxui` | UI/UX design, accessibility | Gemini 2.5 Pro | 0.3 | No bash |
 
