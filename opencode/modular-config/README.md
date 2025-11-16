@@ -269,7 +269,7 @@ tools:
 
 ### Balanced Performance
 - **Grok Code Fast 1**: General development, APIs, databases
-- **Claude Sonnet 4**: Code review, security analysis
+- **Claude Sonnet 4.5**: Code review, security analysis
 
 ### Advanced Reasoning
 - **Claude Sonnet 4.5**: Complex architecture, planning
