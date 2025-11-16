@@ -274,7 +274,6 @@ tools:
 ### Advanced Reasoning
 - **Claude Sonnet 4.5**: Complex architecture, planning
 - **Gemini 2.5 Pro**: Creative tasks, UI/UX design
-- **Qwen2.5-Coder:32b**: Deep code analysis (local model)
 
 ### Specialized Tasks
 - **Grok 2**: Alternative to Grok Code Fast 1 for general tasks
