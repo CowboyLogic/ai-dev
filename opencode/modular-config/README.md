@@ -80,7 +80,7 @@ This configuration includes 13 specialized subagents:
 | Agent | Description | Model | Temperature | Write Access |
 |-------|-------------|-------|-------------|--------------|
 | **api** | REST/GraphQL API design, OpenAPI specs, integration | Grok Code Fast 1 | 0.2 | ✅ Full |
-| **architect** | System design, architecture decisions | Qwen2.5-Coder:32b | 0.2 | ❌ Read-only |
+| **architect** | System design, architecture decisions | Claude Sonnet 4.5 | 0.2 | ❌ Read-only |
 | **cloud** | AWS/Azure/GCP configurations, Infrastructure as Code | Grok Code Fast 1 | 0.1 | ✅ Full |
 | **data** | Data analysis, ETL pipelines, data validation | GPT-5-mini | 0.2 | ✅ Full |
 | **database** | Schema design, query optimization, migrations | Grok Code Fast 1 | 0.1 | ✅ Full |
