@@ -456,17 +456,17 @@ best practices for secure coding and infrastructure.
 
 | Agent | Focus | Model | Access |
 |-------|-------|-------|--------|
-| `api` | REST/GraphQL API design | GPT-4o | Full |
-| `architect` | System architecture | Qwen2.5-Coder:32b | Read-only |
-| `cloud` | AWS/Azure/GCP, IaC | GPT-4o | Full |
+| `api` | REST/GraphQL API design | Grok Code Fast 1 | Full |
+| `architect` | System architecture | Claude Sonnet 4.5 | Read-only |
+| `cloud` | AWS/Azure/GCP, IaC | Grok Code Fast 1 | Full |
 | `data` | Data analysis, ETL | GPT-5-mini | Full |
-| `database` | Schema design, optimization | GPT-4o | Full |
+| `database` | Schema design, optimization | Grok Code Fast 1 | Full |
 | `devops` | CI/CD, Docker, Kubernetes | GPT-5-mini | Full |
 | `documentation` | Technical docs, API docs | Claude Haiku 4.5 | Docs only |
-| `performance` | Profiling, optimization | GPT-4o | Full |
+| `performance` | Profiling, optimization | Grok Code Fast 1 | Full |
 | `research` | Technical discovery | GPT-5-mini | Read-only |
-| `reviewer` | Code review | Claude Sonnet 4 | Read-only |
-| `security` | Security audits | Claude Sonnet 4 | Bash only |
+| `reviewer` | Code review | Claude Sonnet 4.5 | Read-only |
+| `security` | Security audits | Claude Sonnet 4.5 | Bash only |
 | `testing` | Unit/integration tests | GPT-5-mini | Full |
 | `uxui` | UI/UX design, accessibility | Gemini 2.5 Pro | No bash |
 
