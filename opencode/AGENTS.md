@@ -155,6 +155,30 @@ Demonstrates how to configure an **NPX-based MCP server** (Snyk example):
 - Common pattern for Node.js-based MCP servers
 - Remember to enable the tool in the `tools` section
 
+### `docker-desktop-github-mcp.json`
+Demonstrates how to configure the **Docker Desktop MCP Toolbox GitHub server**:
+
+```json
+"mcp": {
+  "docker-desktop-github": {
+    "type": "local",
+    "command": ["docker", "run", "--rm", "-i", "docker/desktop-mcp-toolbox-github:latest"],
+    "enabled": true,
+    "environment": {
+      "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+    },
+    "timeout": 30000
+  }
+}
+```
+
+**Key Points**:
+- Requires Docker Desktop with MCP Toolbox extension installed
+- Provides local GitHub operations through Docker containers
+- Uses `GITHUB_TOKEN` for authentication (same as remote GitHub MCP)
+- Longer timeout (30 seconds) to accommodate Docker startup time
+- Enable in `tools` section as `"docker-desktop-github": true`
+
 ## Modular Subagent Configuration
 
 The `modular-config/` directory demonstrates an **advanced modular pattern** for managing specialized subagents. Instead of defining all agents in `opencode.json`, this approach uses individual markdown files with YAML frontmatter to configure agents.

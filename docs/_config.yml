@@ -1,8 +1,8 @@
 # Site settings
 title: "AI Development Documentation"
 description: "Documentation for AI development tools and configurations"
-url: "https://cowboylogic.github.io"  # Replace with your GitHub Pages URL
-baseurl: "/ai-dev"  # Replace with your repository name
+url: "https://cowboylogic.github.io/ai-dev"
+baseurl: "/ai-dev"
 
 # Build settings
 markdown: kramdown

@@ -87,9 +87,9 @@ Model Context Protocol (MCP) servers extend OpenCode with additional capabilitie
 ```
 
 **Add Your Own MCP Servers**:
-- See `../mcp/sample-configs/` for Docker and NPX examples
-- Popular options: Snyk security scanning, custom tool integrations
-- Set environment variables for authentication (e.g., `SNYK_TOKEN`)
+- See `../mcp/sample-configs/` for Docker, NPX, and Docker Desktop examples
+- Popular options: Snyk security scanning, GitHub operations, custom tool integrations
+- Set environment variables for authentication (e.g., `SNYK_TOKEN`, `GITHUB_TOKEN`)
 
 ### Auto-Loaded Instructions
 

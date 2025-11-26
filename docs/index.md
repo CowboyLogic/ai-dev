@@ -19,7 +19,9 @@ Key aspects covered:
 - **Code Quality** - Standards for writing, testing, and validating code
 - **Problem-Solving** - Approaches for debugging, error handling, and unknown territory
 
-### ⚙️ OpenCode CLI Configuration
+### ⚙️ Tool Configurations
+
+#### OpenCode CLI
 
 The **[OpenCode](tools/opencode/index.md)** directory contains comprehensive configurations for the OpenCode CLI tool, including:
 
@@ -30,6 +32,19 @@ The **[OpenCode](tools/opencode/index.md)** directory contains comprehensive con
 - **MCP Server Integration** - Examples for Docker and NPX-based Model Context Protocol servers
 
 [Explore OpenCode Configuration →](tools/opencode/index.md)
+
+#### Visual Studio Code
+
+The **[VS Code Agent/SubAgent Guide](tools/vscode/README.md)** provides comprehensive documentation for implementing efficient AI agent workflows in VS Code using GitHub Copilot:
+
+- **[Quick Start](tools/vscode/quick-start.md)** - Get your first agent running in 5 minutes
+- **[Markdown-Based Agents](tools/vscode/markdown-agents.md)** - Declarative configuration with YAML frontmatter (recommended)
+- **[Programmatic SubAgents](tools/vscode/subagent-tool.md)** - Complex autonomous task delegation
+- **[Agent Examples Library](tools/vscode/agent-examples.md)** - Ready-to-use configurations for common tasks
+- **[Best Practices](tools/vscode/best-practices.md)** - Optimization patterns and team collaboration
+- **[Troubleshooting](tools/vscode/troubleshooting.md)** - Common issues and solutions
+
+[Explore VS Code Agent Configuration →](tools/vscode/README.md)
 
 ### 📋 Agent Guidelines
 

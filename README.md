@@ -19,14 +19,33 @@ This repository serves as a comprehensive resource for:
 ## Structure
 
 - **`agents/`** - Configuration files and documentation for AI agents
-- **`opencode/`** - OpenCode-specific configurations and samples
+  - `LLM-BaselineBehaviors.md` - Authoritative behavioral baseline for all AI assistants
+- **`opencode/`** - OpenCode CLI configurations and samples
+  - `opencode.json` - Main configuration file
+  - `modular-config/` - Advanced modular subagent configuration
 - **`mcp/`** - Model Context Protocol (MCP) server configurations
   - `sample-configs/` - Example configuration files for different MCP setups
+- **`docs/`** - Comprehensive documentation site (MkDocs)
+  - **`docs/tools/vscode/`** - Visual Studio Code agent/subagent configuration guide
+  - **`docs/tools/opencode/`** - OpenCode configuration documentation
 
 ## Getting Started
 
-Browse the directories to find configuration files relevant to your development environment. Each configuration typically includes:
+### For AI Assistants
 
+1. Read the **[LLM Baseline Behaviors](agents/LLM-BaselineBehaviors.md)** document
+2. Review tool-specific `AGENTS.md` files
+3. Follow instruction priority: User directives → Project rules → Tool guidelines → Baseline behaviors
+
+### For Developers
+
+Browse the directories to find configuration files relevant to your development environment:
+
+- **[VS Code Agent/SubAgent Guide](docs/tools/vscode/README.md)** - Implementing efficient AI workflows with GitHub Copilot
+- **[OpenCode Configuration](docs/tools/opencode/index.md)** - CLI tool with specialized agents
+- **[MCP Server Examples](mcp/sample-configs/)** - Model Context Protocol integrations
+
+Each configuration includes:
 - Setup instructions
 - Usage examples
 - Customization options
