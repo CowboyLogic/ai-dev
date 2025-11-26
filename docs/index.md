@@ -23,13 +23,19 @@ Key aspects covered:
 
 #### OpenCode CLI
 
-The **[OpenCode](tools/opencode/index.md)** directory contains comprehensive configurations for the OpenCode CLI tool, including:
+The **[OpenCode](tools/opencode/index.md)** directory provides two configuration approaches:
 
-- **Tiered AI Models** - Smart model selection for different task types
-- **Specialized Agents** - Pre-configured agents for quick fixes, code review, and documentation
-- **Modular Agent Configuration** - Advanced pattern with 13 specialized subagents in individual files
-- **Custom Commands** - Ready-to-use commands for common workflows
-- **MCP Server Integration** - Examples for Docker and NPX-based Model Context Protocol servers
+**Standard Configuration** (`opencode/standard-config/`)
+- Single-file configuration with tiered agents
+- Pre-configured agents for quick fixes, code review, and documentation
+- Custom commands for common workflows
+- MCP server integration examples
+
+**Agent/SubAgent Configuration** (`docs/reference/opencode/agent-subagent-config/`)
+- Modular pattern with 13 specialized subagents in individual markdown files
+- Automatic agent discovery via YAML frontmatter
+- Specialized agents: API design, security, DevOps, cloud, database, testing, performance, and more
+- Ideal for complex projects and team collaboration
 
 [Explore OpenCode Configuration →](tools/opencode/index.md)
 
@@ -108,7 +114,7 @@ ai-dev/
 │   └── AGENTS.md                   # Agent configuration guidelines
 ├── opencode/
 │   ├── opencode.json               # Main OpenCode configuration
-│   ├── modular-config/             # Modular subagent configuration
+│   ├── agent-subagent-config/      # Modular subagent configuration
 │   ├── README.md                   # Human-readable guide
 │   └── AGENTS.md                   # AI assistant guide
 ├── mcp/

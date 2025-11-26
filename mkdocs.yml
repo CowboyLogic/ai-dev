@@ -106,8 +106,19 @@ nav:
           - Best Practices: tools/vscode/best-practices.md
           - Troubleshooting: tools/vscode/troubleshooting.md
       - Callouts Testing: tools/callouts.md
-  - MCP:
+  - MCP Servers:
       - Overview: mcp/overview.md
+      - Configuration: mcp/configuration.md
+  - Reference:
+      - Overview: reference/README.md
+      - Agents:
+          - Baseline Behaviors: reference/agents/baseline-behaviors.md
+          - Inquisitive Agent: reference/agents/inquisitive-agent.md
+      - OpenCode:
+          - Standard Config: reference/opencode/standard-config/AGENTS.md
+          - Agent/SubAgent Config: reference/opencode/agent-subagent-config/README.md
+      - MCP:
+          - Sample Configurations: reference/mcp/sample-configs/README.md
   - Contributing: contributing.md
   - About: about.md
 

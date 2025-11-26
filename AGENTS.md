@@ -6,7 +6,7 @@ This repository contains configurations and guidelines for working with AI devel
 
 **All AI assistants working in this repository must follow the behavioral model defined in:**
 
-📋 **[`agents/LLM-BaselineBehaviors.md`](agents/LLM-BaselineBehaviors.md)**
+📋 **[`docs/agents/baseline-behaviors.md`](docs/agents/baseline-behaviors.md)**
 
 This document establishes the authoritative baseline for:
 - Communication style and tone
@@ -21,8 +21,13 @@ Any project-specific or tool-specific directives should be layered on top of thi
 
 For additional context specific to certain tools or configurations:
 
-- **`agents/`** - General AI agent configurations and behavioral baselines
-- **`opencode/`** - OpenCode CLI-specific configurations and guidelines (see [`opencode/AGENTS.md`](opencode/AGENTS.md))
+- **`docs/reference/agents/`** - Authoritative AI agent behavioral baselines
+- **`docs/reference/opencode/`** - OpenCode CLI actual configuration files
+  - `standard-config/` - Single-file configuration (see [`AGENTS.md`](docs/reference/opencode/standard-config/AGENTS.md))
+  - `agent-subagent-config/` - Modular agent configuration (see [`README.md`](docs/reference/opencode/agent-subagent-config/README.md))
+- **`docs/reference/mcp/`** - MCP sample configuration files
+
+**Full Documentation:** See [`docs/getting-started/agent-guidelines.md`](docs/getting-started/agent-guidelines.md) for comprehensive guidance.
 
 ## Priority of Instructions
 
@@ -30,8 +35,8 @@ When multiple instruction sources exist, follow this priority order:
 
 1. **Explicit user directives** - Direct instructions from the user in the current conversation
 2. **Project-specific rules** - Guidelines in project `.cursor/rules/` or similar directories
-3. **Tool-specific guidelines** - Instructions in tool-specific AGENTS.md files (e.g., `opencode/AGENTS.md`)
-4. **Baseline behaviors** - The foundational model in `agents/LLM-BaselineBehaviors.md`
+3. **Tool-specific guidelines** - Instructions in tool-specific AGENTS.md files (e.g., `docs/reference/opencode/standard-config/AGENTS.md`)
+4. **Baseline behaviors** - The foundational model in `docs/agents/baseline-behaviors.md`
 
 ## Documentation Maintenance
 
@@ -61,18 +66,18 @@ Whenever you make changes to configuration files, code, or any repository conten
 ### Examples of Changes Requiring Documentation Updates
 
 **Configuration Changes:**
-- Modified `opencode.json` → Update `opencode/README.md`, `opencode/AGENTS.md`, `docs/opencode/configuration.md`
+- Modified `docs/reference/opencode/standard-config/opencode.json` → Update `docs/tools/opencode/index.md`, `docs/reference/opencode/standard-config/AGENTS.md`, `docs/tools/opencode/configuration.md`
 - Added new agent → Update all three files above plus `docs/index.md`
 
 **Behavioral Changes:**
-- Modified `agents/LLM-BaselineBehaviors.md` → Update `README.md`, `AGENTS.md`, `agents/AGENTS.md`, `docs/agents/baseline-behaviors.md`
+- Modified `docs/reference/agents/baseline-behaviors.md` → Update `README.md`, `AGENTS.md`, `docs/agents/baseline-behaviors.md`
 
 **New Files/Directories:**
 - Added new tool configuration → Create corresponding README.md, AGENTS.md, and docs/ pages
 - Update root `README.md` and `docs/index.md` to reference new content
 
 **Sample Configurations:**
-- Added/modified sample configs → Update `opencode/README.md` and `docs/opencode/samples.md`
+- Added/modified sample configs → Update `docs/tools/opencode/index.md` and `docs/tools/opencode/samples.md`
 
 ### Documentation Standards
 

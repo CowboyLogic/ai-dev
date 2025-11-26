@@ -6,7 +6,7 @@ This directory contains configuration files and examples for the OpenCode CLI to
 
 **All AI assistants must first follow the baseline behavioral model:**
 
-📋 **[`../agents/LLM-BaselineBehaviors.md`](../agents/LLM-BaselineBehaviors.md)**
+📋 **[`../../agents/baseline-behaviors.md`](../../agents/baseline-behaviors.md)**
 
 The guidelines below are OpenCode-specific and should be applied **in addition to** the baseline behaviors. When conflicts arise, the baseline behaviors take precedence unless explicitly overridden by user directives.
 
@@ -15,7 +15,7 @@ The guidelines below are OpenCode-specific and should be applied **in addition t
 ```
 opencode/
 ├── opencode.json              # Main configuration file
-├── modular-config/            # Advanced modular subagent configuration
+├── agent-subagent-config/     # Advanced modular subagent configuration
 │   ├── opencode.json          # Minimal primary agent config
 │   ├── agent/                 # Individual subagent definitions
 │   │   ├── api.md             # API design and integration
@@ -181,15 +181,15 @@ Demonstrates how to configure the **Docker Desktop MCP Toolbox GitHub server**:
 
 ## Modular Subagent Configuration
 
-The `modular-config/` directory demonstrates an **advanced modular pattern** for managing specialized subagents. Instead of defining all agents in `opencode.json`, this approach uses individual markdown files with YAML frontmatter to configure agents.
+The `agent-subagent-config/` directory demonstrates an **advanced modular pattern** for managing specialized subagents. Instead of defining all agents in `opencode.json`, this approach uses individual markdown files with YAML frontmatter to configure agents.
 
 ### How It Works
 
-**Main Configuration** (`modular-config/opencode.json`):
+**Main Configuration** (`agent-subagent-config/opencode.json`):
 - Defines only **primary agents** (plan, build)
 - Minimal configuration focused on top-level workflow
 
-**Agent Definitions** (`modular-config/agent/*.md`):
+**Agent Definitions** (`agent-subagent-config/agent/*.md`):
 - Each specialized agent in its own markdown file
 - YAML frontmatter contains OpenCode configuration
 - Automatic discovery and loading via instruction system
@@ -271,7 +271,7 @@ opencode @build "Implement user authentication API"
 3. Add documentation about purpose and usage
 4. Agent is automatically available as `@yourname`
 
-See `modular-config/README.md` for comprehensive documentation.
+See `../agent-subagent-config/README.md` for comprehensive documentation.
 
 ## Traditional Configuration vs Modular Configuration
 
@@ -281,7 +281,7 @@ See `modular-config/README.md` for comprehensive documentation.
 - Direct, straightforward configuration
 - Examples: `quick`, `reviewer`, `docs` agents
 
-**Modular** (`modular-config/`):
+**Modular** (`agent-subagent-config/`):
 - Agents defined in individual markdown files
 - Ideal for complex workflows with many specialized agents
 - Modular, scalable, maintainable
@@ -349,12 +349,12 @@ Common issues when configuring MCP servers:
 
 Any changes to the main configuration file require updates to:
 
-1. **`opencode/README.md`** - Human-readable documentation
+1. **`docs/tools/opencode/index.md`** - User-facing documentation
    - Update configuration highlights if models, agents, or commands change
    - Update examples to match actual configuration
    - Add/remove sections for new/deleted features
 
-2. **`opencode/AGENTS.md`** (this file) - AI assistant guide
+2. **`opencode/standard-config/AGENTS.md`** (this file) - AI assistant guide
    - Update specialized agents section with new configurations
    - Update custom commands table with additions/removals
    - Update MCP server examples if integration changes
@@ -375,20 +375,20 @@ Any changes to the main configuration file require updates to:
 
 ### When Adding/Modifying Sample Configurations
 
-Changes to files in `mcp/sample-configs/` or `opencode/modular-config/`:
+Changes to files in `docs/reference/mcp/sample-configs/` or `docs/reference/opencode/agent-subagent-config/`:
 
-1. **`opencode/README.md`** - Add examples and usage instructions
-2. **`opencode/AGENTS.md`** - Update sample configuration explanations
+1. **`docs/tools/opencode/index.md`** - Add examples and usage instructions
+2. **`opencode/standard-config/AGENTS.md`** - Update sample configuration explanations
 3. **`docs/tools/opencode/samples.md`** - Comprehensive sample documentation
 4. **`docs/mcp/overview.md`** - MCP-specific documentation
-5. **`modular-config/README.md`** - Update if modular config changes
+5. **`agent-subagent-config/README.md`** - Update if modular config changes
 
 ### Common Update Scenarios
 
 **Added a new agent:**
 ```
-✓ Update agent table in opencode/AGENTS.md
-✓ Add example usage in opencode/README.md
+✓ Update agent table in opencode/standard-config/AGENTS.md
+✓ Add example usage in docs/tools/opencode/index.md
 ✓ Document configuration in docs/opencode/configuration.md
 ✓ Update feature list in docs/opencode/index.md if significant
 ```
@@ -402,8 +402,8 @@ Changes to files in `mcp/sample-configs/` or `opencode/modular-config/`:
 
 **Added custom command:**
 ```
-✓ Add to custom commands table in opencode/AGENTS.md
-✓ Add usage example in opencode/README.md
+✓ Add to custom commands table in opencode/standard-config/AGENTS.md
+✓ Add usage example in docs/tools/opencode/index.md
 ✓ Document in docs/opencode/configuration.md
 ```
 

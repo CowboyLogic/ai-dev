@@ -8,20 +8,38 @@ OpenCode CLI is an AI-assisted development tool that integrates multiple AI mode
 
 ## Repository Contents
 
-The `opencode/` directory contains:
+The `opencode/` directory provides **two configuration approaches**:
 
-- **`opencode.json`** - Main configuration file
-- **`modular-config/`** - Advanced modular subagent configuration
-- **`README.md`** - Human-readable guide
+### Standard Configuration
+**Location:** `docs/reference/opencode/standard-config/`
+
+- **`opencode.json`** - Single-file configuration with tiered agents, custom commands, and MCP servers
 - **`AGENTS.md`** - Technical documentation for AI assistants
 
-See also **`mcp/sample-configs/`** for MCP server configuration examples.
+**Best for:** Quick setup, straightforward agent needs, centralized configuration
+
+### Agent/SubAgent Configuration
+**Location:** `docs/reference/opencode/agent-subagent-config/`
+
+- **`opencode.json`** - Minimal primary agent configuration
+- **`agent/`** - 13 specialized subagent definitions in individual markdown files
+- **`prompts/`** - Reusable prompt templates
+- **`README.md`** - Comprehensive modular pattern documentation
+
+**Best for:** Complex projects, many specialized agents, team collaboration, modular maintenance
+
+### MCP Server Examples
+**Location:** `docs/reference/mcp/sample-configs/`
+
+Sample configurations for Docker, NPX, and Docker Desktop-based MCP servers.
 
 ## Quick Start
 
+### Using Standard Configuration
+
 ### 1. Review the Configuration
 
-The main configuration file demonstrates:
+The standard configuration demonstrates:
 
 - **Tiered AI models** for cost-effective operation
 - **Specialized agents** for different task types
@@ -31,10 +49,11 @@ The main configuration file demonstrates:
 ### 2. Copy and Customize
 
 ```bash
-# Copy the configuration to your project
-cp opencode/opencode.json ~/your-project/.opencode.json
+# Copy the standard configuration to your project
+cp docs/reference/opencode/standard-config/opencode.json ~/your-project/.opencode.json
 
-# Or use it as a reference for creating your own
+# Or copy the agent/subagent configuration
+cp -r docs/reference/opencode/agent-subagent-config/* ~/your-project/
 ```
 
 ### 3. Set Environment Variables
@@ -107,23 +126,57 @@ Pre-configured agents optimize for specific workflows:
 - **Access**: Write docs only (no bash)
 - **Use for**: README files, API docs, guides
 
-### 🧩 Modular Agent Configuration
+### 🧩 Modular Agent/SubAgent Configuration
 
-For complex projects, the `modular-config/` directory demonstrates an advanced pattern:
+The **agent/subagent configuration** in `docs/reference/opencode/agent-subagent-config/` demonstrates an advanced modular pattern:
 
 - **13 specialized subagents** in individual markdown files
-- **Automatic discovery** via YAML frontmatter
-- **Modular and maintainable** approach
+- **Automatic discovery** via YAML frontmatter in markdown files
+- **Modular and maintainable** - add/remove agents by adding/removing files
 - **Specialized agents**: API design, security, DevOps, cloud infrastructure, database, testing, documentation, UI/UX, and more
 
-Example agents:
+**How it works:**
+
+Instead of defining all agents in `opencode.json`, each agent lives in its own markdown file with YAML frontmatter:
+
+```markdown
+---
+description: Security audits, vulnerability scanning, and best practices
+mode: subagent
+model: github-copilot/claude-sonnet-4
+temperature: 0.1
+tools:
+  bash: true
+---
+
+# Security Agent
+
+This agent specializes in identifying security vulnerabilities...
+```
+
+**Available specialized agents:**
 - `@api` - REST/GraphQL API design and integration
 - `@security` - Security audits and vulnerability scanning
 - `@database` - Schema design and query optimization
 - `@devops` - CI/CD pipelines and deployment automation
 - `@cloud` - AWS/Azure/GCP and Infrastructure as Code
+- `@testing` - Test development and TDD
+- `@performance` - Performance optimization and profiling
+- `@docs` - Technical documentation
+- `@reviewer` - Code review and quality assurance
+- `@architect` - System architecture and design patterns
+- `@uxui` - UI/UX design and implementation
+- `@data` - Data analysis and ETL
+- `@research` - Technical research and investigation
 
-[Learn more about modular configuration →](configuration.md#modular-agent-configuration)
+**Usage:**
+```bash
+opencode @security "Audit the authentication system"
+opencode @api "Design REST endpoints for user management"
+opencode @devops "Create a GitHub Actions CI/CD pipeline"
+```
+
+[Learn more in agent-subagent-config/README.md →](../../reference/opencode/agent-subagent-config/README.md)
 
 ### ⚡ Custom Commands
 
