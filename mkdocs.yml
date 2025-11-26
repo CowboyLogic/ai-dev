@@ -97,6 +97,14 @@ nav:
           - Overview: tools/opencode/index.md
           - Configuration Guide: tools/opencode/configuration.md
           - Sample Configs: tools/opencode/samples.md
+      - Visual Studio Code:
+          - Overview: tools/vscode/README.md
+          - Quick Start: tools/vscode/quick-start.md
+          - Markdown-Based Agents: tools/vscode/markdown-agents.md
+          - Programmatic SubAgents: tools/vscode/subagent-tool.md
+          - Agent Examples: tools/vscode/agent-examples.md
+          - Best Practices: tools/vscode/best-practices.md
+          - Troubleshooting: tools/vscode/troubleshooting.md
       - Callouts Testing: tools/callouts.md
   - MCP:
       - Overview: mcp/overview.md

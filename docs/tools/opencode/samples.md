@@ -207,6 +207,83 @@ You can use this pattern for any npm-based MCP server:
 }
 ```
 
+### Docker Desktop MCP Toolbox GitHub Server
+
+Located at: `mcp/sample-configs/docker-desktop-github-mcp.json`
+
+For users with Docker Desktop's MCP Toolbox installed, you can use the GitHub MCP server:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  
+  // Configuration for Docker Desktop MCP Toolbox GitHub MCP server
+  // This assumes you have the Docker Desktop MCP Toolbox installed
+  // Replace 'docker/desktop-mcp-toolbox-github:latest' with the actual image name if different
+  "mcp": {
+    "docker-desktop-github": {
+      "type": "local",
+      "command": ["docker", "run", "--rm", "-i", "docker/desktop-mcp-toolbox-github:latest"],
+      "enabled": true,
+      "environment": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "timeout": 30000
+    }
+  },
+
+  // Enable the GitHub MCP tools
+  "tools": {
+    "docker-desktop-github": true
+  }
+}
+```
+
+**Key Points:**
+
+**Docker Desktop Integration:**
+- Requires Docker Desktop with MCP Toolbox extension
+- Provides local GitHub operations without remote API calls
+- May offer additional Docker-specific GitHub workflows
+
+**Environment Variables:**
+- `GITHUB_TOKEN` - Required for GitHub API access
+- Obtain from GitHub Settings > Developer settings > Personal access tokens
+
+**Timeout:**
+- 30000ms (30 seconds) to allow for Docker container startup
+- May need adjustment based on your system's Docker performance
+
+**Setup Requirements:**
+
+1. **Install Docker Desktop MCP Toolbox:**
+   - Ensure Docker Desktop is installed and running
+   - Install the MCP Toolbox extension from Docker Desktop
+
+2. **Verify the image:**
+   ```bash
+   docker images | grep mcp-toolbox
+   ```
+
+3. **Set GitHub token:**
+   ```powershell
+   # PowerShell
+   $env:GITHUB_TOKEN = "your-github-token-here"
+   ```
+
+4. **Test the container:**
+   ```bash
+   docker run --rm -i docker/desktop-mcp-toolbox-github:latest --help
+   ```
+
+5. **Add to OpenCode configuration**
+
+**Features Provided:**
+- Local GitHub repository operations
+- Issue and pull request management
+- Code search and analysis
+- Integration with Docker workflows
+
 ## Additional MCP Server Examples
 
 ### GitHub MCP Server (Remote)
