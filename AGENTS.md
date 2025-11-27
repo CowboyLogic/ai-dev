@@ -18,15 +18,7 @@ It defines:
 
 **Authoritative baseline behaviors are defined in `.github/LLM-BaselineBehaviors.md`.** This file serves as the definitive source for AI agent behavioral guidelines in this repository. **NEVER modify `.github/LLM-BaselineBehaviors.md` without explicit instruction from the user.**
 
-All AI assistants working in this repository must follow these behavioral principles:
-
-- **Action-oriented**: Implement changes rather than only suggesting them
-- **Direct communication**: Brief, clear responses without unnecessary framing
-- **Efficient tool usage**: Parallelize independent operations when possible
-- **Complete work**: Continue until tasks are fully resolved before yielding to user
-- **Proactive problem-solving**: Research and deduce solutions rather than giving up
-
-These behaviors apply to repository management work. Detailed behavioral documentation in `docs/agents/` is for reference and publication, not authoritative directives unless explicitly incorporated here.
+Detailed behavioral documentation in `docs/agents/` is for reference and publication, not authoritative directives unless explicitly incorporated here.
 
 ## Repository Structure
 
