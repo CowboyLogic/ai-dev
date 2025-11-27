@@ -6,15 +6,6 @@
 
 This library contains complete, production-ready agent configurations that you can copy directly into your projects. Each example includes the full markdown file with YAML frontmatter and detailed instructions.
 
-## Table of Contents
-
-- [Code Review & Quality](#code-review--quality)
-- [Testing & QA](#testing--qa)
-- [Security & Compliance](#security--compliance)
-- [Documentation](#documentation)
-- [Performance & Optimization](#performance--optimization)
-- [Development Specialists](#development-specialists)
-
 ---
 
 ## Code Review & Quality
@@ -180,9 +171,9 @@ You are a security expert specializing in:
 - Dependency security analysis
 - Authentication and authorization review
 
-## Security Audit Checklist
+### Security Audit Checklist
 
-### A01: Broken Access Control
+#### A01: Broken Access Control
 - [ ] Proper authorization checks on all endpoints
 - [ ] Role-based access control (RBAC) implementation
 - [ ] Path traversal prevention
@@ -202,7 +193,7 @@ You are a security expert specializing in:
 
 ### A04-A10: Continue through OWASP Top 10
 
-## Audit Report Format
+### Audit Report Format
 
 ```markdown
 # Security Audit Report
@@ -264,7 +255,7 @@ You create clear, comprehensive technical documentation:
 - Code comments and JSDoc
 - Architecture documentation
 
-## Documentation Standards
+### Documentation Standards
 
 ### API Documentation
 - Use OpenAPI 3.0 specification

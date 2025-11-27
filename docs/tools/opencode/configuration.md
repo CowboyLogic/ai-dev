@@ -1,10 +1,39 @@
 # OpenCode Configuration Guide
 
-Detailed guide to configuring and using the OpenCode CLI with the configuration provided in this repository.
+Detailed guide to configuring and using the OpenCode CLI with the configurations provided in this repository.
 
-## Configuration File Structure
+## Configuration Approaches
 
-The `opencode.json` file is organized into several key sections:
+This repository provides two configuration approaches for OpenCode:
+
+### Standard Configuration
+**Location:** `docs/reference/opencode/standard-config/`
+
+A single-file configuration approach where all agents, commands, and settings are defined in one `opencode.json` file.
+
+**Best for:**
+- Quick setup and getting started
+- Projects with straightforward agent needs (3-5 agents)
+- Centralizing all configuration in one place
+- Simple, easy-to-understand configuration
+
+### Agent/SubAgent Configuration  
+**Location:** `docs/reference/opencode/agent-subagent-config/`
+
+A modular configuration approach where agents are defined in individual markdown files with YAML frontmatter.
+
+**Best for:**
+- Complex projects with many specialized agents (5+)
+- Team collaboration where different members manage different agents
+- Modular, maintainable agent definitions
+- Automatic agent discovery from files
+- Sharing/reusing agents across projects
+
+---
+
+## Standard Configuration Structure
+
+The `opencode.json` file in `standard-config/` is organized into several key sections:
 
 ### 1. Schema and Models
 
@@ -400,16 +429,16 @@ Model Context Protocol servers extend OpenCode with additional capabilities.
 
 ## Modular Agent Configuration
 
-For complex projects with many specialized agents, the `modular-config/` directory demonstrates an advanced pattern where each agent is defined in its own markdown file with YAML frontmatter.
+For complex projects with many specialized agents, the `agent-subagent-config/` directory demonstrates an advanced pattern where each agent is defined in its own markdown file with YAML frontmatter.
 
 ### Architecture
 
-**Main Configuration** (`modular-config/opencode.json`):
+**Main Configuration** (`agent-subagent-config/opencode.json`):
 - Defines only **primary agents** (plan, build)
 - Minimal configuration focused on workflow orchestration
 - Delegates to specialized subagents automatically
 
-**Agent Definitions** (`modular-config/agent/*.md`):
+**Agent Definitions** (`agent-subagent-config/agent/*.md`):
 - Each agent in a separate markdown file
 - YAML frontmatter contains configuration
 - Automatic discovery via instruction loading
@@ -522,7 +551,7 @@ Specializes in mobile app development...
 - **Reusability** - Share agents across projects
 - **Version Control** - Track changes independently
 
-See `opencode/modular-config/README.md` for comprehensive documentation.
+See `docs/reference/opencode/agent-subagent-config/README.md` for comprehensive documentation.
 
 ### 9. Additional Settings
 
@@ -697,11 +726,184 @@ Create `.opencode.json` in project root to override settings:
 {
   "model": "openai/gpt-4o",
   "instructions": [
-    "../../agents/LLM-BaselineBehaviors.md",
+    "../reference/agents/baseline-behaviors.md",
     "PROJECT_RULES.md"
   ]
 }
 ```
+
+---
+
+## Agent/SubAgent Configuration Pattern
+
+The modular configuration in `docs/reference/opencode/agent-subagent-config/` uses a different approach where agents are defined in individual markdown files.
+
+### Structure
+
+```
+agent-subagent-config/
+├── opencode.json          # Minimal primary agent config
+├── agent/                 # Individual agent definitions
+│   ├── api.md
+│   ├── security.md
+│   ├── devops.md
+│   └── ... (13 total)
+├── prompts/               # Reusable prompt templates
+│   └── plan.txt
+└── README.md              # Full documentation
+```
+
+### How It Works
+
+**1. Minimal Main Config** (`opencode.json`):
+
+```json
+{
+  "agent": {
+    "plan": {
+      "mode": "primary",
+      "description": "Planning and analysis",
+      "model": "github-copilot/claude-sonnet-4.5",
+      "tools": { "write": false, "bash": false }
+    }
+  },
+  "instructions": [
+    "agent/*.md",  // Auto-loads all agents
+    "prompts/*.txt"
+  ]
+}
+```
+
+**2. Individual Agent Files** (`agent/security.md`):
+
+```markdown
+---
+description: Security audits, vulnerability scanning, and best practices
+mode: subagent
+model: github-copilot/claude-sonnet-4
+temperature: 0.1
+tools:
+  bash: true
+  write: false
+---
+
+# Security Agent
+
+This agent specializes in identifying security vulnerabilities...
+
+## Capabilities
+- OWASP Top 10 analysis
+- Dependency vulnerability scanning
+- Code injection detection
+- Authentication/authorization review
+```
+
+**3. Automatic Discovery:**
+
+When OpenCode loads, it:
+1. Reads `opencode.json`
+2. Processes `instructions` glob patterns
+3. Discovers all `agent/*.md` files
+4. Parses YAML frontmatter to configure each agent
+5. Makes agents available via `@` syntax
+
+**4. Usage:**
+
+```bash
+opencode @security "Audit authentication in auth.js"
+opencode @api "Design REST endpoints for user management"
+opencode @devops "Create GitHub Actions CI/CD pipeline"
+```
+
+### Available Specialized Agents
+
+| Agent | Purpose | Key Tools |
+|-------|---------|-----------|
+| `@api` | API design and integration | write, edit, bash |
+| `@architect` | System architecture | read, write |
+| `@cloud` | Cloud infrastructure (AWS/Azure/GCP) | write, edit, bash |
+| `@data` | Data analysis and ETL | write, bash |
+| `@database` | Database design and optimization | write, edit |
+| `@devops` | CI/CD and deployment | write, edit, bash |
+| `@docs` | Technical documentation | write, edit |
+| `@performance` | Performance optimization | read, edit, bash |
+| `@research` | Technical research | read, webfetch |
+| `@reviewer` | Code review | read only |
+| `@security` | Security audits | read, bash |
+| `@testing` | Test development | write, edit, bash |
+| `@uxui` | UI/UX design | write, edit |
+
+### Benefits
+
+✅ **Modularity** - Each agent in its own file  
+✅ **Maintainability** - Easy to add/remove/modify agents  
+✅ **Discoverability** - New agents automatically available  
+✅ **Version Control** - Track individual agent changes  
+✅ **Reusability** - Share specific agents across projects  
+✅ **Team Collaboration** - Different members own different agents  
+✅ **Documentation** - Agent capabilities documented in-file
+
+### Creating Custom Agents
+
+**1. Create a new markdown file** in `agent/` directory:
+
+```markdown
+---
+description: Your agent's purpose
+mode: subagent
+model: github-copilot/claude-sonnet-4.5
+temperature: 0.1
+tools:
+  write: true
+  edit: true
+  bash: false
+---
+
+# My Custom Agent
+
+Detailed description of what this agent does...
+
+## Capabilities
+- Capability 1
+- Capability 2
+
+## Best Used For
+- Use case 1
+- Use case 2
+```
+
+**2. Save as `agent/myagent.md`**
+
+**3. Restart OpenCode** (if running)
+
+**4. Use the agent:**
+
+```bash
+opencode @myagent "your task here"
+```
+
+### When to Use This Pattern
+
+**Choose Agent/SubAgent Configuration when:**
+- ✅ You need 5+ specialized agents
+- ✅ Different team members manage different agents
+- ✅ You want modular, easy-to-maintain configuration
+- ✅ You need to share/reuse agents across projects
+- ✅ Agents have complex, well-documented capabilities
+
+**Choose Standard Configuration when:**
+- ✅ You need 3-5 agents maximum
+- ✅ You prefer everything in one file
+- ✅ Configuration is relatively simple
+- ✅ Quick setup is priority
+
+### Full Documentation
+
+See [`agent-subagent-config/README.md`](../../reference/opencode/agent-subagent-config/README.md) for:
+- Complete agent descriptions
+- Usage examples for each agent
+- Advanced customization patterns
+- Team workflow recommendations
 
 ## Next Steps
 

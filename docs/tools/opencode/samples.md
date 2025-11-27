@@ -18,7 +18,7 @@ Model Context Protocol (MCP) servers extend OpenCode with additional capabilitie
 
 ### Docker-Based MCP Server
 
-Located at: `mcp/sample-configs/sample-docker-mcp.json`
+Located at: `docs/reference/mcp/sample-configs/sample-docker-mcp.json`
 
 ```json
 {
@@ -101,7 +101,7 @@ Located at: `mcp/sample-configs/sample-docker-mcp.json`
 
 ### NPX-Based MCP Server (Snyk)
 
-Located at: `mcp/sample-configs/sample-npx-mcp.json`
+Located at: `docs/reference/mcp/sample-configs/sample-npx-mcp.json`
 
 ```json
 {
@@ -209,7 +209,7 @@ You can use this pattern for any npm-based MCP server:
 
 ### Docker Desktop MCP Toolbox GitHub Server
 
-Located at: `mcp/sample-configs/docker-desktop-github-mcp.json`
+Located at: `docs/reference/mcp/sample-configs/docker-desktop-github-mcp.json`
 
 For users with Docker Desktop's MCP Toolbox installed, you can use the GitHub MCP server:
 
@@ -630,7 +630,7 @@ for line in sys.stdin:
 
 ## Modular Agent Configuration
 
-The `modular-config/` directory provides an alternative to traditional agent configuration, where specialized agents are defined in individual markdown files.
+The `agent-subagent-config/` directory provides an alternative to traditional agent configuration, where specialized agents are defined in individual markdown files.
 
 ### Overview
 
@@ -717,12 +717,12 @@ opencode @devops "Set up GitHub Actions for CI/CD"
 
 ### Getting Started
 
-1. Copy `opencode/modular-config/` to your project
+1. Copy `docs/reference/opencode/agent-subagent-config/` to your project
 2. Review available agents in `agent/` directory
 3. Add/remove agent files as needed
 4. Use `@agentname` to invoke specific agents
 
-See `opencode/modular-config/README.md` for comprehensive documentation.
+See `docs/reference/opencode/agent-subagent-config/README.md` for comprehensive documentation.
 
 ## Next Steps
 

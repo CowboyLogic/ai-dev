@@ -45,7 +45,14 @@ If you're standardizing AI tool usage across a team:
 ### Path 1: Using OpenCode CLI
 
 1. Review the **[OpenCode Overview](../tools/opencode/index.md)**
-2. Copy `opencode/opencode.json` to your project
+2. Copy configuration to your project:
+   ```bash
+   # Standard configuration (recommended for getting started)
+   cp docs/reference/opencode/standard-config/opencode.json ~/your-project/.opencode.json
+   
+   # OR agent/subagent configuration (for complex projects)
+   cp -r docs/reference/opencode/agent-subagent-config/* ~/your-project/
+   ```
 3. Customize agents and commands for your needs
 4. Set required environment variables (e.g., `GITHUB_TOKEN`)
 5. Start using custom commands like `opencode quick-fix` or `opencode review`
@@ -110,7 +117,7 @@ ai-dev/
 │   └── AGENTS.md                   # Agent configuration guide
 ├── opencode/
 │   ├── opencode.json               # Main configuration
-│   ├── modular-config/             # Modular subagent configuration
+│   ├── agent-subagent-config/      # Modular subagent configuration
 │   ├── README.md                   # Human-readable guide
 │   └── AGENTS.md                   # AI assistant guide
 ├── mcp/
@@ -125,13 +132,13 @@ ai-dev/
 ### Setting Up a New Project
 
 1. Copy relevant configurations from `opencode/` or other directories
-2. Add `agents/LLM-BaselineBehaviors.md` to your AI tool's instruction files
+2. Add `docs/reference/agents/baseline-behaviors.md` to your AI tool's instruction files
 3. Create project-specific rules that build on the baseline
 4. Set up environment variables for MCP servers
 
 ### Standardizing Team AI Usage
 
-1. Share the `agents/LLM-BaselineBehaviors.md` with your team
+1. Share the `docs/reference/agents/baseline-behaviors.md` with your team
 2. Adopt the OpenCode configuration as a team standard
 3. Create team-specific custom commands
 4. Document your team's preferences and patterns

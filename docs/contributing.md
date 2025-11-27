@@ -284,7 +284,7 @@ Install snyk. Get token. Add to config.
 
 ### Behavioral Guidelines
 
-When contributing to `agents/LLM-BaselineBehaviors.md` or related files:
+When contributing to `docs/reference/agents/baseline-behaviors.md` or related files:
 
 **Principles:**
 - Based on real usage patterns

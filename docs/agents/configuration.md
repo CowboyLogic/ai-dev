@@ -21,8 +21,7 @@ The **[LLM Baseline Behaviors](baseline-behaviors.md)** document serves as the f
 Tool-specific `AGENTS.md` files provide additional context:
 
 - **[Root AGENTS.md](https://github.com/CowboyLogic/ai-dev/blob/main/AGENTS.md)** - Repository-wide guidelines
-- **[OpenCode AGENTS.md](https://github.com/CowboyLogic/ai-dev/blob/main/opencode/AGENTS.md)** - OpenCode CLI specific
-- **[Agents AGENTS.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/AGENTS.md)** - Agent configuration details
+- **[OpenCode AGENTS.md](../reference/opencode/standard-config/AGENTS.md)** - OpenCode CLI specific
 
 ### Layer 3: Project-Specific Rules
 
@@ -44,9 +43,9 @@ Direct user instructions in conversation always take highest priority.
 ├─────────────────────────────────┤
 │   Project-Specific Rules        │  ← .cursor/rules/*.md
 ├─────────────────────────────────┤
-│   Tool-Specific Guidelines      │  ← opencode/AGENTS.md
+│   Tool-Specific Guidelines      │  ← docs/reference/opencode/standard-config/AGENTS.md
 ├─────────────────────────────────┤
-│   Behavioral Baseline           │  ← agents/LLM-BaselineBehaviors.md
+│   Behavioral Baseline           │  ← docs/reference/agents/baseline-behaviors.md
 └─────────────────────────────────┘
 ```
 

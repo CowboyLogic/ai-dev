@@ -2,8 +2,11 @@
 
 This document is the **authoritative behavioral model** for all AI assistants working in this repository. It defines standard expectations to ensure consistency across different LLM models and platforms.
 
+> [!NOTE] Reference Source
+> The authoritative source for this baseline is maintained at [`../reference/agents/baseline-behaviors.md`](../reference/agents/baseline-behaviors.md). This document provides enhanced documentation with examples and explanations.
+
 > [!WARNING] Living Document
-    This baseline is regularly updated as AI capabilities evolve and best practices emerge. <br />Last updated: November 2025.
+> This baseline is regularly updated as AI capabilities evolve and best practices emerge. <br />Last updated: November 2025.
 
 ## Purpose
 
@@ -351,6 +354,6 @@ This baseline behavioral model is used throughout this repository and can be:
 - **Extended** with project-specific guidelines
 - **Shared** as instruction material for AI assistants
 
-The complete source document is available at: [`agents/LLM-BaselineBehaviors.md`](https://github.com/CowboyLogic/ai-dev/blob/main/agents/LLM-BaselineBehaviors.md)
+The complete source document is available at: [`docs/reference/agents/baseline-behaviors.md`](../reference/agents/baseline-behaviors.md)
 
 **Next:** Learn about [Agent Configuration](configuration.md) to see how these behaviors are applied in practice.

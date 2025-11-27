@@ -129,7 +129,7 @@ ai-dev/
 │   └── AGENTS.md                     # Agent configuration guide
 ├── opencode/                         # OpenCode CLI configurations
 │   ├── opencode.json                # Main configuration
-│   ├── modular-config/              # Modular subagent configuration
+│   ├── agent-subagent-config/      # Modular subagent configuration
 │   ├── README.md                    # Human-readable guide
 │   └── AGENTS.md                    # AI assistant guide
 ├── mcp/                              # MCP server configurations

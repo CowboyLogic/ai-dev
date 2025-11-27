@@ -10,7 +10,7 @@ Throughout this repository, you'll find `AGENTS.md` files that provide guidance 
 
 - **[Root AGENTS.md](https://github.com/CowboyLogic/ai-dev/blob/main/AGENTS.md)** - Overall repository structure and documentation requirements
 - **[agents/AGENTS.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/AGENTS.md)** - Behavioral baseline guidance
-- **[opencode/AGENTS.md](https://github.com/CowboyLogic/ai-dev/blob/main/opencode/AGENTS.md)** - OpenCode-specific instructions
+- **[docs/reference/opencode/standard-config/AGENTS.md](../reference/opencode/standard-config/AGENTS.md)** - OpenCode standard configuration instructions
 
 ## Instruction Priority Hierarchy
 
@@ -37,7 +37,7 @@ These override general guidelines but defer to user directives.
 
 ### 3. Tool-Specific Guidelines
 
-Instructions in tool-specific AGENTS.md files (e.g., `opencode/AGENTS.md`) provide context for particular tools or workflows.
+Instructions in tool-specific AGENTS.md files (e.g., `docs/reference/opencode/standard-config/AGENTS.md`) provide context for particular tools or workflows.
 
 ### 4. Baseline Behaviors (Foundation)
 
@@ -100,10 +100,10 @@ The following must be updated:
 
 | Change Type | Files to Update |
 |-------------|-----------------|
-| **OpenCode config** | `opencode/README.md`, `opencode/AGENTS.md`, `docs/tools/opencode/configuration.md`, `docs/tools/opencode/index.md` |
+| **OpenCode config** | `docs/tools/opencode/index.md`, `docs/reference/opencode/standard-config/AGENTS.md`, `docs/tools/opencode/configuration.md` |
 | **Behavioral changes** | `agents/AGENTS.md`, root `AGENTS.md`, `docs/agents/baseline-behaviors.md`, root `README.md` |
 | **New features** | All related README, AGENTS.md, and docs/ files, plus `docs/index.md` |
-| **Sample configs** | `opencode/README.md`, `opencode/AGENTS.md`, `docs/tools/opencode/samples.md` |
+| **Sample configs** | `docs/tools/opencode/index.md`, `docs/reference/opencode/standard-config/AGENTS.md`, `docs/tools/opencode/samples.md` |
 
 ### Update Workflow
 
