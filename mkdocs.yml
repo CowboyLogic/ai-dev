@@ -30,9 +30,8 @@ theme:
         icon: material/brightness-4
         name: Switch to light mode
   features:
-    - navigation.tabs
+    - navigation.instant
     - navigation.sections
-    - navigation.top
     - navigation.tracking
     - search.suggest
     - search.highlight
@@ -105,6 +104,7 @@ nav:
           - Agent Examples: tools/vscode/agent-examples.md
           - Best Practices: tools/vscode/best-practices.md
           - Troubleshooting: tools/vscode/troubleshooting.md
+      - MkDocs Themes: tools/mkdocs-themes.md
       - Callouts Testing: tools/callouts.md
   - MCP Servers:
       - Overview: mcp/overview.md
