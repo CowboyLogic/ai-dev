@@ -1,49 +1,15 @@
 # Contributing to AI Dev
 
-Thank you for your interest in contributing to this repository! This guide will help you understand how to submit configurations, documentation, and other improvements.
+Contribute configurations, examples, and documentation improvements to help the community.
 
-## Who Should Contribute?
-
-**You should contribute if:**
-- You've created useful AI agent configurations
-- You've developed custom OpenCode commands or agents
-- You've found better ways to work with AI tools
-- You've discovered useful MCP server integrations
-- You want to improve documentation or examples
-
-**No contribution is too small** - even fixing typos or clarifying documentation helps everyone.
+**New to contributing?** See GitHub's [Contributing to Projects Guide](https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project)
 
 ## What to Contribute
 
-### Configuration Files
-
-**OpenCode Configurations:**
-- Custom specialized agents
-- Useful command definitions
-- MCP server integrations
-- Model provider setups
-- Tool permission patterns
-
-**Other AI Tool Configs:**
-- Cursor IDE rules
-- VS Code Copilot settings
-- Claude project configurations
-- ChatGPT custom instructions
-
-### Documentation
-
-- Improved explanations
-- Additional examples
-- Troubleshooting guides
-- Best practices
-- Use case walkthroughs
-
-### Behavioral Baselines
-
-- Enhanced behavioral guidelines
-- Model-specific adaptations
-- Communication style refinements
-- Workflow improvements
+- AI agent configurations and examples
+- MCP server integration patterns  
+- Documentation improvements
+- Troubleshooting guides and best practices
 
 ## Before You Contribute
 
@@ -284,7 +250,7 @@ Install snyk. Get token. Add to config.
 
 ### Behavioral Guidelines
 
-When contributing to `docs/reference/agents/baseline-behaviors.md` or related files:
+When contributing to `docs/agents/baseline-behaviors-authoritative.md` or related files:
 
 **Principles:**
 - Based on real usage patterns

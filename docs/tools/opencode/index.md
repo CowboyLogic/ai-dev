@@ -1,35 +1,39 @@
 # OpenCode CLI Configuration
 
-This section covers the OpenCode CLI tool and the configurations available in this repository.
+Practical configurations and examples for the OpenCode CLI tool.
 
 ## What is OpenCode?
 
-OpenCode CLI is an AI-assisted development tool that integrates multiple AI models, custom commands, and specialized agents into your development workflow. It provides a powerful command-line interface for AI-driven coding tasks.
+OpenCode CLI integrates multiple AI models, custom commands, and specialized agents into your development workflow.
+
+**Learn more:** [OpenCode Official Documentation](https://opencode.ai/docs)
+
+This guide focuses on **working configurations and integration patterns** from this repository.
 
 ## Repository Contents
 
-The `opencode/` directory provides **two configuration approaches**:
+The OpenCode CLI provides **two configuration approaches** for different project needs:
 
 ### Standard Configuration
-**Location:** `docs/reference/opencode/standard-config/`
+**Location:** `docs/tools/opencode/standard-config/`
 
 - **`opencode.json`** - Single-file configuration with tiered agents, custom commands, and MCP servers
-- **`AGENTS.md`** - Technical documentation for AI assistants
 
 **Best for:** Quick setup, straightforward agent needs, centralized configuration
 
 ### Agent/SubAgent Configuration
-**Location:** `docs/reference/opencode/agent-subagent-config/`
+**Location:** `docs/tools/opencode/agent-subagent-config/`
 
 - **`opencode.json`** - Minimal primary agent configuration
 - **`agent/`** - 13 specialized subagent definitions in individual markdown files
 - **`prompts/`** - Reusable prompt templates
-- **`README.md`** - Comprehensive modular pattern documentation
 
 **Best for:** Complex projects, many specialized agents, team collaboration, modular maintenance
 
+**[📖 Complete Configuration Guide →](configuration.md)** - Detailed setup instructions for both approaches
+
 ### MCP Server Examples
-**Location:** `docs/reference/mcp/sample-configs/`
+**Location:** `docs/mcp/sample-configs/`
 
 Sample configurations for Docker, NPX, and Docker Desktop-based MCP servers.
 
@@ -50,10 +54,10 @@ The standard configuration demonstrates:
 
 ```bash
 # Copy the standard configuration to your project
-cp docs/reference/opencode/standard-config/opencode.json ~/your-project/.opencode.json
+cp docs/tools/opencode/standard-config/opencode.json ~/your-project/.opencode.json
 
 # Or copy the agent/subagent configuration
-cp -r docs/reference/opencode/agent-subagent-config/* ~/your-project/
+cp -r docs/tools/opencode/agent-subagent-config/* ~/your-project/
 ```
 
 ### 3. Set Environment Variables
@@ -128,7 +132,7 @@ Pre-configured agents optimize for specific workflows:
 
 ### 🧩 Modular Agent/SubAgent Configuration
 
-The **agent/subagent configuration** in `docs/reference/opencode/agent-subagent-config/` demonstrates an advanced modular pattern:
+The **agent/subagent configuration** in `docs/tools/opencode/agent-subagent-config/` demonstrates an advanced modular pattern:
 
 - **13 specialized subagents** in individual markdown files
 - **Automatic discovery** via YAML frontmatter in markdown files
@@ -176,7 +180,7 @@ opencode @api "Design REST endpoints for user management"
 opencode @devops "Create a GitHub Actions CI/CD pipeline"
 ```
 
-[Learn more in agent-subagent-config/README.md →](../../reference/opencode/agent-subagent-config/README.md)
+[Learn more in the Configuration Guide →](configuration.md)
 
 ### ⚡ Custom Commands
 
@@ -323,14 +327,15 @@ Choose your path:
 
 - **[Configuration Guide](configuration.md)** - Detailed configuration documentation
 - **[Sample Configurations](samples.md)** - Real-world MCP server examples
-- **[Getting Started](../../getting-started/overview.md)** - General repository guide
-- **[Agent Guidelines](../../getting-started/agent-guidelines.md)** - Understanding the instruction hierarchy
+- **[Getting Started](../../index.md)** - General repository guide
+- **[Agent Guidelines](../../agents/agent-guidelines.md)** - Understanding the instruction hierarchy
 
 ## Additional Resources
 
-- **[OpenCode Official Docs](https://opencode.ai)** - Official documentation
-- **[Model Context Protocol](https://modelcontextprotocol.io)** - Learn about MCP
-- **[GitHub Repository](https://github.com/CowboyLogic/ai-dev)** - This repository
+- **[OpenCode Official Docs](https://opencode.ai/docs)** - Complete OpenCode CLI documentation
+- **[OpenCode Configuration Schema](https://opencode.ai/config.json)** - JSON schema reference
+- **[Model Context Protocol](https://modelcontextprotocol.io)** - MCP specification and tools
+- **[LLM Baseline Behaviors](../../agents/baseline-behaviors.md)** - Behavioral guidelines for this repository
 
 ---
 

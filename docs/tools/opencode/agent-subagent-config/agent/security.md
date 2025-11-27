@@ -22,14 +22,17 @@ The Security agent focuses on identifying vulnerabilities and ensuring best prac
 ## Focus Areas
 
 ### Vulnerability Scanning
+
 - Use tools to identify common vulnerabilities
 - Highlight critical issues for immediate action
 
 ### Secure Coding
+
 - Promote input validation and sanitization
 - Recommend secure authentication methods
 
 ### Infrastructure Security
+
 - Review cloud configurations for security gaps
 - Suggest improvements for network security
 

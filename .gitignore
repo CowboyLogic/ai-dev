@@ -6,3 +6,6 @@ obj/
 
 # mkdocs site output
 site/
+
+# Agent-generated output files
+agent-output/

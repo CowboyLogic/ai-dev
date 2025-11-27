@@ -45,9 +45,9 @@ Configuration for running MCP servers via NPX (Node Package Runner).
 
 For detailed integration instructions, see:
 
-- **[MCP Configuration Guide](../../../mcp/configuration.md)** - Comprehensive setup guide
-- **[MCP Overview](../../../mcp/overview.md)** - Concepts and architecture
-- **[OpenCode MCP Integration](../../../tools/opencode/configuration.md#7-mcp-server-configuration)** - OpenCode-specific setup
+- **[MCP Configuration Guide](../configuration.md)** - Comprehensive setup guide
+- **[MCP Overview](../overview.md)** - Concepts and architecture
+- **[OpenCode MCP Integration](../../tools/opencode/configuration.md#7-mcp-server-configuration)** - OpenCode-specific setup
 
 ## Configuration Format
 
@@ -77,6 +77,6 @@ Many MCP servers require API keys or credentials. Store these securely:
 
 ## Next Steps
 
-- Review **[MCP Overview](../../../mcp/overview.md)** for concepts
-- Follow **[Configuration Guide](../../../mcp/configuration.md)** for setup
-- Explore **[OpenCode Integration](../../../tools/opencode/index.md)** for usage examples
+- Review **[MCP Overview](../overview.md)** for concepts
+- Follow **[Configuration Guide](../configuration.md)** for setup
+- Explore **[OpenCode Integration](../../tools/opencode/index.md)** for usage examples

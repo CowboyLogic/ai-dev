@@ -2,6 +2,10 @@
 
 > **Declarative agent configuration using markdown files with YAML frontmatter**
 
+**Official Documentation:** [GitHub Copilot Custom Instructions](https://docs.github.com/en/copilot/customizing-copilot/creating-custom-instructions-for-github-copilot)
+
+This guide provides **detailed examples and patterns** for agent configuration.
+
 ## Overview
 
 Markdown-based agents are the **simplest and most maintainable** way to configure specialized AI agents in VS Code. Each agent is defined in a markdown file with YAML frontmatter containing configuration properties.

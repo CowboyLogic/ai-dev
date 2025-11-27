@@ -22,14 +22,17 @@ The API agent is designed to assist with API design, documentation, and integrat
 ## Focus Areas
 
 ### API Design
+
 - Follow RESTful principles
 - Use consistent naming conventions
 
 ### Documentation
+
 - Use OpenAPI/Swagger for documentation
 - Provide clear examples and error codes
 
 ### Integration
+
 - Assist with client-side API integration
 - Debug API-related issues
 

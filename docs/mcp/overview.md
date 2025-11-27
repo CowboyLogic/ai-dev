@@ -1,18 +1,18 @@
 # Model Context Protocol (MCP) Servers
 
-This section documents lessons learned and useful configurations when working with MCP servers in their various forms.
+This section provides working examples and configurations for integrating MCP servers into your AI development workflow.
 
 ## What is MCP?
 
-Model Context Protocol (MCP) is a standardized way to extend AI assistants with additional capabilities through server integrations. MCP servers can provide:
+Model Context Protocol (MCP) extends AI assistants with custom tools, data sources, and specialized functions through standardized server integrations.
 
-- **Tool Access** - Custom tools and APIs
-- **Data Sources** - Database connections, file systems, external services
-- **Specialized Functions** - Code analysis, security scanning, deployment tools
+**Learn more:** [Official MCP Documentation](https://modelcontextprotocol.io) | [MCP Specification](https://spec.modelcontextprotocol.io)
+
+This guide focuses on **practical implementation examples** from this repository.
 
 ## Available Sample Configurations
 
-Sample MCP server configurations are available in [`../reference/mcp/sample-configs/`](../reference/mcp/sample-configs/README.md):
+Sample MCP server configurations are available in [`sample-configs/`](sample-configs/README.md):
 
 ### Docker-Based MCP Servers
 
@@ -58,24 +58,14 @@ See [OpenCode Configuration](../tools/opencode/configuration.md) for detailed se
 
 ## Common Use Cases
 
-### Security Scanning
-- Snyk integration for vulnerability detection
-- Custom security audit tools
+This repository includes examples for:
 
-### Code Analysis
-- AST parsing and analysis
-- Code quality metrics
-- Complexity analysis
+- **Security Scanning** - Snyk integration (see `sample-npx-mcp.json`)
+- **Code Analysis** - Custom analysis tools
+- **Deployment & Infrastructure** - CI/CD and cloud provider integrations
+- **Data Access** - Database and API connections
 
-### Deployment & Infrastructure  
-- CI/CD integrations
-- Cloud provider APIs (AWS, Azure, GCP)
-- Kubernetes management
-
-### Data Access
-- Database connections
-- API integrations
-- File system access
+For comprehensive MCP capabilities, see the [official MCP tools documentation](https://modelcontextprotocol.io/docs/tools).
 
 ## Environment Variables
 
@@ -95,9 +85,9 @@ Reference them in configuration files using `${VARIABLE_NAME}` syntax.
 
 ## Next Steps
 
-- Explore [sample configurations](../reference/mcp/sample-configs/README.md)
-- Review [OpenCode MCP integration](../tools/opencode/configuration.md#7-mcp-server-configuration)
-- Check the [official MCP documentation](https://modelcontextprotocol.io)
+- **Quick Start:** Explore [sample configurations](sample-configs/README.md) for copy-paste examples
+- **Integration:** Review [OpenCode MCP setup](../tools/opencode/configuration.md) for tool-specific configuration
+- **Deep Dive:** Read the [official MCP documentation](https://modelcontextprotocol.io) for protocol details and advanced features
 
 > [!NOTE] Expanding Content
 > This section is actively being developed with more examples, tutorials, and best practices.

@@ -1,13 +1,32 @@
 # OpenCode Configuration Guide
 
-Detailed guide to configuring and using the OpenCode CLI with the configurations provided in this repository.
+Practical guide for the OpenCode CLI configurations in this repository.
+
+**Official Documentation:** [OpenCode Docs](https://opencode.ai/docs) | [Configuration Schema](https://opencode.ai/config.json)
+
+This guide focuses on **repository-specific patterns and examples**.
+
+## Behavioral Foundation for AI Assistants
+
+**All AI assistants working with OpenCode must first follow the baseline behavioral model:**
+
+📋 **[`docs/agents/baseline-behaviors.md`](../../agents/baseline-behaviors.md)**
+
+The guidelines below are OpenCode-specific and should be applied **in addition to** the baseline behaviors. When conflicts arise, the baseline behaviors take precedence unless explicitly overridden by user directives.
+
+### OpenCode-Specific Behaviors
+
+- **Configuration Awareness**: Always reference the appropriate configuration files and understand the current agent setup
+- **Tool Permission Respect**: Never attempt operations that are disabled for the current agent
+- **Model Selection**: Use the most appropriate model for the task complexity and requirements
+- **Documentation Updates**: Update configuration documentation when making changes to agent definitions or settings
 
 ## Configuration Approaches
 
 This repository provides two configuration approaches for OpenCode:
 
 ### Standard Configuration
-**Location:** `docs/reference/opencode/standard-config/`
+**Location:** `docs/tools/opencode/standard-config/`
 
 A single-file configuration approach where all agents, commands, and settings are defined in one `opencode.json` file.
 
@@ -18,7 +37,7 @@ A single-file configuration approach where all agents, commands, and settings ar
 - Simple, easy-to-understand configuration
 
 ### Agent/SubAgent Configuration  
-**Location:** `docs/reference/opencode/agent-subagent-config/`
+**Location:** `docs/tools/opencode/agent-subagent-config/`
 
 A modular configuration approach where agents are defined in individual markdown files with YAML frontmatter.
 
@@ -429,23 +448,70 @@ Model Context Protocol servers extend OpenCode with additional capabilities.
 
 ## Modular Agent Configuration
 
-For complex projects with many specialized agents, the `agent-subagent-config/` directory demonstrates an advanced pattern where each agent is defined in its own markdown file with YAML frontmatter.
+For complex projects with many specialized agents, the modular configuration approach provides a scalable way to manage agent definitions. This pattern uses individual markdown files for each agent with YAML frontmatter containing configuration.
 
-### Architecture
+### Architecture Overview
 
-**Main Configuration** (`agent-subagent-config/opencode.json`):
+**Main Configuration** (`opencode.json`):
 - Defines only **primary agents** (plan, build)
 - Minimal configuration focused on workflow orchestration
 - Delegates to specialized subagents automatically
 
-**Agent Definitions** (`agent-subagent-config/agent/*.md`):
+**Agent Definitions** (`agent/*.md`):
 - Each agent in a separate markdown file
 - YAML frontmatter contains configuration
 - Automatic discovery via instruction loading
 
-### Example Agent File
+### Key Benefits
 
-**`agent/security.md`:**
+- **Modularity**: Each agent is defined in its own file, making them easy to add, remove, or modify
+- **Maintainability**: Agent configurations are self-contained and well-documented
+- **Discoverability**: New agents are automatically available by adding a markdown file
+- **Version Control**: Track changes to individual agents independently
+- **Reusability**: Share specific agent configurations across projects
+- **Team Collaboration**: Different members can own different agents
+
+### How It Works
+
+#### 1. Main Configuration File
+
+The main configuration file is minimal and defines only primary agents:
+
+```json
+{
+  "agent": {
+    "plan": {
+      "mode": "primary",
+      "description": "Planning and analysis without making changes, while leveraging subagents for specialized tasks",
+      "model": "github-copilot/claude-sonnet-4.5",
+      "temperature": 0.1,
+      "tools": {
+        "write": true,
+        "bash": false
+      }
+    },
+    "build": {
+      "mode": "primary",
+      "description": "Full development work with all tools enabled, while leveraging subagents for implementation",
+      "model": "github-copilot/grok-code-fast-1",
+      "temperature": 0.3,
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true
+      }
+    }
+  },
+  "instructions": [
+    "agent/*.md"
+  ]
+}
+```
+
+#### 2. Agent Definition Files
+
+Each specialized agent is defined in a markdown file with YAML frontmatter:
+
 ```markdown
 ---
 description: Security audits, vulnerability scanning, and best practices
@@ -454,78 +520,114 @@ model: github-copilot/claude-sonnet-4.5
 temperature: 0.1
 tools:
   bash: true
+  write: false
 ---
 
-# Agent Purpose
+# Security Agent
 
-The Security agent focuses on identifying vulnerabilities and ensuring
-best practices for secure coding and infrastructure.
+This agent specializes in identifying security vulnerabilities and ensuring best practices for secure coding and infrastructure.
 
 ## Core Responsibilities
 
-- Conduct security audits
-- Identify and mitigate vulnerabilities
+- Conduct security audits and vulnerability scanning
+- Identify and mitigate security risks
 - Provide recommendations for secure coding practices
+- Review authentication and authorization mechanisms
 ```
+
+OpenCode automatically reads these files and configures the agents based on the frontmatter properties.
 
 ### Configuration Properties
 
-**YAML Frontmatter:**
+#### Required Properties
+- **`description`**: Brief description of the agent's purpose and capabilities
+- **`mode`**: Agent mode (`subagent` for specialized agents, `primary` for main agents)
 
-**Required:**
-- `description` - Agent's purpose and capabilities
-- `mode` - `subagent` for specialized agents
+#### Optional Properties
+- **`model`**: AI model to use (defaults to main config model if not specified)
+  - Format: `provider/model-name` (e.g., `github-copilot/grok-code-fast-1`)
+- **`temperature`**: Creativity level (0.0-1.0)
+  - `0.1-0.2`: Deterministic, consistent code generation
+  - `0.3-0.4`: Balanced creativity
+  - `0.5+`: More creative/exploratory
+- **`tools`**: Tool permissions object
+  - `write`: Create new files
+  - `edit`: Modify existing files
+  - `bash`: Execute shell commands
+  - Omit tools that should be disabled (defaults to `false`)
 
-**Optional:**
-- `model` - AI model in `provider/model-name` format
-- `temperature` - Creativity level (0.0-1.0)
-- `tools` - Permission object with `write`, `edit`, `bash` properties
+### Available Specialized Agents
 
-### Available Modular Agents
+| Agent | Description | Model | Temperature | Write Access |
+|-------|-------------|-------|-------------|--------------|
+| **api** | REST/GraphQL API design, OpenAPI specs, integration | Grok Code Fast 1 | 0.2 | ✅ Full |
+| **architect** | System design, architecture decisions | Claude Sonnet 4.5 | 0.2 | ❌ Read-only |
+| **cloud** | AWS/Azure/GCP configurations, Infrastructure as Code | Grok Code Fast 1 | 0.1 | ✅ Full |
+| **data** | Data analysis, ETL pipelines, data validation | GPT-5-mini | 0.2 | ✅ Full |
+| **database** | Schema design, query optimization, migrations | Grok Code Fast 1 | 0.1 | ✅ Full |
+| **devops** | CI/CD pipelines, Docker, Kubernetes, deployment | GPT-5-mini | 0.2 | ✅ Full |
+| **documentation** | Technical docs, API docs, README files | Claude Haiku 4.5 | 0.3 | ✅ Docs only |
+| **performance** | Performance profiling, optimization, analysis | Grok Code Fast 1 | 0.1 | ✅ Full |
+| **research** | Technical discovery, product research, doc analysis | GPT-5-mini | 0.2 | ❌ Read-only |
+| **reviewer** | Code review for best practices and issues | Claude Sonnet 4.5 | 0.1 | ❌ Read-only |
+| **security** | Security audits, vulnerability scanning | Claude Sonnet 4.5 | 0.1 | ❌ Bash only |
+| **testing** | Unit tests, integration tests, test optimization | GPT-5-mini | 0.2 | ✅ Full |
+| **uxui** | UI/UX design evaluation, accessibility, styling | Gemini 2.5 Pro | 0.3 | ✅ No bash |
 
-| Agent | Focus | Model | Access |
-|-------|-------|-------|--------|
-| `api` | REST/GraphQL API design | Grok Code Fast 1 | Full |
-| `architect` | System architecture | Claude Sonnet 4.5 | Read-only |
-| `cloud` | AWS/Azure/GCP, IaC | Grok Code Fast 1 | Full |
-| `data` | Data analysis, ETL | GPT-5-mini | Full |
-| `database` | Schema design, optimization | Grok Code Fast 1 | Full |
-| `devops` | CI/CD, Docker, Kubernetes | GPT-5-mini | Full |
-| `documentation` | Technical docs, API docs | Claude Haiku 4.5 | Docs only |
-| `performance` | Profiling, optimization | Grok Code Fast 1 | Full |
-| `research` | Technical discovery | GPT-5-mini | Read-only |
-| `reviewer` | Code review | Claude Sonnet 4.5 | Read-only |
-| `security` | Security audits | Claude Sonnet 4.5 | Bash only |
-| `testing` | Unit/integration tests | GPT-5-mini | Full |
-| `uxui` | UI/UX design, accessibility | Gemini 2.5 Pro | No bash |
+### Usage Examples
 
-### Usage
+#### Direct Agent Invocation
 
-**Direct Invocation:**
+With this configuration, you can invoke specific agents directly:
+
 ```bash
-opencode @api "Design REST API for user authentication"
-opencode @security "Audit authentication system for vulnerabilities"
-opencode @database "Optimize slow query in user_stats table"
-opencode @devops "Create GitHub Actions workflow for deployment"
+# API design and documentation
+opencode @api "Design a REST API for user authentication"
+
+# Security review (read-only, no changes)
+opencode @security "Audit the authentication system for vulnerabilities"
+
+# Database optimization
+opencode @database "Optimize the slow query in user_stats table"
+
+# UI/UX improvements
+opencode @uxui "Improve the accessibility of the login form"
+
+# Infrastructure as Code
+opencode @cloud "Create a Terraform module for AWS ECS deployment"
+
+# Code review (read-only analysis)
+opencode @reviewer "Review the payment processing code for best practices"
+
+# Technical research (no code changes)
+opencode @research "Compare Redis vs Memcached for our caching needs"
+
+# Documentation creation
+opencode @documentation "Generate API documentation for the user endpoints"
 ```
 
-**Primary Agent Delegation:**
-```bash
-# Plan agent automatically delegates to relevant subagents
-opencode @plan "Design microservices architecture"
+#### Primary Agent Workflow
 
-# Build agent implements with subagent support
-opencode @build "Implement user authentication API"
+The `plan` and `build` agents leverage subagents automatically:
+
+```bash
+# Planning phase - analyzes and delegates to subagents
+opencode @plan "Design a microservices architecture for the e-commerce platform"
+# May delegate to: @architect, @cloud, @database, @security
+
+# Build phase - implements changes with subagent support
+opencode @build "Implement the user authentication API"
+# May delegate to: @api, @security, @database, @testing
 ```
 
 ### Adding New Agents
 
-1. Create `agent/yourname.md`
-2. Add YAML frontmatter with configuration
-3. Document purpose and responsibilities
-4. Agent automatically available as `@yourname`
+To add a new specialized agent:
 
-**Example:**
+1. **Create a new markdown file** in the `agent/` directory (e.g., `agent/mobile.md`)
+
+2. **Add YAML frontmatter** with configuration:
+
 ```markdown
 ---
 description: Mobile app development for iOS and Android
@@ -538,20 +640,256 @@ tools:
   bash: true
 ---
 
-# Agent Purpose
+# Mobile Agent
 
-Specializes in mobile app development...
+The Mobile agent specializes in mobile app development for iOS and Android platforms.
+
+## Core Responsibilities
+
+- Develop iOS and Android applications using native technologies
+- Optimize mobile UI/UX for different screen sizes
+- Handle platform-specific features and APIs
+
+## Focus Areas
+
+### iOS Development
+- Swift/SwiftUI best practices
+- iOS SDK integration and optimization
+- App Store submission guidelines
+
+### Android Development
+- Kotlin best practices
+- Android SDK integration
+- Google Play Store requirements
+
+## Best Practices
+
+- Test on multiple device sizes and OS versions
+- Optimize for battery usage and performance
+- Follow platform design guidelines and accessibility standards
 ```
 
-### Benefits
+3. **No configuration changes needed** - OpenCode automatically discovers the new agent
 
-- **Modularity** - Add/remove agents by adding/removing files
-- **Maintainability** - Each agent is self-contained
-- **Discoverability** - OpenCode automatically finds agents
-- **Reusability** - Share agents across projects
-- **Version Control** - Track changes independently
+4. **Use the agent**: `opencode @mobile "Create a login screen for iOS"`
 
-See `docs/reference/opencode/agent-subagent-config/README.md` for comprehensive documentation.
+### Configuration Patterns
+
+#### Read-Only Agents (Review/Analysis)
+
+For agents that should only analyze without making changes:
+
+```yaml
+---
+description: Architecture review and recommendations
+mode: subagent
+model: github-copilot/claude-sonnet-4.5
+temperature: 0.1
+# No tools defined = read-only access
+---
+```
+
+#### Documentation-Only Agents
+
+For agents that should only modify documentation:
+
+```yaml
+---
+description: Documentation writing and maintenance
+mode: subagent
+model: github-copilot/claude-haiku-4.5
+temperature: 0.3
+tools:
+  write: true
+  edit: true
+  bash: false  # Explicitly disable bash
+---
+```
+
+#### Full-Access Development Agents
+
+For agents that need complete control:
+
+```yaml
+---
+description: Full-stack web development
+mode: subagent
+model: github-copilot/grok-code-fast-1
+temperature: 0.2
+tools:
+  write: true
+  edit: true
+  bash: true
+---
+```
+
+### Model Selection Guide
+
+#### Fast & Cost-Effective
+- **GPT-5-mini**: Quick tasks, testing, data processing
+- **Claude Haiku 4.5**: Fast documentation, simple queries
+
+#### Balanced Performance
+- **Grok Code Fast 1**: General development, APIs, databases
+- **Claude Sonnet 4.5**: Code review, security analysis
+
+#### Advanced Reasoning
+- **Claude Sonnet 4.5**: Complex architecture, planning
+- **Gemini 2.5 Pro**: Creative tasks, UI/UX design
+
+### Temperature Settings
+- **0.1-0.2**: Code generation, security reviews, database queries
+- **0.3**: General development, API design
+- **0.4-0.5**: Documentation, UI/UX, creative tasks
+
+### Tool Permissions
+- **Grant `bash` access carefully**: Only for agents that need to run tests, deployments, or system commands
+- **Restrict review agents**: Keep `@reviewer`, `@security`, and `@research` read-only
+- **Documentation agents**: Enable `write` and `edit`, but disable `bash`
+
+### Agent Naming
+- Use **lowercase** names (e.g., `api`, not `API`)
+- Use **descriptive** names (e.g., `uxui`, not `ui`)
+- Keep names **short** for easy invocation (e.g., `@api` vs `@api-design`)
+
+### File Organization
+- **One agent per file**: Keep each agent definition in its own markdown file
+- **Descriptive filenames**: Match the filename to the agent name (e.g., `api.md` → `@api`)
+- **Clear documentation**: Include purpose, responsibilities, and examples in each file
+
+### Troubleshooting
+
+#### Agent Not Available
+- **Check filename**: Must be in `agent/` directory with `.md` extension
+- **Verify frontmatter**: YAML must be valid and properly formatted
+- **Restart OpenCode**: Configuration changes may require restart
+
+#### Agent Not Behaving as Expected
+- **Check model**: Ensure the specified model is accessible via GitHub Copilot
+- **Verify temperature**: Adjust for desired behavior (lower = more deterministic)
+- **Review tool permissions**: Confirm the agent has necessary access
+
+#### Performance Issues
+- **Use faster models**: Switch to GPT-5-mini or Claude Haiku for simpler tasks
+- **Lower temperature**: Reduces processing time for deterministic tasks
+- **Limit tool access**: Fewer tools = faster initialization
+
+### Migration from Traditional Config
+
+To convert a traditional `opencode.json` configuration to this modular pattern:
+
+1. **Keep primary agents** in `opencode.json` (plan, build, etc.)
+2. **Extract subagents** to individual files in `agent/`:
+   - Copy the agent's `description`, `model`, `temperature`, and `tools`
+   - Create YAML frontmatter with these properties
+   - Add documentation about the agent's purpose and usage
+3. **Remove subagent definitions** from `opencode.json`
+4. **Test each agent** to ensure configuration is correct
+
+### Benefits Summary
+
+✅ **Modularity** - Each agent in its own file  
+✅ **Maintainability** - Easy to add/remove/modify agents  
+✅ **Discoverability** - New agents automatically available  
+✅ **Version Control** - Track individual agent changes  
+✅ **Reusability** - Share specific agents across projects  
+✅ **Team Collaboration** - Different members own different agents  
+✅ **Documentation** - Agent capabilities documented in-file
+
+## Agent Best Practices
+
+### Model Selection Guidelines
+
+#### For Simple Tasks
+- **GPT-5-mini** or **Claude Haiku 4.5**: Quick tasks, testing, data processing
+- **Grok 2**: Alternative for general development tasks
+
+#### For Complex Tasks
+- **Claude Sonnet 4.5**: Code review, security analysis, architecture
+- **Grok Code Fast 1**: API design, database work, full-stack development
+
+#### For Creative Tasks
+- **Gemini 2.5 Pro**: UI/UX design, documentation, creative problem-solving
+
+### Temperature Settings
+
+| Temperature | Use Case | Examples |
+|-------------|----------|----------|
+| 0.0-0.1 | Deterministic code generation | Bug fixes, refactoring, security reviews |
+| 0.2-0.3 | Balanced development | API design, database queries, general coding |
+| 0.4-0.5 | Creative tasks | Documentation, UI/UX design, brainstorming |
+
+### Tool Permission Patterns
+
+#### Read-Only Agents (Analysis/Review)
+```json
+{
+  "tools": {
+    "read": true,
+    "list": true,
+    "glob": true,
+    "grep": true,
+    "webfetch": true
+    // No write, edit, or bash
+  }
+}
+```
+**Use for**: `@reviewer`, `@security`, `@research`, `@architect`
+
+#### Documentation Agents
+```json
+{
+  "tools": {
+    "write": true,
+    "edit": true,
+    "read": true,
+    "list": true,
+    "glob": true,
+    "grep": true,
+    "webfetch": true
+    // No bash for security
+  }
+}
+```
+**Use for**: `@docs`, `@documentation`
+
+#### Full Development Agents
+```json
+{
+  "tools": {
+    "write": true,
+    "edit": true,
+    "bash": true,
+    "read": true,
+    "list": true,
+    "glob": true,
+    "grep": true
+  }
+}
+```
+**Use for**: `@api`, `@database`, `@devops`, `@testing`
+
+### Agent Naming Conventions
+
+- **Use lowercase**: `api`, `database`, `security` (not `API`, `Database`, `Security`)
+- **Be descriptive but concise**: `uxui` (not `ui`), `devops` (not `deployment`)
+- **Match filename**: `api.md` → `@api`, `security.md` → `@security`
+- **Use hyphens for compound names**: `performance-tuning.md` → `@performance-tuning`
+
+### Security Considerations
+
+- **Never hardcode secrets** in configuration files
+- **Use environment variables** for API keys and tokens: `${GITHUB_TOKEN}`
+- **Restrict tool permissions** appropriately for each agent
+- **Regularly audit** agent configurations for security implications
+- **Use read-only agents** for sensitive code reviews
+
+### Performance Optimization
+
+- **Choose appropriate models**: Balance capability with speed/cost
+- **Set optimal temperature**: Lower values are faster and more deterministic
+- **Limit tool access**: Fewer tools = faster agent initialization
+- **Use specialized agents**: Direct invocation is faster than delegation
 
 ### 9. Additional Settings
 
@@ -726,7 +1064,7 @@ Create `.opencode.json` in project root to override settings:
 {
   "model": "openai/gpt-4o",
   "instructions": [
-    "../reference/agents/baseline-behaviors.md",
+    "../agents/baseline-behaviors-authoritative.md",
     "PROJECT_RULES.md"
   ]
 }
@@ -736,7 +1074,7 @@ Create `.opencode.json` in project root to override settings:
 
 ## Agent/SubAgent Configuration Pattern
 
-The modular configuration in `docs/reference/opencode/agent-subagent-config/` uses a different approach where agents are defined in individual markdown files.
+The modular configuration in `docs/tools/opencode/agent-subagent-config/` uses a different approach where agents are defined in individual markdown files.
 
 ### Structure
 
@@ -899,11 +1237,7 @@ opencode @myagent "your task here"
 
 ### Full Documentation
 
-See [`agent-subagent-config/README.md`](../../reference/opencode/agent-subagent-config/README.md) for:
-- Complete agent descriptions
-- Usage examples for each agent
-- Advanced customization patterns
-- Team workflow recommendations
+This guide includes complete agent descriptions, usage examples, and advanced customization patterns. See the sections above for detailed information about each specialized agent and team workflow recommendations.
 
 ## Next Steps
 

@@ -85,12 +85,11 @@ extra:
 # Page tree
 nav:
   - Home: index.md
-  - Getting Started:
-      - Overview: getting-started/overview.md
-      - Agent Guidelines: getting-started/agent-guidelines.md
   - Agents:
       - LLM Baseline Behaviors: agents/baseline-behaviors.md
+      - Agent Guidelines: agents/agent-guidelines.md
       - Agent Configuration: agents/configuration.md
+      - Repository Delegation: agents/repository-delegation.md
   - Tools:
       - OpenCode:
           - Overview: tools/opencode/index.md
@@ -104,21 +103,10 @@ nav:
           - Agent Examples: tools/vscode/agent-examples.md
           - Best Practices: tools/vscode/best-practices.md
           - Troubleshooting: tools/vscode/troubleshooting.md
-      - MkDocs Themes: tools/mkdocs-themes.md
       - Callouts Testing: tools/callouts.md
   - MCP Servers:
       - Overview: mcp/overview.md
       - Configuration: mcp/configuration.md
-  - Reference:
-      - Overview: reference/README.md
-      - Agents:
-          - Baseline Behaviors: reference/agents/baseline-behaviors.md
-          - Inquisitive Agent: reference/agents/inquisitive-agent.md
-      - OpenCode:
-          - Standard Config: reference/opencode/standard-config/AGENTS.md
-          - Agent/SubAgent Config: reference/opencode/agent-subagent-config/README.md
-      - MCP:
-          - Sample Configurations: reference/mcp/sample-configs/README.md
   - Contributing: contributing.md
   - About: about.md
 

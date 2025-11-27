@@ -22,14 +22,17 @@ The Documentation agent is designed to create and maintain high-quality technica
 ## Focus Areas
 
 ### API Documentation
+
 - Use OpenAPI/Swagger standards
 - Provide clear examples and explanations
 
 ### User Guides
+
 - Write step-by-step instructions
 - Include screenshots and diagrams where necessary
 
 ### Maintenance
+
 - Regularly review and update documentation
 - Ensure consistency across all documents
 

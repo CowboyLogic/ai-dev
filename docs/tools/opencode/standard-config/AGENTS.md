@@ -6,7 +6,7 @@ This directory contains configuration files and examples for the OpenCode CLI to
 
 **All AI assistants must first follow the baseline behavioral model:**
 
-📋 **[`../../agents/baseline-behaviors.md`](../../agents/baseline-behaviors.md)**
+📋 **[`../../../agents/baseline-behaviors.md`](../../../agents/baseline-behaviors.md)**
 
 The guidelines below are OpenCode-specific and should be applied **in addition to** the baseline behaviors. When conflicts arise, the baseline behaviors take precedence unless explicitly overridden by user directives.
 
@@ -36,17 +36,108 @@ opencode/
 └── AGENTS.md                  # This file
 ```
 
-## Main Configuration File: `opencode.json`
+## User Documentation
 
-The `opencode.json` file is the primary configuration for the OpenCode CLI. It defines:
+**For comprehensive user guides and setup instructions, see:**
 
-### 1. **Model Configuration**
-- **Primary Model**: `anthropic/claude-sonnet-4-5-20250929` (balanced performance)
-- **Small Model**: `xai/grok-2-mini` (fast operations)
-- **Provider**: GitHub Copilot with multiple model options (GPT-4o, GPT-5, Claude variants, Gemini, Grok)
+📖 **[`docs/tools/opencode/configuration.md`](../configuration.md)** - Complete configuration guide  
+📖 **[`docs/tools/opencode/index.md`](../index.md)** - OpenCode overview and quick start  
+📖 **[`docs/tools/opencode/samples.md`](../samples.md)** - MCP server configuration examples
 
-### 2. **Specialized Agents**
-The configuration defines tiered agents for different use cases:
+## AI Assistant Guidelines
+
+### Configuration Awareness
+
+- **Always reference the appropriate configuration files** and understand the current agent setup
+- **Respect tool permissions** - Never attempt operations that are disabled for the current agent
+- **Use appropriate models** for task complexity and requirements
+- **Update documentation** when making changes to agent definitions or settings
+
+### Model Selection Guidelines
+
+#### For Simple Tasks
+- **GPT-5-mini** or **Claude Haiku 4.5**: Quick tasks, testing, data processing
+- **Grok 2**: Alternative for general development tasks
+
+#### For Complex Tasks
+- **Claude Sonnet 4.5**: Code review, security analysis, architecture
+- **Grok Code Fast 1**: API design, database work, full-stack development
+
+#### For Creative Tasks
+- **Gemini 2.5 Pro**: UI/UX design, documentation, creative problem-solving
+
+### Temperature Settings
+
+| Temperature | Use Case | Examples |
+|-------------|----------|----------|
+| 0.0-0.1 | Deterministic code generation | Bug fixes, refactoring, security reviews |
+| 0.2-0.3 | Balanced development | API design, database queries, general coding |
+| 0.4-0.5 | Creative tasks | Documentation, UI/UX design, brainstorming |
+
+### Tool Permission Patterns
+
+#### Read-Only Agents (Analysis/Review)
+```json
+{
+  "tools": {
+    "read": true,
+    "list": true,
+    "glob": true,
+    "grep": true,
+    "webfetch": true
+    // No write, edit, or bash
+  }
+}
+```
+**Use for**: `@reviewer`, `@security`, `@research`, `@architect`
+
+#### Documentation Agents
+```json
+{
+  "tools": {
+    "write": true,
+    "edit": true,
+    "read": true,
+    "list": true,
+    "glob": true,
+    "grep": true,
+    "webfetch": true
+    // No bash for security
+  }
+}
+```
+**Use for**: `@docs`, `@documentation`
+
+#### Full Development Agents
+```json
+{
+  "tools": {
+    "write": true,
+    "edit": true,
+    "bash": true,
+    "read": true,
+    "list": true,
+    "glob": true,
+    "grep": true
+  }
+}
+```
+**Use for**: `@api`, `@database`, `@devops`, `@testing`
+
+### Security Considerations
+
+- **Never hardcode secrets** in configuration files
+- **Use environment variables** for API keys and tokens: `${GITHUB_TOKEN}`
+- **Restrict tool permissions** appropriately for each agent
+- **Regularly audit** agent configurations for security implications
+- **Use read-only agents** for sensitive code reviews
+
+### Agent Naming Conventions
+
+- **Use lowercase**: `api`, `database`, `security` (not `API`, `Database`, `Security`)
+- **Be descriptive but concise**: `uxui` (not `ui`), `devops` (not `deployment`)
+- **Match filename**: `api.md` → `@api`, `security.md` → `@security`
+- **Use hyphens for compound names**: `performance-tuning.md` → `@performance-tuning`
 
 #### `quick` Agent
 - **Purpose**: Fast general tasks (code formatting, simple queries, quick fixes)
@@ -360,12 +451,12 @@ Any changes to the main configuration file require updates to:
    - Update MCP server examples if integration changes
    - Modify best practices if configuration patterns change
 
-3. **`docs/opencode/configuration.md`** - Detailed MkDocs documentation
+3. **`docs/tools/opencode/configuration.md`** - Detailed MkDocs documentation
    - Comprehensive documentation of new features
    - Updated code examples
    - Usage patterns and best practices
 
-4. **`docs/opencode/index.md`** - OpenCode overview page
+4. **`docs/tools/opencode/index.md`** - OpenCode overview page
    - High-level changes that affect the overview
    - Updated feature lists
 
@@ -375,7 +466,7 @@ Any changes to the main configuration file require updates to:
 
 ### When Adding/Modifying Sample Configurations
 
-Changes to files in `docs/reference/mcp/sample-configs/` or `docs/reference/opencode/agent-subagent-config/`:
+Changes to files in `docs/tools/opencode/agent-subagent-config/`:
 
 1. **`docs/tools/opencode/index.md`** - Add examples and usage instructions
 2. **`opencode/standard-config/AGENTS.md`** - Update sample configuration explanations
@@ -389,8 +480,8 @@ Changes to files in `docs/reference/mcp/sample-configs/` or `docs/reference/open
 ```
 ✓ Update agent table in opencode/standard-config/AGENTS.md
 ✓ Add example usage in docs/tools/opencode/index.md
-✓ Document configuration in docs/opencode/configuration.md
-✓ Update feature list in docs/opencode/index.md if significant
+✓ Document configuration in `docs/tools/opencode/configuration.md`
+✓ Update feature list in `docs/tools/opencode/index.md` if significant
 ```
 
 **Changed model configuration:**
@@ -403,8 +494,8 @@ Changes to files in `docs/reference/mcp/sample-configs/` or `docs/reference/open
 **Added custom command:**
 ```
 ✓ Add to custom commands table in opencode/standard-config/AGENTS.md
-✓ Add usage example in docs/tools/opencode/index.md
-✓ Document in docs/opencode/configuration.md
+✓ Add usage example in `docs/tools/opencode/index.md`
+✓ Document in `docs/tools/opencode/configuration.md`
 ```
 
 **Modified MCP server configuration:**

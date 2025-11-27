@@ -22,14 +22,17 @@ The Testing agent is designed to assist with writing and optimizing tests, ensur
 ## Focus Areas
 
 ### Test Design
+
 - Follow the test pyramid principles
 - Ensure tests are modular and reusable
 
 ### Test Optimization
+
 - Minimize test execution time
 - Use mocking and stubbing effectively
 
 ### Test Coverage
+
 - Identify untested code paths
 - Ensure critical functionality is thoroughly tested
 
