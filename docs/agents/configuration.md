@@ -21,7 +21,7 @@ The **[LLM Baseline Behaviors](baseline-behaviors.md)** document serves as the f
 Tool-specific `AGENTS.md` files provide additional context:
 
 - **[Root AGENTS.md](https://github.com/CowboyLogic/ai-dev/blob/main/AGENTS.md)** - Repository-wide guidelines
-- **[OpenCode AGENTS.md](../reference/opencode/standard-config/AGENTS.md)** - OpenCode CLI specific
+- **[OpenCode Configuration](../tools/opencode/configuration.md)** - OpenCode CLI specific
 
 ### Layer 3: Project-Specific Rules
 
@@ -396,7 +396,7 @@ export GITHUB_TOKEN="your-token"
 - **[Baseline Behaviors](baseline-behaviors.md)** - Foundational behavioral model
 - **[OpenCode Configuration](../tools/opencode/configuration.md)** - Practical implementation
 - **[Sample Configurations](../tools/opencode/samples.md)** - Real-world examples
-- **[Getting Started](../getting-started/overview.md)** - Quick start guide
+- **[MCP Overview](../mcp/overview.md)** - Quick start guide
 
 ---
 
