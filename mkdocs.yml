@@ -97,6 +97,7 @@ nav:
       - Database Postgres EF Agent: agents/database-postgres-ef.agent.md
       - DevOps Agent: agents/devops.agent.md
       - Documentation Agent: agents/documentation.agent.md
+      - Google Style Docs Agent: agents/google-style-docs.agent.md
       - Inquisitive Agent: agents/inquisitive-agent.md
       - Performance Agent: agents/performance.agent.md
       - Plan Agent: agents/plan.agent.md
@@ -120,6 +121,7 @@ nav:
           - Example Guide: skills/google-style-docs/example-deployment-guide.md
       - .NET API Development:
           - Overview: skills/dotnet-api-development/README.md
+          - Main Skill Guide: skills/dotnet-api-development/SKILL.md
       - ReactJS/NodeJS Web Apps:
           - Overview: skills/react-nodejs-webapp/README.md
       - PostgreSQL Database:
@@ -129,6 +131,15 @@ nav:
           - Main Skill Guide: skills/git-commit-messages/SKILL.md
           - Examples: skills/git-commit-messages/examples.md
           - VS Code Integration: skills/git-commit-messages/vscode-integration.md
+      - Amazon Web Services:
+          - Overview: skills/amazon-web-services/README.md
+          - Main Skill Guide: skills/amazon-web-services/SKILL.md
+      - Azure:
+          - Overview: skills/azure/README.md
+          - Main Skill Guide: skills/azure/SKILL.md
+      - Google Cloud Platform:
+          - Overview: skills/google-cloud-platform/README.md
+          - Main Skill Guide: skills/google-cloud-platform/SKILL.md
       - Copilot Agent Creator:
           - Overview: skills/copilot-agent-creator/README.md
           - Main Skill Guide: skills/copilot-agent-creator/SKILL.md
@@ -136,14 +147,17 @@ nav:
           - Example MCP Server: skills/copilot-agent-creator/example-mcp-server.ts
           - Package.json Template: skills/copilot-agent-creator/package.json
           - TypeScript Config: skills/copilot-agent-creator/tsconfig.json
-      - Copilot Custom Instructions:
-          - Overview: skills/copilot-custom-instructions/README.md
-          - Main Skill Guide: skills/copilot-custom-instructions/SKILL.md
-          - Example Repository Instructions: skills/copilot-custom-instructions/example-repository-instructions.md
-          - Example Path Instructions: skills/copilot-custom-instructions/example-path-instructions.md
+      - Copilot Instruction Creator:
+          - Overview: skills/copilot-instruction-creator/README.md
+          - Main Skill Guide: skills/copilot-instruction-creator/SKILL.md
+          - Example Repository Instructions: skills/copilot-instruction-creator/example-repository-instructions.md
+          - Example Path Instructions: skills/copilot-instruction-creator/example-path-instructions.md
       - Copilot Prompt Creator:
           - Overview: skills/copilot-prompt-creator/README.md
           - Main Skill Guide: skills/copilot-prompt-creator/SKILL.md
+      - Copilot Custom Instructions:
+          - Overview: skills/copilot-custom-instructions/README.md
+      - Docker Image Management:
           - Overview: skills/docker-image-management/README.md
           - Main Skill Guide: skills/docker-image-management/SKILL.md
           - Dockerfile Templates: skills/docker-image-management/dockerfile-templates.md

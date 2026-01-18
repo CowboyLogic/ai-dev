@@ -125,4 +125,4 @@ Format as clean Markdown with proper headings and code blocks.
 - [GitHub Copilot Documentation](https://docs.github.com/en/copilot)
 - [Copilot Prompt Engineering Guide](https://github.com/microsoft/vscode-copilot)
 - [Awesome Copilot Prompts](https://github.com/f/awesome-chatgpt-prompts) (adapt for Copilot)
-- Related skills: `copilot-custom-instructions`, `skill-creator`
+- Related skills: `copilot-instruction-creator`, `skill-creator`

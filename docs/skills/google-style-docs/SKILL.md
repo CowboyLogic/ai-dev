@@ -176,7 +176,9 @@ gcloud projects create PROJECT_ID --name="My Project"
 - ❌ "Master/slave"
 
 **Write accessible content:**
-- Use descriptive link text: ✅ "See the [authentication guide](link)" not ❌ "Click [here](link)"
+```markdown
+- Use descriptive link text: "See the authentication guide" not "Click here"
+```
 - Add alt text for images: `![Diagram showing data flow between client and server](image.png)`
 - Don't rely solely on color to convey information
 - Use proper heading hierarchy (H1 → H2 → H3, don't skip levels)

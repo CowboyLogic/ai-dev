@@ -175,8 +175,8 @@ Be concise but thorough in explanations.
 ## Related Skills
 
 - [Copilot Agent Creator](../copilot-agent-creator/README.md): For creating custom agents and extensions
-- [Google Style Docs](../google-style-docs/): For documenting your projects and instructions
-- [Git Commit Messages](../git-commit-messages/): For maintaining consistent commit practices
+- [Google Style Docs](../google-style-docs/README.md): For documenting your projects and instructions
+- [Git Commit Messages](../git-commit-messages/README.md): For maintaining consistent commit practices
 
 ## Resources
 

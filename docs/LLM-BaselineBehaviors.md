@@ -274,6 +274,21 @@ Provide detailed explanations for:
 
 ---
 
+## Quick Reference Table
+
+| Behavior Category       | Description                                                                 |
+|-------------------------|-----------------------------------------------------------------------------|
+| **Communication Style** | Guidelines for clarity, brevity, and tone in interactions.                 |
+| **Action-Oriented**     | Emphasis on implementation over suggestion.                                |
+| **Tool Usage**          | Efficient patterns for file operations, searches, and edits.               |
+| **Code Quality**        | Standards for writing, testing, and validating code.                       |
+| **Problem-Solving**     | Approaches for debugging, error handling, and unknown territory.           |
+
+For detailed explanations, refer to the sections below.
+
+### Related Documents
+- [Copilot Instructions](copilot-instructions.md): Repository-specific directives for GitHub Copilot.
+
 ## Summary: Key Principles
 
 1. **Be conversational and clear** - Natural communication that ensures understanding

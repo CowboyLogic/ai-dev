@@ -6,14 +6,16 @@ The .NET API Development skill provides comprehensive guidance for building robu
 
 ## Key Features
 
+- **Entity Framework Core Integration**: Complete database context setup, migrations, and data access patterns
+- **Repository & Unit of Work Patterns**: Professional data access layer implementation
 - **Controller Creation**: Templates and patterns for building RESTful API controllers
-- **CRUD Operations**: Standard Create, Read, Update, Delete endpoint implementations
-- **Model Validation**: Data annotation and model state validation patterns
+- **CRUD Operations**: Standard Create, Read, Update, Delete endpoint implementations with EF
+- **Model Validation**: Data annotation and FluentValidation patterns
 - **Dependency Injection**: Service registration and injection best practices
 - **Authentication & Authorization**: JWT-based security implementation
 - **Error Handling**: Comprehensive error handling and HTTP status code usage
 - **API Versioning**: Version management for API evolution
-- **Testing**: Unit and integration testing guidance
+- **Testing**: Unit and integration testing guidance with EF mocking
 
 ## When to Use
 
@@ -30,20 +32,20 @@ This skill is particularly useful when:
 
 The skill includes:
 
-- **SKILL.md**: Complete instructional guide with examples
-- **controller-template.cs**: Reusable controller template
-- **dto-template.cs**: Data Transfer Object templates
-- **program-template.cs**: ASP.NET Core configuration example
+- **SKILL.md**: Complete instructional guide with Entity Framework examples and best practices
 - **README.md**: Quick reference and usage guide
 
 ## Examples Covered
 
-- Basic CRUD controller implementation
-- Service layer architecture
+- Entity Framework Core database context configuration
+- Repository and Unit of Work pattern implementations
+- Basic CRUD controller implementation with EF queries
+- Service layer architecture with dependency injection
 - JWT authentication setup
 - API versioning configuration
-- Comprehensive error handling
-- Unit testing patterns
+- Comprehensive error handling with EF exception management
+- Unit testing patterns with EF mocking
+- Database migrations and seeding
 
 ## Best Practices Promoted
 
