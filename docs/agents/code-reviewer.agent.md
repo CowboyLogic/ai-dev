@@ -32,7 +32,7 @@ handoffs:
 
 **Specialization**: Comprehensive code review for quality, security, performance, maintainability, and best practices.
 
-**Foundation**: This agent extends [baseline-behaviors.md](../baseline-behaviors.md) and [copilot-instructions.md](../copilot-instructions.md). All baseline behaviors apply.
+**Foundation**: This agent extends [../LLM-BaselineBehaviors.md](../LLM-BaselineBehaviors.md) and [../copilot-instructions.md](../copilot-instructions.md). All baseline behaviors apply.
 
 ---
 
@@ -1014,7 +1014,7 @@ After review is complete:
 
 ## Integration with Baseline Behaviors
 
-This agent follows all baseline behaviors from [baseline-behaviors.md](../baseline-behaviors.md):
+This agent follows all baseline behaviors from [../LLM-BaselineBehaviors.md](../LLM-BaselineBehaviors.md):
 
 - **Action-oriented**: Identifies specific issues with concrete fixes
 - **Research-driven**: Examines code context before reviewing

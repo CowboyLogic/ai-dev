@@ -10,7 +10,7 @@ Agent configuration in this repository follows a layered approach where speciali
 
 ### Layer 1: Behavioral Baseline
 
-The **[LLM Baseline Behaviors](baseline-behaviors.md)** document serves as the foundation. All agents should:
+The **[LLM Baseline Behaviors](../LLM-BaselineBehaviors.md)** document serves as the foundation. All agents should:
 
 1. Read and internalize this baseline
 2. Apply these behaviors as default
@@ -28,7 +28,7 @@ Tool-specific `AGENTS.md` files provide additional context:
 Individual projects may add:
 
 - `.cursor/rules/` files for Cursor IDE
-- `.github/copilot-instructions.md` for GitHub Copilot
+- `.github/../copilot-instructions.md` for GitHub Copilot
 - Custom instruction files for other tools
 
 ### Layer 4: User Directives
@@ -45,7 +45,7 @@ Direct user instructions in conversation always take highest priority.
 ├─────────────────────────────────┤
 │   Tool-Specific Guidelines      │  ← docs/reference/opencode/standard-config/AGENTS.md
 ├─────────────────────────────────┤
-│   Behavioral Baseline           │  ← docs/reference/agents/baseline-behaviors.md
+│   Behavioral Baseline           │  ← docs/reference/../LLM-BaselineBehaviors.md
 └─────────────────────────────────┘
 ```
 
@@ -152,7 +152,7 @@ For GitHub Copilot Chat, reference the baseline in workspace settings:
 {
   "github.copilot.chat.codeGeneration.instructions": [
     {
-      "file": "agents/LLM-BaselineBehaviors.md"
+      "file": "agents/../LLM-BaselineBehaviors.md"
     }
   ]
 }
@@ -166,7 +166,7 @@ Place instructions in `.cursor/rules/`:
 # .cursor/rules/baseline.md
 
 Follow the behavioral baseline defined in:
-agents/LLM-BaselineBehaviors.md
+agents/../LLM-BaselineBehaviors.md
 
 Additional project rules:
 - Use TypeScript strict mode
@@ -393,7 +393,7 @@ export GITHUB_TOKEN="your-token"
 
 ## Additional Resources
 
-- **[Baseline Behaviors](baseline-behaviors.md)** - Foundational behavioral model
+- **[Baseline Behaviors](../LLM-BaselineBehaviors.md)** - Foundational behavioral model
 - **[OpenCode Configuration](../tools/opencode/configuration.md)** - Practical implementation
 - **[Sample Configurations](../tools/opencode/samples.md)** - Real-world examples
 - **[MCP Overview](../mcp/overview.md)** - Quick start guide
@@ -402,7 +402,7 @@ export GITHUB_TOKEN="your-token"
 
 **Next Steps:**
 
-1. Review the **[Baseline Behaviors](baseline-behaviors.md)** in detail
+1. Review the **[Baseline Behaviors](../LLM-BaselineBehaviors.md)** in detail
 2. Explore **[OpenCode Configuration](../tools/opencode/configuration.md)** for practical examples
 3. Try creating your own custom agent configuration
 4. Share successful patterns with the community

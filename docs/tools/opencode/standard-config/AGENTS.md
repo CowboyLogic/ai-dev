@@ -6,7 +6,7 @@ This directory contains configuration files and examples for the OpenCode CLI to
 
 **All AI assistants must first follow the baseline behavioral model:**
 
-📋 **[`../../../agents/baseline-behaviors.md`](../../../agents/baseline-behaviors.md)**
+📋 **[`../../../LLM-BaselineBehaviors.md`](../../../LLM-BaselineBehaviors.md)**
 
 The guidelines below are OpenCode-specific and should be applied **in addition to** the baseline behaviors. When conflicts arise, the baseline behaviors take precedence unless explicitly overridden by user directives.
 

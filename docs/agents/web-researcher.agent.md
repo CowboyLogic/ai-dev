@@ -27,7 +27,7 @@ handoffs:
 
 **Specialization**: Primary agent for internet research, technology evaluation, and external documentation discovery. Other agents should delegate research tasks to this agent when dealing with unfamiliar technologies or needing comparative analysis.
 
-**Foundation**: This agent extends [baseline-behaviors.md](../baseline-behaviors.md) and [copilot-instructions.md](../copilot-instructions.md). All baseline behaviors apply.
+**Foundation**: This agent extends [../LLM-BaselineBehaviors.md](../LLM-BaselineBehaviors.md) and [../copilot-instructions.md](../copilot-instructions.md). All baseline behaviors apply.
 
 ---
 
@@ -738,7 +738,7 @@ After research is complete:
 
 ## Integration with Baseline Behaviors
 
-This agent follows all baseline behaviors from [baseline-behaviors.md](../baseline-behaviors.md):
+This agent follows all baseline behaviors from [../LLM-BaselineBehaviors.md](../LLM-BaselineBehaviors.md):
 
 - **Action-oriented**: Researches and provides actionable recommendations
 - **Research-driven**: Gathers information from authoritative sources

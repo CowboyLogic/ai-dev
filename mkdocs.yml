@@ -86,15 +86,94 @@ extra:
 nav:
   - Home: index.md
   - Agents:
-      - LLM Baseline Behaviors: agents/baseline-behaviors.md
-      - Agent Guidelines: agents/agent-guidelines.md
+      - Overview: agents/README.md
+      - LLM Baseline Behaviors: LLM-BaselineBehaviors.md
+      - Copilot Instructions: copilot-instructions.md
       - Agent Configuration: agents/configuration.md
-      - Repository Delegation: agents/repository-delegation.md
+      - API .NET Agent: agents/api-dotnet.agent.md
+      - Architect React .NET Postgres: agents/architect-react-dotnet-postgres.agent.md
+      - Cloud GCP Agent: agents/cloud-gcp.agent.md
+      - Code Reviewer Agent: agents/code-reviewer.agent.md
+      - Database Postgres EF Agent: agents/database-postgres-ef.agent.md
+      - DevOps Agent: agents/devops.agent.md
+      - Documentation Agent: agents/documentation.agent.md
+      - Inquisitive Agent: agents/inquisitive-agent.md
+      - Performance Agent: agents/performance.agent.md
+      - Plan Agent: agents/plan.agent.md
+      - Security Analyst Agent: agents/security-analyst.agent.md
+      - Testing Specialist Agent: agents/testing-specialist.agent.md
+      - UX/UI Node.js Agent: agents/uxui-nodejs.md
+      - Web Researcher Agent: agents/web-researcher.agent.md
+  - Skills:
+      - Overview: skills/README.md
+      - Skill Creator:
+          - Overview: skills/skill-creator/README.md
+          - Main Skill Guide: skills/skill-creator/SKILL.md
+          - Getting Started: skills/skill-creator/GETTING-STARTED.md
+          - Quick Reference: skills/skill-creator/QUICKREF.md
+          - Template: skills/skill-creator/skill-template.md
+          - Example Skill: skills/skill-creator/example-skill.md
+      - Google Style Docs:
+          - Overview: skills/google-style-docs/README.md
+          - Main Skill Guide: skills/google-style-docs/SKILL.md
+          - Quick Reference: skills/google-style-docs/QUICKREF.md
+          - Example Guide: skills/google-style-docs/example-deployment-guide.md
+      - .NET API Development:
+          - Overview: skills/dotnet-api-development/README.md
+      - ReactJS/NodeJS Web Apps:
+          - Overview: skills/react-nodejs-webapp/README.md
+      - PostgreSQL Database:
+          - Overview: skills/postgresql-database/README.md
+      - Git Commit Messages:
+          - Overview: skills/git-commit-messages/README.md
+          - Main Skill Guide: skills/git-commit-messages/SKILL.md
+          - Examples: skills/git-commit-messages/examples.md
+          - VS Code Integration: skills/git-commit-messages/vscode-integration.md
+      - Copilot Agent Creator:
+          - Overview: skills/copilot-agent-creator/README.md
+          - Main Skill Guide: skills/copilot-agent-creator/SKILL.md
+          - Example Extension: skills/copilot-agent-creator/example-extension.ts
+          - Example MCP Server: skills/copilot-agent-creator/example-mcp-server.ts
+          - Package.json Template: skills/copilot-agent-creator/package.json
+          - TypeScript Config: skills/copilot-agent-creator/tsconfig.json
+      - Copilot Custom Instructions:
+          - Overview: skills/copilot-custom-instructions/README.md
+          - Main Skill Guide: skills/copilot-custom-instructions/SKILL.md
+          - Example Repository Instructions: skills/copilot-custom-instructions/example-repository-instructions.md
+          - Example Path Instructions: skills/copilot-custom-instructions/example-path-instructions.md
+      - Copilot Prompt Creator:
+          - Overview: skills/copilot-prompt-creator/README.md
+          - Main Skill Guide: skills/copilot-prompt-creator/SKILL.md
+          - Overview: skills/docker-image-management/README.md
+          - Main Skill Guide: skills/docker-image-management/SKILL.md
+          - Dockerfile Templates: skills/docker-image-management/dockerfile-templates.md
+          - Docker Compose Examples: skills/docker-image-management/docker-compose-examples.yml
+          - Docker Ignore Template: skills/docker-image-management/dockerignore-template
+          - Management Script: skills/docker-image-management/docker-manage.sh
+      - MkDocs Site Management:
+          - Overview: skills/mkdocs-site-management/README.md
+          - Main Skill Guide: skills/mkdocs-site-management/SKILL.md
   - Tools:
       - OpenCode:
           - Overview: tools/opencode/index.md
           - Configuration Guide: tools/opencode/configuration.md
           - Sample Configs: tools/opencode/samples.md
+          - Agent SubAgent Config:
+              - API Agent: tools/opencode/agent-subagent-config/agent/api.md
+              - Architect Agent: tools/opencode/agent-subagent-config/agent/architect.md
+              - Cloud Agent: tools/opencode/agent-subagent-config/agent/cloud.md
+              - Data Agent: tools/opencode/agent-subagent-config/agent/data.md
+              - Database Agent: tools/opencode/agent-subagent-config/agent/database.md
+              - DevOps Agent: tools/opencode/agent-subagent-config/agent/devops.md
+              - Documentation Agent: tools/opencode/agent-subagent-config/agent/documentation.md
+              - Performance Agent: tools/opencode/agent-subagent-config/agent/performance.md
+              - Research Agent: tools/opencode/agent-subagent-config/agent/research.md
+              - Reviewer Agent: tools/opencode/agent-subagent-config/agent/reviewer.md
+              - Security Agent: tools/opencode/agent-subagent-config/agent/security.md
+              - Testing Agent: tools/opencode/agent-subagent-config/agent/testing.md
+              - UX/UI Agent: tools/opencode/agent-subagent-config/agent/uxui.md
+          - Standard Config:
+              - AGENTS: tools/opencode/standard-config/AGENTS.md
       - Visual Studio Code:
           - Overview: tools/vscode/README.md
           - Quick Start: tools/vscode/quick-start.md
@@ -107,6 +186,8 @@ nav:
   - MCP Servers:
       - Overview: mcp/overview.md
       - Configuration: mcp/configuration.md
+      - Sample Configs:
+          - README: mcp/sample-configs/README.md
   - Contributing: contributing.md
   - About: about.md
 

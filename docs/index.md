@@ -1,6 +1,6 @@
 # AI Development Tools & Configurations
 
-Welcome to the centralized repository for AI tools, agents, and configurations designed to streamline AI-assisted development workflows.
+Welcome to my repository for AI tools, agents, and configurations designed to streamline AI-assisted development workflows.
 
 ## Overview
 
@@ -21,7 +21,7 @@ This repository complements official docs with **ready-to-use configurations, in
 
 ### 🤖 Behavioral Baseline
 
-The **[LLM Baseline Behaviors](agents/baseline-behaviors.md)** document defines the standard behavioral expectations for all AI assistants working in development environments. This ensures consistency across different models and platforms.
+The **[LLM Baseline Behaviors](LLM-BaselineBehaviors.md)** document defines the standard behavioral expectations for all AI assistants working in development environments. This ensures consistency across different models and platforms.
 
 Key aspects covered:
 
@@ -80,7 +80,7 @@ Directory-specific `AGENTS.md` files provide targeted guidance for AI assistants
 
 ### For AI Assistants
 
-1. Read the **[LLM Baseline Behaviors](agents/baseline-behaviors.md)** document
+1. Read the **[LLM Baseline Behaviors](LLM-BaselineBehaviors.md)** document
 2. Review any tool-specific `AGENTS.md` files in relevant directories
 3. Follow the instruction priority hierarchy:
    - Explicit user directives (highest priority)
@@ -108,16 +108,16 @@ Directory-specific `AGENTS.md` files provide targeted guidance for AI assistants
 
 #### Path 2: Configuring AI Assistant Behavior
 
-1. Read the **[LLM Baseline Behaviors](agents/baseline-behaviors.md)** document
+1. Read the **[LLM Baseline Behaviors](LLM-BaselineBehaviors.md)** document
 2. Use it as instruction material for your AI tools
 3. Add project-specific rules on top of the baseline
 4. Reference the baseline in your tool configurations
 
 #### Path 3: Learning Best Practices
 
-1. Explore the **[Behavioral Baseline](agents/baseline-behaviors.md)** to understand effective AI patterns
+1. Explore the **[Behavioral Baseline](LLM-BaselineBehaviors.md)** to understand effective AI patterns
 2. Review **[Sample Configurations](tools/opencode/samples.md)** for practical examples
-3. Read **[Agent Guidelines](agents/agent-guidelines.md)** for instruction hierarchy
+3. Read **[LLM Baseline Behaviors](LLM-BaselineBehaviors.md)** for instruction hierarchy
 4. Apply patterns to your own AI tool setup
 
 ## Key Concepts
@@ -235,7 +235,7 @@ Developers can reference these configurations to understand:
 
 ## Resources
 
-- **[LLM Baseline Behaviors](agents/baseline-behaviors.md)** - Foundational behavioral model
+- **[LLM Baseline Behaviors](LLM-BaselineBehaviors.md)** - Foundational behavioral model
 - **[OpenCode Configuration](tools/opencode/index.md)** - Detailed OpenCode setup guide
 - **[GitHub Repository](https://github.com/CowboyLogic/ai-dev)** - Source code and issues
 
@@ -245,4 +245,4 @@ This repository is actively maintained and updated as AI development tools evolv
 
 ---
 
-**Ready to get started?** Dive into the [OpenCode Configuration](tools/opencode/index.md) or explore the [Agent Guidelines](agents/agent-guidelines.md).
+**Ready to get started?** Dive into the [OpenCode Configuration](tools/opencode/index.md) or explore the [LLM Baseline Behaviors](LLM-BaselineBehaviors.md).

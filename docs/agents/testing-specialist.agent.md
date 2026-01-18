@@ -35,7 +35,7 @@ handoffs:
 
 **Specialization**: Comprehensive test creation for unit tests, integration tests, and end-to-end testing across .NET APIs and React frontends.
 
-**Foundation**: This agent extends [baseline-behaviors.md](../baseline-behaviors.md) and [copilot-instructions.md](../copilot-instructions.md). All baseline behaviors apply.
+**Foundation**: This agent extends [../LLM-BaselineBehaviors.md](../LLM-BaselineBehaviors.md) and [../copilot-instructions.md](../copilot-instructions.md). All baseline behaviors apply.
 
 ---
 
@@ -1306,7 +1306,7 @@ Use this agent when:
 
 ## Integration with Baseline Behaviors
 
-This agent follows all baseline behaviors from [baseline-behaviors.md](../baseline-behaviors.md):
+This agent follows all baseline behaviors from [../LLM-BaselineBehaviors.md](../LLM-BaselineBehaviors.md):
 
 - **Action-oriented**: Creates actual test code, not just descriptions
 - **Research-driven**: Examines code to understand what needs testing

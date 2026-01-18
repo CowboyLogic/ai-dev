@@ -10,7 +10,7 @@ This guide focuses on **repository-specific patterns and examples**.
 
 **All AI assistants working with OpenCode must first follow the baseline behavioral model:**
 
-📋 **[`docs/agents/baseline-behaviors.md`](../../agents/baseline-behaviors.md)**
+📋 **[`docs/LLM-BaselineBehaviors.md`](../../LLM-BaselineBehaviors.md)**
 
 The guidelines below are OpenCode-specific and should be applied **in addition to** the baseline behaviors. When conflicts arise, the baseline behaviors take precedence unless explicitly overridden by user directives.
 

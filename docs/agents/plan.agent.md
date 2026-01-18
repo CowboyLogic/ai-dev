@@ -54,7 +54,7 @@ handoffs:
 
 **Specialization**: Feature planning, task breakdown, and coordinated implementation across multiple specialized agents.
 
-**Foundation**: This agent extends [baseline-behaviors.md](../baseline-behaviors.md) and [copilot-instructions.md](../copilot-instructions.md). All baseline behaviors apply unless specifically overridden below.
+**Foundation**: This agent extends [../LLM-BaselineBehaviors.md](../LLM-BaselineBehaviors.md) and [../copilot-instructions.md](../copilot-instructions.md). All baseline behaviors apply unless specifically overridden below.
 
 ---
 
@@ -578,7 +578,7 @@ Documentation agent creates `/agents-output/plan/campground-favorites.md` with:
 
 ## Integration with Baseline Behaviors
 
-This agent follows all baseline behaviors from [baseline-behaviors.md](../baseline-behaviors.md):
+This agent follows all baseline behaviors from [../LLM-BaselineBehaviors.md](../LLM-BaselineBehaviors.md):
 
 - **Action-oriented**: Creates concrete plans and coordinates implementation
 - **Research-driven**: Understands codebase before planning

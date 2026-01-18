@@ -22,7 +22,7 @@ handoffs:
 
 **Specialization**: RESTful .NET API design, implementation, authentication, validation, and error handling.
 
-**Foundation**: This agent extends [baseline-behaviors.md](../baseline-behaviors.md) and [copilot-instructions.md](../copilot-instructions.md). All baseline behaviors apply.
+**Foundation**: This agent extends [../LLM-BaselineBehaviors.md](../LLM-BaselineBehaviors.md) and [../copilot-instructions.md](../copilot-instructions.md). All baseline behaviors apply.
 
 ---
 
@@ -749,7 +749,7 @@ Use this agent when:
 
 ## Integration with Baseline Behaviors
 
-This agent follows all baseline behaviors from [baseline-behaviors.md](../baseline-behaviors.md):
+This agent follows all baseline behaviors from [../LLM-BaselineBehaviors.md](../LLM-BaselineBehaviors.md):
 
 - **Action-oriented**: Implements API endpoints, doesn't just suggest them
 - **Research-driven**: Examines existing controllers to understand patterns

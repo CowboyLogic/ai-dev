@@ -30,7 +30,7 @@ handoffs:
 
 **Specialization**: Multi-tier application architecture with React frontends, API backends, and database layers.
 
-**Foundation**: This agent extends [baseline-behaviors.md](../baseline-behaviors.md) and [copilot-instructions.md](../copilot-instructions.md). All baseline behaviors apply unless specifically overridden below.
+**Foundation**: This agent extends [../LLM-BaselineBehaviors.md](../LLM-BaselineBehaviors.md) and [../copilot-instructions.md](../copilot-instructions.md). All baseline behaviors apply unless specifically overridden below.
 
 ---
 
@@ -813,7 +813,7 @@ Use this agent when:
 
 ## Integration with Baseline Behaviors
 
-This agent follows all baseline behaviors from [baseline-behaviors.md](../baseline-behaviors.md):
+This agent follows all baseline behaviors from [../LLM-BaselineBehaviors.md](../LLM-BaselineBehaviors.md):
 
 - **Action-oriented**: Implements architectural decisions, doesn't just suggest them
 - **Research-driven**: Examines existing code to understand patterns before proposing changes

@@ -145,7 +145,7 @@ Throughout this guide, you'll discover how to:
 
 - **[GitHub Copilot Documentation](https://docs.github.com/en/copilot)** - Official Copilot documentation
 - **[Custom Instructions](https://docs.github.com/en/copilot/customizing-copilot/creating-custom-instructions-for-github-copilot)** - Creating custom agents
-- **[LLM Baseline Behaviors](../../agents/baseline-behaviors.md)** - Foundation behavioral model for this repository
+- **[LLM Baseline Behaviors](../../LLM-BaselineBehaviors.md)** - Foundation behavioral model for this repository
 - **[OpenCode Modular Config](../opencode/index.md)** - Similar pattern for CLI tools
 
 ---

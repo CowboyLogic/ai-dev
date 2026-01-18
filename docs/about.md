@@ -38,7 +38,7 @@ This repository emphasizes **examples over explanations**. We provide working co
 
 ### Behavioral Baselines
 
-**[`agents/LLM-BaselineBehaviors.md`](agents/baseline-behaviors.md)** - The authoritative behavioral model for AI assistants working in this repository. Covers:
+**[`agents/LLM-BaselineBehaviors.md`](LLM-BaselineBehaviors.md)** - The authoritative behavioral model for AI assistants working in this repository. Covers:
 
 - Communication style and tone
 - Action-oriented decision making
@@ -186,4 +186,4 @@ This repository builds on:
 
 ---
 
-**Ready to get started?** Explore the **[OpenCode Configuration](tools/opencode/index.md)** or dive into the **[Agent Guidelines](agents/agent-guidelines.md)**.
+**Ready to get started?** Explore the **[OpenCode Configuration](tools/opencode/index.md)** or dive into the **[LLM Baseline Behaviors](LLM-BaselineBehaviors.md)**.
