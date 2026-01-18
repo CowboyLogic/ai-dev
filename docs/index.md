@@ -19,6 +19,24 @@ This repository complements official docs with **ready-to-use configurations, in
 
 ## What's Inside
 
+This repository provides the following resources:
+
+- **Behavioral Guidelines**:
+  - [LLM Baseline Behaviors](LLM-BaselineBehaviors.md): Defines standard expectations for AI assistants.
+  - [Copilot Instructions](copilot-instructions.md): Repository-specific directives for GitHub Copilot.
+
+- **Contributing**:
+  - [Contributing Guide](contributing.md): Learn how to contribute configurations, examples, and documentation improvements.
+
+- **Tool Configurations**:
+  - OpenCode CLI: Pre-configured agents and modular patterns for AI workflows.
+  - VS Code: Integration examples and best practices.
+
+- **Documentation**:
+  - Tutorials, API references, and troubleshooting guides for AI tools.
+
+Explore the repository to find practical examples and ready-to-use configurations.
+
 ### 🤖 Behavioral Baseline
 
 The **[LLM Baseline Behaviors](LLM-BaselineBehaviors.md)** document defines the standard behavioral expectations for all AI assistants working in development environments. This ensures consistency across different models and platforms.

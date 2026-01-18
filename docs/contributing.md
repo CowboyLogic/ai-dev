@@ -470,6 +470,32 @@ export SNYK_TOKEN="your-token-here"
 **Security:** Never commit this token to version control.
 ```
 
+## Common Pitfalls
+
+When contributing to this repository, avoid the following mistakes:
+
+1. **Submitting untested configurations**:
+   - Ensure all configurations are functional and tested in a real environment.
+
+2. **Inconsistent formatting**:
+   - Follow the established patterns for JSON, Markdown, and YAML files.
+
+3. **Broken links**:
+   - Verify that all links resolve correctly before submitting.
+
+4. **Duplicating existing content**:
+   - Check if similar examples or configurations already exist in the repository.
+
+## Contributor Checklist
+
+Before submitting your contribution, ensure the following:
+
+- [ ] Your configurations are tested and functional.
+- [ ] All links in your documentation resolve correctly.
+- [ ] Your code and documentation follow the repository's formatting guidelines.
+- [ ] You have reviewed similar examples to avoid duplication.
+- [ ] Your pull request includes a clear description of the changes.
+
 ## Questions?
 
 - **File an issue** - For questions about contributing

@@ -1,5 +1,5 @@
 ---
-name: copilot-custom-instructions
+name: copilot-instruction-creator
 description: Guide for creating custom instructions to tailor GitHub Copilot responses for personal, repository, or organization use. Use this when setting up Copilot customization for better responses.
 license: MIT
 ---
