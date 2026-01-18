@@ -19,7 +19,7 @@ Agent Skills are structured collections of instructions, templates, examples, an
 - **[Skill Creator](skill-creator/README.md)** - Learn how to create new Agent Skills following the open standard
 - **[Google Style Docs](google-style-docs/README.md)** - Write technical documentation following Google's Developer Documentation Style Guide
 - **[Copilot Agent Creator](copilot-agent-creator/README.md)** - Create custom agents and extensions for VS Code and GitHub Copilot
-- **[Copilot Custom Instructions](copilot-custom-instructions/README.md)** - Create custom instructions to tailor GitHub Copilot responses
+- **[Copilot Instruction Creator](copilot-instruction-creator/README.md)** - Create custom instructions to tailor GitHub Copilot responses
 - **[Copilot Prompt Creator](copilot-prompt-creator/README.md)** - Create custom prompts for Copilot with latest GitHub research
 
 ### Development Skills
@@ -28,6 +28,8 @@ Agent Skills are structured collections of instructions, templates, examples, an
 - **[ReactJS/NodeJS Web Apps](react-nodejs-webapp/README.md)** - Create full-stack React applications with Node.js backends
 - **[PostgreSQL Database](postgresql-database/README.md)** - Design, implement, and optimize PostgreSQL databases
 - **[Git Commit Messages](git-commit-messages/README.md)** - Write descriptive yet succinct git commit messages
+- **[Amazon Web Services](amazon-web-services/README.md)** - Expert guidance for AWS development, deployment, and operations
+- **[Azure](azure/README.md)** - Expert guidance for Microsoft Azure development, deployment, and operations
 
 ## Skill Structure
 
@@ -69,7 +71,7 @@ To add new skills to this repository:
 ├── skill-creator/       # Meta-skill for creating skills
 ├── google-style-docs/   # Documentation skill
 ├── copilot-agent-creator/ # Copilot agent development
-├── copilot-custom-instructions/ # Copilot customization
+├── copilot-instruction-creator/ # Copilot customization
 ├── copilot-prompt-creator/ # Copilot prompt creation
 ├── dotnet-api-development/  # .NET API development
 ├── react-nodejs-webapp/     # React/Node.js development
@@ -79,7 +81,7 @@ docs/skills/             # Published skill documentation
 ├── skill-creator/
 ├── google-style-docs/
 ├── copilot-agent-creator/
-├── copilot-custom-instructions/
+├── copilot-instruction-creator/
 ├── copilot-prompt-creator/
 ├── dotnet-api-development/
 ├── react-nodejs-webapp/
