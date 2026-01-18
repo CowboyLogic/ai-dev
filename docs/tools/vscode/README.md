@@ -4,7 +4,15 @@
 
 ## Overview
 
-Visual Studio Code's GitHub Copilot provides flexible ways to configure specialized AI agents for different tasks. This guide covers both declarative configuration using markdown files and programmatic delegation using the `runSubagent` tool.
+This guide provides **practical examples and patterns** for configuring GitHub Copilot agents in VS Code. For complete GitHub Copilot documentation, see the [official GitHub Copilot docs](https://docs.github.com/en/copilot).
+
+**What's here:** Working configurations, integration patterns, and specialized agent examples you can copy and adapt.
+
+**Official Resources:**
+
+- [GitHub Copilot Documentation](https://docs.github.com/en/copilot) - Complete Copilot features and usage
+- [Custom Instructions Guide](https://docs.github.com/en/copilot/customizing-copilot/creating-custom-instructions-for-github-copilot) - Creating custom agents
+- [VS Code Copilot Docs](https://code.visualstudio.com/docs/copilot) - VS Code-specific Copilot integration
 
 ## Documentation Structure
 
@@ -135,9 +143,10 @@ Throughout this guide, you'll discover how to:
 
 ## Additional Resources
 
-- **[LLM Baseline Behaviors](../../agents/baseline-behaviors.md)** - Foundation behavioral model
-- **[OpenCode Modular Config](../opencode/samples.md#modular-agent-configuration)** - Similar pattern for CLI
-- **[GitHub Copilot Documentation](https://docs.github.com/en/copilot)** - Official docs
+- **[GitHub Copilot Documentation](https://docs.github.com/en/copilot)** - Official Copilot documentation
+- **[Custom Instructions](https://docs.github.com/en/copilot/customizing-copilot/creating-custom-instructions-for-github-copilot)** - Creating custom agents
+- **[LLM Baseline Behaviors](../../LLM-BaselineBehaviors.md)** - Foundation behavioral model for this repository
+- **[OpenCode Modular Config](../opencode/index.md)** - Similar pattern for CLI tools
 
 ---
 

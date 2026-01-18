@@ -2,56 +2,43 @@
 
 ## What is AI Dev?
 
-AI Dev is a curated repository of configurations, behavioral guidelines, and best practices for working with AI-powered development tools. It provides a centralized location for:
+AI Dev provides **practical configurations and working examples** for AI-powered development tools. This repository focuses on concrete, usable implementations rather than duplicating vendor documentation.
 
-- **Behavioral baselines** that define consistent AI assistant behavior
-- **OpenCode CLI configurations** with specialized agents and MCP server integrations
-- **Documentation and examples** to accelerate AI-assisted development
-- **Community-contributed patterns** for effective AI tool usage
+**What's here:**
+- Behavioral guidelines for consistent AI assistant behavior
+- Working configurations for OpenCode CLI and VS Code
+- MCP server integration examples
+- Ready-to-use agent definitions
+
+**Official tool documentation:**
+- [GitHub Copilot](https://docs.github.com/en/copilot)
+- [Model Context Protocol](https://modelcontextprotocol.io)
+- [OpenCode AI](https://opencode.ai/docs)
 
 ## Purpose
 
-The repository serves developers who want to:
+This repository helps developers:
 
-1. **Standardize AI behavior** across different tools and models
-2. **Share effective configurations** with teams and the community
-3. **Learn best practices** for AI-assisted development
-4. **Customize AI assistants** for specific workflows and preferences
-5. **Integrate advanced capabilities** through Model Context Protocol (MCP) servers
+1. **Apply consistent patterns** across AI tools and models
+2. **Share working configurations** with teams
+3. **Integrate advanced capabilities** through MCP servers
+4. **Start quickly** with copy-paste examples
 
 ## Philosophy
 
-### Conversational Clarity
+This repository emphasizes **examples over explanations**. We provide working configurations with links to authoritative documentation rather than rewriting vendor guides.
 
-AI assistants should communicate with clarity and thoroughness. Rather than favoring brevity, explanations should ensure full understanding while remaining focused and relevant.
-
-**Core Principles:**
-- Explain solutions clearly so users understand the approach
-- Provide context for recommendations and decisions
-- Balance detail with readability
-- Demonstrate with examples when helpful
-
-### Action-Oriented Behavior
-
-AI assistants should act rather than just suggest. When given a task:
-- Implement solutions using available tools
-- Research missing information rather than guessing
-- Continue working until completion
-- Maintain momentum while preserving quality
-
-### Documentation-First
-
-Configuration and code changes are only complete when documentation is synchronized:
-- All configurations must be documented
-- Changes require updating related documentation
-- Examples should reflect actual implementations
-- Cross-references must stay current
+**Core approach:**
+- **Action-oriented** - Implement changes, don't just suggest
+- **Example-first** - Show concrete implementations
+- **Link to authority** - Reference official docs for concepts
+- **Documentation-aligned** - Keep examples synchronized with actual configs
 
 ## What's Included
 
 ### Behavioral Baselines
 
-**[`agents/LLM-BaselineBehaviors.md`](agents/baseline-behaviors.md)** - The authoritative behavioral model for AI assistants working in this repository. Covers:
+**[`agents/LLM-BaselineBehaviors.md`](LLM-BaselineBehaviors.md)** - The authoritative behavioral model for AI assistants working in this repository. Covers:
 
 - Communication style and tone
 - Action-oriented decision making
@@ -105,20 +92,14 @@ This MkDocs-powered site provides:
 
 ## Technology Stack
 
-**AI Models:**
-- Claude Sonnet 4.5 (primary balanced model)
-- Grok 2 Mini (fast iteration model)
-- GPT-4o, GPT-5, Gemini 2.5 Pro (via GitHub Copilot)
+**AI Integration:**
+- [GitHub Copilot](https://github.com/features/copilot) - AI pair programmer
+- [OpenCode CLI](https://opencode.ai) - AI-assisted development tool
+- [Model Context Protocol](https://modelcontextprotocol.io) - Tool integration standard
 
-**Tools:**
-- OpenCode CLI - AI-assisted development with tiered models
-- MkDocs with Material theme - Documentation site
-- Model Context Protocol (MCP) - Tool and service integration
-
-**Standards:**
-- GitHub Flavored Markdown (GFM) - All documentation
-- JSON with comments - Configuration files
-- Environment variables - Secret management
+**Documentation:**
+- [MkDocs](https://www.mkdocs.org) with [Material theme](https://squidfunk.github.io/mkdocs-material/)
+- GitHub Flavored Markdown
 
 ## Repository Structure
 
@@ -165,18 +146,12 @@ ai-dev/
 
 ## Contributing
 
-We welcome contributions! Please see our **[Contributing Guide](contributing.md)** for:
+Contributions welcome! See our **[Contributing Guide](contributing.md)** and GitHub's [Contributing to Projects](https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project) guide.
 
-- How to submit configurations
-- Documentation standards
-- Pull request process
-- Style guidelines
-
-**All contributions must:**
-- Follow GitHub Flavored Markdown for documentation
-- Use environment variables for secrets
-- Include comprehensive documentation
-- Update all related files
+**Contribute:**
+- Working configurations and examples
+- Integration patterns  
+- Documentation improvements
 
 ## Community
 
@@ -211,4 +186,4 @@ This repository builds on:
 
 ---
 
-**Ready to get started?** Visit the **[Getting Started Guide](getting-started/overview.md)** or explore **[OpenCode Configuration](tools/opencode/index.md)**.
+**Ready to get started?** Explore the **[OpenCode Configuration](tools/opencode/index.md)** or dive into the **[LLM Baseline Behaviors](LLM-BaselineBehaviors.md)**.

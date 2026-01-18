@@ -1,18 +1,30 @@
 # AI Development Tools & Configurations
 
-Welcome to the centralized repository for AI tools, agents, and configurations designed to streamline AI-assisted development workflows.
+Welcome to my repository for AI tools, agents, and configurations designed to streamline AI-assisted development workflows.
 
 ## Overview
 
-This repository serves as a comprehensive resource for developers working with AI coding assistants. Whether you're using GitHub Copilot, Claude, GPT-4, or other AI models, you'll find configurations and guidelines to ensure consistent, efficient, and high-quality assistance.
+This repository provides **practical configurations and working examples** for AI coding assistants. We focus on concrete implementations you can copy and adapt, not rewriting vendor documentation.
+
+### Official Documentation
+
+For comprehensive tool documentation, see:
+
+- **[GitHub Copilot](https://docs.github.com/en/copilot)** - Official GitHub Copilot documentation
+- **[Model Context Protocol](https://modelcontextprotocol.io)** - MCP specification and guides  
+- **[OpenCode AI](https://opencode.ai/docs)** - OpenCode CLI documentation
+- **[VS Code](https://code.visualstudio.com/docs)** - Visual Studio Code documentation
+
+This repository complements official docs with **ready-to-use configurations, integration patterns, and behavioral guidelines**.
 
 ## What's Inside
 
 ### 🤖 Behavioral Baseline
 
-The **[LLM Baseline Behaviors](agents/baseline-behaviors.md)** document defines the standard behavioral expectations for all AI assistants working in development environments. This ensures consistency across different models and platforms.
+The **[LLM Baseline Behaviors](LLM-BaselineBehaviors.md)** document defines the standard behavioral expectations for all AI assistants working in development environments. This ensures consistency across different models and platforms.
 
 Key aspects covered:
+
 - **Communication Style** - Conversational clarity with appropriate detail
 - **Action-Oriented Behavior** - Implementation over suggestion
 - **Tool Usage** - Efficient patterns for file operations, searches, and edits
@@ -26,15 +38,19 @@ Key aspects covered:
 The **[OpenCode](tools/opencode/index.md)** directory provides two configuration approaches:
 
 **Standard Configuration** (`opencode/standard-config/`)
+
 - Single-file configuration with tiered agents
 - Pre-configured agents for quick fixes, code review, and documentation
 - Custom commands for common workflows
 - MCP server integration examples
 
-**Agent/SubAgent Configuration** (`docs/reference/opencode/agent-subagent-config/`)
-- Modular pattern with 13 specialized subagents in individual markdown files
-- Automatic agent discovery via YAML frontmatter
+**Agent/SubAgent Configuration** - Modular pattern with 13 specialized subagents
+
+- Individual agent definitions in markdown files with YAML frontmatter
+- Automatic agent discovery and configuration loading
 - Specialized agents: API design, security, DevOps, cloud, database, testing, performance, and more
+
+**[📖 OpenCode Configuration Guide →](tools/opencode/configuration.md)**
 - Ideal for complex projects and team collaboration
 
 [Explore OpenCode Configuration →](tools/opencode/index.md)
@@ -64,7 +80,7 @@ Directory-specific `AGENTS.md` files provide targeted guidance for AI assistants
 
 ### For AI Assistants
 
-1. Read the **[LLM Baseline Behaviors](agents/baseline-behaviors.md)** document
+1. Read the **[LLM Baseline Behaviors](LLM-BaselineBehaviors.md)** document
 2. Review any tool-specific `AGENTS.md` files in relevant directories
 3. Follow the instruction priority hierarchy:
    - Explicit user directives (highest priority)
@@ -74,10 +90,64 @@ Directory-specific `AGENTS.md` files provide targeted guidance for AI assistants
 
 ### For Developers
 
-1. Browse the configurations in the **[OpenCode](tools/opencode/index.md)** directory
-2. Review sample MCP configurations in `mcp/sample-configs/`
-3. Adapt configurations to your development workflow
-4. Reference the baseline behaviors when configuring your AI tools
+#### Path 1: Using OpenCode CLI
+
+1. Review the **[OpenCode Overview](tools/opencode/index.md)**
+2. Copy configuration to your project:
+   ```bash
+   # Standard configuration (recommended for getting started)
+   cp docs/tools/opencode/standard-config/opencode.json ~/your-project/.opencode.json
+   
+   # OR agent/subagent configuration (for complex projects)
+   cp -r docs/tools/opencode/agent-subagent-config/* ~/your-project/
+   ```
+   📖 **[Complete Configuration Guide →](tools/opencode/configuration.md)**
+3. Customize agents and commands for your needs
+4. Set required environment variables (e.g., `GITHUB_TOKEN`)
+5. Start using custom commands like `opencode quick-fix` or `opencode review`
+
+#### Path 2: Configuring AI Assistant Behavior
+
+1. Read the **[LLM Baseline Behaviors](LLM-BaselineBehaviors.md)** document
+2. Use it as instruction material for your AI tools
+3. Add project-specific rules on top of the baseline
+4. Reference the baseline in your tool configurations
+
+#### Path 3: Learning Best Practices
+
+1. Explore the **[Behavioral Baseline](LLM-BaselineBehaviors.md)** to understand effective AI patterns
+2. Review **[Sample Configurations](tools/opencode/samples.md)** for practical examples
+3. Read **[LLM Baseline Behaviors](LLM-BaselineBehaviors.md)** for instruction hierarchy
+4. Apply patterns to your own AI tool setup
+
+## Key Concepts
+
+### Behavioral Baseline
+
+The **LLM Baseline Behaviors** document is the foundation of this repository. It defines how AI assistants should:
+
+- Communicate (conversational and clear)
+- Take action (implement rather than suggest)
+- Use tools (efficiently with proper context)
+- Handle errors (actively investigate and resolve)
+- Maintain quality (code standards and testing)
+
+### Instruction Hierarchy
+
+When multiple instruction sources exist, follow this priority:
+
+1. **Explicit user directives** - Direct commands in the current conversation
+2. **Project-specific rules** - Guidelines in `.cursor/rules/` or similar
+3. **Tool-specific guidelines** - Instructions in AGENTS.md files
+4. **Baseline behaviors** - The foundational model
+
+### Specialized Agents
+
+Pre-configured agents handle specific workflows:
+
+- **Quick agent** - Fast operations with lightweight model
+- **Reviewer agent** - Read-only code analysis
+- **Docs agent** - Documentation generation
 
 ## Key Features
 
@@ -165,7 +235,7 @@ Developers can reference these configurations to understand:
 
 ## Resources
 
-- **[LLM Baseline Behaviors](agents/baseline-behaviors.md)** - Foundational behavioral model
+- **[LLM Baseline Behaviors](LLM-BaselineBehaviors.md)** - Foundational behavioral model
 - **[OpenCode Configuration](tools/opencode/index.md)** - Detailed OpenCode setup guide
 - **[GitHub Repository](https://github.com/CowboyLogic/ai-dev)** - Source code and issues
 
@@ -175,4 +245,4 @@ This repository is actively maintained and updated as AI development tools evolv
 
 ---
 
-**Ready to get started?** Explore the [Getting Started Guide](getting-started/overview.md) or dive into the [OpenCode Configuration](tools/opencode/index.md).
+**Ready to get started?** Dive into the [OpenCode Configuration](tools/opencode/index.md) or explore the [LLM Baseline Behaviors](LLM-BaselineBehaviors.md).

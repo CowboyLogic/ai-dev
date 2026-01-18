@@ -2,84 +2,85 @@
 
 This repository contains configurations and guidelines for working with AI development assistants.
 
+## Purpose and Scope
+
+**This AGENTS.md file is the authoritative directive for how AI agents should work with this repository.**
+
+It defines:
+- How agents should behave when managing this repository
+- File structure and organization conventions
+- When and how to update documentation
+- Repository-specific workflows and requirements
+
+**The `docs/` folder contains publishable content for readers.** Content in `docs/` may describe agent behaviors or best practices, but those descriptions are for educational/reference purposes. Only directives in this AGENTS.md file (or explicitly referenced external files) govern agent behavior in this repository.
+
 ## Behavioral Baseline
 
-**All AI assistants working in this repository must follow the behavioral model defined in:**
+**Authoritative baseline behaviors are defined in `.github/LLM-BaselineBehaviors.md`.** This file serves as the definitive source for AI agent behavioral guidelines in this repository. **NEVER modify `.github/LLM-BaselineBehaviors.md` without explicit instruction from the user.**
 
-📋 **[`docs/agents/baseline-behaviors.md`](docs/agents/baseline-behaviors.md)**
+Detailed behavioral documentation in `docs/agents/` is for reference and publication, not authoritative directives unless explicitly incorporated here.
 
-This document establishes the authoritative baseline for:
-- Communication style and tone
-- Action-oriented behavior and decision-making
-- Tool usage patterns and efficiency
-- Code quality standards
-- Error handling and problem-solving approaches
+## Repository Structure
 
-Any project-specific or tool-specific directives should be layered on top of this baseline behavior model.
+This repository is organized as follows:
 
-## Directory-Specific Guidelines
-
-For additional context specific to certain tools or configurations:
-
-- **`docs/reference/agents/`** - Authoritative AI agent behavioral baselines
-- **`docs/reference/opencode/`** - OpenCode CLI actual configuration files
-  - `standard-config/` - Single-file configuration (see [`AGENTS.md`](docs/reference/opencode/standard-config/AGENTS.md))
-  - `agent-subagent-config/` - Modular agent configuration (see [`README.md`](docs/reference/opencode/agent-subagent-config/README.md))
-- **`docs/reference/mcp/`** - MCP sample configuration files
-
-**Full Documentation:** See [`docs/getting-started/agent-guidelines.md`](docs/getting-started/agent-guidelines.md) for comprehensive guidance.
+- **`AGENTS.md`** (this file) - Authoritative directives for AI agents working in this repository
+- **`README.md`** - Repository overview and quick start guide
+- **`mkdocs.yml`** - MkDocs configuration for building publishable documentation
+- **`docs/`** - Publishable documentation content (educational/reference material)
+  - `docs/agents/` - Documentation about agent behaviors and best practices
+  - `docs/tools/` - Tool-specific guides and configuration examples
+  - `docs/mcp/` - MCP configuration documentation and samples
+- **`site/`** - Generated static site from MkDocs build (do not edit directly)
+- **`agent-output/`** - Temporary files and agent-generated content (excluded from version control)
 
 ## Priority of Instructions
 
 When multiple instruction sources exist, follow this priority order:
 
 1. **Explicit user directives** - Direct instructions from the user in the current conversation
-2. **Project-specific rules** - Guidelines in project `.cursor/rules/` or similar directories
-3. **Tool-specific guidelines** - Instructions in tool-specific AGENTS.md files (e.g., `docs/reference/opencode/standard-config/AGENTS.md`)
-4. **Baseline behaviors** - The foundational model in `docs/agents/baseline-behaviors.md`
+2. **This AGENTS.md file** - Repository-specific directives and workflows defined here
+3. **Project-specific rules** - Guidelines in `.cursor/rules/` or similar tool-specific directories
+4. **Referenced external files** - Only files explicitly referenced as authoritative by this AGENTS.md
 
-## Documentation Maintenance
+**Important**: Content in `docs/` is for publication and reference. It does not override directives in this file unless explicitly incorporated by reference.
 
-**CRITICAL: Documentation must always reflect the current state of the repository.**
+## Managing This Repository
 
-Whenever you make changes to configuration files, code, or any repository content, you **MUST** update all related documentation:
+### When to Update AGENTS.md
 
-### Files to Keep Synchronized
+**Update this AGENTS.md file only when:**
 
-1. **README.md files** - Update any README.md in the affected directory and the root README.md if needed
-2. **AGENTS.md files** - Update relevant AGENTS.md files when behaviors or configurations change
-3. **MkDocs documentation** - Update files in `docs/` directory:
-   - `docs/index.md` - Main landing page
-   - `docs/agents/` - Agent-related documentation
-   - `docs/opencode/` - OpenCode-specific documentation
-   - Any other relevant documentation pages
+1. **Repository structure changes** - New directories, moved files, or reorganization
+2. **Explicitly directed by the user** - User specifically requests changes to agent behavior or directives
+3. **File path references become outdated** - Links or references in this file point to non-existent locations
 
-### Update Workflow
+**Do NOT update this AGENTS.md file when:**
 
-**Before completing any task:**
+- Making changes to content within `docs/` folder
+- Updating examples, guides, or educational content
+- Modifying configuration samples or tool-specific documentation
+- Adding new documentation pages or articles
 
-1. **Identify affected documentation** - Determine which documentation files describe or reference what you changed
-2. **Update all affected files** - Modify README.md, AGENTS.md, and docs/ files to reflect changes
-3. **Verify consistency** - Ensure examples, instructions, and descriptions match the actual implementation
-4. **Check cross-references** - Update any links or references to changed content
+### Documentation Update Requirements
 
-### Examples of Changes Requiring Documentation Updates
+**When making changes to repository content, update documentation as appropriate:**
 
-**Configuration Changes:**
-- Modified `docs/reference/opencode/standard-config/opencode.json` → Update `docs/tools/opencode/index.md`, `docs/reference/opencode/standard-config/AGENTS.md`, `docs/tools/opencode/configuration.md`
-- Added new agent → Update all three files above plus `docs/index.md`
+1. **Configuration files changed** - Update relevant documentation in `docs/` that references those configurations
+2. **New features or tools added** - Create or update documentation pages to describe them
+3. **Structure changes** - Update this AGENTS.md file to reflect new paths (see above)
+4. **Sample code modified** - Ensure examples in documentation match actual implementations
 
-**Behavioral Changes:**
-- Modified `docs/reference/agents/baseline-behaviors.md` → Update `README.md`, `AGENTS.md`, `docs/agents/baseline-behaviors.md`
+**Direction of information flow:**
 
-**New Files/Directories:**
-- Added new tool configuration → Create corresponding README.md, AGENTS.md, and docs/ pages
-- Update root `README.md` and `docs/index.md` to reference new content
-
-**Sample Configurations:**
-- Added/modified sample configs → Update `docs/tools/opencode/index.md` and `docs/tools/opencode/samples.md`
+- `AGENTS.md` → `docs/` (only when explicitly directed)
+- `docs/` content changes do NOT automatically flow back to `AGENTS.md`
+- Repository structure changes → Update `AGENTS.md` paths/references
+- User behavioral directives → Update `AGENTS.md` if requested
 
 ### Documentation Standards
+
+When creating or updating documentation in `docs/`:
 
 - Use **GitHub Flavored Markdown** for all .md files
 - Maintain consistent formatting with existing documentation
@@ -87,7 +88,48 @@ Whenever you make changes to configuration files, code, or any repository conten
 - Update version numbers or dates where applicable
 - Test all links and cross-references
 
-**Never consider a task complete until all documentation is updated and synchronized.**
+### Markdown Formatting Guidelines
+
+All markdown documentation must follow standard formatting rules:
+
+1. **Blank Lines Around Block Elements**
+   - Always add a blank line before and after:
+     - Lists (ordered and unordered)
+     - Code blocks (fenced with ```)
+     - Blockquotes
+     - Tables
+   - Exception: Multiple consecutive list items don't need blank lines between them
+
+2. **Code Block Formatting**
+   - Use fenced code blocks (```) instead of indented blocks
+   - Specify language for syntax highlighting when possible
+   - Add blank lines before and after code blocks
+
+3. **List Formatting**
+   - Use consistent indentation (2 spaces for nested lists)
+   - Add blank lines before and after lists
+   - Use `-` for unordered lists, `1.` for ordered lists
+
+4. **Heading Spacing**
+   - Add a blank line after headings (except when followed by another heading)
+   - Use consistent heading levels without skipping levels
+
+5. **Link and Reference Formatting**
+   - Use descriptive link text
+   - Ensure all links are functional
+   - Use reference-style links for repeated URLs when appropriate
+
+### Agent Output Directory
+
+**All agent-generated files that are not part of the documentation set must be placed in the `agent-output/` directory.**
+
+- **Location**: Create files in `agent-output/` folder in the repository root
+- **Directory creation**: Create the directory if it doesn't exist before placing files
+- **Purpose**: Keep generated content separate from source documentation
+- **Examples**: Test files, temporary configurations, analysis outputs, generated code samples
+- **Documentation files**: Only create files in `docs/` if they are intended to be part of the official documentation
+
+The `agent-output/` directory is automatically excluded from version control.
 
 ---
 

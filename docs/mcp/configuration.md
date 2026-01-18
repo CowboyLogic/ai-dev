@@ -1,14 +1,14 @@
 # MCP Server Configuration Guide
 
-This guide covers how to configure and use Model Context Protocol (MCP) servers with various AI development tools.
+Working examples for configuring MCP servers with AI development tools. For MCP protocol details, see the [official MCP documentation](https://modelcontextprotocol.io).
 
 ## Sample Configurations
 
-All sample configuration files are located in [`../reference/mcp/sample-configs/`](../reference/mcp/sample-configs/README.md).
+All sample configuration files are located in [`sample-configs/`](sample-configs/README.md).
 
 ## Docker-Based MCP Servers
 
-Docker-based MCP servers run in isolated containers, providing portability and consistent environments.
+Run MCP servers in Docker containers for isolation and portability. For Docker basics, see [Docker documentation](https://docs.docker.com/engine/reference/run/).
 
 ### Basic Docker Configuration
 
@@ -61,7 +61,7 @@ Docker-based MCP servers run in isolated containers, providing portability and c
 
 ## NPX-Based MCP Servers
 
-NPX-based MCP servers run Node.js packages directly, useful for npm-published MCP tools.
+Run MCP servers from npm packages using NPX. For NPX details, see [NPX documentation](https://docs.npmjs.com/cli/commands/npx).
 
 ### Basic NPX Configuration
 
@@ -87,23 +87,16 @@ NPX-based MCP servers run Node.js packages directly, useful for npm-published MC
 
 ### Common NPX MCP Servers
 
-| Package | Purpose | Required Env Vars |
-|---------|---------|-------------------|
-| `@snyk/mcp-server` | Security vulnerability scanning | `SNYK_TOKEN` |
-| `@modelcontextprotocol/server-*` | Official MCP servers | Varies |
+| Package | Purpose | Required Env Vars | Documentation |
+|---------|---------|-------------------|---------------|
+| `@snyk/mcp-server` | Security vulnerability scanning | `SNYK_TOKEN` | [Snyk Docs](https://docs.snyk.io) |
+| `@modelcontextprotocol/server-*` | Official MCP servers | Varies | [MCP Docs](https://modelcontextprotocol.io) |
 
 ### Best Practices
 
-✅ **Do:**
-- Use `-y` flag to auto-install
-- Specify package versions when needed
-- Test packages individually first
-- Check package trust and maintenance
-
-❌ **Don't:**
-- Install untrusted packages
-- Forget required environment variables
-- Use outdated or unmaintained packages
+✅ Use `-y` flag for auto-install, verify package trust before installation
+✅ Set required environment variables (see package documentation)
+✅ Specify package versions for reproducible builds
 
 ## Remote MCP Servers
 
@@ -140,50 +133,29 @@ Remote MCP servers connect to hosted services via HTTP/WebSocket.
 
 ## Environment Variables
 
-### Setting Environment Variables
-
-**Windows PowerShell:**
-```powershell
-# Temporary (current session)
-$env:GITHUB_TOKEN = "ghp_your_token_here"
-$env:SNYK_TOKEN = "your_snyk_token"
-
-# Permanent (user profile)
-[System.Environment]::SetEnvironmentVariable('GITHUB_TOKEN', 'ghp_your_token_here', 'User')
-```
-
-**Linux/Mac:**
-```bash
-# Temporary (current session)
-export GITHUB_TOKEN="ghp_your_token_here"
-export SNYK_TOKEN="your_snyk_token"
-
-# Permanent (add to ~/.bashrc or ~/.zshrc)
-echo 'export GITHUB_TOKEN="ghp_your_token_here"' >> ~/.bashrc
-source ~/.bashrc
-```
-
-### Referencing in Configuration
-
-Use `${VARIABLE_NAME}` syntax in configuration files:
+MCP servers typically require API tokens. Reference them in config files using `${VARIABLE_NAME}` syntax:
 
 ```json
 {
   "environment": {
-    "API_KEY": "${MY_API_KEY}",
-    "API_SECRET": "${MY_API_SECRET}"
+    "API_KEY": "${MY_API_KEY}"
   }
 }
 ```
 
-### Security Best Practices
+**Setting variables:**
 
-🔒 **Security:**
-- Never commit tokens to version control
-- Use `.gitignore` for config files with secrets
-- Rotate tokens regularly
-- Use minimal permission scopes
-- Consider using secret management tools (e.g., Azure Key Vault, AWS Secrets Manager)
+```powershell
+# Windows PowerShell
+$env:GITHUB_TOKEN = "your-token"
+```
+
+```bash
+# Linux/Mac
+export GITHUB_TOKEN="your-token"
+```
+
+🔒 **Security:** Never commit tokens to version control. Use `.gitignore` for files containing secrets.
 
 ## Troubleshooting
 
@@ -288,7 +260,7 @@ Each server runs independently and provides its own set of capabilities.
 
 ## Sample Files Reference
 
-All sample configuration files are available at [`../reference/mcp/sample-configs/`](../reference/mcp/sample-configs/README.md):
+All sample configuration files are available at [`sample-configs/`](sample-configs/README.md):
 
 - **`docker-desktop-github-mcp.json`** - Docker Desktop with GitHub MCP integration
 - **`sample-docker-mcp.json`** - Basic Docker MCP server example
@@ -296,7 +268,7 @@ All sample configuration files are available at [`../reference/mcp/sample-config
 
 ## Next Steps
 
-- Review [sample configurations](../reference/mcp/sample-configs/README.md)
+- Review [sample configurations](sample-configs/README.md)
 - Explore [OpenCode MCP integration](../tools/opencode/configuration.md)
 - Read [MCP Overview](overview.md) for concepts and use cases
 - Visit [official MCP documentation](https://modelcontextprotocol.io) for protocol details

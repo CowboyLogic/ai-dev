@@ -23,10 +23,6 @@ This repository serves as a comprehensive resource for:
   - **`docs/tools/vscode/`** - Visual Studio Code agent/subagent configuration guide
   - **`docs/tools/opencode/`** - OpenCode CLI configuration documentation
   - **`docs/mcp/`** - Model Context Protocol (MCP) server documentation
-  - **`docs/reference/`** - Authoritative source files and actual configurations
-    - `agents/` - Behavioral baseline source files
-    - `opencode/` - OpenCode configuration files (standard & agent/subagent)
-    - `mcp/` - MCP sample configuration files
 
 ## Getting Started
 
@@ -42,7 +38,7 @@ Browse the directories to find configuration files relevant to your development 
 
 - **[VS Code Agent/SubAgent Guide](docs/tools/vscode/README.md)** - Implementing efficient AI workflows with GitHub Copilot
 - **[OpenCode Configuration](docs/tools/opencode/index.md)** - CLI tool with specialized agents
-- **[MCP Server Examples](docs/reference/mcp/sample-configs/)** - Model Context Protocol integrations
+- **[MCP Server Examples](docs/mcp/sample-configs/)** - Model Context Protocol integrations
 
 Each configuration includes:
 - Setup instructions
