@@ -1,0 +1,295 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "github-copilot/gpt-5-mini",
+  "agent": {
+    "plan": {
+      "mode": "primary",
+      "description": "Intelligent task analysis and decomposition with automatic delegation planning",
+      "prompt": "{file:./prompts/intelligent-planner.txt}",
+      "model": "github-copilot/claude-sonnet-4.5",
+      "temperature": 0.1,
+      "steps": 30,
+      "permission": {
+        "write": "allow",
+        "task": "allow",
+        "bash": "ask",
+        "edit": "deny"
+      }
+    },
+    "build": {
+      "mode": "primary",
+      "description": "Autonomous development coordinator with automatic subagent delegation",
+      "model": "github-copilot/claude-sonnet-4.5",
+      "temperature": 0.3,
+      "steps": 50,
+      "prompt": "{file:./prompts/autonomous-coordinator.txt}",
+      "permission": {
+        "*": "allow",
+        "task": "allow",
+        "external_directory": "allow"
+      }
+    },
+    "router": {
+      "mode": "subagent",
+      "description": "Intelligent task routing and delegation coordinator",
+      "model": "github-copilot/gpt-5-mini",
+      "temperature": 0.2,
+      "prompt": "{file:./agents/router.md}",
+      "permission": {
+        "task": "allow",
+        "read": "allow",
+        "grep": "allow",
+        "glob": "allow"
+      }
+    },
+    "context": {
+      "mode": "subagent",
+      "description": "Cross-agent context management and knowledge synthesis",
+      "model": "github-copilot/claude-sonnet-4.5",
+      "temperature": 0.1,
+      "prompt": "{file:./agents/context-manager.md}",
+      "permission": {
+        "read": "allow",
+        "write": "allow",
+        "grep": "allow",
+        "glob": "allow"
+      }
+    },
+    "monitor": {
+      "mode": "subagent",
+      "description": "Multi-session task execution monitoring and coordination",
+      "model": "github-copilot/gpt-5-mini",
+      "temperature": 0.1,
+      "prompt": "{file:./agents/execution-monitor.md}",
+      "permission": {
+        "read": "allow",
+        "bash": "allow",
+        "grep": "allow"
+      }
+    },
+    "architect": {
+      "mode": "subagent",
+      "description": "Autonomous architecture decisions with pattern analysis and system design",
+      "model": "github-copilot/claude-sonnet-4.5",
+      "temperature": 0.2,
+      "steps": 20,
+      "prompt": "{file:./agents/architect-enhanced.md}",
+      "permission": {
+        "read": "allow",
+        "write": "allow",
+        "task": "allow",
+        "codesearch": "allow"
+      }
+    },
+    "research": {
+      "mode": "subagent",
+      "description": "Research, web search, and technical discovery",
+      "model": "github-copilot/gpt-5-mini",
+      "temperature": 0.2,
+      "prompt": "{file:./agents/research-enhanced.md}",
+      "permission": {
+        "read": "allow",
+        "write": "allow",
+        "webfetch": "allow",
+        "websearch": "allow",
+        "codesearch": "allow"
+      }
+    },
+    "api": {
+      "mode": "subagent",
+      "description": "API development and integration",
+      "model": "github-copilot/gpt-5-mini",
+      "temperature": 0.3,
+      "prompt": "{file:./agents/api.md}",
+      "permission": {
+        "read": "allow",
+        "write": "allow",
+        "edit": "allow",
+        "bash": "allow"
+      }
+    },
+    "database": {
+      "mode": "subagent",
+      "description": "Database design and optimization",
+      "model": "github-copilot/gpt-5-mini",
+      "temperature": 0.2,
+      "prompt": "{file:./agents/database.md}",
+      "permission": {
+        "read": "allow",
+        "write": "allow",
+        "edit": "allow",
+        "bash": "allow"
+      }
+    },
+    "uxui": {
+      "mode": "subagent",
+      "description": "UX/UI design and user experience optimization",
+      "model": "github-copilot/gemini-3-pro",
+      "temperature": 0.4,
+      "prompt": "{file:./agents/uxui.md}",
+      "permission": {
+        "read": "allow",
+        "write": "allow",
+        "edit": "allow"
+      }
+    },
+    "testing": {
+      "mode": "subagent",
+      "description": "Test generation and quality assurance",
+      "model": "github-copilot/gpt-5-mini",
+      "temperature": 0.3,
+      "prompt": "{file:./agents/testing.md}",
+      "permission": {
+        "read": "allow",
+        "write": "allow",
+        "edit": "allow",
+        "bash": "allow"
+      }
+    },
+    "devops": {
+      "mode": "subagent",
+      "description": "DevOps, CI/CD, and deployment automation",
+      "model": "github-copilot/gpt-5-mini",
+      "temperature": 0.2,
+      "prompt": "{file:./agents/devops.md}",
+      "permission": {
+        "read": "allow",
+        "write": "allow",
+        "edit": "allow",
+        "bash": "allow"
+      }
+    },
+    "security": {
+      "mode": "subagent",
+      "description": "Security analysis and vulnerability assessment",
+      "model": "github-copilot/gpt-5-mini",
+      "temperature": 0.1,
+      "prompt": "{file:./agents/security.md}",
+      "permission": {
+        "read": "allow",
+        "write": "allow",
+        "edit": "allow"
+      }
+    },
+    "performance": {
+      "mode": "subagent",
+      "description": "Performance analysis and optimization",
+      "model": "github-copilot/gpt-5-mini",
+      "temperature": 0.2,
+      "prompt": "{file:./agents/performance.md}",
+      "permission": {
+        "read": "allow",
+        "write": "allow",
+        "edit": "allow",
+        "bash": "allow"
+      }
+    },
+    "reviewer": {
+      "mode": "subagent",
+      "description": "Code review and quality assurance",
+      "model": "github-copilot/gpt-5-mini",
+      "temperature": 0.2,
+      "prompt": "{file:./agents/reviewer.md}",
+      "permission": {
+        "read": "allow",
+        "write": "allow",
+        "edit": "allow"
+      }
+    },
+    "documentation": {
+      "mode": "subagent",
+      "description": "Technical documentation with Google-style standards",
+      "model": "github-copilot/claude-haiku-4.5",
+      "temperature": 0.3,
+      "prompt": "{file:./agents/documentation.md}",
+      "permission": {
+        "read": "allow",
+        "write": "allow",
+        "edit": "allow"
+      }
+    },
+    "data": {
+      "mode": "subagent",
+      "description": "Data analysis and processing",
+      "model": "github-copilot/gpt-5-mini",
+      "temperature": 0.2,
+      "prompt": "{file:./agents/data.md}",
+      "permission": {
+        "read": "allow",
+        "write": "allow",
+        "edit": "allow",
+        "bash": "allow"
+      }
+    },
+    "cloud": {
+      "mode": "subagent",
+      "description": "Cloud infrastructure and services",
+      "model": "github-copilot/gpt-5-mini",
+      "temperature": 0.2,
+      "prompt": "{file:./agents/cloud.md}",
+      "permission": {
+        "read": "allow",
+        "write": "allow",
+        "edit": "allow",
+        "bash": "allow"
+      }
+    }
+  },
+  "permission": {
+    "*": "allow",
+    "task": "allow",
+    "read": "allow",
+    "grep": "allow",
+    "glob": "allow",
+    "webfetch": "allow",
+    "websearch": "allow",
+    "codesearch": "allow",
+    "write": "allow",
+    "edit": "allow",
+    "bash": "allow",
+    "external_directory": "allow",
+    "skill": "allow"
+  },
+  "skills": {
+    "paths": [
+      "./skills",
+      "~/.opencode/skills"
+    ]
+  },
+  "command": {
+    "auto-feature": {
+      "template": "Implement this feature with full automation: {{input}}",
+      "description": "Fully autonomous feature implementation",
+      "agent": "build",
+      "subtask": true
+    },
+    "auto-fix": {
+      "template": "Autonomously debug and fix this issue: {{input}}",
+      "description": "Autonomous bug fixing workflow",
+      "agent": "build",
+      "subtask": true
+    },
+    "auto-review": {
+      "template": "Perform comprehensive autonomous code review: {{input}}",
+      "description": "Autonomous code review process",
+      "agent": "reviewer",
+      "subtask": true
+    },
+    "auto-test": {
+      "template": "Create comprehensive automated tests for: {{input}}",
+      "description": "Autonomous test generation and execution",
+      "agent": "testing",
+      "subtask": true
+    }
+  },
+  "experimental": {
+    "batch_tool": true,
+    "continue_loop_on_deny": false,
+    "primary_tools": ["task", "context_manager"],
+    "openTelemetry": true,
+    "mcp_timeout": 30000
+  },
+  "mcp": {
+
+  }
+}
