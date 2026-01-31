@@ -40,6 +40,12 @@ This configuration follows a **tiered cost-optimization approach**:
 
 **Result**: You maximize your premium quota for tasks requiring deep AI reasoning while using efficient free models for coordination and execution, extending your GitHub Copilot usage by 60-70%.
 
+## 🔧 Using this Configuration
+
+To use this configuration, clone this repository, and copy the contents of: `docs/tools/opencode/emulating-claude` to your `.opencode` directory.
+
+To learn more about what it is capable of, read on! 
+
 ## ✨ Key Features
 
 ### 🤖 **Autonomous Agent Delegation**
@@ -69,6 +75,7 @@ This configuration follows a **tiered cost-optimization approach**:
 ### Build Agent (Autonomous Coordinator)
 
 **Usage**: Default active agent for development work
+
 **Capabilities**: 
 - Automatically analyzes requests and delegates to appropriate subagents
 - Coordinates multi-agent workflows
@@ -76,9 +83,11 @@ This configuration follows a **tiered cost-optimization approach**:
 - Executes complex feature development autonomously
 
 **Example Usage**:
+
 ```
 Build a REST API for user authentication with JWT tokens, database persistence, and comprehensive tests
 ```
+
 *The build agent will automatically delegate to:*
 
 - `@architect` for system design
@@ -174,33 +183,33 @@ Autonomous test creation and execution.
 
 ### Router Agent
 
-**Purpose**: Intelligent task analysis and delegation
-**Usage**: Automatically invoked by primary agents
-**Capabilities**: Analyzes requests and routes to optimal subagent combinations
+- **Purpose**: Intelligent task analysis and delegation
+- **Usage**: Automatically invoked by primary agents
+- **Capabilities**: Analyzes requests and routes to optimal subagent combinations
 
 ### Context Manager  
 
-**Purpose**: Cross-agent knowledge management
-**Usage**: Maintains project context across all agent interactions
-**Capabilities**: Shares relevant context, tracks project state, synthesizes knowledge
+- **Purpose**: Cross-agent knowledge management
+- **Usage**: Maintains project context across all agent interactions
+- **Capabilities**: Shares relevant context, tracks project state, synthesizes knowledge
 
 ### Execution Monitor
 
-**Purpose**: Multi-session task coordination
-**Usage**: Monitors complex workflows across sessions
-**Capabilities**: Progress tracking, dependency management, error recovery
+- **Purpose**: Multi-session task coordination
+- **Usage**: Monitors complex workflows across sessions
+- **Capabilities**: Progress tracking, dependency management, error recovery
 
 ### Enhanced Research Agent
 
-**Purpose**: Autonomous technical discovery
-**Manual Usage**: `@research Investigate GraphQL vs REST for our new API`
-**Capabilities**: Web research, documentation analysis, technology comparison
+- **Purpose**: Autonomous technical discovery
+- **Manual Usage**: `@research Investigate GraphQL vs REST for our new API`
+- **Capabilities**: Web research, documentation analysis, technology comparison
 
 ### Enhanced Architect Agent  
 
-**Purpose**: Autonomous architecture decisions
-**Manual Usage**: `@architect Design a scalable notification system`
-**Capabilities**: Pattern selection, system design, technology recommendations
+- **Purpose**: Autonomous architecture decisions
+- **Manual Usage**: `@architect Design a scalable notification system`
+- **Capabilities**: Pattern selection, system design, technology recommendations
 
 ## 📁 Domain-Specific Agents
 

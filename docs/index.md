@@ -203,6 +203,7 @@ ai-dev/
 ├── opencode/
 │   ├── opencode.json               # Main OpenCode configuration
 │   ├── agent-subagent-config/      # Modular subagent configuration
+│   ├── emulating-claude/           # Modular fully autonomous subagent configuration
 │   ├── README.md                   # Human-readable guide
 │   └── AGENTS.md                   # AI assistant guide
 ├── mcp/
