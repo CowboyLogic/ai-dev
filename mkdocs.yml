@@ -140,7 +140,8 @@ nav:
       - Google Cloud Platform:
           - Overview: skills/google-cloud-platform/README.md
           - Main Skill Guide: skills/google-cloud-platform/SKILL.md
-      - Copilot Agent Creator:
+      - Terraform GCP:
+          - Main Skill Guide: skills/terraform-gcp/SKILL.md
           - Overview: skills/copilot-agent-creator/README.md
           - Main Skill Guide: skills/copilot-agent-creator/SKILL.md
           - Example Extension: skills/copilot-agent-creator/example-extension.ts
@@ -188,6 +189,7 @@ nav:
               - UX/UI Agent: tools/opencode/agent-subagent-config/agent/uxui.md
           - Standard Config:
               - AGENTS: tools/opencode/standard-config/AGENTS.md
+          - Emulating Claude Code: tools/opencode/emulating-claude/README.md
       - Visual Studio Code:
           - Overview: tools/vscode/README.md
           - Quick Start: tools/vscode/quick-start.md
