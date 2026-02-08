@@ -20,6 +20,7 @@
     </path>
     <path location=".agents/">
       <file name="AGENTS.xml">Primary authoritative directives.</file>
+      <file name="ARCHITECTURE.xml">Architecture and module wiring directives.</file>
       <file name="manifest.xml">Agent configuration manifest.</file>
     </path>
     <path location="docs/">
