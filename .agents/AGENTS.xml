@@ -9,14 +9,18 @@
     1. Explicit user directives in the current conversation.
     2. This repository_directives (AGENTS.xml) file.
     3. Project-specific rules (e.g., .cursor/rules/).
-    4. Referenced external files (e.g., .github/LLM-BaselineBehaviors.md).
+    4. Referenced external files (e.g., .github/BaselineBehaviors-v2.0.xml).
   </instruction_priority>
 
   <repository_map>
     <path location="root">
-      <file name="AGENTS.xml">Primary authoritative directives.</file>
+      <file name="AGENTS.md">Human-readable overview of agent directives.</file>
       <file name="README.md">Overview and quick start.</file>
       <file name="mkdocs.yml">MkDocs configuration.</file>
+    </path>
+    <path location=".agents/">
+      <file name="AGENTS.xml">Primary authoritative directives.</file>
+      <file name="manifest.xml">Agent configuration manifest.</file>
     </path>
     <path location="docs/">
       Publishable documentation content; use GitHub Flavored Markdown (GFM).

@@ -1,60 +1,102 @@
 # AI Development Tools & Configurations
 
-A centralized repository for AI tools, agents, and configurations to streamline AI-assisted development workflows.
+Practical configurations and working examples for AI-powered development tools. Copy, adapt, and integrate.
 
 > [!IMPORTANT]
-> This repository is both a live repository and a work in progress.
-> It does and will contain information and insights I gain on my journey through the ever-changing AI landscape!
-> Happy Trails! 
+> This repository is a living collection of AI development patterns, tools, and insights.
+> It evolves with the AI landscape — contributions welcome!
 
-## Purpose
+## What's Here
 
-This repository serves as a comprehensive resource for:
+**[📚 Full Documentation Site](https://cowboylogic.github.io/ai-dev)**
 
-- **AI Agent Configurations**: Ready-to-use configurations for various AI development agents and assistants
-- **Tool Integration**: Settings and configurations for integrating AI tools into development environments
-- **Best Practices**: Documented patterns and approaches for working with AI coding assistants
-- **Shared Resources**: A collaborative space to store and share AI development configurations with the community
+- **[Agents](docs/agents/README.md)** — Specialized AI agent definitions (API, architecture, security, testing, DevOps, cloud, database, documentation)
+- **[Context & Baselines](docs/context/index.md)** — Behavioral baselines and instruction files governing AI assistant behavior
+- **[Skills](docs/skills/README.md)** — Domain-specific instruction sets teaching AI agents specialized tasks
+- **[Tools](docs/tools/index.md)** — OpenCode CLI and VS Code configurations with examples
+- **[MCP Servers](docs/mcp/overview.md)** — Model Context Protocol integration examples
 
-## Structure
+## Quick Start
 
-- **`docs/`** - Comprehensive documentation site (MkDocs)
-  - **`docs/agents/`** - AI agent behavioral documentation
-  - **`docs/tools/vscode/`** - Visual Studio Code agent/subagent configuration guide
-  - **`docs/tools/opencode/`** - OpenCode CLI configuration documentation
-  - **`docs/mcp/`** - Model Context Protocol (MCP) server documentation
+### AI Assistants
 
-## Getting Started
+1. **Load directives**: Read [AGENTS.md](AGENTS.md) which points to [`.agents/manifest.xml`](.agents/manifest.xml)
+2. **Baseline behaviors**: Review [LLM Baseline Behaviors](docs/context/LLM-BaselineBehaviors.md)
+3. **Priority hierarchy**: User directives → Repository rules → Tool guidelines → Baseline behaviors
 
-### For AI Assistants
+### Developers
 
-1. Read the **[LLM Baseline Behaviors](docs/agents/baseline-behaviors.md)** document
-2. Review tool-specific `AGENTS.md` files
-3. Follow instruction priority: User directives → Project rules → Tool guidelines → Baseline behaviors
+**OpenCode CLI:**
 
-### For Developers
+- [Overview](docs/tools/opencode/index.md) | [Configuration Guide](docs/tools/opencode/configuration.md) | [Samples](docs/tools/opencode/samples.md)
 
-Browse the directories to find configuration files relevant to your development environment:
+**VS Code + Copilot:**
 
-- **[VS Code Agent/SubAgent Guide](docs/tools/vscode/README.md)** - Implementing efficient AI workflows with GitHub Copilot
-- **[OpenCode Configuration](docs/tools/opencode/index.md)** - CLI tool with specialized agents
-- **[MCP Server Examples](docs/mcp/sample-configs/)** - Model Context Protocol integrations
+- [Agent Guide](docs/tools/vscode/README.md) | [Quick Start](docs/tools/vscode/quick-start.md) | [Examples](docs/tools/vscode/agent-examples.md)
 
-Each configuration includes:
-- Setup instructions
-- Usage examples
-- Customization options
-- Integration guidelines
+**MCP Servers:**
+
+- [Overview](docs/mcp/overview.md) | [Configuration](docs/mcp/configuration.md) | [Samples](docs/mcp/sample-configs/)
+
+## Repository Structure
+
+```
+ai-dev/
+├── .agents/                    # XML directive system (high-fidelity context)
+│   ├── AGENTS.xml              # Primary repository directives
+│   ├── manifest.xml            # Agent configuration loader
+│   └── ARCHITECTURE.xml        # Technical stack and patterns
+├── docs/                       # MkDocs documentation source
+│   ├── agents/                 # Agent configuration guides
+│   ├── context/                # Behavioral baselines (Markdown + XML)
+│   ├── skills/                 # Domain-specific instruction sets
+│   ├── tools/                  # OpenCode & VS Code guides
+│   └── mcp/                    # MCP server documentation
+├── agent-output/               # Temporary agent output (gitignored)
+├── AGENTS.md                   # Human-readable directive overview
+├── README.md                   # This file
+└── mkdocs.yml                  # Documentation site configuration
+```
+
+## Key Features
+
+**High-Fidelity XML Context System** — Structured directives optimized for LLM parsing with `.agents/` XML modules ([learn more](docs/context/high-fidelity-context.md))
+
+**Behavioral Baselines** — Consistent AI behavior patterns across tools and models ([LLM-BaselineBehaviors.md](docs/context/LLM-BaselineBehaviors.md))
+
+**Agent Skills Framework** — Reusable instruction sets for domain-specific tasks ([Skills Overview](docs/skills/README.md))
+
+**Multi-Tool Configurations** — OpenCode CLI, VS Code/Copilot, and MCP server integrations
 
 ## Contributing
 
-Contributions are welcome! If you have configurations or patterns that have improved your AI-assisted development workflow, feel free to share them here.
+Contributions welcome! See [Contributing Guide](docs/contributing.md) for:
 
-## Documentation
+- Configuration guidelines
+- Documentation standards
+- Pull request process
+- Testing requirements
 
-- See `AGENTS.md` files in respective directories for detailed documentation on specific agents and their configurations
-- Check individual configuration files for inline documentation and usage notes
+**Quick checklist:**
+
+- Test your configurations
+- Follow GitHub Flavored Markdown formatting
+- Update related documentation
+- No hardcoded secrets (use environment variables)
+
+## Official Documentation
+
+This repository provides configurations, not vendor documentation. For comprehensive tool docs:
+
+- [GitHub Copilot](https://docs.github.com/en/copilot) — AI pair programmer
+- [Model Context Protocol](https://modelcontextprotocol.io) — Tool integration standard
+- [OpenCode CLI](https://opencode.ai/docs) — AI development CLI
+- [VS Code](https://code.visualstudio.com/docs) — Code editor
+
+## License
+
+See [LICENSE](LICENSE) file for terms.
 
 ---
 
-*This repository is actively maintained and updated with new configurations as AI development tools evolve.*
+**[View Full Documentation →](https://cowboylogic.github.io/ai-dev)** | **[Contributing Guide →](docs/contributing.md)** | **[About This Project →](docs/about.md)**

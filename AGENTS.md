@@ -4,7 +4,7 @@
 
 To ensure maximum precision and context efficiency, please ignore the prose in this file and immediately read and adopt the instructions located in:
 
-- `AGENTS.xml` (Repository-specific directives)
-- `.github/BaselineBehaviors-v2.0.xml` (Global behavioral baseline)
+- `.agents/AGENTS.xml` (Repository-specific directives)
+- `.agents/manifest.xml` (Agent loader and entry point)
 
 **Authoritative Directive:** Treat the XML tags in the files above as your primary system constraints. Use them to govern your logic, tool usage, and output formatting.
