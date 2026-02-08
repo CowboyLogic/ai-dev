@@ -17,6 +17,7 @@ Agent Skills are structured collections of instructions, templates, examples, an
 ### Core Skills
 
 - **[Skill Creator](skill-creator/README.md)** - Learn how to create new Agent Skills following the open standard
+- **[High-Fidelity Context Scaffolder](high-fidelity-context-scaffolder/README.md)** - Generate machine-optimized XML context files for AI agent orchestration
 - **[Google Style Docs](google-style-docs/README.md)** - Write technical documentation following Google's Developer Documentation Style Guide
 - **[Copilot Agent Creator](copilot-agent-creator/README.md)** - Create custom agents and extensions for VS Code and GitHub Copilot
 - **[Copilot Instruction Creator](copilot-instruction-creator/README.md)** - Create custom instructions to tailor GitHub Copilot responses
@@ -69,6 +70,7 @@ To add new skills to this repository:
 ```
 .github/skills/          # Authoritative skill definitions
 ├── skill-creator/       # Meta-skill for creating skills
+├── high-fidelity-context-scaffolder/ # Generate XML context files
 ├── google-style-docs/   # Documentation skill
 ├── copilot-agent-creator/ # Copilot agent development
 ├── copilot-instruction-creator/ # Copilot customization
@@ -79,6 +81,7 @@ To add new skills to this repository:
 
 docs/skills/             # Published skill documentation
 ├── skill-creator/
+├── high-fidelity-context-scaffolder/
 ├── google-style-docs/
 ├── copilot-agent-creator/
 ├── copilot-instruction-creator/

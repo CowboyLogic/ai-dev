@@ -396,7 +396,7 @@ Configure Copilot to load your agents automatically.
       "file": ".github/copilot-instructions/docs.md"
     },
     {
-      "file": "agents/LLM-BaselineBehaviors.md"
+      "file": "context/LLM-BaselineBehaviors.md"
     }
   ],
   "github.copilot.chat.localeOverride": "en",

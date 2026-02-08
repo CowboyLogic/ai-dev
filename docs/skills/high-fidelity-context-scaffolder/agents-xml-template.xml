@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AGENTS.xml Template
+  
+  This is the authoritative repository-specific directive file for AI agents.
+  Customize this template based on your repository's actual structure and requirements.
+  
+  Instructions for agents:
+  1. Replace placeholders marked with {{PLACEHOLDER}}
+  2. Remove sections that don't apply to the repository
+  3. Add custom sections as needed for repository-specific workflows
+  4. Maintain the XML structure and hierarchy
+-->
+
+<repository_directives version="1.0">
+  
+  <purpose_and_scope>
+    This file is the authoritative directive for AI agent behavior within this repository.
+    Directives here and in explicitly referenced external files govern all agent actions.
+    {{DESCRIBE_REPOSITORY_PURPOSE_AND_SCOPE}}
+  </purpose_and_scope>
+
+  <instruction_priority>
+    1. Explicit user directives in the current conversation.
+    2. This repository_directives (AGENTS.xml) file.
+    3. Project-specific rules (e.g., .cursor/rules/, .github/copilot-instructions.md).
+    4. Referenced external files (e.g., .github/BaselineBehaviors-v2.0.xml).
+    5. General best practices and tool documentation.
+  </instruction_priority>
+
+  <repository_map>
+    <!-- Root directory files and their purposes -->
+    <path location="root">
+      <file name="README.md">{{DESCRIBE_README_PURPOSE}}</file>
+      <file name="{{CONFIG_FILE}}">{{DESCRIBE_CONFIG_FILE_PURPOSE}}</file>
+      <!-- Add other important root files here -->
+    </path>
+
+    <!-- Documentation directory -->
+    <path location="{{DOCS_DIRECTORY}}/">
+      {{DESCRIBE_DOCUMENTATION_LOCATION_AND_PURPOSE}}
+      <!-- Example: Markdown documentation using GitHub Flavored Markdown (GFM) -->
+    </path>
+
+    <!-- Source code directory -->
+    <path location="{{SOURCE_DIRECTORY}}/">
+      {{DESCRIBE_SOURCE_CODE_LOCATION_AND_PURPOSE}}
+      <!-- Example: Main application source code and implementation -->
+    </path>
+
+    <!-- Tests directory -->
+    <path location="{{TESTS_DIRECTORY}}/">
+      {{DESCRIBE_TESTS_LOCATION_AND_PURPOSE}}
+      <!-- Example: Unit tests, integration tests, and test fixtures -->
+    </path>
+
+    <!-- Build/Output directory (if applicable) -->
+    <path location="{{OUTPUT_DIRECTORY}}/">
+      {{DESCRIBE_OUTPUT_LOCATION_AND_PURPOSE}}
+      <!-- Example: Compiled output, build artifacts; EXCLUDED from version control -->
+    </path>
+
+    <!-- Configuration directory (if applicable) -->
+    <path location="{{CONFIG_DIRECTORY}}/">
+      {{DESCRIBE_CONFIG_LOCATION_AND_PURPOSE}}
+      <!-- Example: Environment-specific configuration files -->
+    </path>
+
+    <!-- Add additional directories as needed -->
+  </repository_map>
+
+  <management_protocols>
+    <!-- When to update this AGENTS.xml file -->
+    <update_triggers_agents_xml>
+      Update this file when:
+      - Repository structure changes (new directories, moved files)
+      - Explicitly directed by user
+      - File path references become outdated
+      - Major workflow changes occur
+      
+      Do NOT update for:
+      - Content changes within existing directories
+      - Minor documentation updates
+      - Routine code changes
+    </update_triggers_agents_xml>
+
+    <!-- Documentation standards and formatting -->
+    <documentation_standards>
+      {{DESCRIBE_DOCUMENTATION_STANDARDS}}
+      <!-- Example: Use GitHub Flavored Markdown (GFM) -->
+      <!-- Example: Apply blank lines around block elements -->
+      <!-- Example: Use fenced code blocks with language identifiers -->
+      <!-- Example: 2-space indentation for lists -->
+      
+      Update documentation when:
+      - Configurations change
+      - New features are added
+      - APIs are modified
+      - Sample code is updated
+    </documentation_standards>
+
+    <!-- Handling of generated/temporary files -->
+    <output_handling>
+      {{DESCRIBE_OUTPUT_HANDLING_POLICY}}
+      <!-- Example: All non-documentation generated files MUST be placed in output/ -->
+      <!-- Example: Create the directory if it does not exist -->
+      <!-- Example: Add output directory to .gitignore -->
+    </output_handling>
+
+    <!-- Version control practices (optional) -->
+    <version_control>
+      {{DESCRIBE_VERSION_CONTROL_PRACTICES}}
+      <!-- Example: Use conventional commit messages -->
+      <!-- Example: Never commit directly to main branch -->
+      <!-- Example: Create feature branches for new work -->
+    </version_control>
+
+    <!-- Testing requirements (optional) -->
+    <testing_protocols>
+      {{DESCRIBE_TESTING_REQUIREMENTS}}
+      <!-- Example: Run tests before committing changes -->
+      <!-- Example: Maintain minimum 80% code coverage -->
+      <!-- Example: Write tests for all new features -->
+    </testing_protocols>
+  </management_protocols>
+
+  <!-- Custom sections can be added here for repository-specific needs -->
+  <!-- Example: <deployment_protocols>, <security_requirements>, <api_guidelines> -->
+
+</repository_directives>

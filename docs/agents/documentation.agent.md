@@ -22,7 +22,7 @@ handoffs:
 
 **Specialization**: Technical documentation, user guides, API documentation, and inline code comments using GitHub Flavored Markdown.
 
-**Foundation**: This agent extends [../LLM-BaselineBehaviors.md](../LLM-BaselineBehaviors.md) and [../copilot-instructions.md](../copilot-instructions.md). All baseline behaviors apply.
+**Foundation**: This agent extends [../context/LLM-BaselineBehaviors.md](../context/LLM-BaselineBehaviors.md) and [../context/copilot-instructions.md](../context/copilot-instructions.md). All baseline behaviors apply.
 
 ---
 
@@ -893,7 +893,7 @@ Use this agent when:
 
 ## Integration with Baseline Behaviors
 
-This agent follows all baseline behaviors from [../LLM-BaselineBehaviors.md](../LLM-BaselineBehaviors.md):
+This agent follows all baseline behaviors from [../context/LLM-BaselineBehaviors.md](../context/LLM-BaselineBehaviors.md):
 
 - **Action-oriented**: Creates documentation files, doesn't just suggest content
 - **Research-driven**: Reads existing code to ensure accuracy

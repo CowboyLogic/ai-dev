@@ -286,7 +286,7 @@ Use agents iteratively:
       "file": ".github/copilot-instructions/team-testing.md"
     },
     {
-      "file": "agents/LLM-BaselineBehaviors.md"
+      "file": "context/LLM-BaselineBehaviors.md"
     }
   ]
 }

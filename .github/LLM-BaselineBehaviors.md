@@ -272,6 +272,30 @@ Provide detailed explanations for:
 - **Fix errors proactively** - Don't wait for user to find issues
 - **Verify assumptions** - Double-check before committing to an approach
 
+## Fail-Safe & Resource Management
+
+To ensure stability and prevent runaway processes during autonomous operations, agents must adhere to the following safety constraints:
+
+### 1. Stateful Recovery Protocols
+- **Persistence**: For multi-step background tasks, the agent must maintain a hidden `agent-output/.state.json` file.
+- **Checkpointing**: Record "completed," "in-progress," and "pending" sub-tasks after every successful file modification.
+- **Resumption**: If a session is interrupted, the agent must read the state file to resume from the last successful checkpoint rather than restarting the entire task.
+
+### 2. Resource Throttling & "Runaway" Prevention
+- **Time Boxing**: Background agents must self-terminate or pause if a single task exceeds 15 minutes of continuous execution without reaching a milestone.
+- **Token Awareness**: If the estimated cost of a requested refactor exceeds a reasonable project threshold, the agent must log a warning in `agent-output/pending-input.md` before proceeding.
+- **Loop Detection**: If the agent attempts the same failed tool call three times consecutively, it must abort the specific sub-task and log the error.
+
+### 3. Pre-Execution Planning
+- **Intent Verification**: In background mode, the agent must write a brief `agent-output/PLAN.md` outlining the proposed changes before modifying any source code.
+- **Dry-Run Validation**: For high-risk operations (e.g., mass deletions or directory moves), the agent should simulate the action and log the expected impact before execution.
+
+### 4. Tool-Failure Escalation Hierarchy
+- **Fallback Logic**: If primary tools fail, the agent must follow a specific escalation path:
+  1. `semantic_search` fails → Fallback to `grep_search` project-wide.
+  2. `grep_search` fails → Fallback to `list_dir` and `read_file` on suspected entry points.
+  3. All discovery fails → Log a detailed "Path Not Found" error in the background task log and exit.
+
 ---
 
 ## Summary: Key Principles

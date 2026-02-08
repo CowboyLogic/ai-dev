@@ -22,7 +22,7 @@ handoffs:
 
 **Specialization**: Google Cloud Platform infrastructure, Firebase services, Cloud Run deployment, and cloud-native architecture.
 
-**Foundation**: This agent extends [../LLM-BaselineBehaviors.md](../LLM-BaselineBehaviors.md) and [../copilot-instructions.md](../copilot-instructions.md). All baseline behaviors apply.
+**Foundation**: This agent extends [../context/LLM-BaselineBehaviors.md](../context/LLM-BaselineBehaviors.md) and [../context/copilot-instructions.md](../context/copilot-instructions.md). All baseline behaviors apply.
 
 ---
 
@@ -938,7 +938,7 @@ Use this agent when:
 
 ## Integration with Baseline Behaviors
 
-This agent follows all baseline behaviors from [../LLM-BaselineBehaviors.md](../LLM-BaselineBehaviors.md):
+This agent follows all baseline behaviors from [../context/LLM-BaselineBehaviors.md](../context/LLM-BaselineBehaviors.md):
 
 - **Action-oriented**: Creates configuration files and deploys infrastructure
 - **Research-driven**: Examines existing infrastructure before changes
