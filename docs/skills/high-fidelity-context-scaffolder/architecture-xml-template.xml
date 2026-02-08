@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ARCHITECTURE.xml Template
+  
+  This file defines the technical architecture, technology stack, and structural
+  specifications of the repository. Use this to inform agents about the project's
+  technical context and development workflow.
+  
+  Instructions for agents:
+  1. Replace placeholders marked with {{PLACEHOLDER}}
+  2. Fill in detected/analyzed values from repository
+  3. Remove sections that don't apply
+  4. Add framework-specific or domain-specific sections as needed
+-->
+
+<architecture_specification version="1.0">
+  
+  <project_metadata>
+    <name>{{PROJECT_NAME}}</name>
+    <description>{{PROJECT_DESCRIPTION}}</description>
+    <version>{{PROJECT_VERSION}}</version>
+    <repository>{{REPOSITORY_URL}}</repository>
+    <!-- Optional: Add license, authors, homepage, etc. -->
+  </project_metadata>
+
+  <technology_stack>
+    <primary_language>{{PRIMARY_LANGUAGE}}</primary_language>
+    <!-- Examples: Python 3.11+, TypeScript 5.0+, Go 1.21+, Rust 1.70+ -->
+    
+    <frameworks>
+      <framework>{{FRAMEWORK_NAME_AND_VERSION}}</framework>
+      <!-- Examples: React 18.2, Django 5.0, Express 4.18, Axum 0.7 -->
+      <!-- Add multiple framework tags as needed -->
+    </frameworks>
+    
+    <build_tools>
+      <tool>{{BUILD_TOOL}}</tool>
+      <!-- Examples: Vite, Webpack, Poetry, Cargo, Maven, Gradle -->
+      <!-- Add multiple tool tags as needed -->
+    </build_tools>
+    
+    <package_managers>
+      <manager>{{PACKAGE_MANAGER}}</manager>
+      <!-- Examples: npm, pip, cargo, go modules, maven -->
+      <!-- Add multiple manager tags as needed -->
+    </package_managers>
+
+    <!-- Optional: Runtime environment -->
+    <runtime_environment>{{RUNTIME_INFO}}</runtime_environment>
+    <!-- Examples: Node.js 20 LTS, Python 3.11+, JVM 17+ -->
+  </technology_stack>
+
+  <directory_structure>
+    <directory path="{{DIRECTORY_PATH}}/">
+      <purpose>{{DESCRIBE_DIRECTORY_PURPOSE}}</purpose>
+      <patterns>{{DESCRIBE_ORGANIZATIONAL_PATTERNS}}</patterns>
+      <!-- Example patterns: "One file per component", "Tests co-located with source" -->
+    </directory>
+    
+    <!-- Repeat for each major directory -->
+    <!-- Common directories: src/, lib/, tests/, docs/, config/, scripts/ -->
+  </directory_structure>
+
+  <documentation_system>
+    <format>{{DOCUMENTATION_FORMAT}}</format>
+    <!-- Examples: GitHub Flavored Markdown, reStructuredText, JSDoc, Rustdoc -->
+    
+    <location>{{DOCUMENTATION_LOCATION}}</location>
+    <!-- Examples: docs/, README.md, wiki/, inline comments -->
+    
+    <build_command>{{DOCUMENTATION_BUILD_COMMAND}}</build_command>
+    <!-- Examples: mkdocs build, sphinx-build, rustdoc, typedoc -->
+    
+    <output_directory>{{DOCUMENTATION_OUTPUT_DIRECTORY}}</output_directory>
+    <!-- Examples: site/, _build/, target/doc/ -->
+  </documentation_system>
+
+  <development_workflow>
+    <setup>
+      <command>{{SETUP_COMMAND}}</command>
+      <!-- Examples: npm install, pip install -e ., cargo build -->
+      <description>{{DESCRIBE_SETUP_PROCESS}}</description>
+    </setup>
+    
+    <build>
+      <command>{{BUILD_COMMAND}}</command>
+      <!-- Examples: npm run build, poetry build, cargo build with release flag -->
+      <description>{{DESCRIBE_BUILD_PROCESS}}</description>
+    </build>
+    
+    <test>
+      <command>{{TEST_COMMAND}}</command>
+      <!-- Examples: npm test, pytest, cargo test, go test ./... -->
+      <description>{{DESCRIBE_TEST_PROCESS}}</description>
+    </test>
+    
+    <run>
+      <command>{{RUN_COMMAND}}</command>
+      <!-- Examples: npm start, python -m package, cargo run, go run . -->
+      <description>{{DESCRIBE_RUN_PROCESS}}</description>
+    </run>
+    
+    <!-- Optional: Deployment -->
+    <deploy>
+      <command>{{DEPLOY_COMMAND}}</command>
+      <description>{{DESCRIBE_DEPLOY_PROCESS}}</description>
+    </deploy>
+
+    <!-- Optional: Development server -->
+    <dev_server>
+      <command>{{DEV_SERVER_COMMAND}}</command>
+      <!-- Examples: npm run dev, mkdocs serve, cargo watch -->
+      <url>{{DEV_SERVER_URL}}</url>
+      <!-- Examples: http://localhost:3000, http://127.0.0.1:8000 -->
+    </dev_server>
+  </development_workflow>
+
+  <constraints>
+    <format_requirements>
+      {{DESCRIBE_FILE_FORMAT_CONSTRAINTS}}
+      <!-- Examples: -->
+      <!-- - All Markdown files must use GitHub Flavored Markdown (GFM) -->
+      <!-- - Code must follow language-specific style guide (PEP 8, rustfmt, etc.) -->
+      <!-- - Configuration files must be in TOML/YAML/JSON format -->
+    </format_requirements>
+    
+    <naming_conventions>
+      {{DESCRIBE_NAMING_CONVENTIONS}}
+      <!-- Examples: -->
+      <!-- - Use kebab-case for file names -->
+      <!-- - Use PascalCase for component/class names -->
+      <!-- - Use snake_case for Python modules -->
+      <!-- - Prefix test files with test_ -->
+    </naming_conventions>
+    
+    <architectural_patterns>
+      {{DESCRIBE_ARCHITECTURAL_PATTERNS}}
+      <!-- Examples: -->
+      <!-- - Follow MVC pattern for backend -->
+      <!-- - Use component-based architecture for frontend -->
+      <!-- - Implement repository pattern for data access -->
+      <!-- - Apply Clean Architecture principles -->
+    </architectural_patterns>
+
+    <!-- Optional: Security constraints -->
+    <security_requirements>
+      {{DESCRIBE_SECURITY_REQUIREMENTS}}
+      <!-- Examples: -->
+      <!-- - Never commit secrets or API keys -->
+      <!-- - Use environment variables for sensitive configuration -->
+      <!-- - Validate all user inputs -->
+    </security_requirements>
+
+    <!-- Optional: Performance constraints -->
+    <performance_requirements>
+      {{DESCRIBE_PERFORMANCE_REQUIREMENTS}}
+      <!-- Examples: -->
+      <!-- - Page load time must be under 2 seconds -->
+      <!-- - API response time must be under 200ms -->
+      <!-- - Bundle size must be under 500KB -->
+    </performance_requirements>
+  </constraints>
+
+  <!-- Optional: CI/CD Configuration -->
+  <continuous_integration>
+    <provider>{{CI_PROVIDER}}</provider>
+    <!-- Examples: GitHub Actions, GitLab CI, CircleCI, Travis CI -->
+    
+    <workflows>
+      <workflow name="{{WORKFLOW_NAME}}">
+        <trigger>{{WORKFLOW_TRIGGER}}</trigger>
+        <!-- Examples: push, pull_request, schedule -->
+        <description>{{WORKFLOW_DESCRIPTION}}</description>
+      </workflow>
+      <!-- Add multiple workflow tags as needed -->
+    </workflows>
+    
+    <deployment_targets>
+      <target>{{DEPLOYMENT_TARGET}}</target>
+      <!-- Examples: Vercel, Netlify, AWS, Heroku, Docker Registry -->
+      <!-- Add multiple target tags as needed -->
+    </deployment_targets>
+  </continuous_integration>
+
+  <!-- Optional: Database/Data Storage -->
+  <data_layer>
+    <database>
+      <type>{{DATABASE_TYPE}}</type>
+      <!-- Examples: PostgreSQL, MongoDB, SQLite, Redis -->
+      <version>{{DATABASE_VERSION}}</version>
+      <connection>{{CONNECTION_INFO}}</connection>
+    </database>
+    
+    <orm_or_query_builder>{{ORM_NAME}}</orm_or_query_builder>
+    <!-- Examples: SQLAlchemy, Prisma, Entity Framework, Diesel -->
+    
+    <migrations>
+      <tool>{{MIGRATION_TOOL}}</tool>
+      <!-- Examples: Alembic, Flyway, Entity Framework Migrations -->
+      <location>{{MIGRATIONS_DIRECTORY}}</location>
+    </migrations>
+  </data_layer>
+
+  <!-- Optional: API Specifications -->
+  <api_specifications>
+    <style>{{API_STYLE}}</style>
+    <!-- Examples: REST, GraphQL, gRPC, WebSocket -->
+    
+    <documentation>{{API_DOCUMENTATION_LOCATION}}</documentation>
+    <!-- Examples: OpenAPI/Swagger spec, GraphQL schema, .proto files -->
+    
+    <versioning>{{API_VERSIONING_STRATEGY}}</versioning>
+    <!-- Examples: URI versioning (/v1/), header versioning, no versioning -->
+  </api_specifications>
+
+  <!-- Custom sections can be added here for specific project needs -->
+  <!-- Examples: <infrastructure>, <monitoring>, <localization>, <accessibility> -->
+
+</architecture_specification>

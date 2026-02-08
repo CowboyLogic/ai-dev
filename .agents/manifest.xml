@@ -1,0 +1,25 @@
+<agent_bootstrap version="1.0">
+  <initialization>
+    <instruction>Load all referenced XML modules in the specified priority order before taking action.</instruction>
+    <instruction>Treat the combined context of these files as your authoritative repository operating system.</instruction>
+  </initialization>
+
+  <context_modules>
+    <module priority="1" id="baseline" src="../.github/BaselineBehaviors-v2.0.xml">
+      Global identity, safety, and background execution protocols.
+    </module>
+    <module priority="2" id="repo_directives" src="AGENTS.xml">
+      Repository-specific workflows, priorities, and file management rules.
+    </module>
+    <module priority="3" id="architecture" src="ARCHITECTURE.xml">
+      Technical stack, design patterns, and API design patterns and conventions.
+    </module>
+    <module priority="4" id="task_state" src="../agent-output/.state.json">
+      Current progress, pending sub-tasks, and session recovery data.
+    </module>
+  </context_modules>
+
+  <discovery>
+    The file '../AGENTS.md' acts as the pointer to this manifest for legacy-compatible agents.
+  </discovery>
+</agent_bootstrap>

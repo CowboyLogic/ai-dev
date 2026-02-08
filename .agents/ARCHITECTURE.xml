@@ -1,0 +1,40 @@
+<repository_architecture id="agent_directives_engine" version="1.0">
+  <tech_stack>
+    <documentation_engine>MkDocs</documentation_engine>
+    <markup_language>GitHub Flavored Markdown (GFM)</markup_language>
+    <configuration_format>YAML (mkdocs.yml)</configuration_format>
+    <output_format>Static Site (site/ directory)</output_format>
+  </tech_stack>
+
+  <file_system_logic>
+    <directory name="docs">
+      Authoritative source for publishable content. Hierarchy managed via mkdocs.yml.
+    </directory>
+    <directory name="agent-output">
+      Volatile storage for logs, temporary analysis, and unverified code samples.
+      Constraint: Must be excluded from version control (Git ignored).
+    </directory>
+    <directory name="site">
+      Generated artifacts. Constraint: Do not edit directly; managed by MkDocs build process.
+    </directory>
+  </file_system_logic>
+
+  <data_logic>
+    <persistence_layer>
+      Background status is persisted via .progress and background-task-log.md in agent-output/.
+    </persistence_layer>
+    <behavioral_inheritance>
+      Agents inherit behavioral baselines from .github/LLM-BaselineBehaviors.md.
+    </behavioral_inheritance>
+  </data_logic>
+
+  <technical_constraints>
+    <markdown_standards>
+      Require blank lines around block elements (lists, code blocks, blockquotes).
+      Fenced code blocks are mandatory over indented blocks.
+    </markdown_standards>
+    <git_workflow>
+      Staging is permitted (git add); committing is restricted to explicit user command.
+    </git_workflow>
+  </technical_constraints>
+</repository_architecture>

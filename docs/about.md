@@ -38,34 +38,42 @@ This repository emphasizes **examples over explanations**. We provide working co
 
 ### Behavioral Baselines
 
-**[`agents/LLM-BaselineBehaviors.md`](LLM-BaselineBehaviors.md)** - The authoritative behavioral model for AI assistants working in this repository. Covers:
+**[Context & Baselines](context/index.md)** — The authoritative behavioral models and instruction files for AI assistants working in this repository. Includes:
 
-- Communication style and tone
-- Action-oriented decision making
-- Tool usage efficiency
-- Code quality standards
-- Problem-solving approaches
+- **[LLM Baseline Behaviors](context/LLM-BaselineBehaviors.md)** - Foundational behavioral model
+- **[Baseline Behaviors v2.0](context/BaselineBehaviors-v2.0.md)** - XML-structured format for AI systems
+- **[Copilot Instructions](context/copilot-instructions.md)** - Repository-specific directives
 
-All AI assistants should follow this baseline as their foundation.
+### Agents
 
-### OpenCode CLI Configuration
+**[Agents](agents/README.md)** — Specialized AI agent definitions for various development tasks:
 
-**[`opencode/`](tools/opencode/index.md)** directory contains:
+- API design and .NET development
+- Architecture and cloud platforms (GCP, AWS, Azure)
+- Database and performance optimization
+- Security and testing
+- Documentation and web research
 
-- **Main configuration** (`opencode.json`) with tiered models and specialized agents
-- **Sample MCP server configs** for Docker-based and NPX-based integrations
-- **Custom commands** for common development tasks
-- **Documentation and guides** for setup and customization
+### Skills
 
-### Documentation Site
+**[Skills](skills/README.md)** — Domain-specific instruction sets teaching AI agents specialized capabilities:
 
-This MkDocs-powered site provides:
+- Programming languages and frameworks (.NET, React, Node.js, PostgreSQL)
+- Documentation (Google Style Docs)
+- DevOps and cloud tools (Docker, Terraform, AWS, Azure, GCP)
+- Git workflows and Copilot customization
+- MkDocs site management
 
-- **Getting Started guides** for new users
-- **Agent configuration guides** with instruction hierarchy
-- **Behavioral baseline documentation** for understanding AI assistant behavior
-- **OpenCode configuration reference** with examples and samples
-- **Contributing guidelines** for sharing improvements
+### Tools
+
+**[Tools](tools/index.md)** — Configuration and integration guides:
+
+- **[OpenCode CLI](tools/opencode/index.md)** - Multi-agent configuration, custom commands, MCP integrations
+- **[Visual Studio Code](tools/vscode/README.md)** - GitHub Copilot integration, agent examples, best practices
+
+### MCP Servers
+
+**[MCP Servers](mcp/overview.md)** — Working examples for Model Context Protocol server integrations.
 
 ## Use Cases
 
@@ -105,28 +113,24 @@ This MkDocs-powered site provides:
 
 ```
 ai-dev/
-├── agents/                           # Agent configurations
-│   ├── LLM-BaselineBehaviors.md     # Authoritative behavioral model
-│   └── AGENTS.md                     # Agent configuration guide
-├── opencode/                         # OpenCode CLI configurations
-│   ├── opencode.json                # Main configuration
-│   ├── agent-subagent-config/      # Modular subagent configuration
-│   ├── README.md                    # Human-readable guide
-│   └── AGENTS.md                    # AI assistant guide
-├── mcp/                              # MCP server configurations
-│   ├── sample-configs/              # Example MCP server configs
-│   └── README.md                    # MCP overview
 ├── docs/                             # MkDocs documentation source
-│   ├── index.md                     # Main landing page
-│   ├── getting-started/             # Getting started guides
-│   ├── agents/                      # Behavioral baseline docs
-│   ├── tools/                       # Tool-specific documentation
-│   │   └── opencode/                # OpenCode documentation
-│   ├── contributing.md              # Contribution guidelines
-│   └── about.md                     # This page
-├── mkdocs.yml                        # MkDocs configuration
+│   ├── index.md                     # Home page
+│   ├── about.md                     # This page
+│   ├── contributing.md              # Contributing guidelines
+│   ├── agents/                      # Agent configuration documentation
+│   ├── context/                     # Behavioral baselines and instructions
+│   ├── skills/                      # Domain-specific instruction sets
+│   ├── tools/                       # Tool configuration guides
+│   └── mcp/                         # MCP server documentation
 ├── AGENTS.md                         # Repository-wide agent guidelines
-└── README.md                         # Repository overview
+├── README.md                         # Repository overview
+├── mkdocs.yml                        # MkDocs configuration
+├── agents/                           # Agent configuration files
+├── tools/                            # Tool-specific configurations
+│   ├── opencode/                    # OpenCode CLI configurations
+│   └── vscode/                      # VS Code integration guides
+├── mcp/                              # MCP server examples
+└── site/                             # Generated documentation (build output)
 ```
 
 ## Maintenance and Updates
@@ -186,4 +190,4 @@ This repository builds on:
 
 ---
 
-**Ready to get started?** Explore the **[OpenCode Configuration](tools/opencode/index.md)** or dive into the **[LLM Baseline Behaviors](LLM-BaselineBehaviors.md)**.
+**Ready to get started?** Explore the **[OpenCode Configuration](tools/opencode/index.md)** or dive into the **[LLM Baseline Behaviors](context/LLM-BaselineBehaviors.md)**.

@@ -13,6 +13,10 @@ For authoritative information on AI agents, refer to:
 
 ## Directory Contents
 
+> [!IMPORTANT]
+> The agents described here will be undergoing changes soon due to the implementation of skills!
+> Check back later for updated versions of the agents and to better understand the relationship between agents and skills!
+
 This directory includes documentation for various specialized AI agents, each tailored for specific development domains:
 
 ### API Development

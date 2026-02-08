@@ -87,8 +87,6 @@ nav:
   - Home: index.md
   - Agents:
       - Overview: agents/README.md
-      - LLM Baseline Behaviors: LLM-BaselineBehaviors.md
-      - Copilot Instructions: copilot-instructions.md
       - Agent Configuration: agents/configuration.md
       - API .NET Agent: agents/api-dotnet.agent.md
       - Architect React .NET Postgres: agents/architect-react-dotnet-postgres.agent.md
@@ -105,6 +103,13 @@ nav:
       - Testing Specialist Agent: agents/testing-specialist.agent.md
       - UX/UI Node.js Agent: agents/uxui-nodejs.md
       - Web Researcher Agent: agents/web-researcher.agent.md
+  - Context & Baselines:
+      - Overview: context/index.md
+      - LLM Baseline Behaviors: context/LLM-BaselineBehaviors.md
+      - Baseline Behaviors v2.0: context/BaselineBehaviors-v2.0.md
+      - Copilot Instructions: context/copilot-instructions.md
+      - High-Fidelity Context: context/high-fidelity-context.md
+      - High-Fidelity Migration: context/high-fidelity-context-migration.md
   - Skills:
       - Overview: skills/README.md
       - Skill Creator:
@@ -114,6 +119,14 @@ nav:
           - Quick Reference: skills/skill-creator/QUICKREF.md
           - Template: skills/skill-creator/skill-template.md
           - Example Skill: skills/skill-creator/example-skill.md
+      - High-Fidelity Context Scaffolder:
+          - Overview: skills/high-fidelity-context-scaffolder/README.md
+          - Main Skill Guide: skills/high-fidelity-context-scaffolder/SKILL.md
+          - Quick Reference: skills/high-fidelity-context-scaffolder/QUICKREF.md
+          - High-Fidelity Context: skills/high-fidelity-context-scaffolder/high-fidelity-context.md
+          - AGENTS.xml Template: skills/high-fidelity-context-scaffolder/agents-xml-template.xml
+          - ARCHITECTURE.xml Template: skills/high-fidelity-context-scaffolder/architecture-xml-template.xml
+          - AGENTS.md Shim Template: skills/high-fidelity-context-scaffolder/agents-md-shim-template.md
       - Google Style Docs:
           - Overview: skills/google-style-docs/README.md
           - Main Skill Guide: skills/google-style-docs/SKILL.md
@@ -142,6 +155,7 @@ nav:
           - Main Skill Guide: skills/google-cloud-platform/SKILL.md
       - Terraform GCP:
           - Main Skill Guide: skills/terraform-gcp/SKILL.md
+      - Copilot Agent Creator:
           - Overview: skills/copilot-agent-creator/README.md
           - Main Skill Guide: skills/copilot-agent-creator/SKILL.md
           - Example Extension: skills/copilot-agent-creator/example-extension.ts
@@ -169,6 +183,7 @@ nav:
           - Overview: skills/mkdocs-site-management/README.md
           - Main Skill Guide: skills/mkdocs-site-management/SKILL.md
   - Tools:
+      - Overview: tools/index.md
       - OpenCode:
           - Overview: tools/opencode/index.md
           - Configuration Guide: tools/opencode/configuration.md
@@ -189,7 +204,39 @@ nav:
               - UX/UI Agent: tools/opencode/agent-subagent-config/agent/uxui.md
           - Standard Config:
               - AGENTS: tools/opencode/standard-config/AGENTS.md
-          - Emulating Claude Code: tools/opencode/emulating-claude/README.md
+          - Emulating Claude:
+              - Overview: tools/opencode/emulating-claude/README.md
+              - Agents:
+                  - API Agent: tools/opencode/emulating-claude/agents/api.md
+                  - Architect Agent: tools/opencode/emulating-claude/agents/architect.md
+                  - Architect Enhanced: tools/opencode/emulating-claude/agents/architect-enhanced.md
+                  - Cloud Agent: tools/opencode/emulating-claude/agents/cloud.md
+                  - Context Manager: tools/opencode/emulating-claude/agents/context-manager.md
+                  - Data Agent: tools/opencode/emulating-claude/agents/data.md
+                  - Database Agent: tools/opencode/emulating-claude/agents/database.md
+                  - DevOps Agent: tools/opencode/emulating-claude/agents/devops.md
+                  - Documentation Agent: tools/opencode/emulating-claude/agents/documentation.md
+                  - Execution Monitor: tools/opencode/emulating-claude/agents/execution-monitor.md
+                  - Performance Agent: tools/opencode/emulating-claude/agents/performance.md
+                  - Research Agent: tools/opencode/emulating-claude/agents/research.md
+                  - Research Enhanced: tools/opencode/emulating-claude/agents/research-enhanced.md
+                  - Reviewer Agent: tools/opencode/emulating-claude/agents/reviewer.md
+                  - Router Agent: tools/opencode/emulating-claude/agents/router.md
+                  - Security Agent: tools/opencode/emulating-claude/agents/security.md
+                  - Testing Agent: tools/opencode/emulating-claude/agents/testing.md
+                  - UX/UI Agent: tools/opencode/emulating-claude/agents/uxui.md
+              - Skills:
+                  - API Development: tools/opencode/emulating-claude/skills/api-development/SKILL.md
+                  - Docker DevOps: tools/opencode/emulating-claude/skills/docker-devops/SKILL.md
+                  - Entity Framework: tools/opencode/emulating-claude/skills/entity-framework/SKILL.md
+                  - Frontend Design: tools/opencode/emulating-claude/skills/frontend-design/SKILL.md
+                  - Google Style Docs:
+                      - Main Guide: tools/opencode/emulating-claude/skills/google-style-docs/SKILL.md
+                      - Overview: tools/opencode/emulating-claude/skills/google-style-docs/README.md
+                      - Quick Reference: tools/opencode/emulating-claude/skills/google-style-docs/QUICKREF.md
+                      - Example Guide: tools/opencode/emulating-claude/skills/google-style-docs/example-deployment-guide.md
+                  - React Components: tools/opencode/emulating-claude/skills/react-components/SKILL.md
+                  - Webapp Testing: tools/opencode/emulating-claude/skills/webapp-testing/SKILL.md
       - Visual Studio Code:
           - Overview: tools/vscode/README.md
           - Quick Start: tools/vscode/quick-start.md
@@ -198,7 +245,6 @@ nav:
           - Agent Examples: tools/vscode/agent-examples.md
           - Best Practices: tools/vscode/best-practices.md
           - Troubleshooting: tools/vscode/troubleshooting.md
-      - Callouts Testing: tools/callouts.md
   - MCP Servers:
       - Overview: mcp/overview.md
       - Configuration: mcp/configuration.md
