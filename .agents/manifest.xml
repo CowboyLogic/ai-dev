@@ -20,6 +20,6 @@
   </context_modules>
 
   <discovery>
-    The file '../AGENTS.md' acts as the pointer to this manifest for legacy-compatible agents.
+    This file ('.agents/manifest.xml') is the canonical entry point for agents; any legacy pointers such as 'AGENTS.md' should delegate here.
   </discovery>
 </agent_bootstrap>

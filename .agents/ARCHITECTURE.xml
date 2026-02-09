@@ -21,7 +21,7 @@
 
   <data_logic>
     <persistence_layer>
-      Background status is persisted via .progress and background-task-log.md in agent-output/.
+      Background status is persisted via .state.json, PLAN.md, and background-task-log.md in agent-output/.
     </persistence_layer>
     <behavioral_inheritance>
       Agents inherit behavioral baselines from .github/LLM-BaselineBehaviors.md.
