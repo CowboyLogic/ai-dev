@@ -4,6 +4,12 @@ This section documents configurations and integration patterns for AI developmen
 
 ## Available Tools
 
+### Claude Code CLI
+
+Anthropic's official CLI for Claude, providing terminal-based AI development workflows with model flexibility and enterprise integration options.
+
+- [VertexAI Configuration](claudecode/claudecode-vertexai.md) — Configure Claude Code to use Google Cloud VertexAI as the model provider
+
 ### OpenCode CLI
 
 A terminal-based AI development tool supporting multi-model configurations, specialized agents, and MCP server integrations.

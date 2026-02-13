@@ -245,6 +245,8 @@ nav:
           - Agent Examples: tools/vscode/agent-examples.md
           - Best Practices: tools/vscode/best-practices.md
           - Troubleshooting: tools/vscode/troubleshooting.md
+      - Claude Code:
+          - VertexAI Configuration: tools/claudecode/claudecode-vertexai.md
   - MCP Servers:
       - Overview: mcp/overview.md
       - Configuration: mcp/configuration.md

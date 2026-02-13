@@ -13,7 +13,7 @@ Practical configurations and working examples for AI-powered development tools. 
 - **[Agents](docs/agents/README.md)** — Specialized AI agent definitions (API, architecture, security, testing, DevOps, cloud, database, documentation)
 - **[Context & Baselines](docs/context/index.md)** — Behavioral baselines and instruction files governing AI assistant behavior
 - **[Skills](docs/skills/README.md)** — Domain-specific instruction sets teaching AI agents specialized tasks
-- **[Tools](docs/tools/index.md)** — OpenCode CLI and VS Code configurations with examples
+- **[Tools](docs/tools/index.md)** — Claude Code, OpenCode CLI, and VS Code configurations with examples
 - **[MCP Servers](docs/mcp/overview.md)** — Model Context Protocol integration examples
 
 ## Quick Start
@@ -25,6 +25,10 @@ Practical configurations and working examples for AI-powered development tools. 
 3. **Priority hierarchy**: User directives → Repository rules → Tool guidelines → Baseline behaviors
 
 ### Developers
+
+**Claude Code:**
+
+- [VertexAI Configuration](docs/tools/claudecode/claudecode-vertexai.md) — Configure Claude Code to use Google Cloud VertexAI
 
 **OpenCode CLI:**
 
@@ -66,7 +70,7 @@ ai-dev/
 
 **Agent Skills Framework** — Reusable instruction sets for domain-specific tasks ([Skills Overview](docs/skills/README.md))
 
-**Multi-Tool Configurations** — OpenCode CLI, VS Code/Copilot, and MCP server integrations
+**Multi-Tool Configurations** — Claude Code, OpenCode CLI, VS Code/Copilot, and MCP server integrations
 
 ## Contributing
 
@@ -88,6 +92,7 @@ Contributions welcome! See [Contributing Guide](docs/contributing.md) for:
 
 This repository provides configurations, not vendor documentation. For comprehensive tool docs:
 
+- [Claude Code](https://claude.ai/code) — Anthropic's official CLI for Claude
 - [GitHub Copilot](https://docs.github.com/en/copilot) — AI pair programmer
 - [Model Context Protocol](https://modelcontextprotocol.io) — Tool integration standard
 - [OpenCode CLI](https://opencode.ai/docs) — AI development CLI
