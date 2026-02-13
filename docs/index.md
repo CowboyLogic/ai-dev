@@ -23,7 +23,7 @@ This repository complements official docs with **ready-to-use configurations, in
 - **[Agents](agents/README.md)** — Specialized AI agent definitions for development tasks (API, architecture, security, testing, and more).
 - **[Context & Baselines](context/index.md)** — Behavioral baselines and instruction files that govern AI assistant behavior.
 - **[Skills](skills/README.md)** — Structured instruction sets that teach AI agents domain-specific tasks.
-- **[Tools](tools/index.md)** — Configurations and guides for OpenCode CLI and VS Code.
+- **[Tools](tools/index.md)** — Configurations and guides for Claude Code, OpenCode CLI, and VS Code.
 - **[MCP Servers](mcp/overview.md)** — Working examples for Model Context Protocol server integrations.
 - **[Contributing](contributing.md)** — How to contribute configurations, examples, and documentation.
 

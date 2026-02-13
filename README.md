@@ -54,7 +54,7 @@ ai-dev/
 │   ├── agents/                 # Agent configuration guides
 │   ├── context/                # Behavioral baselines (Markdown + XML)
 │   ├── skills/                 # Domain-specific instruction sets
-│   ├── tools/                  # OpenCode & VS Code guides
+│   ├── tools/                  # Claude Code, OpenCode, & VS Code guides
 │   └── mcp/                    # MCP server documentation
 ├── agent-output/               # Temporary agent output (gitignored)
 ├── AGENTS.md                   # Human-readable directive overview

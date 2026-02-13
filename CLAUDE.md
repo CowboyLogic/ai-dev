@@ -55,7 +55,7 @@ All publishable content lives in `docs/`, organized into sections managed by `mk
 - `docs/agents/` — 16 specialized agent definitions (API, architecture, security, testing, DevOps, etc.)
 - `docs/context/` — Behavioral baselines and instruction hierarchy documentation
 - `docs/skills/` — Domain-specific skill instruction sets
-- `docs/tools/` — OpenCode CLI and VS Code/Copilot configuration guides
+- `docs/tools/` — OpenCode CLI, Claude Code, and VS Code/Copilot configuration guides
 - `docs/mcp/` — Model Context Protocol integration examples
 
 ### Skills (`.github/skills/`)
