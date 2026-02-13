@@ -368,7 +368,9 @@ Update configuration to use available region:
 1. Check current quota:
 
 ```bash
-gcloud compute project-info describe --project=your-project-id
+gcloud services quota list \
+  --service=aiplatform.googleapis.com \
+  --project=your-project-id
 ```
 
 2. Request quota increase in [Google Cloud Console](https://console.cloud.google.com/iam-admin/quotas)
@@ -525,22 +527,52 @@ chmod +x validate-vertex-config.sh
 
 ### 3. Audit Logging
 
-Enable Cloud Audit Logs for VertexAI:
+Enable Cloud Audit Logs for VertexAI through the Google Cloud Console:
+
+1. Go to [Cloud Console IAM Admin > Audit Logs](https://console.cloud.google.com/iam-admin/audit)
+2. Find `Vertex AI API (aiplatform.googleapis.com)`
+3. Select all log types:
+   - `Admin Read`
+   - `Data Read`
+   - `Data Write`
+4. Click **Save**
+
+**Alternative (CLI with safety):**
+
+If using the gcloud CLI, fetch the current policy, modify it safely, then apply:
 
 ```bash
-# Enable Data Access audit logs
-gcloud projects set-iam-policy your-project-id policy.yaml
-```
+#!/bin/bash
+# SAFETY WARNING: set-iam-policy overwrites all IAM bindings!
+# This script safely merges audit configs without removing existing IAM roles.
 
-**policy.yaml:**
+PROJECT_ID="your-project-id"
 
-```yaml
-auditConfigs:
-- service: aiplatform.googleapis.com
-  auditLogConfigs:
-  - logType: ADMIN_READ
-  - logType: DATA_READ
-  - logType: DATA_WRITE
+# Fetch current policy
+gcloud projects get-iam-policy $PROJECT_ID --format=json > policy.json
+
+# Manually edit policy.json to add auditConfigs (use your preferred editor)
+# Add or merge this section into the JSON:
+# "auditConfigs": [
+#   {
+#     "service": "aiplatform.googleapis.com",
+#     "auditLogConfigs": [
+#       { "logType": "ADMIN_READ" },
+#       { "logType": "DATA_READ" },
+#       { "logType": "DATA_WRITE" }
+#     ]
+#   }
+# ]
+
+# Verify the policy before applying
+cat policy.json
+
+# Apply the updated policy
+# WARNING: This overwrites the entire IAM policy. Verify it contains all existing bindings.
+gcloud projects set-iam-policy $PROJECT_ID policy.json
+
+# Clean up
+rm policy.json
 ```
 
 Monitor logs in Cloud Logging:
