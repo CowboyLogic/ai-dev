@@ -5,12 +5,15 @@
 AI Dev provides **practical configurations and working examples** for AI-powered development tools. This repository focuses on concrete, usable implementations rather than duplicating vendor documentation.
 
 **What's here:**
+
 - Behavioral guidelines for consistent AI assistant behavior
-- Working configurations for OpenCode CLI and VS Code
+- Working configurations for Claude Code, OpenCode CLI, and VS Code
 - MCP server integration examples
 - Ready-to-use agent definitions
 
 **Official tool documentation:**
+
+- [Claude Code](https://claude.ai/code)
 - [GitHub Copilot](https://docs.github.com/en/copilot)
 - [Model Context Protocol](https://modelcontextprotocol.io)
 - [OpenCode AI](https://opencode.ai/docs)
@@ -29,6 +32,7 @@ This repository helps developers:
 This repository emphasizes **examples over explanations**. We provide working configurations with links to authoritative documentation rather than rewriting vendor guides.
 
 **Core approach:**
+
 - **Action-oriented** - Implement changes, don't just suggest
 - **Example-first** - Show concrete implementations
 - **Link to authority** - Reference official docs for concepts
@@ -68,6 +72,7 @@ This repository emphasizes **examples over explanations**. We provide working co
 
 **[Tools](tools/index.md)** — Configuration and integration guides:
 
+- **[Claude Code CLI](tools/claudecode/claudecode-vertexai.md)** - Enterprise VertexAI configuration for Google Cloud Platform
 - **[OpenCode CLI](tools/opencode/index.md)** - Multi-agent configuration, custom commands, MCP integrations
 - **[Visual Studio Code](tools/vscode/README.md)** - GitHub Copilot integration, agent examples, best practices
 
@@ -101,11 +106,14 @@ This repository emphasizes **examples over explanations**. We provide working co
 ## Technology Stack
 
 **AI Integration:**
+
+- [Claude Code](https://claude.ai/code) - Anthropic's official CLI for Claude
 - [GitHub Copilot](https://github.com/features/copilot) - AI pair programmer
 - [OpenCode CLI](https://opencode.ai) - AI-assisted development tool
 - [Model Context Protocol](https://modelcontextprotocol.io) - Tool integration standard
 
 **Documentation:**
+
 - [MkDocs](https://www.mkdocs.org) with [Material theme](https://squidfunk.github.io/mkdocs-material/)
 - GitHub Flavored Markdown
 
@@ -138,12 +146,14 @@ ai-dev/
 **Primary Maintainer:** Repository owner (see GitHub profile)
 
 **Update Frequency:**
+
 - Configurations updated as tools evolve
 - Behavioral baselines refined based on usage
 - Documentation kept synchronized with changes
 - Community contributions reviewed regularly
 
 **Versioning:**
+
 - Configuration files include schema references
 - Breaking changes documented in commit messages
 - Sample configurations maintained for current tool versions
@@ -153,6 +163,7 @@ ai-dev/
 Contributions welcome! See our **[Contributing Guide](contributing.md)** and GitHub's [Contributing to Projects](https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project) guide.
 
 **Contribute:**
+
 - Working configurations and examples
 - Integration patterns  
 - Documentation improvements
@@ -160,11 +171,13 @@ Contributions welcome! See our **[Contributing Guide](contributing.md)** and Git
 ## Community
 
 **Getting Help:**
+
 - File an issue for bugs or questions
 - Start a discussion for ideas and proposals
 - Submit PRs for improvements
 
 **Sharing Success:**
+
 - Share your configurations
 - Document your workflows
 - Contribute improvements
@@ -177,6 +190,8 @@ This repository is provided as-is for community use. Check the repository LICENS
 ## Acknowledgments
 
 This repository builds on:
+
+- **Claude Code** - Anthropic's official CLI for Claude
 - **OpenCode CLI** - AI-assisted development tool
 - **Model Context Protocol** - Tool integration standard
 - **MkDocs Material** - Documentation framework
@@ -190,4 +205,4 @@ This repository builds on:
 
 ---
 
-**Ready to get started?** Explore the **[OpenCode Configuration](tools/opencode/index.md)** or dive into the **[LLM Baseline Behaviors](context/LLM-BaselineBehaviors.md)**.
+**Ready to get started?** Explore the **[Claude Code VertexAI Configuration](tools/claudecode/claudecode-vertexai.md)**, **[OpenCode Configuration](tools/opencode/index.md)**, or dive into the **[LLM Baseline Behaviors](context/LLM-BaselineBehaviors.md)**.
