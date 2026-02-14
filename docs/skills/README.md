@@ -64,6 +64,7 @@ To add new skills to this repository:
 - [Agent Skills Open Standard](https://agentskills.io) - Official specification and documentation
 - [GitHub Copilot Skills](https://docs.github.com/en/copilot/using-github-copilot/using-extensions-to-integrate-external-tools-with-copilot) - Copilot-specific skill integration
 - [Claude Skills Documentation](https://docs.anthropic.com/claude/docs/skills) - Claude-specific skill usage
+- [The Complete Guide to Building Skill for Claude](https://resources.anthropic.com/hubfs/The-Complete-Guide-to-Building-Skill-for-Claude.pdf) - Anthropic's complete guide for building skills for Claude. These also work with other GenAI agents! Must read!
 
 ## Repository Structure
 
