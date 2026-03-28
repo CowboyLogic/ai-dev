@@ -2,14 +2,14 @@
 version: 1
 name: CowboyLogic AI-Dev Catalog
 artifacts:
-  - id: amazon-web-services
-    name: Amazon Web Services (AWS)
-    description: Provides integrations and utilities for working with AWS
+  - id: skill-creator
+    name: Skill Creator
+    description: Provides utilities for creating and improving AI agent skills
     type: skill
     compatibility:
       - tool: claude-code
         scope: [repo, global]
         files:
-          - source: docs/skills/amazon-web-services/SKILL.md
-            target: .claude/skills/amazon-web-services/SKILL.md
+          - source: docs/skills/skill-creator/SKILL.md
+            target: .claude/skills/skill-creator/SKILL.md
     tags: [skills, claude-code]
