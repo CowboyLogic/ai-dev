@@ -10,6 +10,6 @@ artifacts:
       - tool: claude-code
         scope: [repo, global]
         files:
-          - source: docs/skills/skill-creator/SKILL.md
-            target: .claude/skills/skill-creator/SKILL.md
+          - source: docs/skills/skill-creator
+            target: .claude/skills/skill-creator
     tags: [skills, claude-code]
