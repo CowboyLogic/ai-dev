@@ -24,7 +24,7 @@ export NO_PROXY=localhost,127.0.0.1
 
 > The TUI communicates with a local HTTP server. You **must** bypass the proxy for this connection to prevent routing loops.
 
-Configure the server's port and hostname using [CLI flags](cli.md#global-flags).
+Configure the server's port and hostname using [CLI flags](../interface/cli.md#global-flags).
 
 ### Authentication
 

@@ -150,11 +150,11 @@ Creates a shareable link to the current conversation and copies it to the clipbo
 
 ## Customize
 
-- [Themes](themes.md) — `/theme` or set in `tui.json`
-- [Keybinds](keybinds.md) — customizable in `tui.json`
+- [Themes](interface/themes.md) — `/theme` or set in `tui.json`
+- [Keybinds](interface/keybinds.md) — customizable in `tui.json`
 - [Formatters](https://opencode.ai/docs/formatters) — code auto-formatting
-- [Custom Commands](commands.md) — `/my-command` shortcuts
-- [Config reference](config.md) — full `opencode.json` schema
+- [Custom Commands](features/commands.md) — `/my-command` shortcuts
+- [Config reference](configuration/config.md) — full `opencode.json` schema
 
 ---
 
@@ -162,15 +162,15 @@ Creates a shareable link to the current conversation and copies it to the clipbo
 
 | Page | Description |
 |------|-------------|
-| [config.md](config.md) | Full configuration reference |
-| [providers.md](providers.md) | LLM provider setup (75+ providers) |
-| [models.md](models.md) | Model selection and configuration |
-| [agents.md](agents.md) | Built-in and custom agents |
-| [tools.md](tools.md) | Built-in tools and permissions |
-| [rules.md](rules.md) | AGENTS.md / custom instructions |
-| [mcp-servers.md](mcp-servers.md) | MCP (Model Context Protocol) servers |
-| [cli.md](cli.md) | CLI commands and flags |
-| [tui.md](tui.md) | Terminal UI usage and commands |
-| [themes.md](themes.md) | Themes and customization |
-| [keybinds.md](keybinds.md) | Keyboard shortcuts |
-| [commands.md](commands.md) | Custom slash commands |
+| [config.md](configuration/config.md) | Full configuration reference |
+| [providers.md](configuration/providers.md) | LLM provider setup (75+ providers) |
+| [models.md](configuration/models.md) | Model selection and configuration |
+| [agents.md](features/agents.md) | Built-in and custom agents |
+| [tools.md](features/tools.md) | Built-in tools and permissions |
+| [rules.md](features/rules.md) | AGENTS.md / custom instructions |
+| [mcp-servers.md](features/mcp-servers.md) | MCP (Model Context Protocol) servers |
+| [cli.md](interface/cli.md) | CLI commands and flags |
+| [tui.md](interface/tui.md) | Terminal UI usage and commands |
+| [themes.md](interface/themes.md) | Themes and customization |
+| [keybinds.md](interface/keybinds.md) | Keyboard shortcuts |
+| [commands.md](features/commands.md) | Custom slash commands |

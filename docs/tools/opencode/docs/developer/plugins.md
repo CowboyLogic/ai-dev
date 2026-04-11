@@ -5,7 +5,7 @@
 
 Plugins extend OpenCode by hooking into events and customizing behavior. Create plugins to add features, integrate with external services, or modify default behavior.
 
-Browse community plugins in the [ecosystem](ecosystem.md).
+Browse community plugins in the [ecosystem](../ecosystem.md).
 
 ---
 

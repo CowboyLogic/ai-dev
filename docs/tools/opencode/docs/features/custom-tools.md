@@ -132,7 +132,7 @@ export default tool({
 })
 ```
 
-Prefer unique names unless intentionally replacing a built-in. To simply block a tool without replacing it, use [permissions](permissions.md).
+Prefer unique names unless intentionally replacing a built-in. To simply block a tool without replacing it, use [permissions](../configuration/permissions.md).
 
 ---
 

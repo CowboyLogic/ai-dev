@@ -17,7 +17,7 @@ Starts a local server on `127.0.0.1` with a random available port and opens Open
 
 > If `OPENCODE_SERVER_PASSWORD` is not set, the server is unsecured. Fine for local use; set it for network access.
 
-> On Windows, run from [WSL](windows-wsl.md) for proper file system access and terminal integration.
+> On Windows, run from [WSL](../configuration/windows-wsl.md) for proper file system access and terminal integration.
 
 ---
 

@@ -159,7 +159,7 @@ OpenCode Desktop requires the Microsoft Edge WebView2 Runtime. Install/update We
 
 ### Windows: General Performance
 
-Use [WSL](windows-wsl.md) for better file system performance, full terminal support, and tool compatibility.
+Use [WSL](configuration/windows-wsl.md) for better file system performance, full terminal support, and tool compatibility.
 
 ### Notifications Not Showing
 

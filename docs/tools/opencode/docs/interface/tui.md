@@ -60,7 +60,7 @@ Type `/` followed by a command name:
 | `/undo` | `ctrl+x u` | Undo last message and revert file changes |
 | `/unshare` | | Unshare current session |
 
-Custom commands are added the same way — type `/my-command`. See [commands.md](commands.md).
+Custom commands are added the same way — type `/my-command`. See [commands.md](../features/commands.md).
 
 ---
 

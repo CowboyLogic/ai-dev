@@ -106,4 +106,4 @@ For enterprise deployments, sharing can be:
 - Restricted to SSO-authenticated users only
 - Self-hosted on your own infrastructure
 
-See [enterprise.md](enterprise.md) for more.
+See [enterprise.md](../configuration/enterprise.md) for more.

@@ -175,4 +175,4 @@ Force the command to run as a subagent even if the agent mode is `primary`:
 
 OpenCode includes: `/init`, `/undo`, `/redo`, `/share`, `/help`, `/connect`, `/compact`, `/details`, `/editor`, `/exit`, `/export`, `/models`, `/new`, `/sessions`, `/themes`, `/thinking`, `/unshare`.
 
-See [tui.md](tui.md) for the full list.
+See [tui.md](../interface/tui.md) for the full list.

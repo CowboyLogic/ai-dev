@@ -189,38 +189,43 @@ nav:
           - Sample Configs: tools/opencode/samples.md
           - Official Docs:
               - Intro: tools/opencode/docs/index.md
-              - Config: tools/opencode/docs/config.md
-              - Providers: tools/opencode/docs/providers.md
-              - Models: tools/opencode/docs/models.md
-              - Agents: tools/opencode/docs/agents.md
-              - Tools: tools/opencode/docs/tools.md
-              - Rules: tools/opencode/docs/rules.md
-              - Permissions: tools/opencode/docs/permissions.md
-              - MCP Servers: tools/opencode/docs/mcp-servers.md
-              - LSP Servers: tools/opencode/docs/lsp.md
-              - Formatters: tools/opencode/docs/formatters.md
-              - Commands: tools/opencode/docs/commands.md
-              - Keybinds: tools/opencode/docs/keybinds.md
-              - Themes: tools/opencode/docs/themes.md
-              - Skills: tools/opencode/docs/skills.md
-              - Custom Tools: tools/opencode/docs/custom-tools.md
-              - TUI: tools/opencode/docs/tui.md
-              - CLI: tools/opencode/docs/cli.md
-              - Web: tools/opencode/docs/web.md
-              - IDE: tools/opencode/docs/ide.md
-              - Share: tools/opencode/docs/share.md
-              - Zen: tools/opencode/docs/zen.md
-              - GitHub: tools/opencode/docs/github.md
-              - GitLab: tools/opencode/docs/gitlab.md
-              - ACP: tools/opencode/docs/acp.md
-              - Server: tools/opencode/docs/server.md
-              - SDK: tools/opencode/docs/sdk.md
-              - Plugins: tools/opencode/docs/plugins.md
-              - Network: tools/opencode/docs/network.md
-              - Enterprise: tools/opencode/docs/enterprise.md
-              - Windows/WSL: tools/opencode/docs/windows-wsl.md
               - Troubleshooting: tools/opencode/docs/troubleshooting.md
               - Ecosystem: tools/opencode/docs/ecosystem.md
+              - Configuration:
+                  - Config Reference: tools/opencode/docs/configuration/config.md
+                  - Providers: tools/opencode/docs/configuration/providers.md
+                  - Models: tools/opencode/docs/configuration/models.md
+                  - Permissions: tools/opencode/docs/configuration/permissions.md
+                  - Network: tools/opencode/docs/configuration/network.md
+                  - Enterprise: tools/opencode/docs/configuration/enterprise.md
+                  - Windows/WSL: tools/opencode/docs/configuration/windows-wsl.md
+              - Features:
+                  - Agents: tools/opencode/docs/features/agents.md
+                  - Tools: tools/opencode/docs/features/tools.md
+                  - Rules: tools/opencode/docs/features/rules.md
+                  - Skills: tools/opencode/docs/features/skills.md
+                  - Custom Tools: tools/opencode/docs/features/custom-tools.md
+                  - MCP Servers: tools/opencode/docs/features/mcp-servers.md
+                  - LSP Servers: tools/opencode/docs/features/lsp.md
+                  - Formatters: tools/opencode/docs/features/formatters.md
+                  - Commands: tools/opencode/docs/features/commands.md
+              - Interface:
+                  - TUI: tools/opencode/docs/interface/tui.md
+                  - CLI: tools/opencode/docs/interface/cli.md
+                  - Web: tools/opencode/docs/interface/web.md
+                  - IDE: tools/opencode/docs/interface/ide.md
+                  - Keybinds: tools/opencode/docs/interface/keybinds.md
+                  - Themes: tools/opencode/docs/interface/themes.md
+              - Integrations:
+                  - GitHub: tools/opencode/docs/integrations/github.md
+                  - GitLab: tools/opencode/docs/integrations/gitlab.md
+                  - Share: tools/opencode/docs/integrations/share.md
+                  - Zen: tools/opencode/docs/integrations/zen.md
+              - Developer:
+                  - SDK: tools/opencode/docs/developer/sdk.md
+                  - Server: tools/opencode/docs/developer/server.md
+                  - Plugins: tools/opencode/docs/developer/plugins.md
+                  - ACP: tools/opencode/docs/developer/acp.md
           - Agent SubAgent Config:
               - API Agent: tools/opencode/agent-subagent-config/agent/api.md
               - Architect Agent: tools/opencode/agent-subagent-config/agent/architect.md

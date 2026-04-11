@@ -33,7 +33,7 @@ Disable sharing for your trial:
 }
 ```
 
-See [share.md](share.md) for more.
+See [share.md](../integrations/share.md) for more.
 
 ### Code Ownership
 

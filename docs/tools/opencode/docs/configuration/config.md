@@ -191,7 +191,7 @@ Must be a primary agent (`"build"`, `"plan"`, or a custom primary agent).
 }
 ```
 
-See [keybinds.md](keybinds.md) for available actions.
+See [keybinds.md](../interface/keybinds.md) for available actions.
 
 ### Themes
 
@@ -274,7 +274,7 @@ See [keybinds.md](keybinds.md) for available actions.
 }
 ```
 
-See [mcp-servers.md](mcp-servers.md).
+See [mcp-servers.md](../features/mcp-servers.md).
 
 ### Plugins
 
