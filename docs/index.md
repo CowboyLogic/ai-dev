@@ -33,6 +33,6 @@ This repository complements official docs with **ready-to-use configurations, in
 - **Claude Code Users:** See the [VertexAI Configuration Guide](tools/claudecode/claudecode-vertexai.md) for enterprise Google Cloud integration.
 - **OpenCode CLI Users:** See the [OpenCode Overview](tools/opencode/index.md) and [Configuration Guide](tools/opencode/configuration.md).
 - **VS Code Users:** See the [VS Code Agent Guide](tools/vscode/README.md) and [Quick Start](tools/vscode/quick-start.md).
-- **Learning Best Practices:** Explore the [Context & Baselines](context/index.md) section and [Agent Configuration](agents/configuration.md).
+- **Learning Best Practices:** Explore the [Context & Baselines](context/index.md) section and [Frontmatter Reference](skills/agent-creator-copilot/references/frontmatter-reference.md).
 
 Learn more on the [About](about.md) page.

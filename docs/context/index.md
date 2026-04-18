@@ -19,7 +19,7 @@ Follow this canonical hierarchy when multiple instruction sources exist:
 3. **Tool-specific guidelines** — Instructions from external tools or systems
 4. **Baseline behaviors** — Foundational model (lowest priority)
 
-This hierarchy ensures clear decision-making when instructions conflict. For detailed configuration layer documentation, see [Agent Configuration](../agents/configuration.md).
+This hierarchy ensures clear decision-making when instructions conflict. For detailed agent frontmatter configuration, see the [Frontmatter Reference](../skills/agent-creator-copilot/references/frontmatter-reference.md).
 
 ## Evolution Path
 

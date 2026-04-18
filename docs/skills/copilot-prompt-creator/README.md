@@ -54,7 +54,7 @@ When asked to create a prompt for "generating React components", the skill will:
 This skill works alongside:
 - `copilot-instruction-creator`: For persistent Copilot behavior customization
 - `skill-creator`: For creating new skills that use custom prompts
-- `copilot-agent-creator`: For building VS Code extensions with Copilot integration
+- `agent-creator-copilot`: For building VS Code extensions with Copilot integration
 
 ## Files in This Skill
 
