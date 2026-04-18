@@ -17,6 +17,12 @@ This skill provides step-by-step guidance for creating effective custom instruct
 - **Agent Instructions**: Specialized instructions for different AI models
 - **Best Practices**: Proven patterns for writing effective instructions
 
+## Files in This Skill
+
+- **`SKILL.md`** — Core skill guide: workflow steps, instruction types, writing guidelines, and troubleshooting
+- **`references/example-repository-instructions.md`** — Sample repository-wide `.github/copilot-instructions.md` for a React/TypeScript project
+- **`references/example-path-instructions.md`** — Sample path-specific `.github/instructions/*.instructions.md` for tests and API files
+
 ## Quick Start
 
 1. **Check the latest GitHub documentation**: Always visit https://docs.github.com/en/copilot/concepts/prompting/response-customization first
@@ -174,7 +180,7 @@ Be concise but thorough in explanations.
 
 ## Related Skills
 
-- [Copilot Agent Creator](../copilot-agent-creator/README.md): For creating custom agents and extensions
+- [Copilot Agent Creator](../agent-creator-copilot/README.md): For creating custom agents and extensions
 - [Google Style Docs](../google-style-docs/README.md): For documenting your projects and instructions
 - [Git Commit Messages](../git-commit-messages/README.md): For maintaining consistent commit practices
 

@@ -16,21 +16,21 @@ Agent Skills are structured collections of instructions, templates, examples, an
 
 ### Core Skills
 
-- **[Skill Creator](skill-creator/README.md)** - Learn how to create new Agent Skills following the open standard
 - **[High-Fidelity Context Scaffolder](high-fidelity-context-scaffolder/README.md)** - Generate machine-optimized XML context files for AI agent orchestration
 - **[Google Style Docs](google-style-docs/README.md)** - Write technical documentation following Google's Developer Documentation Style Guide
-- **[Copilot Agent Creator](copilot-agent-creator/README.md)** - Create custom agents and extensions for VS Code and GitHub Copilot
+- **[Copilot Agent Creator](agent-creator-copilot/README.md)** - Create custom agents and extensions for VS Code and GitHub Copilot
 - **[Copilot Instruction Creator](copilot-instruction-creator/README.md)** - Create custom instructions to tailor GitHub Copilot responses
 - **[Copilot Prompt Creator](copilot-prompt-creator/README.md)** - Create custom prompts for Copilot with latest GitHub research
 
 ### Development Skills
 
-- **[.NET API Development](dotnet-api-development/README.md)** - Build ASP.NET Core APIs with proper architecture and patterns
-- **[ReactJS/NodeJS Web Apps](react-nodejs-webapp/README.md)** - Create full-stack React applications with Node.js backends
-- **[PostgreSQL Database](postgresql-database/README.md)** - Design, implement, and optimize PostgreSQL databases
 - **[Git Commit Messages](git-commit-messages/README.md)** - Write descriptive yet succinct git commit messages
-- **[Amazon Web Services](amazon-web-services/README.md)** - Expert guidance for AWS development, deployment, and operations
-- **[Azure](azure/README.md)** - Expert guidance for Microsoft Azure development, deployment, and operations
+- **[Docker Image Management](docker-image-management/README.md)** - Build, manage, and publish Docker images
+- **[MkDocs Site Management](mkdocs-site-management/README.md)** - Build and maintain MkDocs documentation sites
+
+### AI Platform Skills
+
+- **[OpenCode Agent Creator](agent-creator-opencode/README.md)** - Create custom agents for the OpenCode CLI
 
 ## Skill Structure
 
@@ -54,10 +54,12 @@ Skills are automatically discovered by AI agents when working in this repository
 To add new skills to this repository:
 
 1. Follow the [Agent Skills standard](https://agentskills.io)
-2. Use the [Skill Creator](skill-creator/README.md) skill for guidance
-3. Place skills in the `.github/skills/` directory
-4. Add documentation to this `docs/skills/` directory
-5. Update the MkDocs navigation in `mkdocs.yml`
+2. Use the [Skill Creator skill](https://github.com/anthropics/skills/tree/main/skills/skill-creator) to generate it
+3. Add the skill to this `docs/skills/` directory
+4. Update the MkDocs navigation in `mkdocs.yml`
+
+> [!TIP]
+> **Want to create a new skill?** Anthropic publishes their own [Skill Creator skill](https://github.com/anthropics/skills/tree/main/skills/skill-creator) on GitHub — you can use it directly to generate new skills. It's also a great example of how well-crafted skills are structured.
 
 ## Additional Resources
 
@@ -69,25 +71,14 @@ To add new skills to this repository:
 ## Repository Structure
 
 ```
-.github/skills/          # Authoritative skill definitions
-├── skill-creator/       # Meta-skill for creating skills
+docs/skills/             # Skill definitions and documentation
 ├── high-fidelity-context-scaffolder/ # Generate XML context files
-├── google-style-docs/   # Documentation skill
-├── copilot-agent-creator/ # Copilot agent development
+├── google-style-docs/   # Google Developer Documentation style
+├── agent-creator-copilot/  # Copilot agent development
+├── agent-creator-opencode/ # OpenCode CLI agent development
 ├── copilot-instruction-creator/ # Copilot customization
-├── copilot-prompt-creator/ # Copilot prompt creation
-├── dotnet-api-development/  # .NET API development
-├── react-nodejs-webapp/     # React/Node.js development
-└── postgresql-database/     # PostgreSQL database development
-
-docs/skills/             # Published skill documentation
-├── skill-creator/
-├── high-fidelity-context-scaffolder/
-├── google-style-docs/
-├── copilot-agent-creator/
-├── copilot-instruction-creator/
-├── copilot-prompt-creator/
-├── dotnet-api-development/
-├── react-nodejs-webapp/
-└── postgresql-database/
+├── copilot-prompt-creator/  # Copilot prompt creation
+├── git-commit-messages/     # Git commit message conventions
+├── docker-image-management/ # Docker image workflows
+└── mkdocs-site-management/  # MkDocs documentation sites
 ```

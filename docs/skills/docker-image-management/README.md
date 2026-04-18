@@ -4,12 +4,14 @@ This skill provides comprehensive guidance and tools for working with Docker con
 
 ## Files in This Skill
 
-- **`SKILL.md`** - Main skill documentation with detailed instructions and best practices
-- **`dockerfile-templates.md`** - Ready-to-use Dockerfile templates for different languages and frameworks
-- **`docker-compose-examples.yml`** - Sample docker-compose configurations for various application architectures
-- **`dockerignore-template`** - Comprehensive .dockerignore templates for different project types
-- **`docker-manage.sh`** - Bash script for common Docker operations
-- **`README.md`** - This file with overview and quick start guide
+- **`SKILL.md`** — Core skill guide: decision table, principles, standard workflow, and debugging checklist
+- **`references/build.md`** — Dockerfile instructions, multi-stage builds, BuildKit mounts, build cache, secrets, base image selection
+- **`references/run.md`** — `docker run` options, networking, storage mounts, resource constraints, security capabilities, lifecycle
+- **`references/registry.md`** — Tagging strategy, authentication, push/pull, Docker Hub, private registries, Docker Scout scanning
+- **`references/dockerfile-templates.md`** — Ready-to-use Dockerfile templates for Node.js, Python, Go, and other runtimes
+- **`references/docker-compose-examples.yml`** — Sample docker-compose configurations for multi-container architectures
+- **`references/dockerignore-template`** — Language-specific `.dockerignore` patterns
+- **`scripts/docker-manage.sh`** — Bash helper script for common Docker operations
 
 ## Quick Start
 
