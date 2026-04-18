@@ -2,30 +2,20 @@
 name: Performance
 description: Optimize application performance across backend, frontend, and database layers
 argument-hint: Describe the performance issue or optimization goal
-tools:
-  - semantic_search
-  - grep_search
-  - file_search
-  - read_file
-  - list_dir
-  - replace_string_in_file
-  - multi_replace_string_in_file
-  - get_errors
-  - runSubagent
-model: GPT-4o
-infer: true
+tools: ["read", "edit", "search", "agent"]
+model: gpt-4o
 target: vscode
 handoffs:
   - label: Optimize Database Schema
-    agent: database
+    agent: database-postgres-ef
     prompt: Optimize the database schema and queries based on the performance analysis above.
     send: false
   - label: Review API Performance
-    agent: api
+    agent: api-dotnet
     prompt: Optimize the API endpoints based on the performance bottlenecks identified above.
     send: false
   - label: Optimize Frontend Performance
-    agent: frontend
+    agent: uxui-nodejs
     prompt: Improve frontend performance based on the analysis above, focusing on bundle size and rendering.
     send: false
   - label: Research Performance Solutions
