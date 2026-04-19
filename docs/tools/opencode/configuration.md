@@ -1241,7 +1241,7 @@ This guide includes complete agent descriptions, usage examples, and advanced cu
 
 - **[Sample Configurations](samples.md)** - Real-world MCP server examples
 - **[OpenCode Overview](index.md)** - Feature overview and use cases
-- **[Agent Frontmatter Reference](../../skills/agent-creator-copilot/references/frontmatter-reference.md)** - VS Code custom agent configuration guide
+- **[Agent Frontmatter Reference](https://github.com/CowboyLogic/ai-dev/blob/main/skills/agent-creator-copilot/references/frontmatter-reference.md)** - VS Code custom agent configuration guide
 
 ---
 

@@ -56,15 +56,19 @@ ai-dev/
 ├── .agents-output/          # Temporary agent output — gitignored, never committed
 ├── .github/
 │   ├── agents/              # Runtime agent scratch space — gitignored
-│   ├── skills/              # Authoritative skill definitions (SKILL.md + README)
 │   ├── workflows/           # GitHub Actions CI/CD (deploy-docs.yml)
 │   ├── ISSUE_TEMPLATE/      # Bug report & feature request templates
 │   └── PULL_REQUEST_TEMPLATE.md
 ├── .vscode/
 │   └── settings.json        # VS Code workspace settings
+├── agents/                  # Installable agent definitions (GitHub CLI discoverable)
+│   ├── matrix-topology/     # Matrix Topology multi-agent system
+│   └── *.agent.md           # Domain specialist agents
+├── skills/                  # Installable skill definitions (GitHub CLI discoverable)
+│   └── <skill-name>/        # Each skill: SKILL.md + README + references/
 ├── docs/                    # MkDocs source — PUBLICATION ONLY, not directives
-│   ├── agents/              # Agent definition guides (published prose)
-│   ├── skills/              # Skill guides mirrored from .github/skills/
+│   ├── agents/              # Agent catalog pages (links to agents/ at root)
+│   ├── skills/              # Skills catalog page (links to skills/ at root)
 │   ├── tools/               # Claude Code, OpenCode, VS Code configuration guides
 │   └── mcp/                 # MCP server documentation
 ├── agent-output/            # Legacy output folder — gitignored
@@ -81,8 +85,9 @@ ai-dev/
 
 ## Skill Definitions
 
-Authoritative skill definitions live in `.github/skills/<skill-name>/`. Each
-follows this structure:
+Authoritative skill definitions live in `skills/<skill-name>/` at the repository root.
+This location makes them discoverable and installable via the GitHub CLI. Each follows
+this structure:
 
 ```text
 skill-name/
@@ -92,9 +97,9 @@ skill-name/
 └── Examples/      # Templates and code samples
 ```
 
-Skills are **mirrored** (not authoritative) in `docs/skills/` for publication.
-When editing a skill, always edit the `.github/skills/` source, then update the
-mirror in `docs/skills/` if the content changes.
+`docs/skills/` contains only a lightweight catalog page that describes each skill
+and links to the GitHub repo. It is **not** the authoritative source and does not
+embed skill content.
 
 ---
 
@@ -129,9 +134,9 @@ mirror in `docs/skills/` if the content changes.
 
 ### Adding a new skill
 
-1. Create `.github/skills/<name>/` with at minimum `SKILL.md` (YAML frontmatter required).
-2. Mirror the content to `docs/skills/<name>/`.
-3. Add all new pages to `mkdocs.yml` under the Skills nav section.
+1. Create `skills/<name>/` at the repo root with at minimum `SKILL.md` (YAML frontmatter required).
+2. Update the `docs/skills/index.md` catalog with a description and GitHub link for the new skill.
+3. No `mkdocs.yml` nav changes are needed — the catalog page is already in the nav.
 
 ---
 

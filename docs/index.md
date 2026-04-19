@@ -20,8 +20,8 @@ This repository complements official docs with **ready-to-use configurations, in
 
 ## What's Inside
 
-- **[Agents](agents/README.md)** — Specialized AI agent definitions for development tasks (API, architecture, security, testing, and more).
-- **[Skills](skills/README.md)** — Structured instruction sets that teach AI agents domain-specific tasks.
+- **[Agents](agents/index.md)** — Specialized AI agent definitions for development tasks (API, architecture, security, testing, and more).
+- **[Skills](skills/index.md)** — Structured instruction sets that teach AI agents domain-specific tasks.
 - **[Tools](tools/index.md)** — Configurations and guides for Claude Code, OpenCode CLI, and VS Code.
 - **[MCP Servers](mcp/overview.md)** — Working examples for Model Context Protocol server integrations.
 - **[Contributing](contributing.md)** — How to contribute configurations, examples, and documentation.
@@ -32,6 +32,6 @@ This repository complements official docs with **ready-to-use configurations, in
 - **Claude Code Users:** See the [VertexAI Configuration Guide](tools/claudecode/claudecode-vertexai.md) for enterprise Google Cloud integration.
 - **OpenCode CLI Users:** See the [OpenCode Overview](tools/opencode/index.md) and [Configuration Guide](tools/opencode/configuration.md).
 - **VS Code Users:** See the [VS Code Agent Guide](tools/vscode/README.md) and [Quick Start](tools/vscode/quick-start.md).
-- **Learning Best Practices:** Explore the [Skills](skills/README.md) section and [Frontmatter Reference](skills/agent-creator-copilot/references/frontmatter-reference.md).
+- **Learning Best Practices:** Explore the [Skills](skills/index.md) section and [Frontmatter Reference](https://github.com/CowboyLogic/ai-dev/blob/main/skills/agent-creator-copilot/references/frontmatter-reference.md).
 
 Learn more on the [About](about.md) page.

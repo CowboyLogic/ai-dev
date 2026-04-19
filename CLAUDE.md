@@ -52,14 +52,21 @@ This repository uses a **three-layer XML directive system** in `.agents/`:
 
 All publishable content lives in `docs/`, organized into sections managed by `mkdocs.yml` navigation. Key sections:
 
-- `docs/agents/` — 16 specialized agent definitions (API, architecture, security, testing, DevOps, etc.)
-- `docs/skills/` — Domain-specific skill instruction sets
+- `docs/agents/` — Agent catalog pages that describe agents and link to the GitHub repo
+- `docs/skills/` — Skills catalog page that describes skills and links to the GitHub repo
 - `docs/tools/` — OpenCode CLI, Claude Code, and VS Code/Copilot configuration guides
 - `docs/mcp/` — Model Context Protocol integration examples
 
-### Skills (`.github/skills/`)
+### Agents (`agents/`)
 
-Authoritative skill definitions live in `.github/skills/<skill-name>/`. Each skill follows a standard structure:
+Installable agent definitions live at the root in `agents/`. Discoverable by the GitHub CLI.
+
+- `agents/matrix-topology/` — Matrix Topology multi-agent system files
+- `agents/*.agent.md` — Domain specialist agent definitions
+
+### Skills (`skills/`)
+
+Installable skill definitions live at the root in `skills/<skill-name>/`. Discoverable by the GitHub CLI. Each skill follows a standard structure:
 
 ```
 skill-name/
@@ -68,8 +75,6 @@ skill-name/
 ├── QUICKREF.md    # Quick reference
 └── Examples/      # Templates, code samples
 ```
-
-Skills are also published to `docs/skills/` for the documentation site.
 
 ### Configuration Files
 
@@ -80,6 +85,6 @@ Skills are also published to `docs/skills/` for the documentation site.
 ## When Editing
 
 - **Adding/modifying content pages:** Edit files in `docs/`, update `mkdocs.yml` nav if adding new pages.
-- **Adding a new skill:** Create in `.github/skills/<name>/` with SKILL.md (YAML frontmatter required), then mirror to `docs/skills/<name>/` and add to `mkdocs.yml` nav.
-- **Changing repo structure:** Update `.agents/AGENTS.xml` to reflect new paths.
-- **Update AGENTS.xml only** when repo structure changes or file path references become outdated — not for content-only changes in `docs/`.
+- **Adding a new skill:** Create `skills/<name>/` at the repo root with SKILL.md (YAML frontmatter required), then add an entry to `docs/skills/index.md`.
+- **Adding a new agent:** Create the `.agent.md` file in `agents/` (or `agents/matrix-topology/`), then update `docs/agents/index.md`.
+- **Changing repo structure:** Update `AGENTS.md` and `CLAUDE.md` to reflect new paths.

@@ -42,7 +42,7 @@ This repository emphasizes **examples over explanations**. We provide working co
 
 ### Agents
 
-**[Agents](agents/README.md)** — Specialized AI agent definitions for various development tasks:
+**[Agents](agents/index.md)** — Specialized AI agent definitions for various development tasks:
 
 - API design and .NET development
 - Architecture and cloud platforms (GCP, AWS, Azure)
@@ -52,7 +52,7 @@ This repository emphasizes **examples over explanations**. We provide working co
 
 ### Skills
 
-**[Skills](skills/README.md)** — Domain-specific instruction sets teaching AI agents specialized capabilities:
+**[Skills](skills/index.md)** — Domain-specific instruction sets teaching AI agents specialized capabilities:
 
 - Programming languages and frameworks (.NET, React, Node.js, PostgreSQL)
 - Documentation (Google Style Docs)

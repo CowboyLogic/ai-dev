@@ -10,8 +10,8 @@ Practical configurations and working examples for AI-powered development tools. 
 
 **[📚 Full Documentation Site](https://cowboylogic.github.io/ai-dev)**
 
-- **[Agents](docs/agents/README.md)** — Specialized AI agent definitions (API, architecture, security, testing, DevOps, cloud, database, documentation)
-- **[Skills](docs/skills/README.md)** — Domain-specific instruction sets teaching AI agents specialized tasks
+- **[Agents](agents/)** — Installable AI agent definitions (Matrix Topology + domain specialists), discoverable via GitHub CLI
+- **[Skills](skills/)** — Installable domain-specific instruction sets, discoverable via GitHub CLI
 - **[Tools](docs/tools/index.md)** — Claude Code, OpenCode CLI, and VS Code configurations with examples
 - **[MCP Servers](docs/mcp/overview.md)** — Model Context Protocol integration examples
 
@@ -44,13 +44,14 @@ Practical configurations and working examples for AI-powered development tools. 
 
 ```
 ai-dev/
-├── .agents/                    # XML directive system (high-fidelity context)
-│   ├── AGENTS.xml              # Primary repository directives
-│   ├── manifest.xml            # Agent configuration loader
-│   └── ARCHITECTURE.xml        # Technical stack and patterns
-├── docs/                       # MkDocs documentation source
-│   ├── agents/                 # Agent configuration guides
-│   ├── skills/                 # Domain-specific instruction sets
+├── agents/                     # Installable agent definitions (GitHub CLI discoverable)
+│   ├── matrix-topology/        # Matrix Topology multi-agent system
+│   └── *.agent.md              # Domain specialist agents
+├── skills/                     # Installable skill definitions (GitHub CLI discoverable)
+│   └── <skill-name>/           # Each skill: SKILL.md + README + references/
+├── docs/                       # MkDocs documentation source (catalog & guides only)
+│   ├── agents/                 # Agent catalog pages
+│   ├── skills/                 # Skills catalog page
 │   ├── tools/                  # Claude Code, OpenCode, & VS Code guides
 │   └── mcp/                    # MCP server documentation
 ├── agent-output/               # Temporary agent output (gitignored)
