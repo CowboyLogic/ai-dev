@@ -5,7 +5,8 @@
 
 OpenCode's share feature creates public links to conversations for collaboration or getting help.
 
-> **Warning:** Shared conversations are publicly accessible to anyone with the link.
+> [!WARNING]
+> Shared conversations are publicly accessible to anyone with the link.
 
 ---
 

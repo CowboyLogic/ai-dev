@@ -176,6 +176,14 @@ nav:
       - MkDocs Site Management:
           - Overview: skills/mkdocs-site-management/README.md
           - Main Skill Guide: skills/mkdocs-site-management/SKILL.md
+      - Markdownlint Validator:
+          - Overview: skills/markdownlint-validator/README.md
+          - Main Skill Guide: skills/markdownlint-validator/SKILL.md
+          - References:
+              - Rules Reference: skills/markdownlint-validator/references/rules.md
+              - Configuration Reference: skills/markdownlint-validator/references/config.md
+          - Scripts:
+              - Validate Script: skills/markdownlint-validator/scripts/validate.sh
   - Tools:
       - Overview: tools/index.md
       - OpenCode:

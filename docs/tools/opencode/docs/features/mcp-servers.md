@@ -5,7 +5,8 @@
 
 Add external tools to OpenCode using the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/). OpenCode supports both local and remote MCP servers.
 
-> **Tip:** MCP servers add to your context window. Be selective — servers like the GitHub MCP server can easily exceed context limits.
+> [!TIP]
+> MCP servers add to your context window. Be selective — servers like the GitHub MCP server can easily exceed context limits.
 
 ---
 
