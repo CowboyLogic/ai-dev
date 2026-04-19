@@ -1,0 +1,46 @@
+{
+  "_comment": "Source URLs for this skill's reference files. Run scripts/update-references.py to refresh.",
+  "index": "https://opencode.ai/docs/config",
+  "schema_urls": {
+    "main": "https://opencode.ai/config.json",
+    "tui": "https://opencode.ai/tui.json"
+  },
+  "references": {
+    "references/providers.md": {
+      "urls": ["https://opencode.ai/docs/providers"],
+      "covers": "Provider configuration, model syntax, authentication, Anthropic/OpenAI/Bedrock/Vertex/Ollama setup, apiKey format, provider options"
+    },
+    "references/mcp.md": {
+      "urls": ["https://opencode.ai/docs/mcp-servers"],
+      "covers": "mcp config structure, local/remote transport types, OAuth, environment variables, CLI commands"
+    },
+    "references/agents.md": {
+      "urls": ["https://opencode.ai/docs/agents"],
+      "covers": "Built-in agents (build/plan/general/explore), custom agent fields, markdown file format, bash glob permissions"
+    },
+    "references/permissions.md": {
+      "urls": [
+        "https://opencode.ai/docs/config",
+        "https://opencode.ai/config.json"
+      ],
+      "covers": "Permission actions (ask/allow/deny), all tool types, bash glob patterns, global vs per-agent permissions"
+    },
+    "references/tui.md": {
+      "urls": [
+        "https://opencode.ai/tui.json",
+        "https://opencode.ai/docs/keybinds",
+        "https://opencode.ai/docs/themes"
+      ],
+      "covers": "tui.json structure, all keybind actions, theme configuration, mouse/scroll/diff settings"
+    },
+    "references/config-schema.md": {
+      "urls": [
+        "https://opencode.ai/docs/config",
+        "https://opencode.ai/config.json",
+        "https://opencode.ai/docs/commands",
+        "https://opencode.ai/docs/formatters"
+      ],
+      "covers": "Full opencode.json schema — all top-level fields, server, commands, instructions, formatters, compaction, skills, plugins, watcher, managed settings"
+    }
+  }
+}

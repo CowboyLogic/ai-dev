@@ -1,0 +1,53 @@
+{
+  "_comment": "Source URLs for this skill's reference files. Run scripts/update-references.py to refresh.",
+  "index": "https://code.claude.com/docs/llms.txt",
+  "references": {
+    "references/settings-schema.md": {
+      "url": "https://code.claude.com/docs/en/settings.md",
+      "covers": "Complete settings.json schema — all top-level keys, permission settings, sandbox settings, worktree settings, global config keys, attribution settings",
+      "sections_to_extract": [
+        "Available settings (full table)",
+        "Global config settings",
+        "Worktree settings",
+        "Permission settings",
+        "Permission rule syntax",
+        "Sandbox settings",
+        "Attribution settings"
+      ]
+    },
+    "references/permissions.md": {
+      "url": "https://code.claude.com/docs/en/permissions.md",
+      "covers": "Permission rule syntax, permission modes, tool-specific rules (Bash wildcards, Read/Edit paths, WebFetch domains, MCP, Agent), working directories, managed settings",
+      "sections_to_extract": [
+        "Permission system",
+        "Permission modes",
+        "Permission rule syntax",
+        "Tool-specific permission rules",
+        "Working directories",
+        "Managed settings"
+      ]
+    },
+    "references/hooks.md": {
+      "url": "https://code.claude.com/docs/en/hooks.md",
+      "covers": "All hook events, matcher patterns, handler types (command/http/prompt/agent), JSON input/output formats, exit codes, event-specific examples",
+      "sections_to_extract": [
+        "All hook events",
+        "Matcher patterns",
+        "Hook handler types and fields",
+        "JSON input/output",
+        "Exit codes",
+        "Event-specific examples"
+      ]
+    },
+    "references/mcp.md": {
+      "url": "https://code.claude.com/docs/en/mcp.md",
+      "covers": "MCP server configuration format, transport types (stdio/sse/http), managed MCP configuration, mcpServers fields",
+      "sections_to_extract": [
+        "mcpServers configuration",
+        "Transport types",
+        "Managed MCP configuration",
+        "MCP permission rules"
+      ]
+    }
+  }
+}

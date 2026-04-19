@@ -169,6 +169,52 @@ nav:
       - MkDocs Site Management:
           - Overview: skills/mkdocs-site-management/README.md
           - Main Skill Guide: skills/mkdocs-site-management/SKILL.md
+      - Claude Code Settings Manager:
+          - Main Skill Guide: skills/client-config-claudecode/SKILL.md
+          - References:
+              - Settings Schema: skills/client-config-claudecode/references/settings-schema.md
+              - Permissions: skills/client-config-claudecode/references/permissions.md
+              - Hooks: skills/client-config-claudecode/references/hooks.md
+              - MCP Servers: skills/client-config-claudecode/references/mcp.md
+          - Scripts:
+              - Show Settings: skills/client-config-claudecode/scripts/show-settings.py
+              - Validate Settings: skills/client-config-claudecode/scripts/validate-settings.py
+              - Update References: skills/client-config-claudecode/scripts/update-references.py
+      - Copilot CLI Configuration Manager:
+          - Main Skill Guide: skills/client-config-copilotcli/SKILL.md
+          - References:
+              - Config Schema: skills/client-config-copilotcli/references/config-schema.md
+              - Hooks: skills/client-config-copilotcli/references/hooks.md
+              - MCP Servers: skills/client-config-copilotcli/references/mcp.md
+              - Skills: skills/client-config-copilotcli/references/skills.md
+              - Instructions: skills/client-config-copilotcli/references/instructions.md
+          - Scripts:
+              - Show Config: skills/client-config-copilotcli/scripts/show-config.py
+              - Update References: skills/client-config-copilotcli/scripts/update-references.py
+      - Gemini CLI Configuration Manager:
+          - Main Skill Guide: skills/client-config-geminicli/SKILL.md
+          - References:
+              - Settings Schema: skills/client-config-geminicli/references/settings-schema.md
+              - Hooks: skills/client-config-geminicli/references/hooks.md
+              - MCP Servers: skills/client-config-geminicli/references/mcp.md
+              - Extensions: skills/client-config-geminicli/references/extensions.md
+              - Commands: skills/client-config-geminicli/references/commands.md
+              - Context: skills/client-config-geminicli/references/context.md
+          - Scripts:
+              - Show Config: skills/client-config-geminicli/scripts/show-config.py
+              - Update References: skills/client-config-geminicli/scripts/update-references.py
+      - OpenCode Configuration Manager:
+          - Main Skill Guide: skills/client-config-opencode/SKILL.md
+          - References:
+              - Config Schema: skills/client-config-opencode/references/config-schema.md
+              - MCP Servers: skills/client-config-opencode/references/mcp.md
+              - Agents: skills/client-config-opencode/references/agents.md
+              - Permissions: skills/client-config-opencode/references/permissions.md
+              - Providers: skills/client-config-opencode/references/providers.md
+              - TUI: skills/client-config-opencode/references/tui.md
+          - Scripts:
+              - Show Config: skills/client-config-opencode/scripts/show-config.py
+              - Update References: skills/client-config-opencode/scripts/update-references.py
       - Markdownlint Validator:
           - Overview: skills/markdownlint-validator/README.md
           - Main Skill Guide: skills/markdownlint-validator/SKILL.md

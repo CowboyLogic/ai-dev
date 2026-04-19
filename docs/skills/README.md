@@ -32,6 +32,13 @@ Agent Skills are structured collections of instructions, templates, examples, an
 
 - **[OpenCode Agent Creator](agent-creator-opencode/README.md)** - Create custom agents for the OpenCode CLI
 
+### AI Client Configuration Skills
+
+- **[Claude Code Settings Manager](client-config-claudecode/SKILL.md)** - Manage and maintain `~/.claude/settings.json` and all Claude Code configuration files
+- **[Copilot CLI Configuration Manager](client-config-copilotcli/SKILL.md)** - Manage GitHub Copilot CLI configuration files including `config.json`, MCP servers, hooks, and custom instructions
+- **[Gemini CLI Configuration Manager](client-config-geminicli/SKILL.md)** - Manage Gemini CLI configuration files including `settings.json`, MCP servers, hooks, extensions, and custom commands
+- **[OpenCode Configuration Manager](client-config-opencode/SKILL.md)** - Manage opencode configuration files including `opencode.json`, providers, agents, MCP servers, and permissions
+
 ## Skill Structure
 
 Each skill directory typically contains:
@@ -80,5 +87,9 @@ docs/skills/             # Skill definitions and documentation
 ├── copilot-prompt-creator/  # Copilot prompt creation
 ├── git-commit-messages/     # Git commit message conventions
 ├── docker-image-management/ # Docker image workflows
-└── mkdocs-site-management/  # MkDocs documentation sites
+├── mkdocs-site-management/  # MkDocs documentation sites
+├── client-config-claudecode/ # Claude Code settings management
+├── client-config-copilotcli/ # GitHub Copilot CLI configuration
+├── client-config-geminicli/  # Gemini CLI configuration
+└── client-config-opencode/   # OpenCode configuration management
 ```

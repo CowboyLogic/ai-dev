@@ -1,0 +1,49 @@
+{
+  "_comment": "Source URLs for this skill's reference files. Run scripts/update-references.py to refresh.",
+  "index": "https://geminicli.com/docs/reference/configuration",
+  "references": {
+    "references/settings-schema.md": {
+      "urls": [
+        "https://geminicli.com/docs/reference/configuration",
+        "https://geminicli.com/docs/cli/settings/",
+        "https://geminicli.com/docs/cli/themes/"
+      ],
+      "covers": "Full settings.json schema — general, ui, model, tools, security, context, mcpServers, advanced sections"
+    },
+    "references/mcp.md": {
+      "urls": [
+        "https://geminicli.com/docs/cli/tutorials/mcp-setup/",
+        "https://geminicli.com/docs/tools/mcp-server/"
+      ],
+      "covers": "MCP server config — command/url/httpUrl transports, env vars, tool filtering, common servers"
+    },
+    "references/hooks.md": {
+      "urls": [
+        "https://geminicli.com/docs/hooks/",
+        "https://geminicli.com/docs/hooks/reference/"
+      ],
+      "covers": "Hook events (BeforeTool/AfterTool/BeforeAgent/AfterAgent/BeforeModel/lifecycle), handler fields, stdin/stdout protocol, exit codes"
+    },
+    "references/context.md": {
+      "urls": [
+        "https://geminicli.com/docs/cli/gemini-md/",
+        "https://geminicli.com/docs/cli/tutorials/memory-management/",
+        "https://geminicli.com/docs/cli/gemini-ignore/"
+      ],
+      "covers": "GEMINI.md discovery, @ import syntax, memory commands, .geminiignore, context settings fields"
+    },
+    "references/commands.md": {
+      "urls": [
+        "https://geminicli.com/docs/cli/custom-commands/"
+      ],
+      "covers": "Custom slash commands — TOML format, naming, {{args}}, !{shell}, @{file} injection, reload"
+    },
+    "references/extensions.md": {
+      "urls": [
+        "https://geminicli.com/docs/extensions/",
+        "https://geminicli.com/docs/extensions/reference/"
+      ],
+      "covers": "Extension manifest (gemini-extension.json), fields, hooks.json, variable substitution, settings config, security allowlists"
+    }
+  }
+}

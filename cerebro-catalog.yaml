@@ -8,3 +8,27 @@ artifacts:
     type: skill
     source: docs/skills/skill-creator
     tags: [skills, claude-code]
+  - id: client-config-claudecode
+    name: Claude Code Settings Manager
+    description: Manage and maintain ~/.claude/settings.json and Claude Code configuration files
+    type: skill
+    source: docs/skills/client-config-claudecode
+    tags: [skills, claude-code, configuration]
+  - id: client-config-copilotcli
+    name: Copilot CLI Configuration Manager
+    description: Manage GitHub Copilot CLI configuration files including config.json, MCP servers, hooks, and custom instructions
+    type: skill
+    source: docs/skills/client-config-copilotcli
+    tags: [skills, copilot, configuration]
+  - id: client-config-geminicli
+    name: Gemini CLI Configuration Manager
+    description: Manage Gemini CLI configuration files including settings.json, MCP servers, hooks, extensions, and custom commands
+    type: skill
+    source: docs/skills/client-config-geminicli
+    tags: [skills, gemini, configuration]
+  - id: client-config-opencode
+    name: OpenCode Configuration Manager
+    description: Manage opencode configuration files including opencode.json, providers, agents, MCP servers, and permissions
+    type: skill
+    source: docs/skills/client-config-opencode
+    tags: [skills, opencode, configuration]
