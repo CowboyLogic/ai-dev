@@ -2,23 +2,12 @@
 name: Testing Specialist
 description: Create comprehensive unit and integration tests for backend APIs and frontend components
 argument-hint: Describe the code or feature you want to test
-tools:
-  - semantic_search
-  - grep_search
-  - file_search
-  - read_file
-  - list_dir
-  - create_file
-  - replace_string_in_file
-  - multi_replace_string_in_file
-  - get_errors
-  - runSubagent
-model: GPT-4o
-infer: true
+tools: ["read", "edit", "search"]
+model: gpt-4o
 target: vscode
 handoffs:
   - label: Implement Code to Test
-    agent: api
+    agent: api-dotnet
     prompt: Implement the API endpoints or business logic that needs testing based on the test specifications above.
     send: false
   - label: Review Test Coverage

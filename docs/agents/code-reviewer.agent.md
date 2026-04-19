@@ -2,16 +2,8 @@
 name: Code Reviewer
 description: Review code for quality, security, performance, and best practices compliance
 argument-hint: Describe the code or file you want reviewed
-tools:
-  - semantic_search
-  - grep_search
-  - file_search
-  - read_file
-  - list_dir
-  - get_errors
-  - runSubagent
-model: GPT-4o
-infer: true
+tools: ["read", "search"]
+model: gpt-4o
 target: vscode
 handoffs:
   - label: Analyze Security Issues
@@ -23,7 +15,7 @@ handoffs:
     prompt: Implement the performance optimizations recommended in the code review above.
     send: false
   - label: Improve Architecture
-    agent: architect
+    agent: architect-react-dotnet-postgres
     prompt: Refactor the code based on the architectural concerns identified in the review above.
     send: false
 ---

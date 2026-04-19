@@ -2,14 +2,12 @@
 name: Plan
 description: Create detailed implementation plans by coordinating with architect for design and specialized agents for execution
 argument-hint: Describe the feature or functionality you want to implement
-tools:
-  ['agent']
-model: Claude Sonnet 4.5
-infer: true
+tools: ["read", "search", "agent"]
+model: claude-sonnet-4-5
 target: vscode
 handoffs:
   - label: Design Architecture
-    agent: architect
+    agent: architect-react-dotnet-postgres
     prompt: Design the complete architecture for the feature described above. Include database schema, API endpoints, frontend components, and all integration points.
     send: false
   - label: Create Plan Document
@@ -21,15 +19,15 @@ handoffs:
     prompt: Update the implementation plan document at `/agents-output/plan/[feature-name].md` to reflect the progress described above. Mark completed tasks with checkboxes and add implementation notes.
     send: false
   - label: Implement Database
-    agent: database
+    agent: database-postgres-ef
     prompt: Implement the database schema and migration based on the implementation plan above.
     send: false
   - label: Implement API
-    agent: api
+    agent: api-dotnet
     prompt: Implement the API endpoints, controllers, and DTOs based on the implementation plan above.
     send: false
   - label: Implement Frontend
-    agent: frontend
+    agent: uxui-nodejs
     prompt: Implement the frontend components and UI based on the implementation plan above.
     send: false
   - label: Create Tests

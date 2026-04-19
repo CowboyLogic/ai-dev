@@ -208,4 +208,5 @@ permission:
 Only analyze code and suggest changes.
 ```
 
-> **Tip:** Use pattern matching for commands with arguments. `"grep *"` allows `grep pattern file.txt`, while `"grep"` alone would block it when arguments are passed.
+> [!TIP]
+> Use pattern matching for commands with arguments. `"grep *"` allows `grep pattern file.txt`, while `"grep"` alone would block it when arguments are passed.

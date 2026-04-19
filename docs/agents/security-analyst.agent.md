@@ -2,20 +2,12 @@
 name: Security Analyst
 description: Analyze security vulnerabilities, threats, and compliance across the application stack
 argument-hint: Describe the security concern or component to analyze
-tools:
-  - semantic_search
-  - grep_search
-  - file_search
-  - read_file
-  - list_dir
-  - get_errors
-  - runSubagent
-model: GPT-4o
-infer: true
+tools: ["read", "search"]
+model: gpt-4o
 target: vscode
 handoffs:
   - label: Implement Security Fixes
-    agent: api
+    agent: api-dotnet
     prompt: Implement the security fixes and mitigations recommended in the security analysis above.
     send: false
   - label: Review Security Implementation

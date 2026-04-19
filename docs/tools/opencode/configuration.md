@@ -1243,7 +1243,7 @@ This guide includes complete agent descriptions, usage examples, and advanced cu
 
 - **[Sample Configurations](samples.md)** - Real-world MCP server examples
 - **[OpenCode Overview](index.md)** - Feature overview and use cases
-- **[Agent Configuration](../../agents/configuration.md)** - General agent configuration guide
+- **[Agent Frontmatter Reference](../../skills/agent-creator-copilot/references/frontmatter-reference.md)** - VS Code custom agent configuration guide
 
 ---
 

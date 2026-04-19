@@ -86,22 +86,33 @@ nav:
   - Home: index.md
   - Agents:
       - Overview: agents/README.md
-      - Agent Configuration: agents/configuration.md
-      - API .NET Agent: agents/api-dotnet.agent.md
-      - Architect React .NET Postgres: agents/architect-react-dotnet-postgres.agent.md
-      - Cloud GCP Agent: agents/cloud-gcp.agent.md
-      - Code Reviewer Agent: agents/code-reviewer.agent.md
-      - Database Postgres EF Agent: agents/database-postgres-ef.agent.md
-      - DevOps Agent: agents/devops.agent.md
-      - Documentation Agent: agents/documentation.agent.md
-      - Google Style Docs Agent: agents/google-style-docs.agent.md
-      - Inquisitive Agent: agents/inquisitive-agent.md
-      - Performance Agent: agents/performance.agent.md
-      - Plan Agent: agents/plan.agent.md
-      - Security Analyst Agent: agents/security-analyst.agent.md
-      - Testing Specialist Agent: agents/testing-specialist.agent.md
-      - UX/UI Node.js Agent: agents/uxui-nodejs.md
-      - Web Researcher Agent: agents/web-researcher.agent.md
+      - Matrix Topology:
+          - Overview: agents/matrix-topology/README.md
+          - Conductor Guide: agents/matrix-topology/CONDUCTOR.md
+          - Neo: agents/matrix-topology/neo.agent.md
+          - The Architect: agents/matrix-topology/the-architect.agent.md
+          - Oracle: agents/matrix-topology/oracle.agent.md
+          - Morpheus: agents/matrix-topology/morpheus.agent.md
+          - Trinity: agents/matrix-topology/trinity.agent.md
+          - Smith: agents/matrix-topology/smith.agent.md
+          - Ghost: agents/matrix-topology/ghost.agent.md
+          - Apoc: agents/matrix-topology/apoc.agent.md
+          - Tank: agents/matrix-topology/tank.agent.md
+          - Niobe: agents/matrix-topology/niobe.agent.md
+          - Switch: agents/matrix-topology/switch.agent.md
+      - Domain Specialists:
+          - API (.NET): agents/api-dotnet.agent.md
+          - Architect (React/.NET/PostgreSQL): agents/architect-react-dotnet-postgres.agent.md
+          - Cloud (GCP): agents/cloud-gcp.agent.md
+          - Code Reviewer: agents/code-reviewer.agent.md
+          - Database (PostgreSQL + EF): agents/database-postgres-ef.agent.md
+          - DevOps: agents/devops.agent.md
+          - Documentation: agents/documentation.agent.md
+          - Performance: agents/performance.agent.md
+          - Plan: agents/plan.agent.md
+          - Security Analyst: agents/security-analyst.agent.md
+          - Testing Specialist: agents/testing-specialist.agent.md
+          - UX/UI (React): agents/uxui-nodejs.agent.md
   - Context & Baselines:
       - Overview: context/index.md
       - LLM Baseline Behaviors: context/LLM-BaselineBehaviors.md
@@ -111,13 +122,6 @@ nav:
       - High-Fidelity Migration: context/high-fidelity-context-migration.md
   - Skills:
       - Overview: skills/README.md
-      - Skill Creator:
-          - Overview: skills/skill-creator/README.md
-          - Main Skill Guide: skills/skill-creator/SKILL.md
-          - Getting Started: skills/skill-creator/GETTING-STARTED.md
-          - Quick Reference: skills/skill-creator/QUICKREF.md
-          - Template: skills/skill-creator/skill-template.md
-          - Example Skill: skills/skill-creator/example-skill.md
       - High-Fidelity Context Scaffolder:
           - Overview: skills/high-fidelity-context-scaffolder/README.md
           - Main Skill Guide: skills/high-fidelity-context-scaffolder/SKILL.md
@@ -131,56 +135,55 @@ nav:
           - Main Skill Guide: skills/google-style-docs/SKILL.md
           - Quick Reference: skills/google-style-docs/QUICKREF.md
           - Example Guide: skills/google-style-docs/example-deployment-guide.md
-      - .NET API Development:
-          - Overview: skills/dotnet-api-development/README.md
-          - Main Skill Guide: skills/dotnet-api-development/SKILL.md
-      - ReactJS/NodeJS Web Apps:
-          - Overview: skills/react-nodejs-webapp/README.md
-      - PostgreSQL Database:
-          - Overview: skills/postgresql-database/README.md
       - Git Commit Messages:
           - Overview: skills/git-commit-messages/README.md
           - Main Skill Guide: skills/git-commit-messages/SKILL.md
           - Examples: skills/git-commit-messages/examples.md
           - VS Code Integration: skills/git-commit-messages/vscode-integration.md
-      - Amazon Web Services:
-          - Overview: skills/amazon-web-services/README.md
-          - Main Skill Guide: skills/amazon-web-services/SKILL.md
-      - Azure:
-          - Overview: skills/azure/README.md
-          - Main Skill Guide: skills/azure/SKILL.md
-      - Google Cloud Platform:
-          - Overview: skills/google-cloud-platform/README.md
-          - Main Skill Guide: skills/google-cloud-platform/SKILL.md
-      - Terraform GCP:
-          - Main Skill Guide: skills/terraform-gcp/SKILL.md
+      - OpenCode Agent Creator:
+          - Overview: skills/agent-creator-opencode/README.md
+          - Main Skill Guide: skills/agent-creator-opencode/SKILL.md
+          - References:
+              - Agent Configuration Reference: skills/agent-creator-opencode/references/agent-reference.md
       - Copilot Agent Creator:
-          - Overview: skills/copilot-agent-creator/README.md
-          - Main Skill Guide: skills/copilot-agent-creator/SKILL.md
-          - Example Extension: skills/copilot-agent-creator/example-extension.ts
-          - Example MCP Server: skills/copilot-agent-creator/example-mcp-server.ts
-          - Package.json Template: skills/copilot-agent-creator/package.json
-          - TypeScript Config: skills/copilot-agent-creator/tsconfig.json
+          - Overview: skills/agent-creator-copilot/README.md
+          - Main Skill Guide: skills/agent-creator-copilot/SKILL.md
+          - References:
+              - Frontmatter Reference: skills/agent-creator-copilot/references/frontmatter-reference.md
+              - Tools Reference: skills/agent-creator-copilot/references/tools-reference.md
+              - Prompt Writing Guide: skills/agent-creator-copilot/references/prompt-writing-guide.md
+              - Example - Workspace Agent: skills/agent-creator-copilot/references/workspace-agent-example.agent.md
+              - Example - User Profile Agent: skills/agent-creator-copilot/references/user-profile-agent-example.agent.md
+              - Example - Cloud Agent with MCP: skills/agent-creator-copilot/references/cloud-agent-with-mcp-example.agent.md
       - Copilot Instruction Creator:
           - Overview: skills/copilot-instruction-creator/README.md
           - Main Skill Guide: skills/copilot-instruction-creator/SKILL.md
-          - Example Repository Instructions: skills/copilot-instruction-creator/example-repository-instructions.md
-          - Example Path Instructions: skills/copilot-instruction-creator/example-path-instructions.md
+          - Example Repository Instructions: skills/copilot-instruction-creator/references/example-repository-instructions.md
+          - Example Path Instructions: skills/copilot-instruction-creator/references/example-path-instructions.md
       - Copilot Prompt Creator:
           - Overview: skills/copilot-prompt-creator/README.md
           - Main Skill Guide: skills/copilot-prompt-creator/SKILL.md
-      - Copilot Custom Instructions:
-          - Overview: skills/copilot-custom-instructions/README.md
       - Docker Image Management:
           - Overview: skills/docker-image-management/README.md
           - Main Skill Guide: skills/docker-image-management/SKILL.md
-          - Dockerfile Templates: skills/docker-image-management/dockerfile-templates.md
-          - Docker Compose Examples: skills/docker-image-management/docker-compose-examples.yml
-          - Docker Ignore Template: skills/docker-image-management/dockerignore-template
-          - Management Script: skills/docker-image-management/docker-manage.sh
+          - Build Reference: skills/docker-image-management/references/build.md
+          - Run Reference: skills/docker-image-management/references/run.md
+          - Registry Reference: skills/docker-image-management/references/registry.md
+          - Dockerfile Templates: skills/docker-image-management/references/dockerfile-templates.md
+          - Docker Compose Examples: skills/docker-image-management/references/docker-compose-examples.yml
+          - Docker Ignore Template: skills/docker-image-management/references/dockerignore-template
+          - Management Script: skills/docker-image-management/scripts/docker-manage.sh
       - MkDocs Site Management:
           - Overview: skills/mkdocs-site-management/README.md
           - Main Skill Guide: skills/mkdocs-site-management/SKILL.md
+      - Markdownlint Validator:
+          - Overview: skills/markdownlint-validator/README.md
+          - Main Skill Guide: skills/markdownlint-validator/SKILL.md
+          - References:
+              - Rules Reference: skills/markdownlint-validator/references/rules.md
+              - Configuration Reference: skills/markdownlint-validator/references/config.md
+          - Scripts:
+              - Validate Script: skills/markdownlint-validator/scripts/validate.sh
   - Tools:
       - Overview: tools/index.md
       - OpenCode:
@@ -290,7 +293,7 @@ nav:
       - Configuration: mcp/configuration.md
       - Sample Configs:
           - README: mcp/sample-configs/README.md
-  - Contributing: contributing.md
+  - Contributing: CONTRIBUTING.md
   - About: about.md
 
 # Extra CSS
