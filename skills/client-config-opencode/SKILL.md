@@ -1,6 +1,6 @@
 ---
 name: client-config-opencode
-description: Manage opencode configuration files including MCP servers, providers, agents, commands, and permissions. Use this skill whenever the user wants to view, edit, add, or understand any opencode setting: models, providers, MCP servers, agents, permissions, keybinds, themes, formatters, custom commands, or instructions. Trigger on: "configure opencode", "add provider", "set model", "add MCP server", "create agent", "configure permissions", "change theme", "add keybind", "show opencode config", or "add custom command".
+description: 'Manage opencode configuration files including MCP servers, providers, agents, commands, and permissions. Use this skill whenever the user wants to view, edit, add, or understand any opencode setting: models, providers, MCP servers, agents, permissions, keybinds, themes, formatters, custom commands, or instructions. Trigger on: "configure opencode", "add provider", "set model", "add MCP server", "create agent", "configure permissions", "change theme", "add keybind", "show opencode config", or "add custom command".'
 ---
 
 # opencode Configuration Manager

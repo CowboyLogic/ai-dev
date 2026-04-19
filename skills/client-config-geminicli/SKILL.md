@@ -1,6 +1,6 @@
 ---
 name: client-config-geminicli
-description: Manage Gemini CLI configuration files including settings, hooks, MCP servers, extensions, custom commands, themes, and trusted folders. Use this skill whenever the user wants to view, edit, add, or understand any Gemini CLI setting: models, tools, permissions, MCP servers, hooks, custom commands, themes, trusted folders, context/memory, or sandboxing. Trigger on: "configure gemini cli", "add MCP server", "set model", "create hook", "add custom command", "change theme", "trust folder", "show gemini config", "add trusted folder", "configure sandbox", or "set approval mode".
+description: 'Manage Gemini CLI configuration files including settings, hooks, MCP servers, extensions, custom commands, themes, and trusted folders. Use this skill whenever the user wants to view, edit, add, or understand any Gemini CLI setting: models, tools, permissions, MCP servers, hooks, custom commands, themes, trusted folders, context/memory, or sandboxing. Trigger on: "configure gemini cli", "add MCP server", "set model", "create hook", "add custom command", "change theme", "trust folder", "show gemini config", "add trusted folder", "configure sandbox", or "set approval mode".'
 ---
 
 # Gemini CLI Configuration Skill

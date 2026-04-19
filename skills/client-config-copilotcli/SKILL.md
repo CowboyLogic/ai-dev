@@ -1,6 +1,6 @@
 ---
 name: client-config-copilotcli
-description: Manage GitHub Copilot CLI configuration files including MCP servers, hooks, skills, and custom instructions. Use this skill whenever the user wants to view, edit, add, or understand any Copilot CLI setting: trusted folders, tool permissions, MCP servers, hooks, skills, BYOK models, authentication, or custom instructions. Trigger on: "add trusted folder", "allow tool", "configure MCP", "add hook", "create skill", "set model", "use my own API key", "add custom instructions", or "show my copilot config".
+description: 'Manage GitHub Copilot CLI configuration files including MCP servers, hooks, skills, and custom instructions. Use this skill whenever the user wants to view, edit, add, or understand any Copilot CLI setting: trusted folders, tool permissions, MCP servers, hooks, skills, BYOK models, authentication, or custom instructions. Trigger on: "add trusted folder", "allow tool", "configure MCP", "add hook", "create skill", "set model", "use my own API key", "add custom instructions", or "show my copilot config".'
 ---
 
 # GitHub Copilot CLI Configuration Manager
