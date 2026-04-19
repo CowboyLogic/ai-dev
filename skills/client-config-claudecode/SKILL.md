@@ -1,6 +1,6 @@
 ---
 name: client-config-claudecode
-description: Manage and maintain ~/.claude/settings.json and Claude Code configuration files. Use this skill whenever the user wants to view, edit, add, remove, or understand any Claude Code settings — permissions, hooks, MCP servers, environment variables, model settings, sandbox, auto mode, or any other settings.json field. Trigger on: "add permission", "allow tool", "deny tool", "configure hook", "add MCP server", "change model", "update settings", "show my settings", "what settings do I have", "set default mode", or any request touching ~/.claude/settings.json.
+description: Manage and maintain Claude Code configuration files and settings. Use this skill whenever the user wants to view, edit, add, remove, or understand any Claude Code settings — permissions, hooks, MCP servers, environment variables, model settings, sandbox, auto mode, or any other configuration field. Trigger on: "add permission", "allow tool", "deny tool", "configure hook", "add MCP server", "change model", "update settings", "show my settings", "what settings do I have", or "set default mode".
 ---
 
 # Claude Code Settings Manager
