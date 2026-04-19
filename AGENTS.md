@@ -64,7 +64,6 @@ ai-dev/
 │   └── settings.json        # VS Code workspace settings
 ├── docs/                    # MkDocs source — PUBLICATION ONLY, not directives
 │   ├── agents/              # Agent definition guides (published prose)
-│   ├── context/             # Behavioral baseline documents (published prose)
 │   ├── skills/              # Skill guides mirrored from .github/skills/
 │   ├── tools/               # Claude Code, OpenCode, VS Code configuration guides
 │   └── mcp/                 # MCP server documentation

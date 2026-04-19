@@ -40,14 +40,6 @@ This repository emphasizes **examples over explanations**. We provide working co
 
 ## What's Included
 
-### Behavioral Baselines
-
-**[Context & Baselines](context/index.md)** — The authoritative behavioral models and instruction files for AI assistants working in this repository. Includes:
-
-- **[LLM Baseline Behaviors](context/LLM-BaselineBehaviors.md)** - Foundational behavioral model
-- **[Baseline Behaviors v2.0](context/BaselineBehaviors-v2.0.md)** - XML-structured format for AI systems
-- **[Copilot Instructions](context/copilot-instructions.md)** - Repository-specific directives
-
 ### Agents
 
 **[Agents](agents/README.md)** — Specialized AI agent definitions for various development tasks:
@@ -119,14 +111,13 @@ This repository emphasizes **examples over explanations**. We provide working co
 
 ## Repository Structure
 
-```
+```text
 ai-dev/
 ├── docs/                             # MkDocs documentation source
 │   ├── index.md                     # Home page
 │   ├── about.md                     # This page
 │   ├── contributing.md              # Contributing guidelines
 │   ├── agents/                      # Agent configuration documentation
-│   ├── context/                     # Behavioral baselines and instructions
 │   ├── skills/                      # Domain-specific instruction sets
 │   ├── tools/                       # Tool configuration guides
 │   └── mcp/                         # MCP server documentation
@@ -160,7 +151,7 @@ ai-dev/
 
 ## Contributing
 
-Contributions welcome! See our **[Contributing Guide](CONTRIBUTING.md)** and GitHub's [Contributing to Projects](https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project) guide.
+Contributions welcome! See our **[Contributing Guide](contributing.md)** and GitHub's [Contributing to Projects](https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project) guide.
 
 **Contribute:**
 
@@ -205,4 +196,4 @@ This repository builds on:
 
 ---
 
-**Ready to get started?** Explore the **[Claude Code VertexAI Configuration](tools/claudecode/claudecode-vertexai.md)**, **[OpenCode Configuration](tools/opencode/index.md)**, or dive into the **[LLM Baseline Behaviors](context/LLM-BaselineBehaviors.md)**.
+**Ready to get started?** Explore the **[Claude Code VertexAI Configuration](tools/claudecode/claudecode-vertexai.md)** or the **[OpenCode Configuration](tools/opencode/index.md)**.

@@ -28,7 +28,7 @@ handoffs:
 
 **Specialization**: Primary agent for application performance analysis, optimization, profiling, and monitoring across full stack. This agent handles all performance-related work identified by other agents (especially Code Reviewer).
 
-**Foundation**: This agent extends [../context/LLM-BaselineBehaviors.md](../context/LLM-BaselineBehaviors.md) and [../context/copilot-instructions.md](../context/copilot-instructions.md). All baseline behaviors apply.
+**Foundation**: This agent extends the repository baseline behaviors defined in `AGENTS.md`. All baseline behaviors apply.
 
 ---
 
@@ -1118,7 +1118,7 @@ Use this agent when:
 
 ## Integration with Baseline Behaviors
 
-This agent follows all baseline behaviors from [../context/LLM-BaselineBehaviors.md](../context/LLM-BaselineBehaviors.md):
+This agent follows all baseline behaviors defined in `AGENTS.md`:
 
 - **Action-oriented**: Implements optimizations, not just suggestions
 - **Research-driven**: Analyzes query plans and profiling data

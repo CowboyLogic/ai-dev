@@ -11,7 +11,6 @@ Practical configurations and working examples for AI-powered development tools. 
 **[📚 Full Documentation Site](https://cowboylogic.github.io/ai-dev)**
 
 - **[Agents](docs/agents/README.md)** — Specialized AI agent definitions (API, architecture, security, testing, DevOps, cloud, database, documentation)
-- **[Context & Baselines](docs/context/index.md)** — Behavioral baselines and instruction files governing AI assistant behavior
 - **[Skills](docs/skills/README.md)** — Domain-specific instruction sets teaching AI agents specialized tasks
 - **[Tools](docs/tools/index.md)** — Claude Code, OpenCode CLI, and VS Code configurations with examples
 - **[MCP Servers](docs/mcp/overview.md)** — Model Context Protocol integration examples
@@ -21,8 +20,7 @@ Practical configurations and working examples for AI-powered development tools. 
 ### AI Assistants
 
 1. **Load directives**: Read [AGENTS.md](AGENTS.md) which points to [`.agents/manifest.xml`](.agents/manifest.xml)
-2. **Baseline behaviors**: Review [LLM Baseline Behaviors](docs/context/LLM-BaselineBehaviors.md)
-3. **Priority hierarchy**: User directives → Repository rules → Tool guidelines → Baseline behaviors
+2. **Priority hierarchy**: User directives → Repository rules → Tool guidelines → Baseline behaviors
 
 ### Developers
 
@@ -52,7 +50,6 @@ ai-dev/
 │   └── ARCHITECTURE.xml        # Technical stack and patterns
 ├── docs/                       # MkDocs documentation source
 │   ├── agents/                 # Agent configuration guides
-│   ├── context/                # Behavioral baselines (Markdown + XML)
 │   ├── skills/                 # Domain-specific instruction sets
 │   ├── tools/                  # Claude Code, OpenCode, & VS Code guides
 │   └── mcp/                    # MCP server documentation
@@ -64,9 +61,7 @@ ai-dev/
 
 ## Key Features
 
-**High-Fidelity XML Context System** — Structured directives optimized for LLM parsing with `.agents/` XML modules ([learn more](docs/context/high-fidelity-context.md))
-
-**Behavioral Baselines** — Consistent AI behavior patterns across tools and models ([LLM-BaselineBehaviors.md](docs/context/LLM-BaselineBehaviors.md))
+**High-Fidelity XML Context System** — Structured directives optimized for LLM parsing with `.agents/` XML modules
 
 **Agent Skills Framework** — Reusable instruction sets for domain-specific tasks ([Skills Overview](docs/skills/README.md))
 

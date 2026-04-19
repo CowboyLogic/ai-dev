@@ -113,13 +113,6 @@ nav:
           - Security Analyst: agents/security-analyst.agent.md
           - Testing Specialist: agents/testing-specialist.agent.md
           - UX/UI (React): agents/uxui-nodejs.agent.md
-  - Context & Baselines:
-      - Overview: context/index.md
-      - LLM Baseline Behaviors: context/LLM-BaselineBehaviors.md
-      - Baseline Behaviors v2.0: context/BaselineBehaviors-v2.0.md
-      - Copilot Instructions: context/copilot-instructions.md
-      - High-Fidelity Context: context/high-fidelity-context.md
-      - High-Fidelity Migration: context/high-fidelity-context-migration.md
   - Skills:
       - Overview: skills/README.md
       - High-Fidelity Context Scaffolder:
@@ -288,12 +281,16 @@ nav:
           - Troubleshooting: tools/vscode/troubleshooting.md
       - Claude Code:
           - VertexAI Configuration: tools/claudecode/claudecode-vertexai.md
+  - Agentic Patterns:
+      - Agentic CI/CD Pipelines: agentic-patterns/agentic-cicd-pipelines.md
+      - Containerized Agent Pattern: agentic-patterns/containerized-agentic-pattern.md
+      - Containerized Agent Setup: agentic-patterns/containerized-agentic-setup.md
   - MCP Servers:
       - Overview: mcp/overview.md
       - Configuration: mcp/configuration.md
       - Sample Configs:
           - README: mcp/sample-configs/README.md
-  - Contributing: CONTRIBUTING.md
+  - Contributing: contributing.md
   - About: about.md
 
 # Extra CSS

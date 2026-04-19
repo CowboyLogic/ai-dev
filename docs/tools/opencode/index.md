@@ -328,14 +328,12 @@ Choose your path:
 - **[Configuration Guide](configuration.md)** - Detailed configuration documentation
 - **[Sample Configurations](samples.md)** - Real-world MCP server examples
 - **[Getting Started](../../index.md)** - General repository guide
-- **[LLM Baseline Behaviors](../../context/LLM-BaselineBehaviors.md)** - Understanding the instruction hierarchy
 
 ## Additional Resources
 
 - **[OpenCode Official Docs](https://opencode.ai/docs)** - Complete OpenCode CLI documentation
 - **[OpenCode Configuration Schema](https://opencode.ai/config.json)** - JSON schema reference
 - **[Model Context Protocol](https://modelcontextprotocol.io)** - MCP specification and tools
-- **[LLM Baseline Behaviors](../../context/LLM-BaselineBehaviors.md)** - Behavioral guidelines for this repository
 
 ---
 
