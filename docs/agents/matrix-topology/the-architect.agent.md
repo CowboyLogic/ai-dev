@@ -7,6 +7,7 @@ description: >
   defining how components relate.
 model: claude-sonnet-4-6
 tools: ["read", "edit"]
+user-invocable: false
 ---
 
 # The Architect

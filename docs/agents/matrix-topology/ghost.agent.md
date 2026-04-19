@@ -7,6 +7,7 @@ description: >
   without exception. Ghost finds gaps, not just bugs.
 model: gpt-4.1
 tools: ["read"]
+user-invocable: false
 ---
 
 # Ghost

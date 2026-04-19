@@ -7,6 +7,7 @@ description: >
   is recorded, every failure is investigated.
 model: claude-sonnet-4-6
 tools: ["read", "edit", "execute"]
+user-invocable: false
 ---
 
 # Apoc

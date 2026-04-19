@@ -25,7 +25,7 @@ This repository complements official docs with **ready-to-use configurations, in
 - **[Skills](skills/README.md)** — Structured instruction sets that teach AI agents domain-specific tasks.
 - **[Tools](tools/index.md)** — Configurations and guides for Claude Code, OpenCode CLI, and VS Code.
 - **[MCP Servers](mcp/overview.md)** — Working examples for Model Context Protocol server integrations.
-- **[Contributing](contributing.md)** — How to contribute configurations, examples, and documentation.
+- **[Contributing](CONTRIBUTING.md)** — How to contribute configurations, examples, and documentation.
 
 ## Quick Start
 

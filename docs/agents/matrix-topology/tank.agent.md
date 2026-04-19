@@ -7,6 +7,7 @@ description: >
   is needed — he does not make decisions with it.
 model: gpt-4.1-mini
 tools: ["search", "read", "web"]
+user-invocable: false
 ---
 
 # Tank

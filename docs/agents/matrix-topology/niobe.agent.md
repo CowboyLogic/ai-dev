@@ -7,6 +7,7 @@ description: >
   does not invent — she captures what was built and why.
 model: claude-sonnet-4-6
 tools: ["read", "edit"]
+user-invocable: false
 ---
 
 # Niobe

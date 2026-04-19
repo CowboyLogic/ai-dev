@@ -293,7 +293,7 @@ nav:
       - Configuration: mcp/configuration.md
       - Sample Configs:
           - README: mcp/sample-configs/README.md
-  - Contributing: contributing.md
+  - Contributing: CONTRIBUTING.md
   - About: about.md
 
 # Extra CSS

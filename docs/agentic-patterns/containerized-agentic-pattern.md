@@ -20,6 +20,9 @@ review_date: "[DATE — RECOMMENDED: 6 MONTHS FROM APPROVAL]"
 
 # AI-Assisted Development: Containerized Agent Execution Pattern
 
+> [!NOTE]
+> This is a work in progress. The concept is real. Testing continues.
+
 ## Status
 
 | Field | Value |

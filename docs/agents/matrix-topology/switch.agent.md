@@ -6,6 +6,7 @@ description: >
   exacting — every requirement gets a test, no exceptions.
 model: claude-sonnet-4-6
 tools: ["read", "edit"]
+user-invocable: false
 ---
 
 # Switch

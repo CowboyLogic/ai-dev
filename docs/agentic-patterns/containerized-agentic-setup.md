@@ -11,6 +11,9 @@
 
 ## Overview
 
+> [!NOTE]
+> This is a work in progress. The concept is real. Testing continues.
+
 This guide sets up a **global, reusable container** for AI agent execution on your local
 Windows 11 / WSL2 / Docker Desktop environment. The container:
 

@@ -6,6 +6,7 @@ description: >
   Trinity does not design — she builds what has been designed, precisely.
 model: claude-sonnet-4-6
 tools: ["read", "edit", "execute"]
+user-invocable: false
 ---
 
 # Trinity

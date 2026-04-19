@@ -7,6 +7,7 @@ description: >
   what should not be there.
 model: gpt-4.1
 tools: ["read", "search"]
+user-invocable: false
 ---
 
 # Smith

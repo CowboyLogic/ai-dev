@@ -7,6 +7,7 @@ description: >
   the user encounters at every step.
 model: claude-sonnet-4-6
 tools: ["read", "edit"]
+user-invocable: false
 ---
 
 # Oracle

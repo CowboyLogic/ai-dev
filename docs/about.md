@@ -160,7 +160,7 @@ ai-dev/
 
 ## Contributing
 
-Contributions welcome! See our **[Contributing Guide](contributing.md)** and GitHub's [Contributing to Projects](https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project) guide.
+Contributions welcome! See our **[Contributing Guide](CONTRIBUTING.md)** and GitHub's [Contributing to Projects](https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project) guide.
 
 **Contribute:**
 
