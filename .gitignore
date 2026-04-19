@@ -9,4 +9,5 @@ site/
 
 # Agent-generated output files
 agent-output/
+.agent-output/
 .github/agents/
