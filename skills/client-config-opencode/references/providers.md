@@ -125,6 +125,56 @@ Provider-specific fields: `region`, `profile`, `endpoint` (VPC endpoint alias)
 }
 ```
 
+### GitLab Duo
+```json
+{
+  "provider": {
+    "gitlab": {
+      "options": {
+        "apiKey": "{env:GITLAB_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+- OAuth or Personal Access Token (PAT)
+- Self-hosted: set `GITLAB_INSTANCE_URL` and `GITLAB_TOKEN` env vars
+- Use `small_model` for `gitlab/gpt-5-nano`
+
+### Helicone (AI Gateway with caching)
+```json
+{
+  "provider": {
+    "helicone": {
+      "options": {
+        "baseURL": "https://gateway.helicone.ai",
+        "headers": {
+          "Helicone-Auth": "Bearer {env:HELICONE_API_KEY}"
+        }
+      }
+    }
+  }
+}
+```
+
+### OpenRouter
+```json
+{
+  "provider": {
+    "openrouter": {
+      "options": {
+        "apiKey": "{env:OPENROUTER_API_KEY}",
+        "baseURL": "https://openrouter.ai/api/v1"
+      }
+    }
+  }
+}
+```
+
+- Use `/connect` or set `apiKey` in config
+- Provider routing: set `provider.order` and `allow_fallbacks` in model options
+
 ## Local / self-hosted providers
 
 ### Ollama
@@ -139,6 +189,27 @@ Provider-specific fields: `region`, `profile`, `endpoint` (VPC endpoint alias)
       "models": {
         "llama3.2": { "name": "Llama 3.2" },
         "mistral": { "name": "Mistral 7B" }
+      }
+    }
+  }
+}
+```
+
+### llama.cpp
+```json
+{
+  "provider": {
+    "llamacpp": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "llama.cpp",
+      "options": {
+        "baseURL": "http://127.0.0.1:8080/v1"
+      },
+      "models": {
+        "my-model": {
+          "name": "My GGUF Model",
+          "limit": { "context": 8192, "output": 2048 }
+        }
       }
     }
   }
@@ -177,6 +248,45 @@ Provider-specific fields: `region`, `profile`, `endpoint` (VPC endpoint alias)
 | `timeout` | Request timeout in milliseconds (default: 300000) |
 | `chunkTimeout` | Streaming response timeout in ms |
 | `setCacheKey` | Ensure cache key is set on requests |
+| `enterpriseUrl` | Enterprise API endpoint override |
+
+## Model fields reference
+
+Custom fields available per model under `provider.<id>.models.<model-id>`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | Display name |
+| `limit.context` | number | Context window size (tokens) |
+| `limit.output` | number | Max output tokens |
+| `family` | string | Model family grouping |
+| `release_date` | string | Release date string |
+| `attachment` | boolean | Supports file attachments |
+| `reasoning` | boolean | Supports reasoning / chain-of-thought |
+| `temperature` | boolean | Supports temperature parameter |
+| `tool_call` | boolean | Supports tool/function calling |
+| `interleaved` | boolean / object | Interleaved reasoning content (`{"field": "reasoning_content"}`) |
+| `modalities` | object | `{"input": [...], "output": [...]}` — `"text"`, `"audio"`, `"image"`, `"video"`, `"pdf"` |
+| `experimental` | boolean | Mark as experimental |
+| `status` | enum | `"alpha"` \| `"beta"` \| `"deprecated"` |
+| `variants` | object | Variant configs (e.g., `"thinking": {"disabled": false}`) |
+| `timeout` | number | Per-model request timeout (ms) |
+| `headers` | object | Per-model HTTP headers |
+
+## Model whitelist / blacklist
+
+Filter which models are visible for a provider:
+
+```json
+{
+  "provider": {
+    "openrouter": {
+      "whitelist": ["anthropic/claude-opus-4-5", "openai/gpt-4o"],
+      "blacklist": ["meta-llama/llama-3-8b-instruct"]
+    }
+  }
+}
+```
 
 ## Provider management
 

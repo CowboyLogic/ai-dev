@@ -31,9 +31,6 @@ until the current one is complete.
      list, or config file table needs updating.
    - Edit files under `skills/$input/references/` with specific, targeted
      changes — do not rewrite sections that are still accurate.
-   - If the skill has an installed copy (e.g. `~/.copilot/skills/$input/`
-     or `~/.claude/skills/$input/`), sync the updated files there after
-     every edit using `Copy-Item`.
 
 4. Note every change made — you will need this list for the changelog
    entry in Stage 4 and the commit message in Stage 5.

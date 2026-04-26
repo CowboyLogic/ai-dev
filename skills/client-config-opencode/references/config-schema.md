@@ -31,8 +31,9 @@ TUI schema: `https://opencode.ai/tui.json`
 | `logLevel` | enum | `"DEBUG"` \| `"INFO"` \| `"WARN"` \| `"ERROR"` | `"INFO"` |
 | `username` | string | Custom display name | `"alice"` |
 | `disabled_providers` | array | Provider IDs to disable | `["bedrock"]` |
-| `enabled_providers` | array | Restrict to only these providers | `["anthropic", "openai"]` |
-
+| `enabled_providers` | array | Restrict to only these providers | `["anthropic", "openai"]` || `enterprise` | object | Enterprise config — `{"url": "https://your-enterprise"}` | — |
+| `autoshare` | boolean | **Deprecated** — use `share` instead | — |
+| `layout` | string | **Deprecated** — always stretch layout | — |
 ---
 
 ## Server
@@ -89,6 +90,17 @@ Define custom slash commands. Also loadable as markdown files in `~/.config/open
 | `model` | No | Model override |
 | `subtask` | No | Run as a subtask (boolean) |
 
+### Prompt template syntax
+
+| Syntax | Description |
+|--------|-------------|
+| `{env:VAR_NAME}` | Inject environment variable value |
+| `{file:path}` | Inject file contents |
+| `$ARGUMENTS` | All arguments passed after the command name |
+| `$1`, `$2`, ... | Positional argument references |
+| `` !`command` `` | Inject shell command output |
+| `@filename` | Include file content by name |
+
 ---
 
 ## Instructions
@@ -138,6 +150,59 @@ Configure code formatters run after file edits:
 | `environment` | Additional env vars |
 | `disabled` | Disable a formatter (including `builtin`) |
 
+Built-in formatters (auto-detected when installed): `air`, `biome`, `cargofmt`, `clang-format`, `cljfmt`, `dart`, `dfmt`, `gleam`, `gofmt`, `htmlbeautifier`, `ktlint`, `mix`, `nixfmt`, `ocamlformat`, `ormolu`, `oxfmt` (experimental), `pint`, `prettier`, `rubocop`, `ruff`, `rustfmt`, `shfmt`, `standardrb`, `terraform`, `uv`, `zig`.
+
+---
+
+## LSP
+
+Configure Language Server Protocol servers:
+
+```json
+{
+  "lsp": {
+    "typescript": {
+      "command": ["typescript-language-server", "--stdio"],
+      "extensions": [".ts", ".tsx"],
+      "initialization": { "preferences": {} }
+    },
+    "python": {
+      "command": ["pylsp"],
+      "extensions": [".py"],
+      "disabled": false
+    }
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `command` | LSP server command array |
+| `extensions` | File extensions to activate LSP for |
+| `env` | Environment variables |
+| `initialization` | LSP initialization options object |
+| `disabled` | Disable this LSP server |
+
+---
+
+## Tool output
+
+Control truncation of tool output sent to the model:
+
+```json
+{
+  "tool_output": {
+    "max_lines": 500,
+    "max_bytes": 51200
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `max_lines` | Maximum lines per tool output |
+| `max_bytes` | Maximum bytes per tool output |
+
 ---
 
 ## Compaction
@@ -149,7 +214,9 @@ Control how context is managed when it fills up:
   "compaction": {
     "auto": true,
     "prune": true,
-    "reserved": 8000
+    "reserved": 8000,
+    "tail_turns": 5,
+    "preserve_recent_tokens": 2000
   }
 }
 ```
@@ -159,6 +226,8 @@ Control how context is managed when it fills up:
 | `auto` | Automatically compact when context is near limit |
 | `prune` | Remove older messages during compaction |
 | `reserved` | Tokens reserved for response generation |
+| `tail_turns` | Number of recent turns to always preserve during compaction |
+| `preserve_recent_tokens` | Minimum tokens to keep from recent messages |
 
 ---
 

@@ -148,7 +148,7 @@ Manage and maintain `~/.claude/settings.json` and all Claude Code configuration 
 Covers permissions, hooks, MCP servers, environment variables, model settings,
 sandbox configuration, and auto mode.
 
-[Skill Overview](skills/client-config-claudecode.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-claudecode)
+[Skill Overview](client-config-claudecode.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-claudecode)
 
 > [!NOTE]
 > When using a newer Claude model for configuring Claude Code, this skill has marginal value.
@@ -161,7 +161,7 @@ Manage GitHub Copilot CLI configuration files — `config.json`, `mcp-config.jso
 skills, and custom instructions. Covers trusted folders, tool permissions, MCP servers,
 BYOK models, and authentication.
 
-[Skill Overview](skills/client-config-copilotcli.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-copilotcli)
+[Skill Overview](client-config-copilotcli.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-copilotcli)
 
 ---
 
@@ -179,7 +179,7 @@ custom commands, themes, and trusted folders. Covers all settings exposed by the
 Manage opencode configuration files — `opencode.json`, providers, agents, MCP servers,
 permissions, keybinds, themes, formatters, and custom commands.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-opencode)
+[Skill Overview](client-config-opencode.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-opencode)
 
 ---
 

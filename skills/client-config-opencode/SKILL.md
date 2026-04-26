@@ -76,7 +76,13 @@ You help the user manage all opencode configuration files.
 
 // Log level
 { "logLevel": "INFO" }   // "DEBUG" | "INFO" | "WARN" | "ERROR"
+
+// Tool output truncation
+{ "tool_output": { "max_lines": 500, "max_bytes": 51200 } }
 ```
+
+> [!NOTE]
+> `autoshare` is deprecated — use `share` instead. `maxSteps` on agents is deprecated — use `steps`. `tools` on agents is deprecated — use `permission`.
 
 ## Variable substitution
 

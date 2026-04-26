@@ -19,6 +19,7 @@ Schema: `https://opencode.ai/tui.json`
     "enabled": true
   },
   "keybinds": {
+    "leader": "ctrl+x",
     "session_new": "ctrl+n",
     "messages_page_up": "pgup"
   }
@@ -36,6 +37,8 @@ Schema: `https://opencode.ai/tui.json`
 | `diff_style` | `"auto"` \| `"stacked"` | Diff rendering mode | `"auto"` |
 | `scroll_speed` | number (min 0.001) | Scroll velocity | — |
 | `scroll_acceleration.enabled` | boolean | Enable scroll acceleration | — |
+| `plugin` | array | Plugin definitions (same format as `opencode.json`) | — |
+| `plugin_enabled` | object | Enable/disable plugins by name (`{"plugin-name": true}`) | — |
 
 ---
 
@@ -48,7 +51,21 @@ Override any action by setting a key combo string. Key format examples:
 - `"f5"` — F5
 - `"leader+d"` — Leader key + D
 
-Set a keybind to `""` (empty string) to disable it.
+Set a keybind to `""` (empty string) to disable it. Set to `"none"` to explicitly disable.
+
+### Leader key
+
+The leader key is `ctrl+x` by default. Override in `tui.json`:
+
+```json
+{ "keybinds": { "leader": "ctrl+x" } }
+```
+
+### App
+
+| Action | Description |
+|--------|-------------|
+| `app_exit` | Exit the application |
 
 ### Session management
 
@@ -94,16 +111,6 @@ Set a keybind to `""` (empty string) to disable it.
 | `messages_redo` | Redo |
 | `messages_toggle_conceal` | Toggle message visibility |
 
-### Model & agent
-
-| Action | Description |
-|--------|-------------|
-| `model_list` | Open model picker (`/models`) |
-| `model_cycle_recent` | Cycle recent models |
-| `model_favorite_toggle` | Toggle model favorite |
-| `agent_list` | Open agent picker |
-| `agent_cycle` | Cycle / switch primary agent (default: Tab) |
-
 ### UI controls
 
 | Action | Description |
@@ -114,6 +121,50 @@ Set a keybind to `""` (empty string) to disable it.
 | `theme_list` | Open theme picker |
 | `editor_open` | Open external editor |
 | `status_view` | Toggle status view |
+| `tool_details` | Toggle tool details panel |
+| `terminal_suspend` | Suspend to terminal (Unix) |
+| `title_toggle` | Toggle session title display |
+| `tips_toggle` | Toggle tips/hints display |
+| `plugin_manager` | Open plugin manager |
+| `display_thinking` | Toggle thinking display |
+
+### Model & agent
+
+| Action | Description |
+|--------|-------------|
+| `model_list` | Open model picker (`/models`) |
+| `model_cycle_recent` | Cycle recent models |
+| `model_reverse` | Cycle recent models (reverse) |
+| `model_favorite_toggle` | Toggle model favorite |
+| `model_provider_list` | Open provider picker |
+| `agent_list` | Open agent picker |
+| `agent_cycle` | Cycle / switch primary agent (default: Tab) |
+| `agent_reverse` | Cycle primary agent (reverse) |
+| `variant_cycle` | Cycle model variants |
+| `variant_list` | Open variant picker |
+| `command_list` | Open command picker |
+
+### Input editing
+
+| Action | Description |
+|--------|-------------|
+| `input_clear` | Clear input field |
+| `input_paste` | Paste clipboard into input |
+| `input_submit` | Submit current input |
+| `input_newline` | Insert newline (Shift+Enter) |
+| `input_move_left` / `input_move_right` | Move cursor left/right |
+| `input_move_up` / `input_move_down` | Move cursor line up/down |
+| `input_line_home` / `input_line_end` | Jump to line start/end |
+| `input_buffer_home` / `input_buffer_end` | Jump to buffer start/end |
+| `input_word_forward` / `input_word_backward` | Move by word |
+| `input_delete` / `input_backspace` | Delete character |
+| `input_delete_word_forward` / `input_delete_word_backward` | Delete word |
+| `input_undo` / `input_redo` | Undo/redo in input |
+| `input_select_all` | Select all input text |
+| `history_previous` / `history_next` | Browse input history |
+
+> [!TIP]
+> `input_newline` (Shift+Enter) may need terminal configuration. In Windows Terminal, add a key binding action for the `\u001b[13;2u` sequence.
 
 ---
 

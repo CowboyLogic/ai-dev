@@ -11,3 +11,9 @@ site/
 agent-output/
 .agent-output/
 .github/agents/
+
+# ignore evaluation workspace trees
+skills/client-config-claudecode-workspace/
+skills/client-config-copilotcli-workspace/
+skills/client-config-geminicli-workspace/
+skills/client-config-opencode-workspace/
