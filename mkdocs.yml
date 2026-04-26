@@ -89,6 +89,8 @@ nav:
       - Matrix Topology: agents/matrix-topology.md
   - Skills:
       - Overview: skills/index.md
+      - Claude Code Settings Manager: skills/client-config-claudecode.md
+      - Copilot CLI Configuration Manager: skills/client-config-copilotcli.md
   - Tools:
       - Overview: tools/index.md
       - OpenCode:

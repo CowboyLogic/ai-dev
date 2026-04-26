@@ -125,6 +125,10 @@ embed skill content.
 - Use **2-space indentation** inside lists.
 - Line-length limit is not enforced (MD013 disabled in `.markdownlint.json`).
 - Ordered list numbering is not enforced (MD029 disabled).
+- **Callouts must use GFM callout syntax** — never plain blockquotes for informational
+  notices, tips, warnings, or page abstracts. Use the appropriate type:
+  `> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]`, `> [!CAUTION]`.
+  Plain `> blockquotes` are reserved for quoted text only.
 
 ### Adding content pages
 

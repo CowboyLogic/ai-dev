@@ -1,16 +1,33 @@
 # Agent Skills
 
 Structured instruction sets that give AI agents specialized domain knowledge and workflows.
-Skills follow the [Agent Skills open standard](https://agentskills.io) and are discoverable
-by the GitHub Copilot CLI.
+Skills follow the [Agent Skills open standard](https://agentskills.io) and are installable
+across all major agent tools using `npx skills`.
 
 All skill files live at the root of the repository under
-[`skills/`](https://github.com/CowboyLogic/ai-dev/tree/main/skills)
-and can be installed directly using the GitHub Copilot CLI.
+[`skills/`](https://github.com/CowboyLogic/ai-dev/tree/main/skills).
 
 ---
 
 ## Installing Skills
+
+### Using `npx skills` (recommended — works across all agents)
+
+```bash
+# Install a specific skill globally for all detected agents
+npx skills add CowboyLogic/ai-dev --skill <skill-name> -g
+
+# Install for a specific agent only
+npx skills add CowboyLogic/ai-dev --skill <skill-name> --agent <agent> -g
+
+# Preview available skills without installing
+npx skills add CowboyLogic/ai-dev -g -l
+
+# List all installed skills
+npx skills ls -g
+```
+
+### Using `gh copilot` (Copilot CLI only)
 
 ```bash
 # Install a specific skill
@@ -131,7 +148,7 @@ Manage and maintain `~/.claude/settings.json` and all Claude Code configuration 
 Covers permissions, hooks, MCP servers, environment variables, model settings,
 sandbox configuration, and auto mode.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-claudecode)
+[Skill Overview](skills/client-config-claudecode.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-claudecode)
 
 > [!NOTE]
 > When using a newer Claude model for configuring Claude Code, this skill has marginal value.
@@ -144,7 +161,7 @@ Manage GitHub Copilot CLI configuration files — `config.json`, `mcp-config.jso
 skills, and custom instructions. Covers trusted folders, tool permissions, MCP servers,
 BYOK models, and authentication.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-copilotcli)
+[Skill Overview](skills/client-config-copilotcli.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-copilotcli)
 
 ---
 

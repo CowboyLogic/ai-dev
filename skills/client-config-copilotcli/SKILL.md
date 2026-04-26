@@ -1,6 +1,6 @@
 ---
 name: client-config-copilotcli
-description: 'Manage GitHub Copilot CLI configuration files including MCP servers, hooks, skills, and custom instructions. Use this skill whenever the user wants to view, edit, add, or understand any Copilot CLI setting: trusted folders, tool permissions, MCP servers, hooks, skills, BYOK models, authentication, or custom instructions. Trigger on: "add trusted folder", "allow tool", "configure MCP", "add hook", "create skill", "set model", "use my own API key", "add custom instructions", or "show my copilot config".'
+description: 'Manage GitHub Copilot CLI configuration files including config.json, settings.json, mcp-config.json, hooks.json, skills, and custom instructions. Use this skill whenever the user wants to view, edit, add, or understand any Copilot CLI setting: trusted folders, user settings, tool permissions, MCP servers, hooks, skills, BYOK models, authentication, session management, or custom instructions. Trigger on: "add trusted folder", "allow tool", "configure MCP", "add hook", "create skill", "set model", "use my own API key", "add custom instructions", "name session", "resume session", or "show my copilot config".' 
 ---
 
 # GitHub Copilot CLI Configuration Manager
@@ -11,11 +11,14 @@ You help the user manage all GitHub Copilot CLI configuration files.
 
 | What | File | Scope |
 |------|------|-------|
-| Trusted folders, core settings | `~/.copilot/config.json` | Global |
+| Trusted folders | `~/.copilot/config.json` | Global |
+| User settings (continueOnAutoMode etc.) | `~/.copilot/settings.json` | Global |
 | MCP servers | `~/.copilot/mcp-config.json` | Global |
 | Hooks | `.github/hooks/hooks.json` | Project (default branch) |
 | Skills | `~/.copilot/skills/<name>/SKILL.md` | Global personal |
 | Skills | `.github/skills/<name>/SKILL.md` | Project |
+| Custom agents | `~/.copilot/agents/<name>.agent.md` | Global personal |
+| Custom agents | `.github/agents/<name>.agent.md` | Project |
 | Custom instructions | `~/.copilot/copilot-instructions.md` | Global personal |
 | Custom instructions | `.github/copilot-instructions.md` | Project-wide |
 | Path-specific instructions | `.github/instructions/*.instructions.md` | Project (glob-matched) |
@@ -34,7 +37,9 @@ You help the user manage all GitHub Copilot CLI configuration files.
 | Task | Reference file |
 |------|----------------|
 | Trusted folders, core config.json | `references/config-schema.md` |
+| User settings (settings.json) | `references/config-schema.md` §Settings |
 | Tool/path/URL permissions (CLI flags) | `references/config-schema.md` §Permissions |
+| Session management (--name, --resume) | `references/config-schema.md` §Sessions |
 | MCP servers | `references/mcp.md` |
 | Hooks | `references/hooks.md` |
 | Skills / custom agents | `references/skills.md` |
@@ -65,12 +70,29 @@ gh auth status
 
 # Offline mode (no GitHub contact)
 export COPILOT_OFFLINE=true
+
+# Name a session at startup
+gh copilot --name my-feature-work
+
+# Resume a named session
+gh copilot --resume=my-feature-work
+
+# Delete a session (inside session)
+/session delete
+/session delete <name>
+/session delete-all
+
+# Prevent system sleep during long sessions
+/keep-alive
+
+# Toggle remote control
+/remote on
+/remote off
 ```
 
 ## Scripts
 
 - `scripts/show-config.py` — display all config files with annotations
-- `scripts/validate-config.py` — validate JSON config files
 - `scripts/update-references.py` — fetch latest upstream docs
 
 Run with: `python scripts/<script>.py`

@@ -1,8 +1,28 @@
 # Copilot CLI Core Configuration Reference
 
+## settings.json
+
+**Location**: `~/.copilot/settings.json` (or `$COPILOT_HOME/settings.json`)
+
+User-configurable options. Introduced in v1.0.35 to separate user settings from internal runtime state in `config.json`.
+
+```json
+{
+  "continueOnAutoMode": true
+}
+```
+
+### continueOnAutoMode (boolean)
+
+When `true`, automatically switches to the auto model on rate limits instead of pausing and waiting. Default: `false`.
+
+---
+
 ## config.json
 
 **Location**: `~/.copilot/config.json` (or `$COPILOT_HOME/config.json`)
+
+Contains trusted folders and is managed by the CLI. Edit `settings.json` for user preferences.
 
 ```json
 {
@@ -92,6 +112,14 @@ Interactive equivalents (during a session): `/allow-all` or `/yolo`
 4. OAuth token from system keychain
 5. GitHub CLI token fallback (`gh auth status`)
 
+### GitHub hostname
+
+`COPILOT_GH_HOST` — sets the GitHub hostname (e.g. for GHES). Takes precedence over `GH_HOST`.
+
+```bash
+export COPILOT_GH_HOST=github.mycompany.com
+```
+
 ### Supported token types
 
 | Type | Prefix | Supported |
@@ -178,6 +206,35 @@ export COPILOT_MODEL=meta-llama/Llama-3-8b-instruct
 
 ---
 
+## Sessions
+
+Sessions can be named at startup and resumed later.
+
+### CLI flags
+
+| Flag | Description |
+|------|-------------|
+| `--name <label>` | Assign a name to the session for easy reference |
+| `--resume=<name>` | Resume a previously named session by name |
+
+```bash
+# Start a named session
+gh copilot --name my-feature-work
+
+# Resume it later
+gh copilot --resume=my-feature-work
+```
+
+### Session slash commands (inside sessions)
+
+| Command | Purpose |
+|---------|--------|
+| `/session delete` | Delete the current session |
+| `/session delete <name>` | Delete a named session |
+| `/session delete-all` | Delete all sessions |
+
+---
+
 ## Interactive slash commands (inside sessions)
 
 | Command | Purpose |
@@ -192,3 +249,9 @@ export COPILOT_MODEL=meta-llama/Llama-3-8b-instruct
 | `/feedback` | Submit feedback or bug reports |
 | `/fleet` | Start multi-step implementation plan |
 | `/chronicle` | View session history and analytics |
+| `/keep-alive` | Prevent system sleep during long sessions |
+| `/remote` | Show remote control status |
+| `/remote on` / `/remote off` | Enable or disable remote control |
+| `/session delete` | Delete the current session |
+| `/session delete <name>` | Delete a named session |
+| `/session delete-all` | Delete all sessions |

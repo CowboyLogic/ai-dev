@@ -1,6 +1,7 @@
 # Agent Examples Library
 
-> **Ready-to-use agent configurations for common development tasks**
+> [!ABSTRACT]
+> Ready-to-use agent configurations for common development tasks.
 
 ## Overview
 

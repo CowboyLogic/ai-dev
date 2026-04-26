@@ -5,17 +5,20 @@ Skills are Markdown files that give Copilot specialized instructions and resourc
 ## Storage locations
 
 ### Personal (global across projects)
+
 ```
 ~/.copilot/skills/<skill-name>/SKILL.md
 ~/.agents/skills/<skill-name>/SKILL.md
 ```
 
 ### Project-specific
+
 ```
 .github/skills/<skill-name>/SKILL.md
-.claude/skills/<skill-name>/SKILL.md
 .agents/skills/<skill-name>/SKILL.md
 ```
+
+> **Note (v1.0.36+)**: Custom agents, skills, and commands from `~/.claude/` are **no longer loaded** by Copilot CLI. Move any files previously in `~/.claude/skills/` or `~/.claude/agents/` to `~/.copilot/skills/` or `~/.copilot/agents/` respectively.
 
 Each skill lives in its own subdirectory. Directory names must be **lowercase with hyphens** (e.g., `frontend-design`, `api-reviewer`).
 

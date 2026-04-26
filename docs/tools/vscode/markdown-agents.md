@@ -1,6 +1,7 @@
 # Markdown-Based Agents
 
-> **Declarative agent configuration using markdown files with YAML frontmatter**
+> [!ABSTRACT]
+> Declarative agent configuration using markdown files with YAML frontmatter.
 
 **Official Documentation:** [GitHub Copilot Custom Instructions](https://docs.github.com/en/copilot/customizing-copilot/creating-custom-instructions-for-github-copilot)
 

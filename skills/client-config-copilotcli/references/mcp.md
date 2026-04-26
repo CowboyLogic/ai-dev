@@ -8,6 +8,10 @@
 
 (Or `$COPILOT_HOME/mcp-config.json`)
 
+**Server names** can include spaces and special characters (supported as of v1.0.35). Enclose in quotes when referencing in CLI commands.
+
+**OAuth**: MCP OAuth authentication is handled through the shared runtime flow. When removing an MCP server, its OAuth state is automatically cleared.
+
 ## Structure
 
 ```json
@@ -18,13 +22,15 @@
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-github"],
       "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_..."
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "$GITHUB_PERSONAL_ACCESS_TOKEN"
       },
       "tools": ["*"]
     }
   }
 }
 ```
+
+**Credential pattern**: Values in `env` that start with `$` are resolved from the user's shell environment at load time. Set credentials in your shell profile (e.g. `~/.bashrc`, `~/.zshrc`, PowerShell `$PROFILE`) — never hardcode secret values in `mcp-config.json`.
 
 ---
 
@@ -39,7 +45,7 @@ Starts a local process, communicates over stdin/stdout.
   "type": "local",
   "command": "node",
   "args": ["path/to/server.js"],
-  "env": { "API_KEY": "..." },
+  "env": { "API_KEY": "$MY_API_KEY" },
   "tools": ["*"]
 }
 ```
@@ -90,10 +96,12 @@ Starts a local process, communicates over stdin/stdout.
   "type": "local",
   "command": "npx",
   "args": ["-y", "@modelcontextprotocol/server-github"],
-  "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_..." },
+  "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "$GITHUB_PERSONAL_ACCESS_TOKEN" },
   "tools": ["*"]
 }
 ```
+
+Set the token in your shell profile: `export GITHUB_PERSONAL_ACCESS_TOKEN=ghp_...`
 
 ### Filesystem
 ```json
@@ -120,10 +128,15 @@ Starts a local process, communicates over stdin/stdout.
 "postgres": {
   "type": "local",
   "command": "npx",
-  "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://user:pass@localhost/db"],
+  "args": ["-y", "@modelcontextprotocol/server-postgres"],
+  "env": { "DATABASE_URL": "$DATABASE_URL" },
   "tools": ["*"]
 }
 ```
+
+Set the connection string in your shell profile: `export DATABASE_URL=postgresql://user:pass@localhost/db`
+
+> If the server package requires the connection string as a positional argument rather than an env var, use `"args": ["-y", "@modelcontextprotocol/server-postgres", "$DATABASE_URL"]` — the `$VAR` reference is expanded from the user environment at load time.
 
 ---
 

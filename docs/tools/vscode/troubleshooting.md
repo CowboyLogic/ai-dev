@@ -1,6 +1,7 @@
 # Troubleshooting
 
-> **Common issues and solutions for VS Code agent configuration**
+> [!ABSTRACT]
+> Common issues and solutions for VS Code agent configuration.
 
 ## Markdown-Based Agents
 

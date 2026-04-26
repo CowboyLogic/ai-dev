@@ -23,7 +23,8 @@ For CLI, hooks are loaded from the current working directory. The file must be o
         "timeoutSec": 30,
         "env": {
           "MY_VAR": "value"
-        }
+        },
+        "matcher": "shell"
       }
     ]
   }
@@ -31,6 +32,8 @@ For CLI, hooks are loaded from the current working directory. The file must be o
 ```
 
 **Required**: `"version": 1`
+
+**`matcher` field**: When set on `preToolUse` or `postToolUse` hooks, the hook only fires for tool names that fully match the pattern. Partial matches are ignored (fixed in v1.0.36).
 
 ---
 
@@ -51,14 +54,51 @@ For CLI, hooks are loaded from the current working directory. The file must be o
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `type` | Yes | Always `"command"` |
-| `bash` | One required | Command string for Unix/Linux/macOS |
-| `powershell` | One required | Command string for Windows PowerShell |
-| `cwd` | No | Working directory (default: `"."`) |
+| `type` | Yes | `"command"` or `"http"` |
+| `bash` | command only* | Command string for Unix/Linux/macOS |
+| `powershell` | command only* | Command string for Windows PowerShell |
+| `url` | http only | URL to POST the hook payload to |
+| `headers` | http only | HTTP headers object (for auth etc.) |
+| `cwd` | No | Working directory (default: `"."`) — command type only |
 | `timeoutSec` | No | Max execution time in seconds (default: 30) |
-| `env` | No | Additional environment variables object |
+| `env` | No | Additional environment variables object — command type only |
+| `matcher` | No | Tool name pattern; hook only fires for fully matching tool names (`preToolUse`/`postToolUse`) |
 
-Provide both `bash` and `powershell` for cross-platform compatibility, or just one if targeting a specific OS.
+*For `command` type, provide both `bash` and `powershell` for cross-platform compatibility, or just one if targeting a specific OS.
+
+---
+
+## Hook types
+
+### `command` (run a local script)
+
+Runs a local process. Input is passed via `$INPUT` (bash) or `$INPUT` (PowerShell).
+
+```json
+{
+  "type": "command",
+  "bash": "echo '$INPUT' | ./scripts/validate-tool.sh",
+  "powershell": "Write-Output '$INPUT' | .\\scripts\\validate-tool.ps1",
+  "cwd": ".",
+  "timeoutSec": 30
+}
+```
+
+### `http` (POST to a URL)
+
+Posts the hook payload as JSON to a remote or local HTTP endpoint. Useful for webhooks, audit logging, or integrations.
+
+```json
+{
+  "type": "http",
+  "url": "https://hooks.example.com/copilot-events",
+  "headers": {
+    "Authorization": "Bearer YOUR_TOKEN",
+    "Content-Type": "application/json"
+  },
+  "timeoutSec": 10
+}
+```
 
 ---
 

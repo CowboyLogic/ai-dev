@@ -1,6 +1,7 @@
 # Quick Start Guide
 
-> **Get your first VS Code agent running in 5 minutes**
+> [!ABSTRACT]
+> Get your first VS Code agent running in 5 minutes.
 
 **Official Documentation:** [GitHub Copilot Custom Instructions](https://docs.github.com/en/copilot/customizing-copilot/creating-custom-instructions-for-github-copilot)
 
