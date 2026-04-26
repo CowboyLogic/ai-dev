@@ -189,7 +189,8 @@ Same response schema as `prompt`. Agent can use Read, Grep, Glob to inspect the 
 | `2` | Blocking error — block action, stderr becomes error message |
 | `1`, `3+` | Non-blocking — continue, show stderr in transcript |
 
-> **Warning**: Only exit code 2 blocks. Exit code 1 is non-blocking (unlike typical Unix convention). Exception: `WorktreeCreate` — any non-zero aborts creation.
+> [!WARNING]
+> Only exit code 2 blocks. Exit code 1 is non-blocking (unlike typical Unix convention). Exception: `WorktreeCreate` — any non-zero aborts creation.
 
 ---
 

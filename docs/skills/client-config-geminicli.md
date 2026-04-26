@@ -48,7 +48,7 @@ npx skills add CowboyLogic/ai-dev --skill client-config-geminicli -g
 # Install for a specific agent
 npx skills add CowboyLogic/ai-dev --skill client-config-geminicli --agent <agent> -g
 
-# Install locally (project scope)
+# Preview installation without applying
 npx skills add CowboyLogic/ai-dev --skill client-config-geminicli -g -l
 ```
 

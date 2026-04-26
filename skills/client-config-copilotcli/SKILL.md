@@ -1,6 +1,6 @@
 ---
 name: client-config-copilotcli
-description: 'Manage GitHub Copilot CLI configuration files including config.json, settings.json, mcp-config.json, hooks.json, skills, and custom instructions. Use this skill whenever the user wants to view, edit, add, or understand any Copilot CLI setting: trusted folders, user settings, tool permissions, MCP servers, hooks, skills, BYOK models, authentication, session management, or custom instructions. Trigger on: "add trusted folder", "allow tool", "configure MCP", "add hook", "create skill", "set model", "use my own API key", "add custom instructions", "name session", "resume session", or "show my copilot config".' 
+description: 'Manage GitHub Copilot CLI configuration files including config.json, settings.json, mcp-config.json, hooks.json, skills, and custom instructions. Use this skill whenever the user wants to view, edit, add, or understand any Copilot CLI setting: trusted folders, user settings, tool permissions, MCP servers, hooks, skills, BYOK models, authentication, session management, or custom instructions. Trigger on: "add trusted folder", "allow tool", "configure MCP", "add hook", "create skill", "set model", "use my own API key", "add custom instructions", "name session", "resume session", or "show my copilot config".'
 ---
 
 # GitHub Copilot CLI Configuration Manager
@@ -104,8 +104,7 @@ When the user asks to **update**, **refresh**, or **sync** this skill:
 1. Run `python scripts/update-references.py --all` → fetches docs to `_fetched/`
 2. Read each `_fetched/` file alongside its corresponding `references/` file
 3. Update `references/` files to reflect documentation changes
-4. Run `python scripts/validate-config.py` to confirm no breakage
-5. Delete `_fetched/` and report what changed
+4. Delete `_fetched/` and report what changed
 
 Source URLs are in `sources.json`.
 

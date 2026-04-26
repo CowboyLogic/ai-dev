@@ -31,7 +31,8 @@ TUI schema: `https://opencode.ai/tui.json`
 | `logLevel` | enum | `"DEBUG"` \| `"INFO"` \| `"WARN"` \| `"ERROR"` | `"INFO"` |
 | `username` | string | Custom display name | `"alice"` |
 | `disabled_providers` | array | Provider IDs to disable | `["bedrock"]` |
-| `enabled_providers` | array | Restrict to only these providers | `["anthropic", "openai"]` || `enterprise` | object | Enterprise config — `{"url": "https://your-enterprise"}` | — |
+| `enabled_providers` | array | Restrict to only these providers | `["anthropic", "openai"]` |
+| `enterprise` | object | Enterprise config — `{"url": "https://your-enterprise"}` | — |
 | `autoshare` | boolean | **Deprecated** — use `share` instead | — |
 | `layout` | string | **Deprecated** — always stretch layout | — |
 ---

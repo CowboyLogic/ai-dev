@@ -1,6 +1,6 @@
 # Programmatic SubAgents
 
-> [!ABSTRACT]
+> [!NOTE]
 > Using the `runSubagent` tool for complex, autonomous tasks.
 
 ## Overview

@@ -269,7 +269,8 @@ See [sub-agents documentation](/en/sub-agents) for file format details.
 
 These go in `~/.claude.json`, NOT in `settings.json`. Adding them to `settings.json` will trigger a schema validation error.
 
-> **Note (v2.1.119+):** `autoScrollEnabled`, `editorMode`, `showTurnDuration`, `terminalProgressBarEnabled`, and `teammateMode` moved to `settings.json`. Earlier versions store them in `~/.claude.json`.
+> [!NOTE]
+> (v2.1.119+) `autoScrollEnabled`, `editorMode`, `showTurnDuration`, `terminalProgressBarEnabled`, and `teammateMode` moved to `settings.json`. Earlier versions store them in `~/.claude.json`.
 
 | Key | Description | Example |
 | --- | --- | --- |

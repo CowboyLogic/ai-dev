@@ -1,6 +1,6 @@
 # Visual Studio Code Agent Configuration Guide
 
-> [!ABSTRACT]
+> [!NOTE]
 > Configure specialized AI agents in VS Code using GitHub Copilot.
 
 ## Overview

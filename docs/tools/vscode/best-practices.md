@@ -1,6 +1,6 @@
 # Best Practices
 
-> [!ABSTRACT]
+> [!NOTE]
 > Optimization patterns and guidelines for VS Code agent configuration.
 
 ## Agent Design Principles

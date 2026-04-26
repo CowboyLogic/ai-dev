@@ -15,6 +15,12 @@ Schema file: `~/.gemini/settings.json` (user) or `.gemini/settings.json` (projec
   - [mcpServers](#mcpservers)
   - [advanced](#advanced)
   - [Annotated example](#annotated-example)
+  - [agents](#agents)
+  - [experimental](#experimental)
+  - [skills](#skills)
+  - [hooksConfig](#hooksconfig)
+  - [ide](#ide)
+  - [billing](#billing)
 
 ---
 
@@ -47,7 +53,8 @@ Schema file: `~/.gemini/settings.json` (user) or `.gemini/settings.json` (projec
 | `"auto_edit"` | Auto-approve file edits, ask for shell |
 | `"plan"` | Always enter plan mode first |
 
-> **Note:** YOLO mode (auto-approve all) is **CLI-only** — use `--yolo` or `--approval-mode=yolo` flag. It cannot be set in `settings.json`. Use `security.disableYoloMode: true` to prevent its use.
+> [!NOTE]
+> YOLO mode (auto-approve all) is **CLI-only** — use `--yolo` or `--approval-mode=yolo` flag. It cannot be set in `settings.json`. Use `security.disableYoloMode: true` to prevent its use.
 
 ---
 
