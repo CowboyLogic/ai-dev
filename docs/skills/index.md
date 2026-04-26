@@ -133,6 +133,9 @@ sandbox configuration, and auto mode.
 
 [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-claudecode)
 
+> [!NOTE]
+> When using a newer Claude model for configuring Claude Code, this skill has marginal value.
+
 ---
 
 ### Copilot CLI Configuration Manager

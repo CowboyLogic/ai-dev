@@ -24,7 +24,7 @@ import urllib.error
 from pathlib import Path
 
 SKILL_ROOT = Path(__file__).parent.parent
-SOURCES_FILE = SKILL_ROOT / "sources.json"
+SOURCES_FILE = SKILL_ROOT / "assets" / "sources.json"
 FETCHED_DIR = SKILL_ROOT / "_fetched"
 
 HEADERS = {
@@ -60,7 +60,7 @@ def save_fetched(ref_path: str, content: str, url: str) -> Path:
 
 def main():
     if not SOURCES_FILE.exists():
-        print(f"ERROR: sources.json not found at {SOURCES_FILE}")
+        print(f"ERROR: assets/sources.json not found at {SOURCES_FILE}")
         sys.exit(1)
 
     with open(SOURCES_FILE) as f:
