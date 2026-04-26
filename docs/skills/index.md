@@ -170,7 +170,7 @@ BYOK models, and authentication.
 Manage Gemini CLI configuration files — `settings.json`, MCP servers, hooks, extensions,
 custom commands, themes, and trusted folders. Covers all settings exposed by the Gemini CLI.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-geminicli)
+[Skill Overview](client-config-geminicli.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-geminicli)
 
 ---
 

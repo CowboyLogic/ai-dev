@@ -91,6 +91,7 @@ nav:
       - Overview: skills/index.md
       - Claude Code Settings Manager: skills/client-config-claudecode.md
       - Copilot CLI Configuration Manager: skills/client-config-copilotcli.md
+      - Gemini CLI Configuration Manager: skills/client-config-geminicli.md
   - Tools:
       - Overview: tools/index.md
       - OpenCode:

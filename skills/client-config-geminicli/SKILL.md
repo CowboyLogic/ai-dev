@@ -1,6 +1,6 @@
 ---
 name: client-config-geminicli
-description: 'Manage Gemini CLI configuration files including settings, hooks, MCP servers, extensions, custom commands, themes, and trusted folders. Use this skill whenever the user wants to view, edit, add, or understand any Gemini CLI setting: models, tools, permissions, MCP servers, hooks, custom commands, themes, trusted folders, context/memory, or sandboxing. Trigger on: "configure gemini cli", "add MCP server", "set model", "create hook", "add custom command", "change theme", "trust folder", "show gemini config", "add trusted folder", "configure sandbox", or "set approval mode".'
+description: Manage Gemini CLI configuration files — settings.json, GEMINI.md, hooks, MCP servers, extensions, custom commands, themes, and trusted folders. Use this skill whenever the user wants to view, edit, add, or understand any Gemini CLI setting: models, tools, permissions, MCP servers, hooks, custom commands, themes, trusted folders, context/memory, or sandboxing. Trigger on: "configure gemini cli", "add MCP server", "set model", "create hook", "add custom command", "change theme", "trust folder", "show gemini config", "add trusted folder", "configure sandbox", "set approval mode", or any request touching ~/.gemini/settings.json or .gemini/settings.json.
 ---
 
 # Gemini CLI Configuration Skill
@@ -27,10 +27,13 @@ description: 'Manage Gemini CLI configuration files including settings, hooks, M
 | View/edit any setting field | `references/settings-schema.md` |
 | Add/configure MCP server | `references/mcp.md` |
 | Create/edit hooks | `references/hooks.md` |
+| Disable/enable all hooks | `references/hooks.md` (hooksConfig section) |
 | GEMINI.md / context / memory | `references/context.md` |
 | Custom commands | `references/commands.md` |
 | Themes | `references/settings-schema.md` (ui section) |
 | Trusted folders / security | `references/settings-schema.md` (security section) |
+| Voice mode | `references/settings-schema.md` (experimental section) |
+| Auto memory / memory inbox | `references/settings-schema.md` (experimental section) + `references/context.md` |
 | Extensions | `references/extensions.md` |
 | Show current config | run `python scripts/show-config.py` |
 
@@ -48,9 +51,21 @@ description: 'Manage Gemini CLI configuration files including settings, hooks, M
 
 **Set approval mode:**
 ```json
-{ "general": { "approvalMode": "auto_edit" } }
+{ "general": { "defaultApprovalMode": "auto_edit" } }
 ```
-Valid modes: `default` | `auto_edit` | `plan` | `yolo`
+Valid modes (settable in config): `default` | `auto_edit` | `plan`
+> YOLO mode (auto-approve all) is **CLI-only**: use `--yolo` or `--approval-mode=yolo`. Block it with `security.disableYoloMode: true`.
+
+**Enable voice mode:**
+```json
+{ "experimental": { "voiceMode": true } }
+```
+
+**Enable auto memory extraction:**
+```json
+{ "experimental": { "autoMemory": true } }
+```
+Review extracted skills with `/memory inbox`.
 
 **Add MCP server (stdio):**
 ```json
@@ -60,6 +75,11 @@ Valid modes: `default` | `auto_edit` | `plan` | `yolo`
 **Enable trusted folders:**
 ```json
 { "security": { "folderTrust": { "enabled": true } } }
+```
+
+**Disable all hooks temporarily:**
+```json
+{ "hooksConfig": { "enabled": false } }
 ```
 
 ## Variable substitution in settings

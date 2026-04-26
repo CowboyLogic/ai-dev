@@ -1,0 +1,109 @@
+{
+  "skill": "client-config-geminicli",
+  "evals": [
+    {
+      "id": "approval-mode-rename",
+      "prompt": "I want to set the default approval mode to auto_edit in my Gemini CLI user settings. What is the correct settings.json field path and value?",
+      "assertions": [
+        {
+          "id": "uses-defaultApprovalMode",
+          "description": "Uses general.defaultApprovalMode (not general.approvalMode)",
+          "check": "Response uses `general.defaultApprovalMode` as the field name"
+        },
+        {
+          "id": "does-not-use-old-approvalMode",
+          "description": "Does not use deprecated general.approvalMode field name",
+          "check": "Response does not suggest `\"approvalMode\"` as a bare field under general (old name)"
+        },
+        {
+          "id": "value-is-auto_edit",
+          "description": "Specifies the value auto_edit",
+          "check": "Response includes `\"auto_edit\"` as the value"
+        },
+        {
+          "id": "correct-json-structure",
+          "description": "Provides correct nested JSON structure",
+          "check": "Response shows { \"general\": { \"defaultApprovalMode\": \"auto_edit\" } } or equivalent"
+        }
+      ]
+    },
+    {
+      "id": "yolo-cli-only",
+      "prompt": "How do I enable YOLO mode in Gemini CLI so it never asks for approval? I want to put it in my settings.json.",
+      "assertions": [
+        {
+          "id": "yolo-is-cli-only",
+          "description": "States that YOLO mode cannot be set in settings.json",
+          "check": "Response clearly states YOLO mode is not settable via settings.json"
+        },
+        {
+          "id": "provides-cli-flag",
+          "description": "Gives the correct CLI flag (--yolo or --approval-mode=yolo)",
+          "check": "Response mentions --yolo flag or --approval-mode=yolo"
+        },
+        {
+          "id": "does-not-show-yolo-in-settings",
+          "description": "Does NOT show general.approvalMode: yolo in a settings.json snippet",
+          "check": "Response does not include a settings.json block with yolo value for approvalMode"
+        },
+        {
+          "id": "mentions-disableYoloMode",
+          "description": "Optionally mentions security.disableYoloMode to block it",
+          "check": "Response mentions security.disableYoloMode as a way to prevent YOLO mode (bonus)"
+        }
+      ]
+    },
+    {
+      "id": "voice-mode-enable",
+      "prompt": "How do I enable voice mode in Gemini CLI? What settings do I need to configure?",
+      "assertions": [
+        {
+          "id": "uses-experimental-voiceMode",
+          "description": "Mentions experimental.voiceMode: true",
+          "check": "Response includes experimental.voiceMode set to true"
+        },
+        {
+          "id": "mentions-activation-mode",
+          "description": "Mentions experimental.voice.activationMode",
+          "check": "Response mentions activationMode or push-to-talk"
+        },
+        {
+          "id": "in-experimental-section",
+          "description": "Places voice settings under the experimental key",
+          "check": "Response nests voice settings under `experimental` in settings.json"
+        },
+        {
+          "id": "correct-backend-field",
+          "description": "Mentions backend field or gemini-live default",
+          "check": "Response mentions experimental.voice.backend or gemini-live"
+        }
+      ]
+    },
+    {
+      "id": "context-filtering-paths",
+      "prompt": "I want to configure Gemini CLI to respect .gitignore and .geminiignore when it searches for files, and also enable fuzzy search for @ file references. What are the correct settings.json fields?",
+      "assertions": [
+        {
+          "id": "uses-fileFiltering-subpath",
+          "description": "Uses context.fileFiltering.* sub-path (not old context.respectGitignore flat path)",
+          "check": "Response uses context.fileFiltering.respectGitIgnore (camelCase G)"
+        },
+        {
+          "id": "uses-geminiIgnore-path",
+          "description": "Uses context.fileFiltering.respectGeminiIgnore",
+          "check": "Response uses context.fileFiltering.respectGeminiIgnore"
+        },
+        {
+          "id": "uses-fuzzy-search-path",
+          "description": "Uses context.fileFiltering.enableFuzzySearch",
+          "check": "Response uses context.fileFiltering.enableFuzzySearch (not context.fuzzySearch)"
+        },
+        {
+          "id": "does-not-use-old-flat-paths",
+          "description": "Does not use old flat paths like context.respectGitignore",
+          "check": "Response does not use old flat fields context.respectGitignore or context.fuzzySearch"
+        }
+      ]
+    }
+  ]
+}

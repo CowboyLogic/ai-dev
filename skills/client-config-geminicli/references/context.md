@@ -59,6 +59,7 @@ This is a TypeScript monorepo using pnpm workspaces.
 | `/memory show` | Display all loaded context concatenated |
 | `/memory reload` | Force re-scan and reload all context files |
 | `/memory add <text>` | Append text to `~/.gemini/GEMINI.md` |
+| `/memory inbox` | Review skills auto-extracted from past sessions (requires `experimental.autoMemory: true`) |
 
 ---
 
@@ -103,11 +104,13 @@ When enabled, the CLI automatically saves important information between sessions
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `context.fileName` | array | `["GEMINI.md"]` | File names to scan for |
-| `context.respectGitignore` | boolean | `true` | Skip gitignored files |
-| `context.respectGeminiignore` | boolean | `true` | Skip .geminiignore files |
-| `context.fuzzySearch` | boolean | `false` | Enable fuzzy file matching |
-| `context.recursiveSearch` | boolean | `true` | Search subdirectories |
-| `context.includeDirectories` | array | `[]` | Additional dirs to include |
+| `context.discoveryMaxDirs` | number | `200` | Max directories to search for memory |
+| `context.loadMemoryFromIncludeDirectories` | boolean | `false` | Scan include dirs on `/memory reload` |
+| `context.fileFiltering.respectGitIgnore` | boolean | `true` | Skip gitignored files |
+| `context.fileFiltering.respectGeminiIgnore` | boolean | `true` | Skip .geminiignore files |
+| `context.fileFiltering.enableRecursiveFileSearch` | boolean | `true` | Enable recursive search for `@` completions |
+| `context.fileFiltering.enableFuzzySearch` | boolean | `true` | Enable fuzzy file matching |
+| `context.fileFiltering.customIgnoreFilePaths` | array | `[]` | Additional ignore files (highest precedence) |
 
 ---
 
