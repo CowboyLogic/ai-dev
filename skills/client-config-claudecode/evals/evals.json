@@ -1,0 +1,44 @@
+{
+  "skill_name": "client-config-claudecode",
+  "evals": [
+    {
+      "id": 1,
+      "name": "hook-lint-on-edit",
+      "prompt": "Add a hook to my Claude Code settings so that whenever Claude edits or writes any file, it automatically runs `npm run lint --fix 2>&1` in the project root. Show me the exact JSON to add to my ~/.claude/settings.json.",
+      "expected_output": "A complete, correct hooks configuration showing PostToolUse event with Edit|Write matcher and a command handler running npm run lint --fix",
+      "assertions": [
+        { "id": "uses-PostToolUse-event", "description": "Response uses the PostToolUse hook event (not PreToolUse)" },
+        { "id": "uses-edit-write-matcher", "description": "Matcher covers both Edit and Write tools" },
+        { "id": "includes-project-dir-var", "description": "Uses $CLAUDE_PROJECT_DIR or equivalent to run in project root" },
+        { "id": "valid-json-structure", "description": "The JSON snippet is syntactically valid and uses the correct hooks nesting structure" },
+        { "id": "no-hallucinated-fields", "description": "Does not invent non-existent hook fields or events" }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "permissions-git-allow-deny",
+      "prompt": "Configure my Claude Code settings to allow git read commands (status, log, diff, show) but block destructive git operations like push, reset --hard, and force-push. Show me the exact permissions config.",
+      "expected_output": "Correct allow rules for safe git read commands and deny rules for destructive git operations using proper Bash() rule syntax",
+      "assertions": [
+        { "id": "allow-git-read-commands", "description": "Includes allow rules covering git status, git log, git diff, and/or git show" },
+        { "id": "deny-git-push", "description": "Includes a deny rule that blocks git push" },
+        { "id": "deny-git-reset-hard", "description": "Includes a deny rule that blocks git reset --hard or git reset" },
+        { "id": "correct-bash-rule-syntax", "description": "Uses Bash(...) rule syntax correctly (not just strings like 'git push')" },
+        { "id": "deny-before-allow-awareness", "description": "Response shows awareness that deny takes precedence over allow (evaluation order)" }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "voice-and-model-config",
+      "prompt": "I want to enable voice dictation in tap mode with auto-submit turned on, and set my default model to claude-sonnet-4-6. Show me the complete config snippet for my settings.json.",
+      "expected_output": "Correct voice object (not deprecated voiceEnabled) plus model setting in valid JSON",
+      "assertions": [
+        { "id": "uses-voice-object-not-deprecated", "description": "Uses the voice object {enabled, mode, autoSubmit} rather than the deprecated voiceEnabled boolean" },
+        { "id": "voice-mode-tap", "description": "Sets voice.mode to tap" },
+        { "id": "voice-autosubmit-true", "description": "Sets voice.autoSubmit to true" },
+        { "id": "model-key-correct", "description": "Uses the model key (not modelId or defaultModel) set to claude-sonnet-4-6" },
+        { "id": "valid-json", "description": "The snippet is valid JSON that could be merged into settings.json" }
+      ]
+    }
+  ]
+}

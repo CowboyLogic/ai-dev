@@ -8,6 +8,9 @@
 | `plan` | primary | file edits and bash set to `ask` — analysis/planning |
 | `general` | subagent | Full access — multi-step research tasks |
 | `explore` | subagent | Read-only codebase exploration |
+| `compaction` | system (hidden) | Summarises context when it fills up |
+| `title` | system (hidden) | Generates session titles |
+| `summary` | system (hidden) | Generates session summaries |
 
 Switch primary agents with Tab or the `switch_agent` keybind.
 Invoke subagents with `@general`, `@explore`, or let the primary agent call them automatically.
@@ -118,12 +121,18 @@ Use glob patterns for fine-grained bash control:
           "git push *": "deny",
           "npm run *": "allow",
           "rm *": "ask"
+        },
+        "task": {
+          "*": "allow",
+          "my-mcp_*": "deny"
         }
       }
     }
   }
 }
 ```
+
+The `task` permission controls which subagents this agent can invoke, using glob patterns on agent or MCP tool names. Set `"deny"` to block invocation.
 
 ---
 

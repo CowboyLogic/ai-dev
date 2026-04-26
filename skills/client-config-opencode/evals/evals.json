@@ -1,0 +1,50 @@
+[
+  {
+    "id": "add-mcp-remote-oauth",
+    "prompt": "Add a remote MCP server named 'sentry' to my opencode.json. It should connect to https://mcp.sentry.io/mcp, use OAuth authentication, and have a 10-second timeout. Show me the exact JSON to add.",
+    "assertions": [
+      { "id": "correct-type-remote", "description": "Sets type to 'remote'" },
+      { "id": "correct-url", "description": "Uses url field with https://mcp.sentry.io/mcp" },
+      { "id": "oauth-not-false", "description": "Does not set oauth: false (leaves it for auto or provides OAuth config)" },
+      { "id": "correct-timeout", "description": "Sets timeout to 10000 (milliseconds)" },
+      { "id": "correct-nesting", "description": "Entry is nested under top-level 'mcp' object with key 'sentry'" },
+      { "id": "enabled-field", "description": "Includes enabled: true or omits it (not sets to false)" }
+    ]
+  },
+  {
+    "id": "configure-gitlab-duo-provider",
+    "prompt": "I want to use GitLab Duo as an AI provider in opencode. How do I configure it? I'm using a self-hosted GitLab instance at https://gitlab.mycompany.com. Include the environment variable setup.",
+    "assertions": [
+      { "id": "identifies-gitlab-provider", "description": "Names the provider as 'gitlab' or equivalent" },
+      { "id": "mentions-gitlab-token", "description": "References GITLAB_TOKEN environment variable" },
+      { "id": "mentions-instance-url", "description": "References GITLAB_INSTANCE_URL or equivalent for self-hosted" },
+      { "id": "env-var-syntax", "description": "Uses {env:VARIABLE_NAME} syntax for secrets in config" },
+      { "id": "correct-provider-structure", "description": "Shows the provider block inside the 'provider' object in opencode.json" }
+    ]
+  },
+  {
+    "id": "custom-agent-read-only",
+    "prompt": "Create a custom opencode agent called 'auditor' that: is a subagent, uses claude-sonnet-4-5, has read-only permissions (can read files but cannot edit or run bash), and has a temperature of 0.1. Show me both the JSON config and the equivalent markdown agent file.",
+    "assertions": [
+      { "id": "correct-mode-subagent", "description": "Sets mode to 'subagent'" },
+      { "id": "correct-model", "description": "Sets model to anthropic/claude-sonnet-4-5 or similar" },
+      { "id": "edit-deny", "description": "Sets permission.edit to 'deny'" },
+      { "id": "bash-deny", "description": "Sets permission.bash to 'deny'" },
+      { "id": "read-allow", "description": "Sets permission.read to 'allow'" },
+      { "id": "correct-temperature", "description": "Sets temperature to 0.1" },
+      { "id": "shows-markdown-format", "description": "Shows YAML frontmatter format for the .md agent file" },
+      { "id": "correct-file-location", "description": "Mentions ~/.config/opencode/agents/ or .opencode/agents/ as the file location" }
+    ]
+  },
+  {
+    "id": "keybind-leader-and-disable",
+    "prompt": "How do I change the leader key in opencode from the default to ctrl+space? Also, how do I disable the session_fork keybind entirely? Which config file do these go in?",
+    "assertions": [
+      { "id": "correct-file-tui-json", "description": "Identifies tui.json (not opencode.json) as the target file" },
+      { "id": "correct-file-path", "description": "Gives correct path ~/.config/opencode/tui.json" },
+      { "id": "leader-key-syntax", "description": "Shows keybinds.leader: 'ctrl+space' or equivalent" },
+      { "id": "disable-empty-string", "description": "Shows setting session_fork to empty string '' or 'none' to disable" },
+      { "id": "keybinds-object", "description": "Shows both changes nested inside a 'keybinds' object" }
+    ]
+  }
+]

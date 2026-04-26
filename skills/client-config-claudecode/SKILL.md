@@ -11,7 +11,9 @@ You help the user manage `~/.claude/settings.json` — their user-level Claude C
 
 | Scope | File | Shared? |
 |-------|------|---------|
-| Managed | `/Library/Application Support/ClaudeCode/managed-settings.json` (mac) | IT-deployed |
+| Managed (macOS) | `/Library/Application Support/ClaudeCode/managed-settings.json` | IT-deployed |
+| Managed (Linux/WSL) | `/etc/claude-code/managed-settings.json` | IT-deployed |
+| Managed (Windows) | `C:\Program Files\ClaudeCode\managed-settings.json` | IT-deployed |
 | Local project | `.claude/settings.local.json` | No (gitignored) |
 | Project | `.claude/settings.json` | Yes (git) |
 | **User** | **`~/.claude/settings.json`** | No |
@@ -35,6 +37,8 @@ You help the user manage `~/.claude/settings.json` — their user-level Claude C
 | Model, effort, thinking, output style | `references/settings-schema.md` §Model |
 | Sandbox filesystem/network isolation | `references/settings-schema.md` §Sandbox |
 | Auto mode classifier | `references/settings-schema.md` §AutoMode |
+| Plugins (enable/disable, marketplaces) | `references/settings-schema.md` §Plugins |
+| Subagent files (user or project scope) | `references/settings-schema.md` §Subagents |
 | Environment variables, attribution, misc | `references/settings-schema.md` §Misc |
 | Unknown / full schema lookup | `references/settings-schema.md` |
 
@@ -57,6 +61,9 @@ You help the user manage `~/.claude/settings.json` — their user-level Claude C
 // Show thinking summaries
 { "showThinkingSummaries": true }
 
+// Voice dictation (voiceEnabled is deprecated)
+{ "voice": { "enabled": true, "mode": "tap", "autoSubmit": true } }
+
 // Disable all hooks (emergency)
 { "disableAllHooks": true }
 ```
@@ -75,7 +82,7 @@ Run with: `python scripts/<script>.py` from the skill directory, or with absolut
 
 When the user asks you to **update**, **refresh**, or **sync** this skill with the latest Claude Code documentation, follow these steps:
 
-1. **Fetch** — run `python scripts/update-references.py --all` (requires network access). This fetches each source URL listed in `sources.json` and saves raw content to `_fetched/`.
+1. **Fetch** — run `python scripts/update-references.py --all` (requires network access). This fetches each source URL listed in `assets/sources.json` and saves raw content to `_fetched/`.
 
 2. **Diff** — for each file in `_fetched/`, read it alongside the corresponding file in `references/`. Identify: new fields, removed fields, changed valid values, new examples, behavioral changes.
 
@@ -89,7 +96,7 @@ When the user asks you to **update**, **refresh**, or **sync** this skill with t
 
 ### Source URLs (for manual lookup)
 
-See `sources.json` for the full manifest. Key URLs:
+See `assets/sources.json` for the full manifest. Key URLs:
 
 | Reference file | Source URL |
 |----------------|-----------|

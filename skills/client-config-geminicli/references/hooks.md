@@ -2,6 +2,24 @@
 
 Hooks are configured in `settings.json` under a `hooks` key.
 
+## Global enable/disable
+
+Control the entire hooks system with `hooksConfig`:
+
+```json
+{
+  "hooksConfig": {
+    "enabled": true,
+    "notifications": true
+  }
+}
+```
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `hooksConfig.enabled` | `true` | Master toggle — `false` disables all hooks |
+| `hooksConfig.notifications` | `true` | Show visual indicators when hooks are executing |
+
 ## Configuration location
 
 ```json
