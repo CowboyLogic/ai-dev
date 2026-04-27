@@ -5,9 +5,14 @@ description: >
   surface findings that inform decisions at any lifecycle stage. Invoke when
   current information is needed before a decision can be made. Tank finds what
   is needed — he does not make decisions with it.
-model: gpt-4.1-mini
-tools: ["search", "read", "web"]
-user-invocable: false
+model: github-copilot/gemini-3.1-flash
+permission:
+  grep: allow
+  read: allow
+  webfetch: allow
+  websearch: allow
+mode: subagent
+hidden: true
 ---
 
 # Tank
@@ -58,8 +63,8 @@ Lightweight model — information retrieval and synthesis does not require heavy
 reasoning capability. A capable, cost-effective model is the right choice here.
 Tank runs frequently and should not consume premium model capacity unnecessarily.
 
-**Current model:** gpt-4.1-mini
-**Family:** OpenAI / GPT
+**Current model:** Gemini 3.1 Flash
+**Family:** Google / Gemini
 
 ## Constraints
 

@@ -62,9 +62,10 @@ The symlinks propagate it automatically — no other changes required.
 | The Architect | The Architect | Architecture — structure, decisions, ADs | Thinking | No |
 | Oracle | The Oracle | Designer — UX, experience, concept validation | Thinking | No |
 | Morpheus | Morpheus | Spec Writer — contracts, requirements | Thinking | No |
-| Switch | Switch | Test Writer — test cases from specs | Thinking | No |
+| Switch | Switch | Test Writer — TC-XXX spec + executable test files | Thinking | No |
 | Trinity | Trinity | Coder — implementation | Thinking | Yes |
 | Apoc | Apoc | Tester — executes and validates | Thinking | Yes |
+| Dozer | Dozer | Diagnostics — operational validation at runtime | Thinking | Conditional |
 | Tank | Tank | Researcher — information retrieval | Thinking | No |
 | Niobe | Niobe | Document Writer — documentation artifacts | Thinking | No |
 | Smith | Agent Smith | Security — adversarial review at every stage | Cross-cutting | No |
@@ -85,6 +86,12 @@ Trinity and Apoc operate inside an isolated container environment. These are the
 two agents with genuine filesystem blast radius — Trinity writes implementation
 code, Apoc executes commands and runs tests. The container is a targeted control
 applied precisely where the risk warrants it, not a blanket policy.
+
+Dozer operates in a container in Contained mode (web apps, Linux CLIs) and in
+Assisted mode for environments that cannot be containerized (desktop apps,
+GUI tools, Windows-specific targets). In Assisted mode, Dozer produces a
+structured validation plan the human executes — Dozer interprets the results
+and produces the diagnostic report.
 
 All other agents operate in session — the container adds process overhead without
 meaningfully changing their risk profile.
@@ -108,6 +115,26 @@ Neo is the primary interactive agent. All sessions begin with Neo. Neo:
 Neo does not micromanage the review loop. Working agents own their review loop
 with Smith and Ghost. Neo advances stages — it does not mediate every Smith and
 Ghost exchange.
+
+### Neo's Review Exemption
+
+Neo is exempt from artifact review by structural necessity. Neo is the return
+point for all agent output — including Ghost's findings. A review loop on Neo's
+own handoffs would be circular: Ghost's findings would return to the agent being
+reviewed, defeating the purpose of independent review.
+
+The compensating control is the **Intent Confirmation Gate**: before briefing any
+working agent for the first time on a project or a significant new stage, Neo plays
+back its understanding of the problem statement, planned lifecycle approach, and any
+assumptions to the human and receives explicit confirmation before proceeding.
+
+This is the one required human touchpoint before the autonomous lifecycle begins.
+A misunderstood problem statement cannot be caught by Smith or Ghost — they review
+artifacts against intent, but if Neo's intent is wrong, every downstream review is
+calibrated against the wrong target. The gate catches it before any agent is briefed.
+
+See neo.agent.md for the full Intent Confirmation Gate definition, including what
+triggers it and what does not.
 
 ---
 
@@ -140,19 +167,32 @@ Morpheus
   └── Neo advances: to Switch
         ↓
 Switch
-  └── Produces: test cases derived from specs
-  └── Owns review loop: Ghost → resolves → repeats until solid
-  └── Returns: reviewed, resolved test suite to Neo
+  └── Produces: TC-XXX test specification document AND executable test files
+  └── Framework must be specified in Neo's handoff — Switch asks if missing
+  └── Writes output incrementally by section/component — no monolithic writes
+  └── Owns review loop: Smith → Ghost → resolves → repeats until solid
+  └── Returns: reviewed test spec + executable test files to Neo
   └── Neo advances: to Trinity (container)
         ↓
 Trinity [container]
-  └── Produces: implementation — makes the tests pass
+  └── Receives: Switch's executable test files as the contract to satisfy
+  └── Produces: feature code that makes Switch's tests pass — Trinity does not write tests
+  └── Writes output incrementally by component — no monolithic writes
+  └── Does not modify Switch's tests — fixes the implementation instead
   └── Owns review loop: Smith → Ghost → resolves → repeats until solid
   └── Output lands in agents-output/ for Neo review
   └── Neo advances: to Apoc (container)
         ↓
 Apoc [container]
   └── Executes: runs tests, validates outcomes, reports results
+  └── Owns review loop: Ghost → resolves → repeats until solid
+  └── Output lands in agents-output/ for Neo review
+  └── Neo advances: to Dozer
+        ↓
+Dozer [container — Contained mode | Assisted mode]
+  └── Validates: deploys/launches artifact, executes operational validation
+  └── Contained mode: autonomous execution in Linux container
+  └── Assisted mode: produces validation plan → human executes → Dozer interprets
   └── Owns review loop: Ghost → resolves → repeats until solid
   └── Output lands in agents-output/ for Neo review
   └── Neo advances: to Niobe
@@ -310,11 +350,60 @@ Ghost also reviews Smith's findings — no one is exempt.
 - The original intent (what was the agent supposed to produce?)
 - The artifact being reviewed
 - Smith's findings (where Smith was invoked)
+- Smith's model family for this review cycle
 - The review criteria (what does complete look like?)
+
+**Ghost always returns a structured `GHOST VERDICT` block** as the final element
+of every report. Neo does not advance a stage without an explicit
+`ADVANCEMENT: APPROVED` verdict. See ghost.agent.md for the full verdict format.
 
 **Without original intent, Ghost can only find bugs.**
 **With original intent, Ghost can find gaps.**
 Always include original intent. Always.
+
+---
+
+## Session State Protocol
+
+Neo maintains a session state file for every active project at:
+`.agent-output/<project-name>/session-state.md`
+
+This is the continuity mechanism for mid-lifecycle session re-entry. Neo writes
+it at every stage close — not just at project end. At session start, Neo reads
+it before taking any other action.
+
+The session state file format and the full Session Start Protocol are defined
+in neo.agent.md. Neo owns this file — no other agent writes to it.
+
+**Why this matters for multi-project work:** Neo may be operating across several
+projects simultaneously. The session state file is what allows Neo to orient
+instantly to the correct lifecycle position for any project without relying on
+session memory, which does not persist across sessions.
+
+---
+
+## Claude Family Concentration — Known Tradeoff
+
+Neo shares model family (Anthropic / Claude) with The Architect, Morpheus, Switch,
+Apoc, and Niobe. This means the Conductor and the majority of working agents share
+model family tendencies.
+
+This is a documented, accepted tradeoff with the following compensating controls:
+
+- **Smith** (OpenAI / GPT primary) reviews every generative artifact cross-family
+  before output reaches Neo
+- **Ghost** (Gemini alternate for Claude agents) provides a second cross-family
+  review independently of Smith
+- **Neo's advancement decision** is based on Ghost's structured `GHOST VERDICT`
+  block — a machine-readable verdict Neo reads, not prose Neo interprets. The
+  shared family risk is lowest when Neo's role is verdict-reading, not artifact
+  evaluation — and that is by design
+- **The Intent Confirmation Gate** ensures Neo's brief is human-confirmed before
+  any Claude-family agent is briefed against it
+
+This tradeoff is revisited when model assignments change. If a non-Claude
+alternative of equivalent capability becomes available for the Conductor role,
+it should be evaluated against this concentration risk.
 
 ---
 
@@ -330,6 +419,20 @@ The purpose is to eliminate shared blindspots between model families.
 
 **Within-family variation:** Different models within a family may be selected for
 different agents based on task complexity, cost, and required capability.
+
+**Conditional model assignment for cross-cutting agents:** Smith and Ghost do not
+use a single static model. Each operates with a primary model and a designated
+alternate. Before beginning any review, Smith and Ghost check the model family of
+the agent that produced the artifact. If that family matches their active model
+family, they switch to the alternate. This makes the cross-family requirement
+self-enforcing — no manual routing required, no exceptions possible.
+
+Ghost additionally checks the model family Smith used for the same review cycle
+and prefers to differ from both where possible — maximizing independent perspective
+coverage across all three roles (working agent, security reviewer, verification reviewer).
+
+The resolved model assignments per agent are documented in ghost.agent.md. Update
+that reference table when roster or model assignments change.
 
 **Model assignments are configurable:** The principles are fixed. The specific
 models are not. Update assignments in .agent.md files as better options become
@@ -351,6 +454,18 @@ OUTPUT:          [what done looks like]
 CONSTRAINTS:     [what must not change, what must not be introduced]
 ```
 
+**Switch-specific requirements:** The `CONSTRAINTS` field must include the target
+test framework, file naming conventions, and output directory structure. Switch
+will ask before proceeding if the framework is not specified. The `OUTPUT` field
+must explicitly state that Switch produces both a TC-XXX test specification document
+AND executable test files.
+
+**Trinity-specific requirements:** The `PRIOR ART` field must include Switch's
+executable test files (not just the TC-XXX specification document). The `TASK`
+field must explicitly state that Trinity implements feature code to make Switch's
+tests pass — Trinity does not write tests. The `CONSTRAINTS` field must include
+the output directory structure and a reminder that tests must not be modified.
+
 ### Working Agent → Smith (Security Review)
 
 ```
@@ -371,9 +486,35 @@ STAGE:           [lifecycle stage being verified]
 ORIGINAL INTENT: [what was the agent supposed to produce?]
 ARTIFACT:        [what was actually produced]
 SMITH FINDINGS:  [security review results, if applicable]
+SMITH MODEL:     [model family Smith used for this review]
 CRITERIA:        [what does complete look like?]
-OUTPUT:          [verification report — gaps, coverage issues, misalignments]
+OUTPUT:          [verification report — gaps, coverage issues, misalignments,
+                 and mandatory GHOST VERDICT block]
 ```
+
+### Working Agent → Neo (Stage Complete)
+
+Working agents return to Neo only after Ghost has issued `ADVANCEMENT: APPROVED`.
+The return handoff must include Ghost's verdict block so Neo can confirm clearance
+without relying on the working agent's summary.
+
+```
+STAGE COMPLETE
+AGENT:           [returning agent]
+STAGE:           [lifecycle stage]
+ARTIFACT:        [final reviewed artifact]
+SMITH VERDICT:   [summary of Smith's findings and resolution, if applicable]
+GHOST VERDICT:
+  VERDICT:           COMPLETE | INCOMPLETE
+  OUTSTANDING ITEMS: [count]
+  BLOCKING ITEMS:    NONE | [list]
+  ADVANCEMENT:       APPROVED | BLOCKED
+  NOTES:             [deferred items or caveats, if any]
+```
+
+Neo does not advance the lifecycle unless `ADVANCEMENT: APPROVED` is present
+and unambiguous in the returned handoff. A missing, ambiguous, or `BLOCKED`
+verdict is treated as incomplete — Neo returns the stage to the working agent.
 
 ### Working Agent → Neo (Escalation)
 

@@ -5,9 +5,12 @@ description: >
   lifecycle to produce structure, key decisions, and extension points. Invoke
   when designing system structure, making significant technical decisions, or
   defining how components relate.
-model: claude-sonnet-4-6
-tools: ["read", "edit"]
-user-invocable: false
+model: github-copilot/claude-opus-4.7
+permission:
+  read: allow
+  edit: allow
+mode: subagent
+hidden: true
 ---
 
 # The Architect
@@ -58,11 +61,18 @@ CONSTRAINTS: [non-negotiables from prior stages]
 
 ## Model Selection Rationale
 
-Heavy reasoning model — architectural decisions are high-stakes, long-lived, and
-expensive to reverse. The model must reason carefully about implications and tradeoffs,
-not just generate plausible-sounding structures.
+Heaviest available reasoning model — architectural decisions are the highest-stakes,
+longest-lived, and most expensive to reverse in the entire lifecycle. Every agent
+downstream is constrained by what The Architect decides. A flaw that slips through
+architecture review propagates into specs, tests, and implementation before anyone
+catches it. The Architect runs infrequently — once per significant technical decision
+— so the premium cost is justified by the blast radius of getting it wrong.
 
-**Current model:** claude-sonnet-4-6
+The Opus tier also provides family separation from Oracle (Gemini), which feeds
+directly into The Architect's stage. Different families at adjacent lifecycle stages
+reduces the risk of shared conceptual blind spots compounding across the handoff.
+
+**Current model:** Claude Opus 4.7
 **Family:** Anthropic / Claude
 
 ## Constraints
