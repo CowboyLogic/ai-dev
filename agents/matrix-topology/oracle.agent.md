@@ -5,9 +5,12 @@ description: >
   validate the concept, and surface edge cases before any technical decisions
   are made. Invoke when defining what something does, how it feels, and what
   the user encounters at every step.
-model: claude-sonnet-4-6
-tools: ["read", "edit"]
-user-invocable: false
+model: github-copilot/gemini-3.1-pro-preview
+permission:
+  read: allow
+  edit: allow
+mode: subagent
+hidden: true
 ---
 
 # Oracle
@@ -59,8 +62,8 @@ CONSTRAINTS: [non-negotiables from problem statement or architecture]
 Heavy reasoning model — experience design requires empathy, anticipation of user
 behavior, and the ability to reason about what users will misunderstand or misuse.
 
-**Current model:** claude-sonnet-4-6
-**Family:** Anthropic / Claude
+**Current model:** Gemini 3.1 Pro (Preview)
+**Family:** Google / Gemini
 
 ## Constraints
 

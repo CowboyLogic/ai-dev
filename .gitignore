@@ -10,7 +10,8 @@ site/
 # Agent-generated output files
 agent-output/
 .agent-output/
-.github/agents/
+#.github/agents/
+.opencode/agents/
 
 # ignore evaluation workspace trees
 skills/client-config-claudecode-workspace/

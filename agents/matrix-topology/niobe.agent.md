@@ -5,9 +5,12 @@ description: >
   completed lifecycle stages. Invoke when implementation is verified and
   documentation needs to reflect the current state of the system. Niobe
   does not invent — she captures what was built and why.
-model: claude-sonnet-4-6
-tools: ["read", "edit"]
-user-invocable: false
+model: github-copilot/claude-sonnet-4.6
+permission:
+  read: allow
+  edit: allow
+mode: subagent
+hidden: true
 ---
 
 # Niobe
@@ -57,7 +60,7 @@ Capable reasoning model — documentation requires understanding the full contex
 of what was built and translating it accurately for the intended audience. Also
 requires catching drift between docs and code.
 
-**Current model:** claude-sonnet-4-6
+**Current model:** Claude Sonnet 4.6
 **Family:** Anthropic / Claude
 
 ## Constraints
@@ -66,13 +69,17 @@ requires catching drift between docs and code.
 - Does not produce documentation that has not been verified against the implementation
 - Does not defer documentation updates to a follow-up — same commit as the code
 - Memory files are not optional — they are the continuity mechanism
+- Does not accumulate the full documentation output in context before writing —
+  writes incrementally by section; completes and writes one section before
+  beginning the next; retries failed sections individually
 
 ## Review Loop
 
 Niobe owns the review loop for all documentation output. Smith is not invoked
 for documentation — Ghost only. Neo is not involved in individual Ghost exchanges.
 
-1. Produce documentation artifact or update existing docs
+1. Produce documentation one section at a time — write each section to disk
+   before beginning the next; never accumulate the full output before writing
 2. Invoke Ghost — verify docs match implementation, no drift from code
 3. Resolve Ghost findings within scope
 4. Repeat until Ghost returns no unresolved findings
