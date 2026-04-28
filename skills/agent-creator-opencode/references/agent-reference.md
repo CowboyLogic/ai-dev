@@ -487,6 +487,39 @@ permission:
 provider/model-id
 ```
 
+Run `opencode models` to list all model IDs for your configured providers.
+
+### GitHub Copilot models
+
+Auth via GitHub OAuth — use `/connect` inside opencode to authenticate. No API key required.
+
+| Model ID | Display Name | Best for |
+|---|---|---|
+| `github-copilot/claude-sonnet-4.6` | Claude Sonnet 4.6 | Orchestrators, complex code generation |
+| `github-copilot/claude-opus-4.6` | Claude Opus 4.6 | Highest-quality reasoning and architecture agents |
+| `github-copilot/claude-opus-4.7` | Claude Opus 4.7 | Highest-quality reasoning and architecture agents |
+| `github-copilot/claude-opus-4.5` | Claude Opus 4.5 | Heavyweight analysis agents |
+| `github-copilot/claude-opus-41` | Claude Opus 4.1 | Heavyweight analysis agents |
+| `github-copilot/claude-sonnet-4` | Claude Sonnet 4 | Orchestrators, general coding |
+| `github-copilot/gpt-5.4` | GPT-5.4 | Code review, complex reasoning |
+| `github-copilot/gpt-5.3-codex` | GPT-5.3-Codex | Code-focused agents |
+| `github-copilot/gpt-5.2-codex` | GPT-5.2-Codex | Code-focused agents |
+| `github-copilot/gpt-5.2` | GPT-5.2 | General-purpose agents |
+| `github-copilot/gpt-5.4-mini` | GPT-5.4 Mini | Fast subagents, planning, analysis |
+| `github-copilot/gpt-5.4-nano` | GPT-5.4 Nano | High-volume lightweight subagents |
+| `github-copilot/gpt-5-mini` | GPT-5-mini | Fast, cheap subagents |
+| `github-copilot/gpt-5.5` | GPT-5.5 | High-capability general agents |
+| `github-copilot/gpt-5.1-codex` | GPT-5.1-Codex | Code generation |
+| `github-copilot/gpt-5.1-codex-mini` | GPT-5.1-Codex-mini | Lightweight code agents |
+| `github-copilot/gpt-5.1-codex-max` | GPT-5.1-Codex-max | Max-context code agents |
+| `github-copilot/gemini-3.1-pro-preview` | Gemini 3.1 Pro Preview | Architecture, design, multimodal agents |
+| `github-copilot/gemini-3-pro-preview` | Gemini 3 Pro Preview | Architecture, design, multimodal agents |
+| `github-copilot/gemini-3-flash-preview` | Gemini 3 Flash | Fast, cheap analysis subagents |
+| `github-copilot/gemini-2.5-pro` | Gemini 2.5 Pro | Deep reasoning, large context |
+| `github-copilot/grok-code-fast-1` | Grok Code Fast 1 | Research, web-augmented agents |
+
+### Other common providers
+
 | Provider | Example model IDs |
 |---|---|
 | Anthropic | `anthropic/claude-sonnet-4-20250514` |
@@ -495,10 +528,8 @@ provider/model-id
 | OpenAI | `openai/gpt-5` |
 | OpenCode Zen | `opencode/gpt-5.1-codex` |
 
-Run `opencode models` to list all model IDs for your configured providers.
-
 **When to specify model per-agent:**
-- Different capability tiers for different roles (haiku for planning, sonnet for coding)
+- Different capability tiers for different roles (nano/mini for planning, sonnet/opus for coding)
 - Specific provider features (reasoning effort, extended context)
 - Subagents that should always use a specific model regardless of the primary agent
 

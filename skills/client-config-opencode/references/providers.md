@@ -142,6 +142,50 @@ Provider-specific fields: `region`, `profile`, `endpoint` (VPC endpoint alias)
 - Self-hosted: set `GITLAB_INSTANCE_URL` and `GITLAB_TOKEN` env vars
 - Use `small_model` for `gitlab/gpt-5-nano`
 
+### GitHub Copilot
+
+Auth via GitHub OAuth — no API key required. Connect with `/connect` inside opencode.
+
+```bash
+/connect   # select "GitHub Copilot" to authenticate
+```
+
+Model IDs use the `github-copilot/` prefix:
+
+```json
+{ "model": "github-copilot/claude-sonnet-4.6" }
+```
+
+**Available models (as of April 2026)**
+
+| Model ID | Display Name |
+|---|---|
+| `github-copilot/gpt-5.1-codex-max` | GPT-5.1-Codex-max |
+| `github-copilot/gpt-5.1-codex` | GPT-5.1-Codex |
+| `github-copilot/gpt-5.1-codex-mini` | GPT-5.1-Codex-mini |
+| `github-copilot/gpt-5.2` | GPT-5.2 |
+| `github-copilot/gpt-5.2-codex` | GPT-5.2-Codex |
+| `github-copilot/gpt-5.3-codex` | GPT-5.3-Codex |
+| `github-copilot/gpt-5.4` | GPT-5.4 |
+| `github-copilot/gpt-5.4-mini` | GPT-5.4 Mini |
+| `github-copilot/gpt-5.4-nano` | GPT-5.4 Nano |
+| `github-copilot/gpt-5.5` | GPT-5.5 |
+| `github-copilot/gpt-5-mini` | GPT-5-mini |
+| `github-copilot/claude-sonnet-4` | Claude Sonnet 4 |
+| `github-copilot/claude-sonnet-4.6` | Claude Sonnet 4.6 |
+| `github-copilot/claude-opus-4.5` | Claude Opus 4.5 |
+| `github-copilot/claude-opus-4.6` | Claude Opus 4.6 |
+| `github-copilot/claude-opus-4.7` | Claude Opus 4.7 |
+| `github-copilot/claude-opus-41` | Claude Opus 4.1 |
+| `github-copilot/gemini-2.5-pro` | Gemini 2.5 Pro |
+| `github-copilot/gemini-3-flash-preview` | Gemini 3 Flash |
+| `github-copilot/gemini-3-pro-preview` | Gemini 3 Pro Preview |
+| `github-copilot/gemini-3.1-pro-preview` | Gemini 3.1 Pro Preview |
+| `github-copilot/grok-code-fast-1` | Grok Code Fast 1 |
+
+> [!TIP]
+> Run `/models` inside opencode after connecting to see the live list of available Copilot models for your subscription.
+
 ### Helicone (AI Gateway with caching)
 ```json
 {
