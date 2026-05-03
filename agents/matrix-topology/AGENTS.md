@@ -162,7 +162,7 @@ Copilot tool aliases: `read`, `edit`, `run` (bash), `search` (grep), `web` (fetc
 | `github-copilot/gpt-5.3-codex` | `inherit` *(GPT — not available)* | `GPT-5.3-Codex (copilot)` |
 | `github-copilot/gpt-5.4` | `inherit` *(GPT — not available)* | `GPT-5.4 (copilot)` |
 | `github-copilot/gemini-3.1-pro-preview` | `inherit` *(Gemini — not available)* | `Gemini 3.1 Pro (copilot)` |
-| `github-copilot/gemini-3.1-flash` | `inherit` *(Gemini — not available)* | `Gemini 3.1 Flash (copilot)` |
+| `github-copilot/gemini-3-flash-preview` | `inherit` *(Gemini — not available)* | `Gemini 3 Flash (Preview) (copilot)` |
 
 > [!NOTE]
 > Claude Code only serves Claude models. Agents designated for GPT or Gemini families
