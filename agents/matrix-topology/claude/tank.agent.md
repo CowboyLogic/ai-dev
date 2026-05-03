@@ -5,14 +5,8 @@ description: >
   surface findings that inform decisions at any lifecycle stage. Invoke when
   current information is needed before a decision can be made. Tank finds what
   is needed — he does not make decisions with it.
-model: github-copilot/gemini-3.1-flash
-permission:
-  grep: allow
-  read: allow
-  webfetch: allow
-  websearch: allow
-mode: subagent
-hidden: true
+tools: Read, Grep, WebFetch
+model: haiku
 ---
 
 # Tank
