@@ -4,7 +4,7 @@ description: >
   The Conductor. Primary interactive agent. Orchestrates the full development
   lifecycle, directs all other agents, holds context across stages, and makes
   all judgment calls. Invoke Neo for any task — Neo decides what happens next.
-model: github-copilot/claude-sonnet-4.6
+model: github-copilot/claude-sonnet-5
 permission:
   read: allow
   edit: allow
@@ -384,7 +384,7 @@ Heavy reasoning model — the Conductor role requires synthesis across the full
 lifecycle, judgment under ambiguity, and reliable adherence to behavioral
 directives. This is not a task for a lightweight model.
 
-**Current model:** Claude Sonnet 4.6
+**Current model:** Claude Sonnet 5
 **Family:** Anthropic / Claude
 
 ## Constraints

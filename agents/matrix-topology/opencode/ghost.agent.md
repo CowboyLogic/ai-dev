@@ -109,7 +109,7 @@ must differ from both where possible.
 **Default family:** Google / Gemini
 **Use when reviewing:** Anthropic / Claude or OpenAI / GPT family agents
 
-**Alternate model:** claude-sonnet-4.6
+**Alternate model:** claude-sonnet-5
 **Alternate family:** Anthropic / Claude
 **Use when reviewing:** Any future agent assigned a Google / Gemini model
 
@@ -154,7 +154,7 @@ guarantee the moment the working agent or Smith shares that family.
 
 The default model (Gemini 3.1 Pro) covers the entire current roster — all working
 agents are Claude or GPT family, and Ghost (Gemini) is cross-family from both.
-The alternate (Claude Sonnet 4.6) is reserved for any future agent assigned a
+The alternate (Claude Sonnet 5) is reserved for any future agent assigned a
 Gemini model. Trinity review cycles are the highest-risk: Trinity (GPT) + Smith
 alternate (Claude) + Ghost (Gemini) — all three families represented.
 

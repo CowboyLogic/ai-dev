@@ -5,7 +5,7 @@ description: >
   completed lifecycle stages. Invoke when implementation is verified and
   documentation needs to reflect the current state of the system. Niobe
   does not invent — she captures what was built and why.
-model: github-copilot/claude-sonnet-4.6
+model: github-copilot/claude-sonnet-5
 permission:
   read: allow
   edit: allow
@@ -63,7 +63,7 @@ Capable reasoning model — documentation requires understanding the full contex
 of what was built and translating it accurately for the intended audience. Also
 requires catching drift between docs and code.
 
-**Current model:** Claude Sonnet 4.6
+**Current model:** Claude Sonnet 5
 **Family:** Anthropic / Claude
 
 ## Constraints

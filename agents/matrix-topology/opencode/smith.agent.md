@@ -5,7 +5,7 @@ description: >
   that produces a generative artifact. Invoke Smith after architecture, design,
   specifications, and implementation — every time, without exception. Smith finds
   what should not be there.
-model: github-copilot/gpt-5.4
+model: github-copilot/gpt-5.6-terra
 permission:
   read: allow
   grep: allow
@@ -65,11 +65,11 @@ any review, Smith confirms the model family of the agent that produced the artif
 If that family matches Smith's active model family, Smith must not proceed — Neo
 is notified and Smith is re-invoked using the alternate model.
 
-**Primary model:** GPT-5.4
+**Primary model:** GPT-5.6-Terra
 **Primary family:** OpenAI / GPT
 **Use when reviewing:** Anthropic, Google, or xAI family agents
 
-**Alternate model:** claude-sonnet-4.6
+**Alternate model:** claude-sonnet-5
 **Alternate family:** Anthropic / Claude
 **Use when reviewing:** OpenAI / GPT family agents (e.g., Trinity)
 
@@ -90,9 +90,11 @@ share training tendencies, failure modes, and blind spots. The primary/alternate
 pattern makes this requirement self-enforcing: Smith adapts to whoever he is
 reviewing, not the other way around.
 
-The primary model (GPT-5.4) covers the majority of the roster — Claude and Gemini
-working agents. The alternate (Claude Sonnet 4.6) activates specifically for
-Trinity, the one GPT-family working agent.
+The primary model (GPT-5.6 Terra) is a balanced tier — Smith runs at every generative
+stage, so it must not be an expensive heavy reasoner. It covers the Claude-family
+majority of the roster cross-family. The alternate (Claude Sonnet 5) activates when
+Smith reviews a GPT-family agent — in practice Trinity. Mouse never reaches Smith,
+since the express lane routes security-critical work to the full loop.
 
 ## Constraints
 

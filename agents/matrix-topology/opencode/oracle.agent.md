@@ -5,7 +5,7 @@ description: >
   validate the concept, and surface edge cases before any technical decisions
   are made. Invoke when defining what something does, how it feels, and what
   the user encounters at every step.
-model: github-copilot/claude-opus-4.7
+model: github-copilot/claude-opus-4.8
 permission:
   read: allow
   edit: allow
@@ -70,7 +70,7 @@ design stage. It is now Claude Opus to ensure Ghost (Gemini) can satisfy the
 cross-family review requirement across all agents. The reasoning capability is
 equivalent; the cross-family coverage is better.
 
-**Current model:** Claude Opus 4.7
+**Current model:** Claude Opus 4.8
 **Family:** Anthropic / Claude
 
 ## Constraints

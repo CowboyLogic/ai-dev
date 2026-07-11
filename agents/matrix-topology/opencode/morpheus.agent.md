@@ -5,7 +5,7 @@ description: >
   design artifacts. Invoke when contracts, interfaces, and testable requirements
   need to be formally defined. Morpheus does not write code — he defines what
   code must do and what it must not do.
-model: github-copilot/claude-sonnet-4.6
+model: github-copilot/claude-sonnet-5
 permission:
   read: allow
   edit: allow
@@ -66,7 +66,7 @@ CONSTRAINTS: [interface constraints from architecture]
 Heavy reasoning model — specification writing requires precision, anticipation of
 implementation edge cases, and the ability to find gaps before they become code.
 
-**Current model:** Claude Sonnet 4.6
+**Current model:** Claude Sonnet 5
 **Family:** Anthropic / Claude
 
 ## Constraints

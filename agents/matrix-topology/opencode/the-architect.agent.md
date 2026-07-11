@@ -5,7 +5,7 @@ description: >
   lifecycle to produce structure, key decisions, and extension points. Invoke
   when designing system structure, making significant technical decisions, or
   defining how components relate.
-model: github-copilot/claude-opus-4.7
+model: github-copilot/claude-opus-4.8
 permission:
   read: allow
   edit: allow
@@ -71,11 +71,12 @@ architecture review propagates into specs, tests, and implementation before anyo
 catches it. The Architect runs infrequently — once per significant technical decision
 — so the premium cost is justified by the blast radius of getting it wrong.
 
-The Opus tier also provides family separation from Oracle (Gemini), which feeds
-directly into The Architect's stage. Different families at adjacent lifecycle stages
-reduces the risk of shared conceptual blind spots compounding across the handoff.
+Oracle (the adjacent upstream design stage) is also Claude Opus now — so the
+cross-family control does not come from adjacent working stages differing. It comes
+from Smith and Ghost reviewing every artifact cross-family. The Opus tier here is
+about matching the stakes of the architecture stage, not about family separation.
 
-**Current model:** Claude Opus 4.7
+**Current model:** Claude Opus 4.8
 **Family:** Anthropic / Claude
 
 ## Constraints

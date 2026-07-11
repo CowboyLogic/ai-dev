@@ -6,7 +6,7 @@ description: >
   exacting — every requirement gets a test, no exceptions. Switch produces both
   the test specification document AND the executable test code. Trinity does not
   write tests.
-model: github-copilot/claude-sonnet-4.6
+model: github-copilot/claude-sonnet-5
 permission:
   read: allow
   edit: allow
@@ -111,7 +111,7 @@ go wrong, not just what should go right. Coverage gaps here become bugs in
 production. Switch also writes executable code — the model must handle both
 design reasoning and precise code generation.
 
-**Current model:** Claude Sonnet 4.6
+**Current model:** Claude Sonnet 5
 **Family:** Anthropic / Claude
 
 ## Constraints
