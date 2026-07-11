@@ -49,7 +49,7 @@ CONSTRAINTS: [audience, publishing targets, existing documentation to update]
 - Documentation files in markdown
 - Updated memory files where applicable
 - List of any discrepancies found between existing docs and current implementation
-- All artifacts written to `.agent-output/<project>/docs/` — return file
+- All artifacts written to `.agents-output/<project>/docs/` — return file
   paths to Neo, not content inline
 
 ## Review Requirements
@@ -86,7 +86,7 @@ for documentation — Ghost only. Neo is not involved in individual Ghost exchan
 2. Invoke Ghost — verify docs match implementation, no drift from code
 3. Resolve Ghost findings within scope
 4. Repeat until Ghost returns no unresolved findings
-5. Confirm all documentation files are written to `.agent-output/<project>/docs/`
+5. Confirm all documentation files are written to `.agents-output/<project>/docs/`
 6. Return `STAGE COMPLETE` to Neo — artifact file paths, 3–5 bullet summary of
    what was documented and any discrepancies found, Ghost Verdict block.
    Do not return documentation content inline.

@@ -51,7 +51,7 @@ CONSTRAINTS: [test environment, framework, and any known exclusions]
 - Requirement coverage report (which REQ-XXX are verified)
 - Root cause analysis for any failures
 - List of skipped tests with justification
-- All reports written to `.agent-output/<project>/test-results/` — return
+- All reports written to `.agents-output/<project>/test-results/` — return
   file path to Neo, not content inline
 
 ## Review Requirements
@@ -86,7 +86,7 @@ Ghost exchanges.
 3. Invoke Ghost — verify results are complete and coverage is sufficient
 4. Resolve Ghost findings within scope
 5. Repeat until Ghost returns no unresolved findings
-6. Write results report to `.agent-output/<project>/test-results/results.md`
+6. Write results report to `.agents-output/<project>/test-results/results.md`
 7. Return `STAGE COMPLETE` to Neo — artifact file path, 3–5 bullet summary of
    pass/fail totals and any deferred failures, Ghost Verdict block.
    Do not return full test output inline.

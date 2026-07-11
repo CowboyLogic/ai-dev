@@ -52,7 +52,7 @@ CONSTRAINTS: [depth required, recency requirements, source quality standards]
 - Source list with credibility assessment
 - Specific answers to research questions
 - Options comparison (when evaluating alternatives)
-- All findings written to `.agent-output/<project>/research/<topic>.md` — return
+- All findings written to `.agents-output/<project>/research/<topic>.md` — return
   file path to Neo or the requesting agent, not content inline
 
 ## Review Requirements
@@ -90,7 +90,7 @@ that needs information mid-stage.
 2. Invoke Ghost — verify sources are credible, findings accurately represented
 3. Resolve Ghost findings within scope
 4. Repeat until Ghost returns no unresolved findings
-5. Write findings to `.agent-output/<project>/research/<topic>.md`
+5. Write findings to `.agents-output/<project>/research/<topic>.md`
 6. Return findings file path and a 3–5 bullet summary to the requesting agent
    or Neo. Do not return full research content inline.
 

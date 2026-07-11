@@ -24,33 +24,52 @@ This topology is a **separate concern** from personal working preferences (see
 
 ## Deployment
 
-**Source of truth:**
+**Source of truth** is this repository (`CowboyLogic/ai-dev`):
+
 ```
-~/.agents/conductor/
-  CONDUCTOR.md
-  agents/
-    neo.agent.md
+agents/matrix-topology/
+  CONDUCTOR.md                    ← this document
+  README.md                       ← the pattern write-up
+  opencode/                       ← OpenCode agent definitions
+    neo.agent.md                  ← Conductor
+    mouse.agent.md                ← Express Builder
     the-architect.agent.md
     oracle.agent.md
     morpheus.agent.md
     switch.agent.md
     trinity.agent.md
     apoc.agent.md
+    dozer.agent.md
     tank.agent.md
     niobe.agent.md
     smith.agent.md
     ghost.agent.md
+  copilot/                        ← GitHub Copilot variants (parallel set)
+
+harness/opencode/                 ← OpenCode harness configuration
+  opencode.jsonc                  ← default agent, commands, MCP, instructions
+  guardrails.md                   ← persistent session guardrails
 ```
 
-**Linked into each tool via symlink (Unix) or directory junction (Windows):**
+**Linked into OpenCode (Unix symlink or Windows junction):**
+
 ```
-~/.claude/agents/       → ~/.agents/conductor/agents/
-~/.opencode/agents/     → ~/.agents/conductor/agents/
+~/.config/opencode/               → harness/opencode/
+  opencode.jsonc                     (default_agent: neo; /handoff, /change commands)
+  guardrails.md                      (loaded via instructions on every session)
+~/.config/opencode/agent/         → agents/matrix-topology/opencode/
 ```
 
-Adding a new tool: create a symlink to ~/.agents/conductor/agents/.
-Adding a new agent: add the .agent.md file to the source directory.
-The symlinks propagate it automatically — no other changes required.
+- The harness config folder (`harness/opencode/`) is linked to `~/.config/opencode/`.
+- The agent definitions are linked into `~/.config/opencode/agent/`, OpenCode's
+  global agent directory, where they are auto-discovered.
+- `default_agent` is `neo` — all sessions begin with the Conductor.
+- Commands (`/handoff`, `/change`) live in `opencode.jsonc`. `/change` is the
+  express-lane entry point (see the Express Lane in neo.agent.md).
+
+Adding a new agent: add the `.agent.md` file to `agents/matrix-topology/opencode/`.
+The symlink propagates it automatically — no other changes required. Update the
+roster table below and, if it participates in a stage, the lifecycle.
 
 ---
 
@@ -59,11 +78,12 @@ The symlinks propagate it automatically — no other changes required.
 | Agent | Character | Role | Tier | Container |
 |---|---|---|---|---|
 | Neo | Neo | Conductor — orchestrates, directs, escalates | Thinking | No |
-| The Architect | The Architect | Architecture — structure, decisions, ADs | Thinking | No |
 | Oracle | The Oracle | Designer — UX, experience, concept validation | Thinking | No |
+| The Architect | The Architect | Architecture — structure, decisions, ADs | Thinking | No |
 | Morpheus | Morpheus | Spec Writer — contracts, requirements | Thinking | No |
 | Switch | Switch | Test Writer — TC-XXX spec + executable test files | Thinking | No |
-| Trinity | Trinity | Coder — implementation | Thinking | Yes |
+| Mouse | Mouse | Express Builder — small scoped changes, express lane only | Thinking | No |
+| Trinity | Trinity | Coder — full-loop implementation | Thinking | Yes |
 | Apoc | Apoc | Tester — executes and validates | Thinking | Yes |
 | Dozer | Dozer | Diagnostics — operational validation at runtime | Thinking | Conditional |
 | Tank | Tank | Researcher — information retrieval | Thinking | No |
@@ -86,6 +106,14 @@ Trinity and Apoc operate inside an isolated container environment. These are the
 two agents with genuine filesystem blast radius — Trinity writes implementation
 code, Apoc executes commands and runs tests. The container is a targeted control
 applied precisely where the risk warrants it, not a blanket policy.
+
+Mouse has the same class of blast radius as Trinity (edit + bash), but is **not**
+containerized: the express lane deliberately works the live tree so the human sees
+the diff directly, on small scoped changes, under immediate review (Ghost before
+accept). That is the express lane's explicit trade — speed and directness over
+container isolation, made acceptable by small scope and a human in the loop. Work
+that warrants isolation is exactly the work that trips the escalation checklist and
+goes to the full loop (Trinity, containerized) instead.
 
 Dozer operates in a container in Contained mode (web apps, Linux CLIs) and in
 Assisted mode for environments that cannot be containerized (desktop apps,
@@ -176,8 +204,14 @@ of unnecessary sequential work in the lifecycle.
 
 ## The Lifecycle & Injection Points
 
-Each stage produces an artifact. The working agent owns its review loop with
-Smith and Ghost before returning output to Neo. Neo advances the stage when
+The topology has **two tracks**. This section describes the **full loop** — the
+complete lifecycle for greenfield and high-stakes work. Most day-to-day changes run
+the **Express Lane** instead (see below); the full loop is the deliberate escalation
+path. The full loop is entered by talking to Neo directly; the express lane is
+entered by the `/change` command.
+
+Each full-loop stage produces an artifact. The working agent owns its review loop
+with Smith and Ghost before returning output to Neo. Neo advances the stage when
 output is solid and reviewed.
 
 ```
@@ -191,24 +225,24 @@ Problem Statement
         │    └── Returns: research file path + 3–5 bullet summary to requesting agent or Neo          │
         └──────────────────────────────────────────────────────────────────────────────────────────────┘
         ↓
-The Architect
-  └── Produces: architecture decisions, structure, extension points
-  └── Owns review loop: Smith → Ghost → resolves → repeats until solid
-  └── Writes artifact to: .agent-output/<project>/architecture/arch.md
-  └── Returns STAGE COMPLETE to Neo: artifact path + 3–5 bullet summary + Ghost Verdict
-  └── Neo advances: to Oracle
-        ↓
 Oracle
   └── Produces: UX concept, user journey, edge cases
   └── Owns review loop: Smith → Ghost → resolves → repeats until solid
-  └── Writes artifact to: .agent-output/<project>/design/ux-concept.md
+  └── Writes artifact to: .agents-output/<project>/design/ux-concept.md
+  └── Returns STAGE COMPLETE to Neo: artifact path + 3–5 bullet summary + Ghost Verdict
+  └── Neo advances: to The Architect
+        ↓
+The Architect
+  └── Produces: architecture decisions, structure, extension points
+  └── Owns review loop: Smith → Ghost → resolves → repeats until solid
+  └── Writes artifact to: .agents-output/<project>/architecture/arch.md
   └── Returns STAGE COMPLETE to Neo: artifact path + 3–5 bullet summary + Ghost Verdict
   └── Neo advances: to Morpheus
         ↓
 Morpheus
   └── Produces: specifications — numbered, testable, RFC 2119 language
   └── Owns review loop: Smith → Ghost → resolves → repeats until solid
-  └── Writes artifact to: .agent-output/<project>/spec/spec.md
+  └── Writes artifact to: .agents-output/<project>/spec/spec.md
   └── Returns STAGE COMPLETE to Neo: artifact path + 3–5 bullet summary + Ghost Verdict
   └── Neo advances: to Switch
         ↓
@@ -217,7 +251,7 @@ Switch
   └── Framework must be specified in Neo's handoff — Switch asks if missing
   └── Writes output incrementally by section/component — no monolithic writes
   └── Owns review loop: Smith → Ghost → resolves → repeats until solid
-  └── Writes artifacts to: .agent-output/<project>/tests/
+  └── Writes artifacts to: .agents-output/<project>/tests/
   └── Returns STAGE COMPLETE to Neo: artifact paths + 3–5 bullet summary + Ghost Verdict
   └── Neo advances: to Trinity (container)
         ↓
@@ -227,14 +261,14 @@ Trinity [container]
   └── Writes output incrementally by component — no monolithic writes
   └── Does not modify Switch's tests — fixes the implementation instead
   └── Owns review loop: Smith → Ghost → resolves → repeats until solid
-  └── Writes artifacts to: .agent-output/<project>/impl/
+  └── Writes artifacts to: .agents-output/<project>/impl/
   └── Returns STAGE COMPLETE to Neo: artifact paths + 3–5 bullet summary + Ghost Verdict
   └── Neo advances: to Apoc (container)
         ↓
 Apoc [container]
   └── Executes: runs tests, validates outcomes, reports results
   └── Owns review loop: Ghost → resolves → repeats until solid
-  └── Writes report to: .agent-output/<project>/test-results/results.md
+  └── Writes report to: .agents-output/<project>/test-results/results.md
   └── Returns STAGE COMPLETE to Neo: artifact path + 3–5 bullet summary + Ghost Verdict
   └── Neo advances: to Dozer
         ↓
@@ -243,22 +277,68 @@ Dozer [container — Contained mode | Assisted mode]
   └── Contained mode: autonomous execution in Linux container
   └── Assisted mode: produces validation plan → human executes → Dozer interprets
   └── Owns review loop: Ghost → resolves → repeats until solid
-  └── Writes artifacts to: .agent-output/<project>/diagnostics/
+  └── Writes artifacts to: .agents-output/<project>/diagnostics/
   └── Returns STAGE COMPLETE to Neo: artifact path + 3–5 bullet summary + Ghost Verdict
   └── Neo advances: to Niobe
         ↓
 Niobe
   └── Produces: documentation artifacts, memory files
   └── Owns review loop: Ghost → resolves → repeats until solid
-  └── Writes artifacts to: .agent-output/<project>/docs/
+  └── Writes artifacts to: .agents-output/<project>/docs/
   └── Returns STAGE COMPLETE to Neo: artifact paths + 3–5 bullet summary + Ghost Verdict
   └── Neo closes: stage complete
 ```
 
-**All working agents write artifacts to `.agent-output/<project>/<stage>/` before
+**All working agents write artifacts to `.agents-output/<project>/<stage>/` before
 returning to Neo. Agents return a compact STAGE COMPLETE — file path, summary,
 verdict — not artifact content inline. Neo reads artifact files when needed to
 brief the next agent. This is the context preservation protocol.**
+
+---
+
+## The Express Lane
+
+The full loop above is for greenfield and high-stakes work. The **express lane** is
+the default, faster path for small, well-scoped changes — and where most day-to-day
+work happens. It is entered deterministically by the `/change` command
+(`harness/opencode/opencode.jsonc`), which drops Neo into express mode.
+
+The express lane is a **flip of the full loop's ownership model: Neo owns the review
+loop directly.** There is no autonomous working-agent review loop — that depends on
+nested subagent delegation, which OpenCode does not run reliably. Every hop is one
+level deep from Neo.
+
+```
+/change "<request>"
+  └── Neo states intent in one line (non-blocking — NOT the Intent Confirmation Gate)
+  └── Neo runs the up-front escalation checklist ↓ — any hit → full loop instead
+        ↓
+Mouse  (express builder — not containerized; works the live tree)
+  └── Implements the change directly; gets it green (build/tests/typecheck)
+  └── Returns the diff summary to Neo — the diff is the artifact, no .agents-output
+        ↓
+Neo → Ghost  (cross-family: Gemini vs Mouse's GPT)
+  └── Reviews the diff against stated intent
+  └── On a security-ADJACENT surface, Neo adds a SECURITY FOCUS directive
+        ↓
+Neo acts on the verdict:
+  └── APPROVED → summarize to human, done
+  └── Fixable in scope → return findings to Mouse (one fix cycle)
+  └── BLOCKED on a design-rooted gap, or 2 cycles no convergence → full loop
+```
+
+**Up-front escalation checklist** (any hit routes to the full loop, not express):
+
+- New architectural decision or component boundary
+- Public interface / API / contract change
+- Security-critical surface — auth/authz, cryptography, secrets, deserialization of
+  untrusted input, or a change to a security control itself
+- Large blast radius — many files or multiple subsystems
+
+Security uses a **three-band model**: critical → full loop (where Smith reviews);
+adjacent (input handling, query building, uploads, outbound calls) → stays express
+with a directed Ghost pass; neither → no security step. Smith does not appear in the
+express lane. The full express-lane definition lives in neo.agent.md and mouse.agent.md.
 
 ---
 
@@ -417,7 +497,7 @@ Always include original intent. Always.
 ## Session State Protocol
 
 Neo maintains a session state file for every active project at:
-`.agent-output/<project-name>/session-state.md`
+`.agents-output/<project-name>/session-state.md`
 
 This is the continuity mechanism for mid-lifecycle session re-entry and the
 primary defense against context loss during compaction. Neo writes it
@@ -462,9 +542,12 @@ session memory, which does not persist across sessions or survive compaction.
 
 ## Claude Family Concentration — Known Tradeoff
 
-Neo shares model family (Anthropic / Claude) with The Architect, Morpheus, Switch,
-Apoc, and Niobe. This means the Conductor and the majority of working agents share
-model family tendencies.
+Neo shares model family (Anthropic / Claude) with Oracle, The Architect, Morpheus,
+Switch, Apoc, Dozer, Tank, and Niobe. This means the Conductor and the majority of
+working agents share model family tendencies. (Oracle and Tank were previously
+Gemini; they moved to Claude so Ghost (Gemini) can satisfy the cross-family review
+requirement across the whole roster without a second Ghost variant.) Mouse and
+Trinity run on GPT — the two GPT-family working agents.
 
 This is a documented, accepted tradeoff with the following compensating controls:
 
@@ -581,7 +664,7 @@ next agent. This keeps Neo's context window for coordination, not content storag
 STAGE COMPLETE
 AGENT:          [returning agent]
 STAGE:          [lifecycle stage]
-ARTIFACT PATH:  [.agent-output/<project>/<stage>/<artifact>.md]
+ARTIFACT PATH:  [.agents-output/<project>/<stage>/<artifact>.md]
 SUMMARY:        [3–5 bullets — key decisions, outcomes, or findings]
 SMITH VERDICT:  [one line: issues found and resolution applied, or N/A]
 GHOST VERDICT:
@@ -651,7 +734,7 @@ no session context is assumed.
 
 ## Adding a New Agent
 
-1. Create ~/.agents/conductor/agents/[name].agent.md
+1. Create agents/matrix-topology/opencode/[name].agent.md
 2. Follow the standard .agent.md structure (see any existing agent file)
 3. Add the agent to the roster table in this document
 4. Add the agent to the lifecycle if it participates in a stage

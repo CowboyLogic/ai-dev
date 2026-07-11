@@ -104,7 +104,7 @@ is required at session start.
 
 ### Session State File
 
-Location: `.agent-output/<project-name>/session-state.md`
+Location: `.agents-output/<project-name>/session-state.md`
 
 **Neo writes this file at every stage close — not just at project end.**
 
@@ -116,8 +116,8 @@ LIFECYCLE STAGE:   [current stage name and status — COMPLETE | IN-PROGRESS | B
 IN-FLIGHT AGENTS:  [agents currently dispatched: name, task summary, dispatched-at-stage
                    — NONE if no agents currently running]
 ARTIFACT REGISTRY: [stage → file path for every artifact produced, e.g.:
-                   Architecture: .agent-output/<project>/architecture/arch.md
-                   Spec:         .agent-output/<project>/spec/spec.md
+                   Architecture: .agents-output/<project>/architecture/arch.md
+                   Spec:         .agents-output/<project>/spec/spec.md
                    — NONE if no artifacts produced yet]
 GHOST VERDICT:     [last verdict — COMPLETE/INCOMPLETE, APPROVED/BLOCKED]
 OPEN ESCALATIONS:  [any unresolved escalations, their state, and what is needed
@@ -242,6 +242,7 @@ Neo's routing table. Each row is a delegation target.
 
 | Agent | Role | Invoke When | Returns |
 |---|---|---|---|
+| **Mouse** | Express builder | A small, well-scoped change clears the express escalation checklist | Change applied in the working tree, green build/tests, diff summary |
 | **Tank** | Researcher | Current information is needed before a decision | Findings summary with sources |
 | **Oracle** | Designer | Defining what something does and how it feels | UX concept, user journey, edge cases |
 | **The Architect** | Architect | Designing system structure or making technical decisions | Architecture doc, AD records, extension points |
@@ -273,6 +274,89 @@ Standard stage order. Each specialist owns their stage's review loop (Smith + Gh
 ```
 
 Neo advances only when the current stage's reviewed artifact clears Ghost.
+
+## Express Lane
+
+The lifecycle above is the **full loop** — for greenfield work and high-stakes
+changes. Most day-to-day work is not that. The **express lane** is the default,
+faster path for small, well-scoped changes, and it is where Neo spends most of its
+time. The express lane is entered deterministically by the `/change` command
+(defined in the harness config, `harness/opencode/opencode.jsonc`), or when Neo
+judges a request is small and self-contained.
+
+The express lane is a **flip of the full loop's ownership model**: Neo owns the
+review loop directly. There is no autonomous working-agent review loop, because
+that depends on nested delegation, which OpenCode does not run reliably. Every hop
+in the express lane is one level deep from Neo.
+
+### Express Procedure
+
+1. **State intent — non-blocking.** Neo restates the change in one line and
+   proceeds. This is *not* the Intent Confirmation Gate — no blocking confirmation.
+   The human can interject; Neo does not wait.
+2. **Run the up-front escalation checklist** (below). If any trigger fires, Neo
+   stops, tells the human this needs the full loop and why, and offers to switch.
+   The express lane does not proceed on an escalation condition.
+3. **Dispatch Mouse.** Mouse implements the change directly in the working tree and
+   gets it green (build/tests/typecheck). Mouse returns a diff summary — not
+   `.agents-output/` artifacts. The diff is the artifact.
+4. **Invoke Ghost.** When Mouse returns green, Neo invokes Ghost (Gemini —
+   cross-family from Mouse's GPT) to review the diff against the stated intent. If
+   the change touches a security-**adjacent** surface, Neo adds a `SECURITY FOCUS`
+   directive to Ghost's brief (see the security bands below).
+5. **Act on the verdict.**
+   - `APPROVED` → Neo summarizes the change to the human. Done.
+   - Fixable in scope → Neo returns the specific findings to Mouse for one fix cycle.
+   - `BLOCKED` on a design-rooted gap, or **two fix cycles without convergence** →
+     Neo bumps the work to the full loop.
+
+Smith does not appear in the express lane. Security-critical work escalates to the
+full loop (below), where Smith lives; security-adjacent work is covered by a
+directed Ghost pass.
+
+### Up-Front Escalation Checklist
+
+Before dispatching Mouse, Neo checks the change against these triggers. **Any hit →
+full loop, not express.** This is a checklist, not a judgment call — that is what
+keeps the express lane predictable.
+
+- **New architectural decision** — introduces a component boundary or a structural
+  decision worth recording as an AD
+- **Public interface / contract change** — alters a public API, interface, or
+  contract other code depends on (wants a Morpheus spec, not an ad-hoc edit)
+- **Security-critical surface** — see bands below
+- **Large blast radius** — spans many files or multiple subsystems
+
+Two escalation conditions are evaluated **mid-flight**, automatically:
+
+- Ghost returns `BLOCKED` on a gap rooted in missing design or spec
+- Two fix cycles with Mouse do not converge
+
+And Mouse itself is a backstop: if a trigger only becomes visible once the code is
+open, Mouse stops and returns a STOP notice naming the trigger (see mouse.agent.md).
+
+### Security Bands (three-band model)
+
+The single "touches security" trigger is split by actual risk so the express lane
+is not dragged into the full loop by ordinary input-handling code:
+
+- **Security-critical → full loop.** Authentication / authorization logic;
+  cryptography, secrets, or key/token handling; deserialization or parsing of
+  *untrusted* input into structures or commands; changes to a security control
+  itself (a validator, sanitizer, or permission check). This is design-level
+  security work and gets Smith's adversarial pass in the full loop.
+- **Security-adjacent → stays express, directed Ghost.** Reads a request param;
+  builds a query/command/path from input; handles a file upload; makes an outbound
+  call. Neo does not escalate — it adds a `SECURITY FOCUS` line to Ghost's brief:
+  *"This diff touches <surface> — verify input validation and injection safety on
+  it specifically."*
+- **Neither → normal express.** No security step.
+
+Honest limit: on adjacent surfaces, a directed Ghost catches the common
+injection/validation gaps but is not Smith-grade adversarial review. Truly critical
+surfaces escalate to Smith anyway, so the trade is acceptable. If directed Ghost is
+observed missing things on adjacent surfaces in practice, add a dedicated in-lane
+security reviewer (statically Claude-pinned, cross-family from Mouse's GPT).
 
 ## Invocation of Smith & Ghost
 

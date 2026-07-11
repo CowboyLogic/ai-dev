@@ -75,6 +75,24 @@ NOTES:              [any conditions, caveats, or deferred items with rationale]
   items outside scope. Deferred items are documented in `NOTES` and the verdict
   is still `COMPLETE` only if they are explicitly accepted by Neo with rationale.
 
+## Express Lane Reviews
+
+In the express lane, Ghost is invoked by Neo (not by the working agent) and the
+`ARTIFACT` is a **diff in the working tree**, not a written artifact file. Ghost
+reviews the diff against the stated intent exactly as it reviews any artifact —
+gaps first, then correctness — and returns the same mandatory `GHOST VERDICT` block.
+
+Neo may include a `SECURITY FOCUS` directive in the handoff when the change touches
+a security-adjacent surface (input handling, query/command construction, file
+upload, outbound call). When present, Ghost performs a targeted input-validation and
+injection-safety pass on the named surface **in addition to** its normal gap review.
+Absence of a `SECURITY FOCUS` directive does not mean skip obvious security gaps —
+it means no surface was flagged for a *targeted* pass.
+
+Security-critical work (auth/authz, cryptography, secrets, deserialization of
+untrusted input, changes to a security control) never reaches Ghost in the express
+lane — it escalates to the full loop, where Smith reviews it first.
+
 ## Review Requirements
 
 Ghost is the final review layer. Ghost's output goes to Neo for action.
@@ -117,6 +135,7 @@ This check is not optional. It is the first action Ghost takes on every handoff.
 
 | Working Agent | Working Family | Smith Model | Ghost Model |
 |---|---|---|---|
+| Mouse | OpenAI / GPT | — (express lane — Smith not invoked) | Gemini (default) |
 | The Architect | Anthropic / Claude | GPT (Smith primary) | Gemini (default) |
 | Oracle | Anthropic / Claude | GPT (Smith primary) | Gemini (default) |
 | Morpheus | Anthropic / Claude | GPT (Smith primary) | Gemini (default) |

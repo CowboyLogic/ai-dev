@@ -50,7 +50,7 @@ CONSTRAINTS: [non-negotiables from problem statement or architecture]
 - User journey — step by step, including edge cases and failure states
 - Open questions that require human or architectural input
 - Flagged data exposure and security concerns for Smith
-- All artifacts written to `.agent-output/<project>/design/` — return
+- All artifacts written to `.agents-output/<project>/design/` — return
   file path to Neo, not content inline
 
 ## Review Requirements
@@ -92,7 +92,7 @@ individual Smith and Ghost exchanges.
 4. Invoke Ghost — verify concept covers all scenarios and aligns with architecture
 5. Resolve Ghost findings within scope
 6. Repeat until Smith and Ghost return no unresolved findings
-7. Write final artifact to `.agent-output/<project>/design/ux-concept.md`
+7. Write final artifact to `.agents-output/<project>/design/ux-concept.md`
 8. Return `STAGE COMPLETE` to Neo — artifact file path, 3–5 bullet summary of
    key experience decisions, Ghost Verdict block. Do not return artifact content inline.
 

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // Persistent guardrails loaded into every session.
+  // Covers: git safety, post-compaction verification, and handoff file loading.
+  "default_agent": "neo",
+
+  "instructions": [
+    "/Users/micheal/.config/opencode/guardrails.md"
+  ],
+
+  "command": {
+    "handoff": {
+      "description": "Capture current conversation context and write a handoff document to .agents-output/handoff.md",
+      "template": "Capture all key context from this conversation and write a structured handoff document to `.agents-output/handoff.md`. Create the `.agents-output/` directory if it does not already exist.\n\nThe document must include the following sections:\n\n## Session Info\n- Date and time of this handoff\n- Project name and absolute working directory\n\n## Objective\nWhat was the user trying to accomplish in this session? State it clearly.\n\n## Work Completed\nKey decisions made, files created or modified (include full relative paths), and the reasoning behind significant choices.\n\n## Current State\nWhere things stand right now — what is working, what is broken or incomplete, and any partially applied changes.\n\n## Next Steps\nWhat should be done next, ordered by priority. Be specific enough that a fresh agent can act without asking for clarification.\n\n## Open Questions\nUnresolved questions, blockers, or items the user still needs to decide.\n\n## Critical Context\nAnything important that would not be obvious from reading the code alone: environment quirks, workarounds in place, non-obvious decisions, credentials or config locations, flags to avoid, etc.\n\n$ARGUMENTS\n\nAfter writing the file, confirm the full path and print a brief summary of what was captured."
+    },
+
+    "change": {
+      "description": "Express lane for a small, well-scoped change. Neo runs the express procedure (Mouse builds, Ghost reviews) and auto-escalates to the full loop on architectural, contract, security-critical, or large-blast-radius triggers.",
+      "agent": "neo",
+      "template": "EXPRESS LANE. Run the Express Lane procedure defined in your agent file (neo.agent.md -> Express Lane). Do NOT run the full lifecycle unless an escalation trigger fires.\n\nCHANGE REQUEST: $ARGUMENTS\n\nProcedure (summary — your agent file is authoritative):\n1. State your understanding of the change in one line and proceed (non-blocking — do NOT run the full Intent Confirmation Gate).\n2. Run the up-front escalation checklist: new architectural decision, public interface/contract change, security-CRITICAL surface (auth/authz, crypto, secrets, deserialization of untrusted input, or a security control), or large blast radius. If ANY fires, STOP and tell the human this needs the full loop and why — offer to switch. Do not proceed in the express lane.\n3. If clear, dispatch Mouse to implement the change directly in the working tree and get it green (build/tests/typecheck).\n4. When Mouse returns green, invoke Ghost to review the diff against the stated intent. If the change touches a security-ADJACENT surface (reads a request param, builds a query/command/path from input, handles a file upload, makes an outbound call), add a SECURITY FOCUS directive to Ghost's brief naming that surface.\n5. Act on Ghost's verdict: APPROVED -> summarize the change to the human and finish. Fixable in scope -> return findings to Mouse for one fix cycle. BLOCKED on a design-rooted gap, or two fix cycles without convergence -> bump to the full loop.\n6. Keep it lean: the diff is the artifact. Do not stand up the full .agents-output artifact protocol or session-state ceremony for an express change."
+    }
+  },
+
+  "mcp": {
+    "github": {
+      "type": "remote",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "enabled": true,
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer {env:GITHUB_TOKEN_CLIENT}"
+      }
+    }
+  }
+}

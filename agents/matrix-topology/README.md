@@ -121,8 +121,13 @@ handles.
 
 ## 3. Meet the Crew
 
-The topology has eleven agents. Nine are specialists in a specific development
-function. Two are cross-cutting participants who appear at every generative stage.
+The topology has thirteen agents. One is the Conductor (Neo). Ten are specialists in
+a specific development function. Two are cross-cutting participants who appear at
+every generative stage.
+
+Most day-to-day work does not convene the full crew — it runs the **express lane**
+(Neo + Mouse + Ghost; see §4). The full roster below is the **full loop**, reserved
+for greenfield and high-stakes work.
 
 The Matrix naming is intentional — each character earns their role. But the names
 are a costume, not the identity. The roles are what matter.
@@ -175,12 +180,21 @@ a corresponding test case — and that every test is precise enough to catch a
 violation. No requirement goes untested. No edge case gets a pass because it
 seems unlikely.
 
-**Trinity** — *Implementation*
+**Trinity** — *Implementation (full loop)*
 
 Trinity implements. She makes Switch's tests pass against Morpheus's spec within
 The Architect's boundaries. She does not invent features. She does not make
 architectural decisions. She builds what has been designed, precisely, and flags
 anything that is ambiguous or unimplementable rather than guessing.
+
+**Mouse** — *Implementation (express lane)*
+
+Mouse is Trinity's express-lane counterpart. For small, well-scoped changes that
+don't warrant the full lifecycle, Mouse implements the change directly in the
+working tree, gets it green, and hands it back for review. He works fast because his
+scope is narrow — one change, understood, applied, verified. If a change turns out
+to need real design, spec, or security work, Mouse stops and it escalates to the
+full loop. Mouse never writes to `.agents-output/`; the diff is the artifact.
 
 **Apoc** — *Testing*
 
@@ -188,6 +202,15 @@ Apoc executes. When Trinity says it's done, Apoc verifies it's actually done.
 He runs every test, records every result, and investigates every failure. He does
 not accept "it works on my machine." He does not close a stage until the test
 suite passes completely.
+
+**Dozer** — *Operational Validation*
+
+Dozer runs the built thing. "Tests pass" and "the app works" are not the same
+statement, and Dozer is the difference — launching the artifact against real
+dependencies to catch integration failures, environment drift, and runtime behavior
+no test anticipated. He works in a container where he can (Contained mode) or hands
+the human a precise validation plan and interprets the results where he can't
+(Assisted mode — desktop, GUI, Windows targets).
 
 **Tank** — *Research*
 
@@ -244,9 +267,9 @@ the next. Skipping a stage means borrowing against future rework.
 ```markdown
 Problem Statement
       ↓
-  Architecture      (The Architect)
-      ↓
     Design          (Oracle)
+      ↓
+  Architecture      (The Architect)
       ↓
  Specification      (Morpheus)
       ↓
@@ -256,8 +279,13 @@ Problem Statement
       ↓
     Testing         (Apoc)
       ↓
+Operational Validation (Dozer)
+      ↓
  Documentation      (Niobe)
 ```
+
+Design comes before architecture: the experience is defined first, and the
+architecture is built to serve it — not the other way around.
 
 Research (Tank) is available on demand at any stage. Smith and Ghost intercept
 at every stage that produces a generative artifact.
@@ -294,11 +322,12 @@ not raw drafts requiring further mediation.
 
 ### A Full Cycle — Plain Language
 
-Here is what a full architecture stage looks like in practice:
+Here is what the architecture stage looks like in practice (design, via Oracle,
+has already produced a reviewed UX concept that Neo passes in as prior art):
 
 1. You tell Neo what you're building and what problem it solves
 2. Neo validates the problem statement is clear enough to proceed
-3. Neo briefs The Architect with the problem statement and task
+3. Neo briefs The Architect with the problem statement, Oracle's design, and the task
 4. The Architect produces an architecture document with ADs and extension points
 5. The Architect invokes Smith — Smith reviews for threat model and security
    implications of the structural decisions
@@ -309,12 +338,40 @@ Here is what a full architecture stage looks like in practice:
 9. If new findings emerge, the loop repeats
 10. When Smith and Ghost return no unresolved findings, The Architect returns
     the reviewed architecture to Neo
-11. Neo advances to the design stage
+11. Neo advances to the specification stage (Morpheus)
 
 The same loop runs at every subsequent stage. By the time Trinity writes code,
 she has a reviewed architecture, a reviewed design, and a reviewed specification
 to work from. The work is scoped, the decisions are documented, the security
 implications are already understood.
+
+### The Express Lane — The Path You'll Use Most
+
+The full loop above is right for greenfield and high-stakes work. It is overkill for
+a small, well-scoped change — and small changes are most of the work. For those, the
+topology has an **express lane**, entered by the `/change` command.
+
+The express lane is a deliberate flip of the full loop's ownership model: **Neo owns
+the review loop directly.** There is no autonomous working-agent loop here — that
+relies on nested delegation, which the OpenCode harness does not run reliably. Every
+hop is one level deep from Neo:
+
+1. `/change "<request>"` drops Neo into express mode
+2. Neo states its understanding in one line (non-blocking) and runs a short
+   escalation checklist — a new architectural decision, a contract change, a
+   security-critical surface, or a large blast radius sends the work to the full
+   loop instead
+3. If it's clear, **Mouse** implements the change directly and gets it green
+4. Neo hands the diff to **Ghost** for an independent, cross-family review against
+   the stated intent
+5. Approved → you're done; fixable → one more Mouse cycle; blocked on something
+   design-rooted → it escalates to the full loop
+
+Two gates — *does it work* and *an independent set of eyes* — and nothing more.
+Security scales to risk: critical surfaces escalate to the full loop (where Smith
+lives); adjacent surfaces (ordinary input handling) stay express with Ghost given a
+targeted security focus; everything else pays nothing. The discipline survives; the
+ceremony doesn't.
 
 ---
 
@@ -432,13 +489,13 @@ topology easier to reason about and discuss. Neo orchestrates. Smith is adversar
 Ghost is thorough and operates from a different perspective. The names carry meaning.
 
 But they are a costume, not the identity. If your team would rather work with
-Conductor, Architect, Designer, SpecWriter, TestWriter, Coder, Tester, Researcher,
-DocWriter, Security, and Reviewer — that works just as well. The roles are what
-matter. Name them whatever makes your team productive.
+Conductor, Designer, Architect, SpecWriter, TestWriter, ExpressBuilder, Coder,
+Tester, Diagnostics, Researcher, DocWriter, Security, and Reviewer — that works just
+as well. The roles are what matter. Name them whatever makes your team productive.
 
 ### Adapting the Roster
 
-The eleven-agent roster reflects one person's development workflow developed over
+The thirteen-agent roster reflects one person's development workflow developed over
 time. Your workflow may differ. Some agents you may not need. Others you may want
 to add.
 
@@ -446,7 +503,11 @@ to add.
 
 - The separation of design from architecture — concept before technical decisions
 - Smith and Ghost as cross-cutting participants — not end-of-process gates
-- The review loop owned by the working agent — not mediated by the Conductor
+- Independent cross-family review at every generative stage — whoever drives the
+  loop. Whether the working agent owns it or the Conductor does depends on your
+  harness: nested delegation (agent invokes its own reviewers) is elegant but not
+  reliable everywhere, so on OpenCode the Conductor owns the loop in the express lane
+- A fast express lane for small changes, with the full loop as deliberate escalation
 - The escalation model — explicit tiers with clear triggers
 
 **What to change:**
@@ -487,20 +548,28 @@ The topology is a destination. You can walk there one agent at a time.
 ### File Structure
 
 ```markdown
-~/.agents/conductor/          ← deploy here, or clone and link
+agents/matrix-topology/
   CONDUCTOR.md                ← full topology reference document
-  agents/
+  README.md                   ← this document
+  opencode/                   ← OpenCode agent definitions
     neo.agent.md              ← Conductor
-    the-architect.agent.md    ← Architecture
     oracle.agent.md           ← Design
+    the-architect.agent.md    ← Architecture
     morpheus.agent.md         ← Specification
     switch.agent.md           ← Test Definition
-    trinity.agent.md          ← Implementation
+    mouse.agent.md            ← Implementation (express lane)
+    trinity.agent.md          ← Implementation (full loop)
     apoc.agent.md             ← Testing
+    dozer.agent.md            ← Operational Validation
     tank.agent.md             ← Research
     niobe.agent.md            ← Documentation
     smith.agent.md            ← Security (cross-cutting)
     ghost.agent.md            ← Review (cross-cutting)
+  copilot/                    ← GitHub Copilot variants (parallel set)
+
+harness/opencode/             ← OpenCode harness configuration
+  opencode.jsonc              ← default agent, commands (/handoff, /change), MCP
+  guardrails.md               ← persistent session guardrails
 ```
 
 Each `.agent.md` file contains:
@@ -515,32 +584,39 @@ Each `.agent.md` file contains:
 - Model selection rationale
 - Constraints
 
-### Deploying It
+### Deploying It (OpenCode)
 
 **Clone the repository:**
 
 ```bash
-git clone https://github.com/CowboyLogic/ai-dev ~/.agents/conductor
+git clone https://github.com/CowboyLogic/ai-dev ~/src/ai-dev
 ```
 
-**Link into your tools (Unix/WSL):**
+**Link the harness config and the agents into OpenCode (Unix/WSL):**
 
 ```bash
-ln -sf ~/.agents/conductor/agents ~/.claude/agents
-ln -sf ~/.agents/conductor/agents ~/.opencode/agents
+# Harness config: default agent, commands (/handoff, /change), guardrails, MCP
+ln -sfn ~/src/ai-dev/harness/opencode ~/.config/opencode
+# Agent definitions into OpenCode's global agent directory
+ln -sfn ~/src/ai-dev/agents/matrix-topology/opencode ~/.config/opencode/agent
 ```
 
-**Link into your tools (Windows — directory junction):**
+**Link into OpenCode (Windows — directory junction):**
 
 ```powershell
-New-Item -ItemType Junction -Path "$env:USERPROFILE\.claude\agents" `
-  -Target "$env:USERPROFILE\.agents\conductor\agents"
-New-Item -ItemType Junction -Path "$env:USERPROFILE\.opencode\agents" `
-  -Target "$env:USERPROFILE\.agents\conductor\agents"
+New-Item -ItemType Junction -Path "$env:USERPROFILE\.config\opencode" `
+  -Target "$env:USERPROFILE\src\ai-dev\harness\opencode"
+New-Item -ItemType Junction -Path "$env:USERPROFILE\.config\opencode\agent" `
+  -Target "$env:USERPROFILE\src\ai-dev\agents\matrix-topology\opencode"
 ```
 
-Adding a new tool: create a symlink or junction to `~/.agents/conductor/agents/`.
-The agents propagate automatically — no other changes required.
+`default_agent` is `neo`, so every session starts with the Conductor. `guardrails.md`
+is loaded on every session via the `instructions` field in `opencode.jsonc`, and the
+`/change` command gives you the express lane.
+
+Adding a new agent: drop the `.agent.md` file into
+`agents/matrix-topology/opencode/`. The link propagates it automatically — no other
+changes required.
 
 ### Updating Model Assignments
 
