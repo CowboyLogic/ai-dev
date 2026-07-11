@@ -97,20 +97,23 @@ feedback is resolved before the next stage begins.
 The cost of a security flaw found in architecture review is a conversation.
 The cost of the same flaw found in production is an incident.
 
-### Autonomous Review Loops — Speed Without Sacrificing Quality
+### Conductor-Owned Review Loops — Speed Without Sacrificing Quality
 
-Working agents own their review loop. When The Architect produces an architecture
-document, it doesn't wait for the Conductor to hand it to Smith and Ghost and mediate
-the response. It invokes Smith and Ghost directly, resolves their findings within its
-scope, and returns solid, reviewed output to the Conductor.
+The Conductor (Neo) owns the review loop, and it runs flat — one level deep. When The
+Architect produces an architecture document, it writes the artifact and returns it to
+Neo. Neo invokes the security reviewer (Smith or Smith-Claude) and Ghost directly,
+batches their findings back to The Architect for one resolution pass, and re-verifies
+until Ghost approves. Working agents never invoke reviewers themselves.
 
-This is what makes the pattern fast. Review isn't a separate phase that adds time —
-it's woven into how each agent completes its work. The Conductor advances stages, not
-exchanges.
+This flat model is deliberate: a subagent invoking another subagent (a working agent
+calling Smith or Ghost) does not run reliably in the OpenCode harness. Keeping every
+reviewer invocation one level deep from the Conductor is what makes the pattern both
+fast *and* reliable. Review isn't a separate phase bolted on at the end — Neo weaves it
+into every stage — but the Conductor, not the working agent, holds the loop.
 
 ### The Human Stays in the Loop Where It Matters
 
-Autonomous review loops don't mean the human disappears. They mean the human isn't
+Conductor-owned review loops don't mean the human disappears. They mean the human isn't
 interrupted for things agents can resolve themselves. When an issue crosses agent
 boundaries — when Trinity finds an architectural flaw she can't fix in code, when
 Morpheus finds a gap he can't fill without a design decision — it escalates. The
@@ -121,9 +124,11 @@ handles.
 
 ## 3. Meet the Crew
 
-The topology has thirteen agents. One is the Conductor (Neo). Ten are specialists in
-a specific development function. Two are cross-cutting participants who appear at
-every generative stage.
+The topology has fourteen agents. One is the Conductor (Neo). Ten are specialists in
+a specific development function. Three are cross-cutting participants who appear at
+every generative stage — Ghost, plus the security reviewer in two model-pinned
+variants (Smith on GPT, Smith-Claude on Claude) so it is always cross-family from the
+artifact's producer.
 
 Most day-to-day work does not convene the full crew — it runs the **express lane**
 (Neo + Mouse + Ghost; see §4). The full roster below is the **full loop**, reserved
@@ -233,13 +238,20 @@ code is not outdated — it is wrong.
 These two agents do not sit in a linear sequence. They intercept at every stage
 that produces a generative artifact.
 
-**Agent Smith** — *Security*
+**Agent Smith / Smith-Claude** — *Security*
 
 Smith is adversarial by design. He approaches every artifact as an attacker would —
 looking for what should not be there, what was missed, what can be exploited, and
 what the working agent was too close to see. He is not a gate at the end of the
 process. He is a participant at every generative stage, from architecture through
 implementation.
+
+The security role runs in two model-pinned variants so it is always cross-family from
+the artifact's producer: **Smith** on GPT reviews the Claude-family agents, and
+**Smith-Claude** on Claude reviews the GPT-family agents (in the full loop, Trinity).
+Neo picks the right one by the producer's family. Both are the same role — a running
+agent cannot change its own model, so the invariant is met by two pins plus routing,
+not by one agent switching.
 
 Security is not optional. It is not a second thought. It is built in from the
 beginning.
@@ -287,38 +299,45 @@ Operational Validation (Dozer)
 Design comes before architecture: the experience is defined first, and the
 architecture is built to serve it — not the other way around.
 
-Research (Tank) is available on demand at any stage. Smith and Ghost intercept
-at every stage that produces a generative artifact.
+Research (Tank) is available on demand at any stage. The security reviewer and Ghost
+intercept — invoked by Neo — at every stage that produces a generative artifact.
 
 ### The Review Loop
 
-This is the mechanism that makes the pattern work. Every working agent owns its
-review loop — it is not delegated to the Conductor.
+This is the mechanism that makes the pattern work. **The Conductor (Neo) owns the
+review loop** — it is not run by the working agent. Every reviewer invocation is one
+level deep from Neo, because a subagent invoking another subagent does not run
+reliably in the OpenCode harness.
 
 ```markdown
-Working Agent produces artifact
+Working Agent produces artifact → returns ARTIFACT READY to Neo
             ↓
-       Invoke Smith
-    (security review)
+   Neo invokes the security reviewer
+   (Smith for Claude artifacts,
+    Smith-Claude for GPT artifacts)
             ↓
-  Resolve findings in scope
+   Neo invokes Ghost
+   (verification + gap finding,
+    also reviews the security findings)
             ↓
-       Invoke Ghost
-  (verification + gap finding)
+   Neo batches both sets of findings
+   into ONE return to the working agent
             ↓
-  Resolve findings in scope
+   Working Agent resolves in scope → REVISION COMPLETE
             ↓
-       Resolved?
+   Neo re-verifies with Ghost
+            ↓
+       APPROVED?
        ┌────┴────┐
       Yes        No
        ↓          ↓
-  Return to    Escalate
-    Neo        (see below)
+  Neo advances  Batched findings again,
+   the stage    or escalate (see below)
 ```
 
-The loop repeats until Smith and Ghost return no unresolved findings. Only then
-does the working agent return output to Neo. Neo receives solid, reviewed artifacts —
-not raw drafts requiring further mediation.
+The loop repeats until Ghost returns `ADVANCEMENT: APPROVED`. Neo holds the verdict
+and advances the stage. The working agent produces and revises the artifact; Neo runs
+every review — no agent invokes a reviewer itself.
 
 ### A Full Cycle — Plain Language
 
@@ -328,17 +347,17 @@ has already produced a reviewed UX concept that Neo passes in as prior art):
 1. You tell Neo what you're building and what problem it solves
 2. Neo validates the problem statement is clear enough to proceed
 3. Neo briefs The Architect with the problem statement, Oracle's design, and the task
-4. The Architect produces an architecture document with ADs and extension points
-5. The Architect invokes Smith — Smith reviews for threat model and security
-   implications of the structural decisions
-6. The Architect resolves Smith's findings within his scope
-7. The Architect invokes Ghost — Ghost verifies coverage, completeness, and
-   alignment with the problem statement; also verifies Smith's review was thorough
-8. The Architect resolves Ghost's findings within his scope
-9. If new findings emerge, the loop repeats
-10. When Smith and Ghost return no unresolved findings, The Architect returns
-    the reviewed architecture to Neo
-11. Neo advances to the specification stage (Morpheus)
+4. The Architect produces an architecture document with ADs and extension points,
+   writes it to disk, and returns `ARTIFACT READY` to Neo
+5. Neo invokes Smith (GPT — cross-family from The Architect's Claude) — Smith reviews
+   for threat model and security implications of the structural decisions
+6. Neo invokes Ghost — Ghost verifies coverage, completeness, and alignment with the
+   problem statement, and also verifies Smith's review was thorough
+7. Neo batches Smith's and Ghost's findings into one return to The Architect
+8. The Architect resolves the findings within his scope and returns `REVISION COMPLETE`
+9. Neo re-verifies with Ghost; if findings remain, the loop repeats
+10. When Ghost returns `ADVANCEMENT: APPROVED`, Neo advances to the specification
+    stage (Morpheus)
 
 The same loop runs at every subsequent stage. By the time Trinity writes code,
 she has a reviewed architecture, a reviewed design, and a reviewed specification
@@ -377,21 +396,21 @@ ceremony doesn't.
 
 ## 5. The Escalation Model
 
-Autonomous review loops do not mean the human is removed from the process. They
+Conductor-owned review loops do not mean the human is removed from the process. They
 mean the human is not interrupted for things the system can resolve itself.
 When something genuinely requires human authority, it escalates — clearly,
 with full context, and with a specific question that needs an answer.
 
 ### Tier 1 — The Agent Resolves It
 
-**Trigger:** Smith or Ghost raise an issue the working agent can address within
-its own scope.
+**Trigger:** The security reviewer or Ghost raise an issue the working agent can
+address within its own scope.
 
-Trinity finds a vulnerability in her code and fixes it. Morpheus finds an ambiguous
-requirement and tightens the language. The Architect reconsiders a structural
+Neo returns the batched findings; Trinity finds a vulnerability in her code and fixes
+it. Morpheus tightens an ambiguous requirement. The Architect reconsiders a structural
 decision in light of a security finding.
 
-No escalation. The loop continues.
+No cross-agent escalation. Neo re-verifies and the loop continues to approval.
 
 ### Tier 2 — Neo Coordinates
 
@@ -404,7 +423,8 @@ Smith identifies a design-level security issue in a specification — that requi
 Oracle's involvement.
 
 Neo identifies the right agent, coordinates resolution, and returns the resolution
-to the working agent. The working agent re-enters its review loop with the fix applied.
+to the working agent. The working agent applies the fix and returns its revised
+artifact; Neo re-runs the review loop with the fix in place.
 
 ### Tier 3 — You Decide
 
@@ -456,9 +476,12 @@ need it is risk.
 
 ### The Cross-Family Review Requirement
 
-Smith and Ghost must always run on a different model family than the agent whose
-work they are reviewing. If the working agent used a Claude family model, Smith
-and Ghost use a GPT, Gemini, or other non-Claude family model — and vice versa.
+The security reviewer and Ghost must always run on a different model family than the
+agent whose work they are reviewing. Because a running agent cannot change its own
+model, this is enforced by **routing**, not self-switching: the security review is
+split across **Smith** (GPT, for Claude-family artifacts) and **Smith-Claude** (Claude,
+for GPT-family artifacts), and Neo invokes whichever is cross-family from the producer.
+Ghost (Gemini) is cross-family from the whole Claude/GPT roster, so it needs no switch.
 
 This is non-negotiable, and here is why: models within the same family share
 training approaches, data sources, and inherent tendencies. When a model reviews
@@ -495,7 +518,7 @@ as well. The roles are what matter. Name them whatever makes your team productiv
 
 ### Adapting the Roster
 
-The thirteen-agent roster reflects one person's development workflow developed over
+The fourteen-agent roster reflects one person's development workflow developed over
 time. Your workflow may differ. Some agents you may not need. Others you may want
 to add.
 
@@ -530,12 +553,14 @@ to add.
 If you're new to multi-agent development, don't try to implement the full topology
 on day one. Start with three:
 
-1. **Neo** — your primary interaction agent
-2. **Smith** — security review on everything you produce
-3. **Ghost** — verification review on everything Smith reviews
+1. **Neo** — your primary interaction agent, which owns the review loop
+2. **Smith** — security review that Neo invokes on everything you produce
+3. **Ghost** — verification review that Neo invokes on everything Smith reviews
 
 That trio alone will catch more problems earlier than any single-agent workflow.
-Once you're comfortable with the review loop pattern, add the specialist agents
+(Add **Smith-Claude** when you introduce a GPT-family working agent, so the security
+review stays cross-family — see §6.) Once you're comfortable with the Neo-owned review
+loop pattern, add the specialist agents
 one at a time, starting with whichever role is the most painful bottleneck in
 your current workflow.
 
@@ -563,7 +588,8 @@ agents/matrix-topology/
     dozer.agent.md            ← Operational Validation
     tank.agent.md             ← Research
     niobe.agent.md            ← Documentation
-    smith.agent.md            ← Security (cross-cutting)
+    smith.agent.md            ← Security — GPT (reviews Claude-family artifacts)
+    smith-claude.agent.md     ← Security — Claude (reviews GPT-family artifacts)
     ghost.agent.md            ← Review (cross-cutting)
   copilot/                    ← GitHub Copilot variants (parallel set)
 

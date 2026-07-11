@@ -1,9 +1,9 @@
 # The Conductor — Agent Topology
 **Document:** CONDUCTOR.md
 **Status:** Living Document
-**Version:** 0.2.0
+**Version:** 0.3.0
 **Created:** 2026-04-18
-**Updated:** 2026-04-18
+**Updated:** 2026-07-11
 
 > "I'm trying to free your mind. But I can only show you the door.
 > You're the one that has to walk through it." — Morpheus
@@ -42,7 +42,8 @@ agents/matrix-topology/
     dozer.agent.md
     tank.agent.md
     niobe.agent.md
-    smith.agent.md
+    smith.agent.md                ← Security — GPT (reviews Claude-family artifacts)
+    smith-claude.agent.md         ← Security — Claude (reviews GPT-family artifacts)
     ghost.agent.md
   copilot/                        ← GitHub Copilot variants (parallel set)
 
@@ -88,7 +89,8 @@ roster table below and, if it participates in a stage, the lifecycle.
 | Dozer | Dozer | Diagnostics — operational validation at runtime | Thinking | Conditional |
 | Tank | Tank | Researcher — information retrieval | Thinking | No |
 | Niobe | Niobe | Document Writer — documentation artifacts | Thinking | No |
-| Smith | Agent Smith | Security — adversarial review at every stage | Cross-cutting | No |
+| Smith | Agent Smith | Security — adversarial review (GPT; reviews Claude-family artifacts) | Cross-cutting | No |
+| Smith-Claude | Agent Smith | Security — adversarial review (Claude; reviews GPT-family artifacts) | Cross-cutting | No |
 | Ghost | Ghost | Review — verification, second set of eyes | Cross-cutting | No |
 
 ---
@@ -140,9 +142,11 @@ Neo is the primary interactive agent. All sessions begin with Neo. Neo:
 - Advances the lifecycle when a stage produces solid, reviewed output
 - Is the only agent that interacts directly with the human
 
-Neo does not micromanage the review loop. Working agents own their review loop
-with Smith and Ghost. Neo advances stages — it does not mediate every Smith and
-Ghost exchange.
+Neo **owns** the review loop. Working agents produce an artifact and return it;
+Neo invokes the security reviewer (Smith or Smith-Claude) and Ghost directly, one
+level deep, and drives resolution before advancing. This is the same flat ownership
+model the express lane uses — adopted across the full loop because nested subagent
+delegation (a working agent invoking a reviewer) does not run reliably in OpenCode.
 
 ### Neo's Review Exemption
 
@@ -184,21 +188,25 @@ On projects with multiple independent components, Oracle, The Architect, and
 Morpheus can each work on separate subsystems simultaneously. No serialization
 is required between work with no shared dependencies.
 
-### Review loops are self-contained
+### Neo owns the review loop — and juggles several at once
 
-Once Neo dispatches a working agent, that agent runs its full Smith + Ghost review
-loop without Neo involvement. Neo does not relay between Smith and Ghost exchanges.
-Neo waits for the `STAGE COMPLETE` return with `ADVANCEMENT: APPROVED` — nothing
-else. Treating the review loop as something Neo must mediate is the primary source
-of unnecessary sequential work in the lifecycle.
+The working agent does not run its own review loop. It returns `ARTIFACT READY` and
+Neo runs the review (security reviewer → Ghost → batched findings → revision →
+re-verify) one level deep. When several independent subsystems are in flight, Neo
+juggles their review loops concurrently rather than serializing them — each loop is a
+small state machine keyed by artifact path in `IN-FLIGHT AGENTS`
+(`awaiting-artifact | in-security-review | in-verification | awaiting-revision |
+approved`). Compact returns (paths + verdicts, not artifact content) keep Neo's context
+free enough to hold multiple loops; Neo reads artifact files from the `ARTIFACT
+REGISTRY` only when it needs their content.
 
 ### Dispatch pattern
 
 1. Identify all agents whose inputs are satisfied
 2. Dispatch all of them simultaneously — do not queue them
-3. Write session state: record all in-flight agents under `IN-FLIGHT AGENTS`
-4. On each return: verify `GHOST VERDICT`, update session state and artifact
-   registry, identify the next parallel set, dispatch
+3. Write session state: record all in-flight agents under `IN-FLIGHT AGENTS` with loop state
+4. On each `ARTIFACT READY`: run the Neo-owned review loop; on `ADVANCEMENT: APPROVED`,
+   update session state and artifact registry, identify the next parallel set, dispatch
 
 ---
 
@@ -210,9 +218,9 @@ the **Express Lane** instead (see below); the full loop is the deliberate escala
 path. The full loop is entered by talking to Neo directly; the express lane is
 entered by the `/change` command.
 
-Each full-loop stage produces an artifact. The working agent owns its review loop
-with Smith and Ghost before returning output to Neo. Neo advances the stage when
-output is solid and reviewed.
+Each full-loop stage produces an artifact. The working agent writes it and returns
+`ARTIFACT READY` to Neo; **Neo** then owns the review loop (security reviewer + Ghost)
+for that artifact and advances the stage when Ghost returns `ADVANCEMENT: APPROVED`.
 
 ```
 Problem Statement
@@ -221,38 +229,38 @@ Problem Statement
         ┌─────────────────── PARALLEL: Tank may be dispatched alongside any stage ───────────────────┐
         │  Tank                                                                                        │
         │    └── Invoked on demand at any stage — Neo dispatches in parallel with working agents      │
-        │    └── Owns review loop: Ghost → resolves → repeats until solid                             │
-        │    └── Returns: research file path + 3–5 bullet summary to requesting agent or Neo          │
+        │    └── Returns ARTIFACT READY to Neo: research file path + 3–5 bullet summary               │
+        │    └── NEO owns review: Ghost → findings → Tank revises → re-verify (no Smith for research)  │
         └──────────────────────────────────────────────────────────────────────────────────────────────┘
         ↓
 Oracle
   └── Produces: UX concept, user journey, edge cases
-  └── Owns review loop: Smith → Ghost → resolves → repeats until solid
   └── Writes artifact to: .agents-output/<project>/design/ux-concept.md
-  └── Returns STAGE COMPLETE to Neo: artifact path + 3–5 bullet summary + Ghost Verdict
+  └── Returns ARTIFACT READY to Neo: artifact path + 3–5 bullet summary + Smith flags
+  └── NEO owns review: Smith (GPT) → Ghost → batched findings → Oracle revises → re-verify
   └── Neo advances: to The Architect
         ↓
 The Architect
   └── Produces: architecture decisions, structure, extension points
-  └── Owns review loop: Smith → Ghost → resolves → repeats until solid
   └── Writes artifact to: .agents-output/<project>/architecture/arch.md
-  └── Returns STAGE COMPLETE to Neo: artifact path + 3–5 bullet summary + Ghost Verdict
+  └── Returns ARTIFACT READY to Neo: artifact path + 3–5 bullet summary + Smith flags
+  └── NEO owns review: Smith (GPT) → Ghost → batched findings → Architect revises → re-verify
   └── Neo advances: to Morpheus
         ↓
 Morpheus
   └── Produces: specifications — numbered, testable, RFC 2119 language
-  └── Owns review loop: Smith → Ghost → resolves → repeats until solid
   └── Writes artifact to: .agents-output/<project>/spec/spec.md
-  └── Returns STAGE COMPLETE to Neo: artifact path + 3–5 bullet summary + Ghost Verdict
+  └── Returns ARTIFACT READY to Neo: artifact path + 3–5 bullet summary + Smith flags
+  └── NEO owns review: Smith (GPT) → Ghost → batched findings → Morpheus revises → re-verify
   └── Neo advances: to Switch
         ↓
 Switch
   └── Produces: TC-XXX test specification document AND executable test files
   └── Framework must be specified in Neo's handoff — Switch asks if missing
   └── Writes output incrementally by section/component — no monolithic writes
-  └── Owns review loop: Smith → Ghost → resolves → repeats until solid
   └── Writes artifacts to: .agents-output/<project>/tests/
-  └── Returns STAGE COMPLETE to Neo: artifact paths + 3–5 bullet summary + Ghost Verdict
+  └── Returns ARTIFACT READY to Neo: artifact paths + 3–5 bullet summary + Smith flags
+  └── NEO owns review: Smith (GPT) → Ghost → batched findings → Switch revises → re-verify
   └── Neo advances: to Trinity (container)
         ↓
 Trinity [container]
@@ -260,39 +268,40 @@ Trinity [container]
   └── Produces: feature code that makes Switch's tests pass — Trinity does not write tests
   └── Writes output incrementally by component — no monolithic writes
   └── Does not modify Switch's tests — fixes the implementation instead
-  └── Owns review loop: Smith → Ghost → resolves → repeats until solid
   └── Writes artifacts to: .agents-output/<project>/impl/
-  └── Returns STAGE COMPLETE to Neo: artifact paths + 3–5 bullet summary + Ghost Verdict
+  └── Returns ARTIFACT READY to Neo: artifact paths + 3–5 bullet summary + Smith flags
+  └── NEO owns review: Smith-Claude (Claude — Trinity is GPT) → Ghost → batched findings → Trinity revises → re-verify
   └── Neo advances: to Apoc (container)
         ↓
 Apoc [container]
   └── Executes: runs tests, validates outcomes, reports results
-  └── Owns review loop: Ghost → resolves → repeats until solid
   └── Writes report to: .agents-output/<project>/test-results/results.md
-  └── Returns STAGE COMPLETE to Neo: artifact path + 3–5 bullet summary + Ghost Verdict
+  └── Returns ARTIFACT READY to Neo: artifact path + 3–5 bullet summary
+  └── NEO owns review: Ghost → findings → Apoc revises → re-verify (no Smith for execution)
   └── Neo advances: to Dozer
         ↓
 Dozer [container — Contained mode | Assisted mode]
   └── Validates: deploys/launches artifact, executes operational validation
   └── Contained mode: autonomous execution in Linux container
   └── Assisted mode: produces validation plan → human executes → Dozer interprets
-  └── Owns review loop: Ghost → resolves → repeats until solid
   └── Writes artifacts to: .agents-output/<project>/diagnostics/
-  └── Returns STAGE COMPLETE to Neo: artifact path + 3–5 bullet summary + Ghost Verdict
+  └── Returns ARTIFACT READY to Neo: artifact path + 3–5 bullet summary
+  └── NEO owns review: Ghost → findings → Dozer revises → re-verify (no Smith for diagnostics)
   └── Neo advances: to Niobe
         ↓
 Niobe
   └── Produces: documentation artifacts, memory files
-  └── Owns review loop: Ghost → resolves → repeats until solid
   └── Writes artifacts to: .agents-output/<project>/docs/
-  └── Returns STAGE COMPLETE to Neo: artifact paths + 3–5 bullet summary + Ghost Verdict
+  └── Returns ARTIFACT READY to Neo: artifact paths + 3–5 bullet summary
+  └── NEO owns review: Ghost → findings → Niobe revises → re-verify (no Smith for docs)
   └── Neo closes: stage complete
 ```
 
 **All working agents write artifacts to `.agents-output/<project>/<stage>/` before
-returning to Neo. Agents return a compact STAGE COMPLETE — file path, summary,
-verdict — not artifact content inline. Neo reads artifact files when needed to
-brief the next agent. This is the context preservation protocol.**
+returning to Neo. Agents return a compact `ARTIFACT READY` — file path and summary,
+not artifact content inline — and do not invoke reviewers. Neo owns the review loop
+(security reviewer + Ghost), holds the Ghost verdict, and reads artifact files when
+needed to brief the next agent. This is the context preservation protocol.**
 
 ---
 
@@ -344,31 +353,37 @@ express lane. The full express-lane definition lives in neo.agent.md and mouse.a
 
 ## The Review Loop
 
-Working agents own their review loop. Neo does not mediate individual Smith and
-Ghost exchanges. The loop runs autonomously until output is solid or an escalation
-condition is met.
+**Neo owns the review loop.** The working agent produces an artifact and returns it;
+Neo invokes the security reviewer and Ghost — one level deep, never nested through a
+working agent — and drives resolution until Ghost approves or an escalation condition
+is met. This flat model exists because nested subagent delegation (a working agent
+invoking a reviewer) does not run reliably in OpenCode.
 
 ### How The Loop Works
 
 ```
-Working Agent produces artifact
+Working Agent produces artifact → writes to .agents-output/<project>/<stage>/
+        ↓  returns ARTIFACT READY (path + summary + Smith flags) to Neo
+Neo invokes the security reviewer (where applicable), one level deep:
+   • Smith (GPT)         for a Claude-family artifact
+   • Smith-Claude (Claude) for a GPT-family artifact (Trinity)
+        ↓  reviewer returns findings
+Neo invokes Ghost (with original intent + the security findings), one level deep
+        ↓  Ghost returns findings (including assessment of the security review) + GHOST VERDICT
+Neo batches the security + Ghost findings into ONE return to the working agent
         ↓
-Invoke Smith (where applicable)
+Working Agent resolves within scope, updates the artifact on disk, returns REVISION COMPLETE
         ↓
-Smith returns findings
+Neo re-invokes Ghost (and the security reviewer if the change warrants it)
         ↓
-Working Agent resolves findings within its scope
-        ↓
-Invoke Ghost
-        ↓
-Ghost returns findings (including assessment of Smith's review)
-        ↓
-Working Agent resolves findings within its scope
-        ↓
-     Resolved?
-     ├── Yes → output is solid → return to Neo
-     └── No  → issue outside agent's scope → escalate
+     ADVANCEMENT: APPROVED?
+     ├── Yes → Neo advances the stage
+     └── No  → batched findings returned again, or escalate if outside agent's scope
 ```
+
+Findings are **batched**: the working agent gets the security reviewer's and Ghost's
+findings together in a single return, not in two separate round-trips. This minimizes
+hops through Neo while keeping every reviewer invocation one level deep.
 
 ### What "Resolved Within Scope" Means
 
@@ -388,17 +403,18 @@ can resolve it without changing decisions made by another agent.
 
 Three tiers of resolution. Each tier has a clear trigger and a clear owner.
 
-### Tier 1 — Working Agent Resolves
+### Tier 1 — Working Agent Resolves (within Neo's loop)
 
-**Trigger:** Smith or Ghost raise an issue the working agent can address within
-its own scope.
+**Trigger:** The security reviewer or Ghost raise an issue the working agent can
+address within its own scope.
 
-**Owner:** Working agent
+**Owner:** Working agent (resolution), Neo (loop control)
 
-**Process:** Agent resolves the issue, re-invokes Smith and/or Ghost, continues
-the loop until output is solid.
-
-**No Neo involvement required.**
+**Process:** Neo returns the batched findings to the working agent. The agent resolves
+the issue within scope, updates the artifact on disk, and returns `REVISION COMPLETE`.
+Neo re-invokes Ghost (and the security reviewer where warranted) and repeats until
+`ADVANCEMENT: APPROVED`. The working agent does not invoke reviewers itself — Neo owns
+the loop — but a Tier 1 issue never requires a decision from another agent or the human.
 
 ---
 
@@ -451,31 +467,41 @@ on issues that genuinely need human authority.
 
 ## Cross-Cutting Agents
 
-### Smith — Security
+### Smith / Smith-Claude — Security
 
 Smith is adversarial by design. He approaches every artifact as an attacker —
 finding what should not be there, what was missed, what can be exploited.
 
-Smith is invoked by the working agent directly as part of the review loop.
-Smith does not wait for Neo to invoke him.
+**Neo** invokes the security reviewer directly, one level deep, after the working
+agent returns its artifact. The security review is split across two statically-pinned
+agents so the reviewer is always cross-family from the producer — a running agent
+cannot change its own model, and Neo cannot override a subagent's model at invocation:
 
-**Smith receives in every handoff:**
+- **Smith** (GPT) reviews **Claude-family** artifacts (Oracle, The Architect,
+  Morpheus, Switch)
+- **Smith-Claude** (Claude) reviews **GPT-family** artifacts — in the full loop,
+  Trinity's implementation
+
+Neo routes by the `PRODUCED BY` family. The reviewer confirms the family on receipt
+and refuses a same-family artifact (notifying Neo) as a backstop.
+
+**The security reviewer receives in every handoff (from Neo):**
 - The original problem statement (context anchor)
 - The artifact being reviewed
 - The stage it came from
-- The model family of the agent that produced it (Smith must be a different family)
+- The model family of the agent that produced it (the reviewer must be a different family)
 - Explicit security review criteria for this artifact type
 
-**Smith is not optional.** Any stage that produces a generative artifact requires
-Smith's review before Ghost is invoked.
+**Security review is not optional.** Any stage that produces a generative artifact
+requires it before Ghost is invoked.
 
 ### Ghost — Review
 
 Ghost provides the second set of eyes from a different model family. He finds gaps —
 things that were not done that should have been — not just bugs.
 
-Ghost is invoked by the working agent after Smith, as part of the review loop.
-Ghost also reviews Smith's findings — no one is exempt.
+**Neo** invokes Ghost directly after the security reviewer, as part of the Neo-owned
+review loop. Ghost also reviews the security reviewer's findings — no one is exempt.
 
 **Ghost receives in every handoff:**
 - The original intent (what was the agent supposed to produce?)
@@ -551,10 +577,11 @@ Trinity run on GPT — the two GPT-family working agents.
 
 This is a documented, accepted tradeoff with the following compensating controls:
 
-- **Smith** (OpenAI / GPT primary) reviews every generative artifact cross-family
-  before output reaches Neo
-- **Ghost** (Gemini alternate for Claude agents) provides a second cross-family
-  review independently of Smith
+- **The security reviewer** runs cross-family on every generative artifact, invoked
+  directly by Neo — **Smith** (GPT) for the Claude-family majority, **Smith-Claude**
+  (Claude) for the GPT-family agents (Trinity). Neo routes by producer family
+- **Ghost** (Gemini) provides a second cross-family review independently of the
+  security reviewer
 - **Neo's advancement decision** is based on Ghost's structured `GHOST VERDICT`
   block — a machine-readable verdict Neo reads, not prose Neo interprets. The
   shared family risk is lowest when Neo's role is verdict-reading, not artifact
@@ -574,23 +601,25 @@ it should be evaluated against this concentration risk.
 cognitive task the agent performs. Heavy reasoning for complex tasks. Lightweight
 for focused, well-scoped tasks. Cost and capability are both selection criteria.
 
-**Cross-family review requirement:** Smith and Ghost must always run on a different
-model family than the agent whose work they are reviewing. This is non-negotiable.
-The purpose is to eliminate shared blindspots between model families.
+**Cross-family review requirement:** the security reviewer and Ghost must always run
+on a different model family than the agent whose work they are reviewing. This is
+non-negotiable. The purpose is to eliminate shared blindspots between model families.
 
 **Within-family variation:** Different models within a family may be selected for
 different agents based on task complexity, cost, and required capability.
 
-**Conditional model assignment for cross-cutting agents:** Smith and Ghost do not
-use a single static model. Each operates with a primary model and a designated
-alternate. Before beginning any review, Smith and Ghost check the model family of
-the agent that produced the artifact. If that family matches their active model
-family, they switch to the alternate. This makes the cross-family requirement
-self-enforcing — no manual routing required, no exceptions possible.
+**Cross-family enforcement is by routing, not self-switching.** A running agent
+cannot change its own model, and Neo cannot override a subagent's model at invocation
+(OpenCode limitation). So the security review is split across two statically-pinned
+agents — **Smith** (GPT) and **Smith-Claude** (Claude) — and **Neo** invokes whichever
+is cross-family from the artifact's producer. Ghost (Gemini) is cross-family from the
+entire current Claude/GPT roster, so it needs no switching; its Claude-pinned alternate
+is reserved for any future agent assigned a Gemini model.
 
-Ghost additionally checks the model family Smith used for the same review cycle
-and prefers to differ from both where possible — maximizing independent perspective
-coverage across all three roles (working agent, security reviewer, verification reviewer).
+Ghost additionally prefers to differ from the security reviewer's family for the same
+review cycle where possible — maximizing independent perspective coverage across all
+three roles (working agent, security reviewer, verification reviewer). Trinity cycles
+achieve full coverage: Trinity (GPT) + Smith-Claude (Claude) + Ghost (Gemini).
 
 The resolved model assignments per agent are documented in ghost.agent.md. Update
 that reference table when roster or model assignments change.
@@ -627,19 +656,22 @@ field must explicitly state that Trinity implements feature code to make Switch'
 tests pass — Trinity does not write tests. The `CONSTRAINTS` field must include
 the output directory structure and a reminder that tests must not be modified.
 
-### Working Agent → Smith (Security Review)
+### Neo → Smith / Smith-Claude (Security Review)
+
+Neo picks the reviewer by `PRODUCED BY` family: Smith for Claude-family, Smith-Claude
+for GPT-family.
 
 ```
-AGENT:           Smith — Security Review
+AGENT:           Smith — Security Review   (or: Smith-Claude — Security Review)
 STAGE:           [lifecycle stage being reviewed]
 CONTEXT:         [original problem statement]
-ARTIFACT:        [what is being reviewed]
-PRODUCED BY:     [agent name and model family]
+ARTIFACT:        [what is being reviewed — path]
+PRODUCED BY:     [agent name and model family — determines which reviewer Neo invokes]
 CRITERIA:        [security review criteria for this artifact type]
 OUTPUT:          [findings report — issues, risk levels, recommendations]
 ```
 
-### Working Agent → Ghost (Verification)
+### Neo → Ghost (Verification)
 
 ```
 AGENT:           Ghost — Verification Review
@@ -653,21 +685,64 @@ OUTPUT:          [verification report — gaps, coverage issues, misalignments,
                  and mandatory GHOST VERDICT block]
 ```
 
-### Working Agent → Neo (Stage Complete)
+### Working Agent → Neo (Artifact Ready)
 
-Working agents return to Neo only after Ghost has issued `ADVANCEMENT: APPROVED`.
-The return handoff is **compact** — file path, summary, and verdict only.
-Artifact content is in the file. Neo reads the file when it needs to brief the
-next agent. This keeps Neo's context window for coordination, not content storage.
+The working agent returns this as soon as it has written the artifact — **before** any
+review. It does not invoke reviewers and does not carry a Ghost verdict; Neo owns the
+review loop and holds the verdict. The return is **compact** — path and summary only.
+Artifact content stays in the file; Neo reads it when briefing a reviewer or the next agent.
 
 ```
-STAGE COMPLETE
+ARTIFACT READY
 AGENT:          [returning agent]
 STAGE:          [lifecycle stage]
 ARTIFACT PATH:  [.agents-output/<project>/<stage>/<artifact>.md]
 SUMMARY:        [3–5 bullets — key decisions, outcomes, or findings]
-SMITH VERDICT:  [one line: issues found and resolution applied, or N/A]
-GHOST VERDICT:
+SMITH FLAGS:    [security-sensitive areas to focus the security review on, or N/A]
+```
+
+On `ARTIFACT READY`, Neo registers the path in `ARTIFACT REGISTRY`, sets the agent's
+`IN-FLIGHT AGENTS` loop state to `in-security-review` (or `in-verification` where no
+security review applies), and begins the Neo-owned review loop.
+
+### Neo → Working Agent (Batched Review Findings)
+
+Neo returns the security reviewer's and Ghost's findings **together** in one handoff —
+not two separate round-trips.
+
+```
+REVIEW FINDINGS
+STAGE:            [lifecycle stage]
+ARTIFACT PATH:    [path the agent should revise in place]
+SECURITY FINDINGS:[Smith / Smith-Claude findings — issues, risk levels, or NONE]
+GHOST FINDINGS:   [gaps, coverage issues, misalignments, or NONE]
+GHOST VERDICT:    [current verdict — expected INCOMPLETE / BLOCKED if findings exist]
+ACTION:           [resolve within scope and return REVISION COMPLETE, or escalate]
+```
+
+### Working Agent → Neo (Revision Complete)
+
+After resolving batched findings, the working agent returns this. Neo then re-invokes
+Ghost (and the security reviewer where warranted) to confirm.
+
+```
+REVISION COMPLETE
+AGENT:          [returning agent]
+STAGE:          [lifecycle stage]
+ARTIFACT PATH:  [.agents-output/<project>/<stage>/<artifact>.md]
+CHANGED:        [1–3 bullets — what was changed to resolve the findings]
+UNRESOLVED:     [any finding NOT resolved and why — escalated, or NONE]
+```
+
+### The Ghost Verdict (held by Neo)
+
+Neo advances a stage only when **Ghost's** returned `GHOST VERDICT` block shows
+`ADVANCEMENT: APPROVED`. The verdict comes to Neo directly from Ghost, not from the
+working agent. A missing, ambiguous, or `BLOCKED` verdict is treated as incomplete —
+Neo returns batched findings to the working agent and re-runs the loop.
+
+```
+GHOST VERDICT
   VERDICT:          COMPLETE | INCOMPLETE
   OUTSTANDING:      [count — 0 if COMPLETE]
   BLOCKING:         NONE | [list]
@@ -675,15 +750,8 @@ GHOST VERDICT:
   NOTES:            [deferred items or caveats, if any]
 ```
 
-Neo does not advance the lifecycle unless `ADVANCEMENT: APPROVED` is present
-and unambiguous in the returned handoff. A missing, ambiguous, or `BLOCKED`
-verdict is treated as incomplete — Neo returns the stage to the working agent.
-
-When Neo receives a `STAGE COMPLETE`, it:
-
-1. Registers the artifact path in session state under `ARTIFACT REGISTRY`
-2. Clears the agent from `IN-FLIGHT AGENTS`
-3. Reads the registered path when briefing the next stage agent
+On `ADVANCEMENT: APPROVED`, Neo clears the agent from `IN-FLIGHT AGENTS`, confirms the
+artifact path in `ARTIFACT REGISTRY`, and reads that path when briefing the next stage.
 
 ### Working Agent → Neo (Escalation)
 

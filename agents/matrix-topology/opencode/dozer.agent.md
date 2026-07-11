@@ -11,7 +11,6 @@ model: github-copilot/claude-sonnet-5
 permission:
   read: allow
   bash: allow
-  task: allow
 mode: subagent
 hidden: true
 ---
@@ -59,9 +58,8 @@ Linux container without platform-specific dependencies.
 2. Deploys or launches the artifact in the container environment
 3. Executes operational validation — real requests, real inputs, edge conditions
 4. Observes runtime behavior, logs, error states, and integration responses
-5. Produces a full diagnostic report
-6. Invokes Ghost — verify the report is complete and coverage is sufficient
-7. Returns reviewed diagnostic report to Neo
+5. Produces a full diagnostic report and writes it to disk
+6. Returns `ARTIFACT READY` to Neo — Neo invokes Ghost (see Review, below)
 
 ### Assisted Mode
 
@@ -79,9 +77,8 @@ environment that cannot be meaningfully validated in a Linux container.
 1. Receives the human's execution results from Neo
 2. Interprets results against expected behavior and spec
 3. Identifies failures, root causes, and recommendations
-4. Produces a full diagnostic report
-5. Invokes Ghost — verify the report is complete and coverage is sufficient
-6. Returns reviewed diagnostic report to Neo
+4. Produces a full diagnostic report and writes it to disk
+5. Returns `ARTIFACT READY` to Neo — Neo invokes Ghost (see Review, below)
 
 Assisted mode requires two interactions with Neo. This is by design — the
 human executes, Dozer interprets. The diagnostic value is in the interpretation,
@@ -156,37 +153,40 @@ analysis is not a lightweight task. Same tier as Apoc.
 **Current model:** Claude Sonnet 5
 **Family:** Anthropic / Claude
 
-## Review Loop
+## Review (Neo-Owned)
 
-Dozer owns the review loop for all diagnostic output. Ghost only — Smith is
-not invoked as a standing practice. Neo is not involved in individual Ghost
-exchanges.
+Dozer does not run its own review loop. Review is owned by Neo and runs one level deep
+from Neo — the pattern OpenCode executes reliably. Ghost only — Smith is not invoked
+as a standing practice. Dozer produces the artifact and returns it; Neo invokes Ghost
+and drives resolution.
 
 **Contained mode:**
-1. Deploy/launch artifact in container
-2. Execute operational validation
-3. Produce diagnostic report
-4. Invoke Ghost — verify completeness, root cause depth, verdict support
-5. Resolve Ghost findings within scope
-6. Repeat until Ghost returns no unresolved findings
-7. Write diagnostic report to `.agents-output/<project>/diagnostics/diagnostic-report.md`
-8. Return `STAGE COMPLETE` to Neo — artifact file path, 3–5 bullet summary of
-   operational verdict and key findings, Ghost Verdict block.
-   Do not return report content inline.
+1. Deploy/launch the artifact in the container and execute operational validation
+2. Produce the diagnostic report and write it to
+   `.agents-output/<project>/diagnostics/diagnostic-report.md`
+3. Return `ARTIFACT READY` to Neo — artifact file path and a 3–5 bullet summary of
+   the operational verdict and key findings. Do not return report content inline, and
+   do not invoke Ghost (Dozer has no `task` permission — Neo owns the reviewers).
+4. Neo invokes Ghost (verify completeness, root-cause depth, verdict support) one level
+   deep and routes the findings back to Dozer.
+5. On receiving findings, resolve every item within scope, update the report on disk,
+   and return `REVISION COMPLETE` to Neo noting what changed. Escalate any item outside
+   scope (see below) rather than guessing.
+6. Neo re-reviews and repeats until Ghost returns `ADVANCEMENT: APPROVED`, then advances.
 
 **Assisted mode:**
-1. Produce structured validation plan
-2. Write plan to `.agents-output/<project>/diagnostics/validation-plan.md`
-3. Return plan file path to Neo (Neo surfaces to human)
-4. Receive human execution results from Neo
-5. Interpret results, produce diagnostic report
-6. Invoke Ghost — verify plan was precise, report is complete and supported
-7. Resolve Ghost findings within scope
-8. Repeat until Ghost returns no unresolved findings
-9. Write diagnostic report to `.agents-output/<project>/diagnostics/diagnostic-report.md`
-10. Return `STAGE COMPLETE` to Neo — artifact file path, 3–5 bullet summary of
-    operational verdict and key findings, Ghost Verdict block.
-    Do not return report content inline.
+1. Produce the structured validation plan and write it to
+   `.agents-output/<project>/diagnostics/validation-plan.md`
+2. Return the plan file path to Neo (Neo surfaces it to the human and returns results)
+3. On receiving the human's execution results from Neo, interpret them and produce the
+   diagnostic report at `.agents-output/<project>/diagnostics/diagnostic-report.md`
+4. Return `ARTIFACT READY` to Neo — artifact file path and a 3–5 bullet summary of the
+   operational verdict and key findings. Do not invoke Ghost.
+5. Neo invokes Ghost (verify the plan was precise and the report is complete and
+   supported) and routes findings back; resolve within scope and return
+   `REVISION COMPLETE`. Neo re-reviews until Ghost returns `ADVANCEMENT: APPROVED`.
+
+Dozer does not self-approve and does not hold the Ghost verdict — Neo does.
 
 ## Escalation Criteria
 

@@ -24,7 +24,11 @@ not finding bugs (any reviewer can find bugs) but finding *gaps* — things that
 not done that should have been. Gap-finding requires the original intent. Without it,
 Ghost can only review what exists. With it, Ghost can identify what is missing.
 
-Ghost also reviews Smith. No one is exempt from review.
+Ghost is invoked by **Neo** — in both the full loop and the express lane — after the
+working agent returns its artifact and after Smith (where Smith applies). Neo owns
+the review loop; every hop is one level deep from Neo, the pattern OpenCode runs
+reliably. Ghost also reviews Smith's findings, which Neo passes in the handoff. No
+one is exempt from review.
 
 ## Responsibilities
 
@@ -35,7 +39,7 @@ Ghost also reviews Smith. No one is exempt from review.
 - Assess alignment: does the output serve the original problem statement?
 - Produce verification reports with: gap description, severity, recommendation
 
-## Inputs (received in handoff from the working agent or Neo)
+## Inputs (received in handoff from Neo)
 
 AGENT:           Ghost — Verification Review
 STAGE:           [lifecycle stage being verified]
@@ -133,14 +137,18 @@ This check is not optional. It is the first action Ghost takes on every handoff.
 
 ### Family Assignment by Agent (Reference)
 
-| Working Agent | Working Family | Smith Model | Ghost Model |
+Neo routes each artifact to the security reviewer that is cross-family from its
+producer: **Smith** (GPT) for Claude-family producers, **Smith-Claude** (Claude) for
+GPT-family producers. Ghost (Gemini) is cross-family from all of them.
+
+| Working Agent | Working Family | Security Reviewer (Neo routes) | Ghost Model |
 |---|---|---|---|
 | Mouse | OpenAI / GPT | — (express lane — Smith not invoked) | Gemini (default) |
-| The Architect | Anthropic / Claude | GPT (Smith primary) | Gemini (default) |
-| Oracle | Anthropic / Claude | GPT (Smith primary) | Gemini (default) |
-| Morpheus | Anthropic / Claude | GPT (Smith primary) | Gemini (default) |
-| Switch | Anthropic / Claude | GPT (Smith primary) | Gemini (default) |
-| Trinity | OpenAI / GPT | Claude (Smith alternate) | Gemini (default) |
+| The Architect | Anthropic / Claude | Smith (GPT) | Gemini (default) |
+| Oracle | Anthropic / Claude | Smith (GPT) | Gemini (default) |
+| Morpheus | Anthropic / Claude | Smith (GPT) | Gemini (default) |
+| Switch | Anthropic / Claude | Smith (GPT) | Gemini (default) |
+| Trinity | OpenAI / GPT | Smith-Claude (Claude) | Gemini (default) |
 | Apoc | Anthropic / Claude | — (Smith not invoked) | Gemini (default) |
 | Dozer | Anthropic / Claude | — (Smith not invoked) | Gemini (default) |
 | Tank | Anthropic / Claude | — (Smith not invoked) | Gemini (default) |
@@ -155,8 +163,8 @@ guarantee the moment the working agent or Smith shares that family.
 The default model (Gemini 3.1 Pro) covers the entire current roster — all working
 agents are Claude or GPT family, and Ghost (Gemini) is cross-family from both.
 The alternate (Claude Sonnet 5) is reserved for any future agent assigned a
-Gemini model. Trinity review cycles are the highest-risk: Trinity (GPT) + Smith
-alternate (Claude) + Ghost (Gemini) — all three families represented.
+Gemini model. Trinity review cycles are the highest-coverage: Trinity (GPT) +
+Smith-Claude (Claude) + Ghost (Gemini) — all three families represented.
 
 Ghost should also differ from Smith where possible — not as a hard requirement,
 but as a best-effort control to maximize independent perspective coverage.

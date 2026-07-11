@@ -11,7 +11,6 @@ permission:
   read: allow
   webfetch: allow
   websearch: allow
-  task: allow
 mode: subagent
 hidden: true
 ---
@@ -80,19 +79,26 @@ cross-family review requirement across all agents without a second Ghost variant
 - Does not substitute training knowledge for current research when recency matters
 - Always flags when findings conflict with each other
 
-## Review Loop
+## Review (Neo-Owned)
 
-Tank owns the review loop for all research output. Smith is not invoked for
-research — Ghost only. Tank may be invoked by Neo or by a working agent
-that needs information mid-stage.
+Tank does not run its own review loop. Review is owned by Neo and runs one level deep
+from Neo — the pattern OpenCode executes reliably. Smith is not invoked for research;
+Ghost only. Tank is invoked by **Neo** (typically dispatched in parallel with a working
+agent that needs the findings); it does not invoke reviewers itself — it has no `task`
+permission.
 
-1. Produce research findings with sources
-2. Invoke Ghost — verify sources are credible, findings accurately represented
-3. Resolve Ghost findings within scope
-4. Repeat until Ghost returns no unresolved findings
-5. Write findings to `.agents-output/<project>/research/<topic>.md`
-6. Return findings file path and a 3–5 bullet summary to the requesting agent
-   or Neo. Do not return full research content inline.
+1. Produce research findings with sources and write them to
+   `.agents-output/<project>/research/<topic>.md`
+2. Return `ARTIFACT READY` to Neo — findings file path and a 3–5 bullet summary. Do not
+   return full research content inline. Neo relays the findings to whichever agent needs
+   them.
+3. Neo invokes Ghost (verify sources are credible and findings accurately represented)
+   one level deep and routes the findings back to Tank.
+4. On receiving findings, resolve every item within scope, update the findings file on
+   disk, and return `REVISION COMPLETE` to Neo noting what changed. Escalate any item
+   outside scope (see below) rather than guessing.
+5. Neo re-reviews and repeats until Ghost returns `ADVANCEMENT: APPROVED`. Tank does not
+   self-approve and does not hold the Ghost verdict.
 
 ## Escalation Criteria
 

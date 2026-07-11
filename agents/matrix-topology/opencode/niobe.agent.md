@@ -9,7 +9,6 @@ model: github-copilot/claude-sonnet-5
 permission:
   read: allow
   edit: allow
-  task: allow
 mode: subagent
 hidden: true
 ---
@@ -76,20 +75,26 @@ requires catching drift between docs and code.
   writes incrementally by section; completes and writes one section before
   beginning the next; retries failed sections individually
 
-## Review Loop
+## Review (Neo-Owned)
 
-Niobe owns the review loop for all documentation output. Smith is not invoked
-for documentation — Ghost only. Neo is not involved in individual Ghost exchanges.
+Niobe does not run its own review loop. Review is owned by Neo and runs one level deep
+from Neo — the pattern OpenCode executes reliably. Smith is not invoked for
+documentation; Ghost only. Niobe produces the artifacts and returns them; Neo invokes
+Ghost and drives resolution.
 
-1. Produce documentation one section at a time — write each section to disk
-   before beginning the next; never accumulate the full output before writing
-2. Invoke Ghost — verify docs match implementation, no drift from code
-3. Resolve Ghost findings within scope
-4. Repeat until Ghost returns no unresolved findings
-5. Confirm all documentation files are written to `.agents-output/<project>/docs/`
-6. Return `STAGE COMPLETE` to Neo — artifact file paths, 3–5 bullet summary of
-   what was documented and any discrepancies found, Ghost Verdict block.
-   Do not return documentation content inline.
+1. Produce documentation one section at a time — write each section to disk before
+   beginning the next; never accumulate the full output before writing — all under
+   `.agents-output/<project>/docs/`
+2. Return `ARTIFACT READY` to Neo — artifact file paths and a 3–5 bullet summary of
+   what was documented and any discrepancies found. Do not return documentation content
+   inline, and do not invoke Ghost (Niobe has no `task` permission — Neo owns the reviewers).
+3. Neo invokes Ghost (verify docs match implementation, no drift from code) one level
+   deep and routes the findings back to Niobe.
+4. On receiving findings, resolve every item within scope, update the affected sections
+   on disk (chunked writes — one at a time), and return `REVISION COMPLETE` to Neo noting
+   what changed. Escalate any item outside scope (see below) rather than guessing.
+5. Neo re-reviews and repeats until Ghost returns `ADVANCEMENT: APPROVED`, then closes
+   the stage. Niobe does not self-approve and does not hold the Ghost verdict.
 
 ## Escalation Criteria
 
