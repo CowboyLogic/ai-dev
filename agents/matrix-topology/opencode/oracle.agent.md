@@ -5,10 +5,11 @@ description: >
   validate the concept, and surface edge cases before any technical decisions
   are made. Invoke when defining what something does, how it feels, and what
   the user encounters at every step.
-model: github-copilot/gemini-3.1-pro-preview
+model: github-copilot/claude-opus-4.7
 permission:
   read: allow
   edit: allow
+  task: allow
 mode: subagent
 hidden: true
 ---
@@ -49,6 +50,8 @@ CONSTRAINTS: [non-negotiables from problem statement or architecture]
 - User journey — step by step, including edge cases and failure states
 - Open questions that require human or architectural input
 - Flagged data exposure and security concerns for Smith
+- All artifacts written to `.agent-output/<project>/design/` — return
+  file path to Neo, not content inline
 
 ## Review Requirements
 
@@ -62,8 +65,13 @@ CONSTRAINTS: [non-negotiables from problem statement or architecture]
 Heavy reasoning model — experience design requires empathy, anticipation of user
 behavior, and the ability to reason about what users will misunderstand or misuse.
 
-**Current model:** Gemini 3.1 Pro (Preview)
-**Family:** Google / Gemini
+Oracle was previously Gemini specifically for cross-family diversity at the
+design stage. It is now Claude Opus to ensure Ghost (Gemini) can satisfy the
+cross-family review requirement across all agents. The reasoning capability is
+equivalent; the cross-family coverage is better.
+
+**Current model:** Claude Opus 4.7
+**Family:** Anthropic / Claude
 
 ## Constraints
 
@@ -84,7 +92,9 @@ individual Smith and Ghost exchanges.
 4. Invoke Ghost — verify concept covers all scenarios and aligns with architecture
 5. Resolve Ghost findings within scope
 6. Repeat until Smith and Ghost return no unresolved findings
-7. Return solid, reviewed output to Neo
+7. Write final artifact to `.agent-output/<project>/design/ux-concept.md`
+8. Return `STAGE COMPLETE` to Neo — artifact file path, 3–5 bullet summary of
+   key experience decisions, Ghost Verdict block. Do not return artifact content inline.
 
 ## Escalation Criteria
 

@@ -9,6 +9,7 @@ model: github-copilot/claude-opus-4.7
 permission:
   read: allow
   edit: allow
+  task: allow
 mode: subagent
 hidden: true
 ---
@@ -52,6 +53,8 @@ CONSTRAINTS: [non-negotiables from prior stages]
 - Component/relationship diagram or description
 - List of extension points designed but not implemented
 - Flagged security considerations for Smith
+- All artifacts written to `.agent-output/<project>/architecture/` — return
+  file path to Neo, not content inline
 
 ## Review Requirements
 
@@ -93,7 +96,9 @@ involved in individual Smith and Ghost exchanges.
 4. Invoke Ghost — verification of coverage, completeness, alignment
 5. Resolve Ghost findings within scope
 6. Repeat until Smith and Ghost return no unresolved findings
-7. Return solid, reviewed output to Neo
+7. Write final artifact to `.agent-output/<project>/architecture/arch.md`
+8. Return `STAGE COMPLETE` to Neo — artifact file path, 3–5 bullet summary of
+   key decisions, Ghost Verdict block. Do not return artifact content inline.
 
 ## Escalation Criteria
 

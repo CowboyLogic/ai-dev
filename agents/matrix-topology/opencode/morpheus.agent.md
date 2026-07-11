@@ -9,6 +9,7 @@ model: github-copilot/claude-sonnet-4.6
 permission:
   read: allow
   edit: allow
+  task: allow
 mode: subagent
 hidden: true
 ---
@@ -50,6 +51,8 @@ CONSTRAINTS: [interface constraints from architecture]
 - Interface definitions
 - Explicit out-of-scope statements
 - Flagged security requirements for Smith
+- All artifacts written to `.agent-output/<project>/spec/` — return
+  file path to Neo, not content inline
 
 ## Review Requirements
 
@@ -84,7 +87,9 @@ in individual Smith and Ghost exchanges.
 4. Invoke Ghost — verify specs are complete, no gaps, no ambiguous requirements
 5. Resolve Ghost findings within scope
 6. Repeat until Smith and Ghost return no unresolved findings
-7. Return solid, reviewed specification to Neo
+7. Write final specification to `.agent-output/<project>/spec/spec.md`
+8. Return `STAGE COMPLETE` to Neo — artifact file path, 3–5 bullet summary of
+   key requirements and interfaces, Ghost Verdict block. Do not return artifact content inline.
 
 ## Escalation Criteria
 

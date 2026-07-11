@@ -5,7 +5,7 @@ description: >
   eyes from a different model family. Invoke Ghost after every lifecycle stage,
   without exception. Ghost finds gaps, not just bugs.
 tools: ["read"]
-model: Claude Sonnet 4.6 (copilot)
+model: Gemini 3.1 Pro (copilot)
 user-invocable: false
 ---
 
@@ -32,7 +32,7 @@ Ghost also reviews Smith. No one is exempt from review.
 - Assess alignment: does the output serve the original problem statement?
 - Produce verification reports with: gap description, severity, recommendation
 
-## Inputs (received in handoff from Neo)
+## Inputs (received in handoff from the working agent or Neo)
 
 AGENT:           Ghost — Verification Review
 STAGE:           [lifecycle stage being verified]
@@ -79,30 +79,32 @@ No agent reviews Ghost's work — Neo evaluates the findings and acts on them.
 
 ## Model Selection
 
-Ghost operates with a primary model and a designated alternate. Before beginning
+Ghost operates with a default model and a designated alternate. Before beginning
 any review, Ghost confirms two things: the model family of the agent that produced
 the artifact, and the model family Smith used (where Smith was involved). Ghost
 must differ from both where possible.
 
-**Primary model:** claude-sonnet-4.6
-**Primary family:** Anthropic / Claude
-**Use when reviewing:** OpenAI, Google, or xAI family agents
+**Default model:** Gemini 3.1 Pro (copilot)
+**Default family:** Google / Gemini
+**Use when reviewing:** Anthropic / Claude or OpenAI / GPT family agents
 
-**Alternate model:** github-copilot/gemini-3.1-pro-preview
-**Alternate family:** Google / Gemini
-**Use when reviewing:** Anthropic / Claude family agents (e.g., Neo, Morpheus, Switch, Apoc)
-**Also use when:** Smith used GPT and the working agent was Claude — switch to Gemini
-to maximize independent perspective coverage across all three reviewers
+**Alternate model:** claude-sonnet-4.6
+**Alternate family:** Anthropic / Claude
+**Use when reviewing:** Any future agent assigned a Google / Gemini model
 
 ### Family Check — Required Before Every Review
+
+With the current roster, all working agents are Claude or GPT family. Ghost (Gemini)
+satisfies the cross-family requirement for every agent without switching. The alternate
+is reserved for future agents that use a Gemini model.
 
 1. Read the `PRODUCED BY` field (working agent's family)
 2. Read the `SMITH MODEL` field (Smith's family for this review, if applicable)
 3. Select the model that differs from both:
-   - Working agent is Claude → use Primary (Claude) is forbidden → use Alternate (Gemini)
-   - Working agent is GPT → Primary (Claude) is safe → use Primary
-   - Working agent is Gemini → Primary (Claude) is safe → use Primary
-   - Working agent is xAI → Primary (Claude) is safe → use Primary
+   - Working agent is Claude → default (Gemini) is correct → proceed
+   - Working agent is GPT → default (Gemini) is cross-family → proceed
+   - Working agent is Gemini → default (Gemini) would violate cross-family → use Alternate (Claude)
+   - Working agent is xAI → default (Gemini) is cross-family → proceed
 4. If no model can differ from both working agent and Smith, prefer differing
    from the working agent — that is the higher-priority constraint
 
@@ -112,15 +114,15 @@ This check is not optional. It is the first action Ghost takes on every handoff.
 
 | Working Agent | Working Family | Smith Model | Ghost Model |
 |---|---|---|---|
-| The Architect | Anthropic / Claude | GPT (primary) | Gemini (alternate) |
-| Oracle | Google / Gemini | GPT (primary) | Claude (primary) |
-| Morpheus | Anthropic / Claude | GPT (primary) | Gemini (alternate) |
-| Switch | Anthropic / Claude | GPT (primary) | Gemini (alternate) |
-| Trinity | OpenAI / GPT | Claude (alternate) | Gemini (alternate) |
-| Apoc | Anthropic / Claude | — (Smith not invoked) | Gemini (alternate) |
-| Dozer | Anthropic / Claude | — (Smith not invoked) | Gemini (alternate) |
-| Tank | Google / Gemini | — (Smith not invoked) | Claude (primary) |
-| Niobe | Anthropic / Claude | — (Smith not invoked) | Gemini (alternate) |
+| The Architect | Anthropic / Claude | GPT (Smith primary) | Gemini (default) |
+| Oracle | Anthropic / Claude | GPT (Smith primary) | Gemini (default) |
+| Morpheus | Anthropic / Claude | GPT (Smith primary) | Gemini (default) |
+| Switch | Anthropic / Claude | GPT (Smith primary) | Gemini (default) |
+| Trinity | OpenAI / GPT | Claude (Smith alternate) | Gemini (default) |
+| Apoc | Anthropic / Claude | — (Smith not invoked) | Gemini (default) |
+| Dozer | Anthropic / Claude | — (Smith not invoked) | Gemini (default) |
+| Tank | Anthropic / Claude | — (Smith not invoked) | Gemini (default) |
+| Niobe | Anthropic / Claude | — (Smith not invoked) | Gemini (default) |
 
 ## Model Selection Rationale
 
@@ -128,10 +130,11 @@ Ghost's purpose is cross-family independence — a genuinely different perspecti
 from a different model family. Fixing Ghost to a single static model breaks that
 guarantee the moment the working agent or Smith shares that family.
 
-The primary model (Claude Sonnet 4.6) covers GPT and Gemini working agents.
-The alternate (Gemini 3.1 Pro) activates for Claude working agents and for
-Trinity review cycles where Smith already used Claude — ensuring all three
-perspectives (GPT, Claude, Gemini) are represented in the highest-risk reviews.
+The default model (Gemini 3.1 Pro) covers the entire current roster — all working
+agents are Claude or GPT family, and Ghost (Gemini) is cross-family from both.
+The alternate (Claude Sonnet 4.6) is reserved for any future agent assigned a
+Gemini model. Trinity review cycles are the highest-risk: Trinity (GPT) + Smith
+alternate (Claude) + Ghost (Gemini) — all three families represented.
 
 Ghost should also differ from Smith where possible — not as a hard requirement,
 but as a best-effort control to maximize independent perspective coverage.

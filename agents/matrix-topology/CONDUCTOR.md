@@ -138,6 +138,42 @@ triggers it and what does not.
 
 ---
 
+## Parallel Dispatch
+
+Neo dispatches agents in parallel whenever their work is independent.
+Queuing parallelizable work sequentially is wasted lifecycle time.
+
+### Tank is always parallel
+
+Tank is on-demand at any lifecycle stage. Any time a working agent needs current
+information to make a decision, Neo dispatches Tank and the working agent
+simultaneously — not Tank first. The working agent integrates Tank's findings
+when they arrive. It does not wait.
+
+### Independent subsystems
+
+On projects with multiple independent components, Oracle, The Architect, and
+Morpheus can each work on separate subsystems simultaneously. No serialization
+is required between work with no shared dependencies.
+
+### Review loops are self-contained
+
+Once Neo dispatches a working agent, that agent runs its full Smith + Ghost review
+loop without Neo involvement. Neo does not relay between Smith and Ghost exchanges.
+Neo waits for the `STAGE COMPLETE` return with `ADVANCEMENT: APPROVED` — nothing
+else. Treating the review loop as something Neo must mediate is the primary source
+of unnecessary sequential work in the lifecycle.
+
+### Dispatch pattern
+
+1. Identify all agents whose inputs are satisfied
+2. Dispatch all of them simultaneously — do not queue them
+3. Write session state: record all in-flight agents under `IN-FLIGHT AGENTS`
+4. On each return: verify `GHOST VERDICT`, update session state and artifact
+   registry, identify the next parallel set, dispatch
+
+---
+
 ## The Lifecycle & Injection Points
 
 Each stage produces an artifact. The working agent owns its review loop with
@@ -148,22 +184,32 @@ output is solid and reviewed.
 Problem Statement
   └── Neo validates: is the problem stated clearly enough to proceed?
         ↓
+        ┌─────────────────── PARALLEL: Tank may be dispatched alongside any stage ───────────────────┐
+        │  Tank                                                                                        │
+        │    └── Invoked on demand at any stage — Neo dispatches in parallel with working agents      │
+        │    └── Owns review loop: Ghost → resolves → repeats until solid                             │
+        │    └── Returns: research file path + 3–5 bullet summary to requesting agent or Neo          │
+        └──────────────────────────────────────────────────────────────────────────────────────────────┘
+        ↓
 The Architect
   └── Produces: architecture decisions, structure, extension points
   └── Owns review loop: Smith → Ghost → resolves → repeats until solid
-  └── Returns: reviewed, resolved architecture output to Neo
+  └── Writes artifact to: .agent-output/<project>/architecture/arch.md
+  └── Returns STAGE COMPLETE to Neo: artifact path + 3–5 bullet summary + Ghost Verdict
   └── Neo advances: to Oracle
         ↓
 Oracle
   └── Produces: UX concept, user journey, edge cases
   └── Owns review loop: Smith → Ghost → resolves → repeats until solid
-  └── Returns: reviewed, resolved design output to Neo
+  └── Writes artifact to: .agent-output/<project>/design/ux-concept.md
+  └── Returns STAGE COMPLETE to Neo: artifact path + 3–5 bullet summary + Ghost Verdict
   └── Neo advances: to Morpheus
         ↓
 Morpheus
   └── Produces: specifications — numbered, testable, RFC 2119 language
   └── Owns review loop: Smith → Ghost → resolves → repeats until solid
-  └── Returns: reviewed, resolved specification to Neo
+  └── Writes artifact to: .agent-output/<project>/spec/spec.md
+  └── Returns STAGE COMPLETE to Neo: artifact path + 3–5 bullet summary + Ghost Verdict
   └── Neo advances: to Switch
         ↓
 Switch
@@ -171,7 +217,8 @@ Switch
   └── Framework must be specified in Neo's handoff — Switch asks if missing
   └── Writes output incrementally by section/component — no monolithic writes
   └── Owns review loop: Smith → Ghost → resolves → repeats until solid
-  └── Returns: reviewed test spec + executable test files to Neo
+  └── Writes artifacts to: .agent-output/<project>/tests/
+  └── Returns STAGE COMPLETE to Neo: artifact paths + 3–5 bullet summary + Ghost Verdict
   └── Neo advances: to Trinity (container)
         ↓
 Trinity [container]
@@ -180,13 +227,15 @@ Trinity [container]
   └── Writes output incrementally by component — no monolithic writes
   └── Does not modify Switch's tests — fixes the implementation instead
   └── Owns review loop: Smith → Ghost → resolves → repeats until solid
-  └── Output lands in agents-output/ for Neo review
+  └── Writes artifacts to: .agent-output/<project>/impl/
+  └── Returns STAGE COMPLETE to Neo: artifact paths + 3–5 bullet summary + Ghost Verdict
   └── Neo advances: to Apoc (container)
         ↓
 Apoc [container]
   └── Executes: runs tests, validates outcomes, reports results
   └── Owns review loop: Ghost → resolves → repeats until solid
-  └── Output lands in agents-output/ for Neo review
+  └── Writes report to: .agent-output/<project>/test-results/results.md
+  └── Returns STAGE COMPLETE to Neo: artifact path + 3–5 bullet summary + Ghost Verdict
   └── Neo advances: to Dozer
         ↓
 Dozer [container — Contained mode | Assisted mode]
@@ -194,20 +243,22 @@ Dozer [container — Contained mode | Assisted mode]
   └── Contained mode: autonomous execution in Linux container
   └── Assisted mode: produces validation plan → human executes → Dozer interprets
   └── Owns review loop: Ghost → resolves → repeats until solid
-  └── Output lands in agents-output/ for Neo review
+  └── Writes artifacts to: .agent-output/<project>/diagnostics/
+  └── Returns STAGE COMPLETE to Neo: artifact path + 3–5 bullet summary + Ghost Verdict
   └── Neo advances: to Niobe
-        ↓
-Tank
-  └── Invoked on demand at any stage — not a linear stage
-  └── Owns review loop: Ghost → resolves → repeats until solid
-  └── Returns: research findings to requesting agent or Neo
         ↓
 Niobe
   └── Produces: documentation artifacts, memory files
   └── Owns review loop: Ghost → resolves → repeats until solid
-  └── Returns: reviewed documentation to Neo
+  └── Writes artifacts to: .agent-output/<project>/docs/
+  └── Returns STAGE COMPLETE to Neo: artifact paths + 3–5 bullet summary + Ghost Verdict
   └── Neo closes: stage complete
 ```
+
+**All working agents write artifacts to `.agent-output/<project>/<stage>/` before
+returning to Neo. Agents return a compact STAGE COMPLETE — file path, summary,
+verdict — not artifact content inline. Neo reads artifact files when needed to
+brief the next agent. This is the context preservation protocol.**
 
 ---
 
@@ -368,17 +419,44 @@ Always include original intent. Always.
 Neo maintains a session state file for every active project at:
 `.agent-output/<project-name>/session-state.md`
 
-This is the continuity mechanism for mid-lifecycle session re-entry. Neo writes
-it at every stage close — not just at project end. At session start, Neo reads
-it before taking any other action.
+This is the continuity mechanism for mid-lifecycle session re-entry and the
+primary defense against context loss during compaction. Neo writes it
+aggressively — not only at stage close. At session start, Neo reads it before
+taking any other action.
 
-The session state file format and the full Session Start Protocol are defined
-in neo.agent.md. Neo owns this file — no other agent writes to it.
+The session state file format, write triggers, and the full Session Start
+Protocol are defined in neo.agent.md. Neo owns this file — no other agent
+writes to it.
+
+### What the session state carries
+
+Beyond lifecycle position, the session state now carries two critical fields:
+
+**`ARTIFACT REGISTRY`** — a map of every artifact produced, keyed by stage,
+with the file path where it was written. When Neo needs to pass prior work to
+the next agent, it reads the file from the registry. It does not rely on the
+artifact being in context — context is not reliable across compaction.
+
+**`IN-FLIGHT AGENTS`** — a record of every agent currently dispatched, with
+their task summary and the stage they were dispatched at. This makes parallel
+dispatch auditable: Neo always knows what work is running and what it is waiting
+for. On session resume, `IN-FLIGHT AGENTS` tells Neo which tasks may need
+restarting.
+
+### Write triggers
+
+Neo writes session state:
+
+- At every stage close — when a working agent returns `ADVANCEMENT: APPROVED`
+- After the Intent Confirmation Gate exchange
+- After every parallel dispatch — recording all in-flight agents
+- After every Tier 2 or Tier 3 escalation decision
+- After any judgment call that downstream stages depend on
 
 **Why this matters for multi-project work:** Neo may be operating across several
 projects simultaneously. The session state file is what allows Neo to orient
 instantly to the correct lifecycle position for any project without relying on
-session memory, which does not persist across sessions.
+session memory, which does not persist across sessions or survive compaction.
 
 ---
 
@@ -495,26 +573,34 @@ OUTPUT:          [verification report — gaps, coverage issues, misalignments,
 ### Working Agent → Neo (Stage Complete)
 
 Working agents return to Neo only after Ghost has issued `ADVANCEMENT: APPROVED`.
-The return handoff must include Ghost's verdict block so Neo can confirm clearance
-without relying on the working agent's summary.
+The return handoff is **compact** — file path, summary, and verdict only.
+Artifact content is in the file. Neo reads the file when it needs to brief the
+next agent. This keeps Neo's context window for coordination, not content storage.
 
 ```
 STAGE COMPLETE
-AGENT:           [returning agent]
-STAGE:           [lifecycle stage]
-ARTIFACT:        [final reviewed artifact]
-SMITH VERDICT:   [summary of Smith's findings and resolution, if applicable]
+AGENT:          [returning agent]
+STAGE:          [lifecycle stage]
+ARTIFACT PATH:  [.agent-output/<project>/<stage>/<artifact>.md]
+SUMMARY:        [3–5 bullets — key decisions, outcomes, or findings]
+SMITH VERDICT:  [one line: issues found and resolution applied, or N/A]
 GHOST VERDICT:
-  VERDICT:           COMPLETE | INCOMPLETE
-  OUTSTANDING ITEMS: [count]
-  BLOCKING ITEMS:    NONE | [list]
-  ADVANCEMENT:       APPROVED | BLOCKED
-  NOTES:             [deferred items or caveats, if any]
+  VERDICT:          COMPLETE | INCOMPLETE
+  OUTSTANDING:      [count — 0 if COMPLETE]
+  BLOCKING:         NONE | [list]
+  ADVANCEMENT:      APPROVED | BLOCKED
+  NOTES:            [deferred items or caveats, if any]
 ```
 
 Neo does not advance the lifecycle unless `ADVANCEMENT: APPROVED` is present
 and unambiguous in the returned handoff. A missing, ambiguous, or `BLOCKED`
 verdict is treated as incomplete — Neo returns the stage to the working agent.
+
+When Neo receives a `STAGE COMPLETE`, it:
+
+1. Registers the artifact path in session state under `ARTIFACT REGISTRY`
+2. Clears the agent from `IN-FLIGHT AGENTS`
+3. Reads the registered path when briefing the next stage agent
 
 ### Working Agent → Neo (Escalation)
 

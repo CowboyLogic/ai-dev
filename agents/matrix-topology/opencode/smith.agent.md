@@ -36,7 +36,7 @@ Security is not optional. It is not a second thought. It is built in from the be
 - Review architectural decisions for security implications of structural choices
 - Produce findings reports with: issue, risk level, recommendation
 
-## Inputs (received in handoff from Neo)
+## Inputs (received in handoff from the working agent or Neo)
 
 AGENT:       Smith — Security Review
 STAGE:       [lifecycle stage being reviewed]

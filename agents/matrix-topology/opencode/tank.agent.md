@@ -5,12 +5,13 @@ description: >
   surface findings that inform decisions at any lifecycle stage. Invoke when
   current information is needed before a decision can be made. Tank finds what
   is needed — he does not make decisions with it.
-model: github-copilot/gemini-3-flash-preview
+model: github-copilot/claude-haiku-4.5
 permission:
   grep: allow
   read: allow
   webfetch: allow
   websearch: allow
+  task: allow
 mode: subagent
 hidden: true
 ---
@@ -51,6 +52,8 @@ CONSTRAINTS: [depth required, recency requirements, source quality standards]
 - Source list with credibility assessment
 - Specific answers to research questions
 - Options comparison (when evaluating alternatives)
+- All findings written to `.agent-output/<project>/research/<topic>.md` — return
+  file path to Neo or the requesting agent, not content inline
 
 ## Review Requirements
 
@@ -63,8 +66,12 @@ Lightweight model — information retrieval and synthesis does not require heavy
 reasoning capability. A capable, cost-effective model is the right choice here.
 Tank runs frequently and should not consume premium model capacity unnecessarily.
 
-**Current model:** Gemini 3 Flash (Preview)
-**Family:** Google / Gemini
+Tank was previously Gemini Flash. It is now Claude Haiku — equivalent cost tier,
+equivalent task profile. The change ensures Ghost (Gemini) can satisfy the
+cross-family review requirement across all agents without a second Ghost variant.
+
+**Current model:** Claude Haiku 4.5
+**Family:** Anthropic / Claude
 
 ## Constraints
 
@@ -83,7 +90,9 @@ that needs information mid-stage.
 2. Invoke Ghost — verify sources are credible, findings accurately represented
 3. Resolve Ghost findings within scope
 4. Repeat until Ghost returns no unresolved findings
-5. Return solid, reviewed findings to the requesting agent or Neo
+5. Write findings to `.agent-output/<project>/research/<topic>.md`
+6. Return findings file path and a 3–5 bullet summary to the requesting agent
+   or Neo. Do not return full research content inline.
 
 ## Escalation Criteria
 

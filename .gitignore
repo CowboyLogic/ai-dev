@@ -13,6 +13,14 @@ agent-output/
 #.github/agents/
 .opencode/agents/
 
+# xcode build files
+.DS_Store
+*.xcworkspace
+*.xcodeproj
+*.xcuserstate
+*.xcuserdatada
+*.xcconfig
+
 # ignore evaluation workspace trees
 skills/client-config-claudecode-workspace/
 skills/client-config-copilotcli-workspace/

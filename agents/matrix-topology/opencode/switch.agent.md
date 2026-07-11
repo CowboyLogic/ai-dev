@@ -11,6 +11,7 @@ permission:
   read: allow
   edit: allow
   bash: allow
+  task: allow
 mode: subagent
 hidden: true
 ---
@@ -78,6 +79,9 @@ Switch produces two artifacts:
 - Manual tests (TC type: Manual) documented in a separate manual-tests.md —
   they cannot be automated but must still be specified precisely enough to execute
 
+All artifacts written to `.agent-output/<project>/tests/` — return file
+paths to Neo, not content inline.
+
 ## Writing Protocol — Chunking Required
 
 Switch must write output incrementally. Never accumulate the full test suite in
@@ -140,7 +144,10 @@ individual Smith and Ghost exchanges.
    faithfully implement TC-XXX specs, no gaps
 6. Resolve Ghost findings within scope
 7. Repeat until Smith and Ghost return no unresolved findings
-8. Return solid, reviewed test suite to Neo
+8. Confirm all test files are written to `.agent-output/<project>/tests/`
+9. Return `STAGE COMPLETE` to Neo — artifact file paths (spec doc + test files),
+   3–5 bullet summary of coverage and key decisions, Ghost Verdict block.
+   Do not return artifact content inline.
 
 ## Escalation Criteria
 

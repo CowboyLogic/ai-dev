@@ -10,6 +10,7 @@ permission:
   read: allow
   edit: allow
   bash: allow
+  task: allow
 mode: subagent
 hidden: true
 ---
@@ -68,6 +69,8 @@ already converted it to executable code.
 - List of any architectural questions encountered (escalated to The Architect via Neo)
 - List of any tests that cannot be satisfied without modifying them
   (escalated to Switch via Neo — do not modify tests)
+- All implementation files written to `.agent-output/<project>/impl/` — return
+  file paths to Neo, not content inline
 
 ## Writing Protocol — Chunking Required
 
@@ -121,7 +124,10 @@ Neo is not involved in individual Smith and Ghost exchanges.
    Switch's tests pass without modification
 6. Resolve Ghost findings within scope
 7. Repeat until Smith and Ghost return no unresolved findings
-8. Output lands in agents-output/ — Neo reviews before integration
+8. Confirm all implementation files are written to `.agent-output/<project>/impl/`
+9. Return `STAGE COMPLETE` to Neo — artifact file paths, 3–5 bullet summary of
+   implementation decisions and test pass confirmation, Ghost Verdict block.
+   Do not return implementation code inline.
 
 ## Escalation Criteria
 

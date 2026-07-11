@@ -11,6 +11,7 @@ model: github-copilot/claude-sonnet-4.6
 permission:
   read: allow
   bash: allow
+  task: allow
 mode: subagent
 hidden: true
 ---
@@ -130,6 +131,9 @@ OUTPUT:      [diagnostic report interpreting the results]
 - Validation sequence ordered from foundational (does it launch?) to
   functional (does it do what it should?) to integrations (does it connect?)
 
+All artifacts written to `.agent-output/<project>/diagnostics/` — return
+file path to Neo, not content inline.
+
 ## Review Requirements
 
 - Ghost verifies the diagnostic report is complete — all runtime findings are
@@ -165,17 +169,24 @@ exchanges.
 4. Invoke Ghost — verify completeness, root cause depth, verdict support
 5. Resolve Ghost findings within scope
 6. Repeat until Ghost returns no unresolved findings
-7. Return solid, reviewed diagnostic report to Neo
+7. Write diagnostic report to `.agent-output/<project>/diagnostics/diagnostic-report.md`
+8. Return `STAGE COMPLETE` to Neo — artifact file path, 3–5 bullet summary of
+   operational verdict and key findings, Ghost Verdict block.
+   Do not return report content inline.
 
 **Assisted mode:**
 1. Produce structured validation plan
-2. Return plan to Neo (Neo surfaces to human)
-3. Receive human execution results from Neo
-4. Interpret results, produce diagnostic report
-5. Invoke Ghost — verify plan was precise, report is complete and supported
-6. Resolve Ghost findings within scope
-7. Repeat until Ghost returns no unresolved findings
-8. Return solid, reviewed diagnostic report to Neo
+2. Write plan to `.agent-output/<project>/diagnostics/validation-plan.md`
+3. Return plan file path to Neo (Neo surfaces to human)
+4. Receive human execution results from Neo
+5. Interpret results, produce diagnostic report
+6. Invoke Ghost — verify plan was precise, report is complete and supported
+7. Resolve Ghost findings within scope
+8. Repeat until Ghost returns no unresolved findings
+9. Write diagnostic report to `.agent-output/<project>/diagnostics/diagnostic-report.md`
+10. Return `STAGE COMPLETE` to Neo — artifact file path, 3–5 bullet summary of
+    operational verdict and key findings, Ghost Verdict block.
+    Do not return report content inline.
 
 ## Escalation Criteria
 

@@ -5,7 +5,7 @@ description: >
   current information is needed before a decision can be made. Tank finds what
   is needed — he does not make decisions with it.
 tools: ["search", "read", "web"]
-model: Gemini 3 Flash (Preview) (copilot)
+model: Claude Haiku 4.5 (copilot)
 user-invocable: false
 ---
 
@@ -57,8 +57,12 @@ Lightweight model — information retrieval and synthesis does not require heavy
 reasoning capability. A capable, cost-effective model is the right choice here.
 Tank runs frequently and should not consume premium model capacity unnecessarily.
 
-**Current model:** Gemini 3 Flash (Preview)
-**Family:** Google / Gemini
+Tank was previously Gemini Flash. It is now Claude Haiku — equivalent cost tier,
+equivalent task profile. The change ensures Ghost (Gemini) can satisfy the
+cross-family review requirement across all agents without a second Ghost variant.
+
+**Current model:** Claude Haiku 4.5
+**Family:** Anthropic / Claude
 
 ## Constraints
 
