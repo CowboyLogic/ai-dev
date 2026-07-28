@@ -194,6 +194,25 @@ on every turn.
 > guidance the agent has to weigh. This is the same principle the lane classifier is
 > built on; agent selection needed it too and did not have it.
 
+### The same gap, in the other direction: fan-out
+
+The roster gap made the Conductor reach for one agent that was *too broad*. The
+absence of a fan-out rule made it use one agent where several were needed — a
+request producing six independent files was handled by a single dispatch.
+
+Both are the same missing question: **how many dispatches does this request need?**
+The original design only ever answered "which agent," never "how many."
+
+`conductor.md` now carries a dependency test — *does producing A require knowing the
+contents of B?* Yes means one artifact and one dispatch; no means separate artifacts
+and separate dispatches. The Conductor states the count out loud before dispatching,
+because an unstated count defaults to one.
+
+Note that this is a **context-quality** rule, not a concurrency rule. An agent
+producing many independent outputs in one run degrades on the later ones. That is
+true whether or not the harness runs dispatches in parallel, which remains
+unverified and does not matter to the decision.
+
 ---
 
 ## Changing an Agent
