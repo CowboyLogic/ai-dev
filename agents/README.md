@@ -1,22 +1,31 @@
 ﻿# AI Agents Overview
 
 This directory contains documentation for custom AI agents used in AI-assisted development workflows.
-For the authoritative guide to how these agents work together, see the [Matrix Topology](matrix-topology/README.md).
+Two complete multi-agent topologies live here, plus a set of single-agent domain specialists.
 
 ---
 
-## Two-Tier Agent Architecture
+## Agent Architecture
 
-Agents in this repository operate at two levels:
+Agents in this repository operate at two levels: full topologies and domain specialists.
 
-### Matrix Topology (Primary)
+### Multi-Agent Topologies
 
-The `matrix-topology/` folder defines a **multi-agent system** for disciplined, production-quality development work.
-Each agent has a distinct role in the lifecycle — planning, design, implementation, security review, and quality verification.
-Agents collaborate through structured handoffs rather than a single agent doing everything.
+Both define complete multi-agent systems for disciplined development work, where each agent
+has a distinct role and agents collaborate through structured handoffs rather than one agent
+doing everything. They are **independent patterns** — pick one; changes do not propagate
+between them.
 
-See [matrix-topology/README.md](matrix-topology/README.md) and [matrix-topology/CONDUCTOR.md](matrix-topology/CONDUCTOR.md)
-for the full roster, lifecycle, and handoff protocols.
+| Topology | Clients | Organizing idea |
+|---|---|---|
+| [Lane Topology](lane-topology/README.md) | OpenCode | 9 agents. A mechanical lane classifier sizes process to the task before work starts — mechanical, investigate, direct, plan (Socratic), or full build. Reviewers execute the tests themselves. |
+| [Matrix Topology](matrix-topology/README.md) | OpenCode, Claude Code, Copilot | 14 agents. A staged lifecycle (design → architecture → spec → tests → code → validation → docs) with an express lane for small changes. |
+
+The Lane Topology is the newer of the two and was built from what the Matrix Topology taught.
+See [lane-topology/README.md](lane-topology/README.md) for the comparison.
+
+Authoritative technical references: [lane-topology/opencode/conductor.agent.md](lane-topology/opencode/conductor.agent.md)
+and [matrix-topology/CONDUCTOR.md](matrix-topology/CONDUCTOR.md).
 
 ### Domain Specialists (Supplementary)
 

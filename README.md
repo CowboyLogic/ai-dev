@@ -46,7 +46,9 @@ Practical configurations and working examples for AI-powered development tools. 
 ai-dev/
 ├── agents/                     # Installable agent definitions (GitHub CLI discoverable)
 │   ├── matrix-topology/        # Matrix Topology multi-agent system
+│   ├── lane-topology/          # Lane Topology multi-agent system (OpenCode)
 │   └── *.agent.md              # Domain specialist agents
+├── harness/                    # Client harness configs (OpenCode symlink targets)
 ├── skills/                     # Installable skill definitions (GitHub CLI discoverable)
 │   └── <skill-name>/           # Each skill: SKILL.md + README + references/
 ├── docs/                       # MkDocs documentation source (catalog & guides only)
