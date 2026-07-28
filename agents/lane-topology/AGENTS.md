@@ -94,18 +94,29 @@ Two things make that visible rather than silent:
 - `conductor.md` halts on the first dispatch that resolves to a general-purpose agent
 - The README's verification steps, run before trusting a fresh setup
 
-> [!IMPORTANT]
-> **`hidden` is suspected of affecting routing, not just autocomplete.** The schema
-> documents it as "hide from `@` autocomplete" — but autocomplete and auto-routing are
-> both described as consuming the `description` field, so a hidden subagent may be
-> invisible to the routing the Conductor depends on.
->
-> All subagents here ship `hidden: false` for that reason. Do not set `hidden: true`
-> without re-verifying that dispatches still reach the named specialists rather than
-> falling through to `general`.
-
 **A silent config failure that produces plausible output is more expensive than a
 crash.** Every mechanism in this section exists to convert the former into the latter.
+
+### Verified behavior — do not re-derive these from the schema docs
+
+Each of these was established against a running OpenCode install, and each one
+contradicts a plausible reading of the reference documentation. Trust this list over
+the schema.
+
+| Behavior | Status |
+|---|---|
+| `.agent.md` and `.md` both load | Both work. Naming is not load-bearing. |
+| `hidden: true` blocks agent-to-agent dispatch | **False.** It only removes the agent from user selection. The Matrix topology's primary dispatches hidden subagents without issue. |
+| Agents are portable across clients | **False.** `model`, `permission`, `mode`, and `hidden` have no Copilot equivalent. Bodies are shareable; frontmatter is not. |
+| `default_agent` may name a subagent | **False.** It must name a `primary`-mode agent. |
+
+> [!IMPORTANT]
+> When a dispatch problem appears, **diff against `agents/matrix-topology/opencode/`
+> before theorizing.** It is a known-working implementation on the same harness with
+> structurally identical frontmatter — same model pins, same permission blocks, same
+> `mode`/`hidden` values. If a behavior differs between the two topologies, the cause
+> is not in the frontmatter, and the next thing to check is what the config and agent
+> symlinks actually resolve to on that machine.
 
 ---
 

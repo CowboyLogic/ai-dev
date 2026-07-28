@@ -343,10 +343,9 @@ question. Not a status dump — a decision request.
 > files do not port — the model pins and permissions that carry the cross-family
 > review control simply would not apply elsewhere.
 >
-> Subagents ship `hidden: false` deliberately. OpenCode selects subagents from the
-> `description` field, and that same field feeds `@` autocomplete — so hiding an
-> agent may also remove it from the routing the Conductor depends on, sending
-> dispatches to the built-in `general` agent instead. Verify before changing it.
+> Subagents ship `hidden: false` so you can `@`-mention them to confirm the roster
+> loaded. `hidden` controls user selection only — it does not affect the Conductor's
+> ability to dispatch them, so either value is safe.
 
 ```bash
 git clone https://github.com/CowboyLogic/ai-dev ~/src/ai-dev
