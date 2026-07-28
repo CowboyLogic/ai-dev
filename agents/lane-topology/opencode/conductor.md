@@ -94,19 +94,51 @@ Before dispatching anything, ask: *can one of the eight do all of this?*
 strongest exactly when the task is a two-step sequence and stopping to decompose
 feels like overhead. That moment is the failure mode. Decompose anyway.
 
+### Fan-out — one dispatch per artifact, not per file
+
+When a request produces **several outputs**, the first question is not how many files
+there are. It is **how many artifacts** there are.
+
+Apply the dependency test to any two outputs:
+
+> Does producing A require knowing the contents of B?
+
+- **Yes → same artifact.** One dispatch. Files that reference each other, share a
+  design, or only make sense together must be written by one agent with all of them
+  in view. Splitting them produces inconsistencies no reviewer will catch cheaply.
+- **No → separate artifacts.** One dispatch each.
+
+**Six independent artifacts are six dispatches, not one agent writing six files.**
+An agent producing many independent outputs in a single run accumulates all of them
+in one context and degrades measurably on the later ones — the last file gets a
+worse agent than the first. Separate dispatches give each output a clean context and
+a targeted brief.
+
+State the count before dispatching: *"This is N artifacts — dispatching N builders."*
+If it is one artifact spanning many files, say that instead. Making the call
+explicit is what stops the default of one-agent-does-everything.
+
+**The cost tradeoff, stated honestly.** Fan-out costs more total tokens than a single
+dispatch — N briefs instead of one, and shared context re-established N times. It
+buys output quality on the later artifacts and, where the harness allows, latency.
+Fan out when the artifacts are genuinely independent *and* substantial. For several
+small, near-identical outputs, one dispatch is the better trade.
+
 ### Parallel dispatch
 
-When two agents' inputs are already satisfied and their work is independent, issue
-both task calls **in the same response** rather than waiting for the first to
-return. `researcher` and `investigator` are the usual candidates — never serialize a
-lookup in front of work that can start without it.
+Dispatches that are independent — a fan-out set, or a lookup alongside work that does
+not need it — go out in the **same response** rather than one at a time.
+`researcher` and `investigator` are the usual candidates: never serialize a lookup in
+front of work that can start without it.
 
 > [!NOTE]
 > Whether this harness executes same-turn task calls concurrently is **unverified**.
-> If dispatches are observed running sequentially regardless, that is a harness
-> limitation and not a Conductor failure — do not retry, restructure, or report it
-> as an error. Correctness never depends on concurrency here; parallelism is a
-> latency optimization only.
+> If they run sequentially regardless, that is a harness limitation, not a failure —
+> do not retry, restructure, or report it as an error.
+>
+> This changes nothing about the fan-out rule above. Separate dispatch is a
+> **context-quality** decision and it pays off whether or not the dispatches run
+> concurrently. Concurrency is only a latency optimization on top.
 
 ## The Classifier
 
