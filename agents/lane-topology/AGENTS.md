@@ -43,13 +43,13 @@ a bug.
 |---|---|---|---|---|---|
 | `conductor.md` | `conductor` | `claude-sonnet-5` | Claude | read, edit, task | Classify, dispatch, ledger, human interface |
 | `planner.md` | `planner` | `claude-opus-5` | Claude | read, edit, grep | Socratic planning, design, ADs, requirements |
-| `investigator.md` | `investigator` | `gemini-3.1-pro-preview` | Gemini | read, grep, bash | Read-only comprehension and root cause |
+| `investigator.md` | `investigator` | `gemini-3.1-pro-preview` | Gemini | read, grep, bash, edit→`.agents-output/**` | Read-only comprehension and root cause |
 | `builder.md` | `builder` | `gpt-5.6-terra` | GPT | read, edit, bash, grep | Implementation |
 | `mechanic.md` | `mechanic` | `claude-haiku-4.5` | Claude | read, edit, bash | Trivial mechanical edits |
 | `verifier.md` | `verifier` | `gemini-3.1-pro-preview` | Gemini | read, grep, bash | Cross-family review + independent execution |
 | `adversary.md` | `adversary` | `claude-opus-5` | Claude | read, grep, bash | Security review |
 | `scribe.md` | `scribe` | `claude-sonnet-5` | Claude | read, edit, grep | Documentation |
-| `researcher.md` | `researcher` | `claude-haiku-4.5` | Claude | read, grep, webfetch, websearch | External research |
+| `researcher.md` | `researcher` | `claude-haiku-4.5` | Claude | read, grep, webfetch, websearch, edit→`.agents-output/**` | External research |
 
 `conductor` is `mode: primary`. Everything else is `mode: subagent`.
 
@@ -77,26 +77,6 @@ identifier is the filename.
 **`default_agent` must name a `primary`-mode agent.** It is `conductor` here. The
 OpenCode default is the built-in `build` agent.
 
-### The failure mode to watch for
-
-OpenCode ships built-in subagents — `general` (full access, multi-step research) and
-`explore` (read-only). Subagent selection is **description-driven**: the `description`
-field feeds both `@` autocomplete and auto-routing.
-
-If the Conductor's dispatch does not resolve to one of the nine defined agents, it can
-land on `general` instead — which has full tool access and no role constraint, so it
-produces plausible work that ignores the brief. **Nothing errors.** Lane
-classification, model pinning, and cross-family review are all silently absent while
-the session looks like it is working.
-
-Two things make that visible rather than silent:
-
-- `conductor.md` halts on the first dispatch that resolves to a general-purpose agent
-- The README's verification steps, run before trusting a fresh setup
-
-**A silent config failure that produces plausible output is more expensive than a
-crash.** Every mechanism in this section exists to convert the former into the latter.
-
 ### Verified behavior — do not re-derive these from the schema docs
 
 Each of these was established against a running OpenCode install, and each one
@@ -109,14 +89,17 @@ the schema.
 | `hidden: true` blocks agent-to-agent dispatch | **False.** It only removes the agent from user selection. The Matrix topology's primary dispatches hidden subagents without issue. |
 | Agents are portable across clients | **False.** `model`, `permission`, `mode`, and `hidden` have no Copilot equivalent. Bodies are shareable; frontmatter is not. |
 | `default_agent` may name a subagent | **False.** It must name a `primary`-mode agent. |
+| A `general` dispatch means the roster failed to load | **False.** The roster loaded and the Conductor *chose* `general`, because no single agent covered the request. See Roster Closure. |
 
 > [!IMPORTANT]
-> When a dispatch problem appears, **diff against `agents/matrix-topology/opencode/`
-> before theorizing.** It is a known-working implementation on the same harness with
-> structurally identical frontmatter — same model pins, same permission blocks, same
-> `mode`/`hidden` values. If a behavior differs between the two topologies, the cause
-> is not in the frontmatter, and the next thing to check is what the config and agent
-> symlinks actually resolve to on that machine.
+> **A `general` dispatch is a roster problem, not a config problem.** That was the
+> original misdiagnosis and it cost several rounds. The roster loads fine; `general`
+> gets chosen when the eight leave a request with no legal move.
+>
+> When a dispatch problem appears, ask the Conductor to list its available subagents
+> by identifier. If it names the eight, the configuration is sound and the cause is
+> in the roster or the prompt — do not go looking at file names, `hidden`, or
+> symlinks.
 
 ---
 
@@ -171,6 +154,45 @@ change and say what replaced it.
     producer's frame and silently voids the cross-family control. Rationale flows
     forward to the Conductor and to the next producer, never sideways to a peer
     reviewer. See `conductor.md` → Facts Protocol.
+
+---
+
+## Roster Closure — the failure this topology actually hit
+
+OpenCode always offers `general` (full tool access, no role constraint). It is
+permanently available as an escape hatch, and it will be taken whenever the roster
+leaves a request with no legal move.
+
+**Observed in real use.** A request combined external research with writing a file.
+`researcher` had web access but no `edit`; `scribe` had `edit` but no web access.
+No single agent could do it, so the Conductor dispatched `general` — which then
+ignored the brief and did its own thing. Asked afterward, it explained the correct
+decomposition perfectly. **The reasoning was available in retrospect and not at the
+decision point.**
+
+Two rules follow, and both are load-bearing.
+
+**1. Close the escape hatch explicitly.** `conductor.md` bans `general` and `explore`
+unconditionally — not "if the roster fails to load," which was the original and
+useless framing. A rule stated as a diagnostic for a *config* problem does not fire
+when the config is healthy and the agent simply finds the roster inconvenient.
+
+**2. Any two agents must compose without a third.** When adding or narrowing an
+agent, check the roster for a plausible request that no single agent can serve. If
+one exists, either the Conductor has an explicit decomposition path for it, or the
+gap gets filled by `general` the first time it comes up.
+
+This is why `researcher` and `investigator` hold `edit` scoped to
+`.agents-output/**`. It is not a relaxation of their read-only role — the working
+tree is still off limits — it is what lets them hand a large artifact to the next
+agent by path instead of pushing it through the Conductor's context, which is re-sent
+on every turn.
+
+> [!IMPORTANT]
+> **A rule that requires reasoning at the decision point will lose to a convenient
+> default.** Prefer closed sets, lookups, and unconditional prohibitions over
+> guidance the agent has to weigh. This is the same principle the lane classifier is
+> built on; agent selection needed it too and did not have it.
 
 ---
 
