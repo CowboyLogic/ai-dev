@@ -1,5 +1,4 @@
 ---
-name: Mechanic
 description: >
   Trivial mechanical edits — typos, version bumps, config values, formatting,
   comments, log lines, mechanical renames. No logic changes, no control flow, no new
@@ -10,7 +9,7 @@ permission:
   edit: allow
   bash: allow
 mode: subagent
-hidden: true
+hidden: false
 ---
 
 # Mechanic

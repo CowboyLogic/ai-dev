@@ -1,5 +1,4 @@
 ---
-name: Investigator
 description: >
   Read-only codebase comprehension and root-cause analysis. Answers "why", "where",
   "how does this work", and "what does this touch". Reads widely, returns compactly.
@@ -10,7 +9,7 @@ permission:
   grep: allow
   bash: allow
 mode: subagent
-hidden: true
+hidden: false
 ---
 
 # Investigator

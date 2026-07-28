@@ -1,5 +1,4 @@
 ---
-name: Scribe
 description: >
   Documentation. Writes docs that describe what the code actually does, not what it
   was supposed to do. Runs at the close of the BUILD lane or on demand. Reads the
@@ -10,7 +9,7 @@ permission:
   edit: allow
   grep: allow
 mode: subagent
-hidden: true
+hidden: false
 ---
 
 # Scribe

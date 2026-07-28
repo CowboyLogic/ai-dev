@@ -24,7 +24,7 @@ between them.
 The Lane Topology is the newer of the two and was built from what the Matrix Topology taught.
 See [lane-topology/README.md](lane-topology/README.md) for the comparison.
 
-Authoritative technical references: [lane-topology/opencode/conductor.agent.md](lane-topology/opencode/conductor.agent.md)
+Authoritative technical references: [lane-topology/opencode/conductor.md](lane-topology/opencode/conductor.md)
 and [matrix-topology/CONDUCTOR.md](matrix-topology/CONDUCTOR.md).
 
 ### Domain Specialists (Supplementary)

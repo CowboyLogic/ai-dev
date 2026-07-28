@@ -1,5 +1,4 @@
 ---
-name: Planner
 description: >
   Socratic planning, design, and specification. Interrogates the request before
   answering it — returns a QUESTION BRIEF of the decisions that must be made, then
@@ -11,7 +10,7 @@ permission:
   edit: allow
   grep: allow
 mode: subagent
-hidden: true
+hidden: false
 ---
 
 # Planner

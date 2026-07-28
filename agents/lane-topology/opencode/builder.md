@@ -1,5 +1,4 @@
 ---
-name: Builder
 description: >
   Implementation. Writes code in the working tree against a stated intent (DIRECT
   lane) or a Design Brief (BUILD lane), and gets it green. Does not design, does not
@@ -11,7 +10,7 @@ permission:
   bash: allow
   grep: allow
 mode: subagent
-hidden: true
+hidden: false
 ---
 
 # Builder

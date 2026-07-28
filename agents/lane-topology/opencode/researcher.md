@@ -1,5 +1,4 @@
 ---
-name: Researcher
 description: >
   External information retrieval. Current library APIs, protocol details, version
   compatibility, error messages, vendor documentation. Returns findings with sources.
@@ -11,7 +10,7 @@ permission:
   webfetch: allow
   websearch: allow
 mode: subagent
-hidden: true
+hidden: false
 ---
 
 # Researcher
