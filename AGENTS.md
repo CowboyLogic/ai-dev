@@ -63,7 +63,11 @@ ai-dev/
 │   └── settings.json        # VS Code workspace settings
 ├── agents/                  # Installable agent definitions (GitHub CLI discoverable)
 │   ├── matrix-topology/     # Matrix Topology multi-agent system
+│   ├── lane-topology/       # Lane Topology multi-agent system (OpenCode)
 │   └── *.agent.md           # Domain specialist agents
+├── harness/                 # Client harness configs (symlink targets, not published)
+│   ├── opencode/            # OpenCode config for the Matrix Topology
+│   └── opencode-lane/       # OpenCode config for the Lane Topology
 ├── skills/                  # Installable skill definitions (GitHub CLI discoverable)
 │   └── <skill-name>/        # Each skill: SKILL.md + README + references/
 ├── docs/                    # MkDocs source — PUBLICATION ONLY, not directives

@@ -62,7 +62,20 @@ All publishable content lives in `docs/`, organized into sections managed by `mk
 Installable agent definitions live at the root in `agents/`. Discoverable by the GitHub CLI.
 
 - `agents/matrix-topology/` — Matrix Topology multi-agent system files
+- `agents/lane-topology/` — Lane Topology multi-agent system (OpenCode-only successor)
 - `agents/*.agent.md` — Domain specialist agent definitions
+
+Each topology has a maintenance directive at `agents/<topology>/AGENTS.md`. Read it
+before modifying any agent in that tree — the two topologies are independent patterns,
+and changes do not propagate between them.
+
+### Harness Configs (`harness/`)
+
+Client harness configuration, symlinked into the tool's config directory rather than
+published to the docs site.
+
+- `harness/opencode/` — OpenCode config for the Matrix Topology
+- `harness/opencode-lane/` — OpenCode config for the Lane Topology
 
 ### Skills (`skills/`)
 
