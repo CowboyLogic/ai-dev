@@ -60,6 +60,31 @@ the setup is validated.
 
 ---
 
+## External Dependency — the `about-me` skill
+
+The Conductor loads a skill named **`about-me`** as step 1 of its Session Start
+sequence. It carries the operator's working context and philosophy, and it shapes
+brief construction, question framing, and escalation tone.
+
+**It is not shipped in this repository.** It lives in the operator's global skills
+directory (`~/.agents/skills/about-me/`) and is installed per machine. On a machine
+without it, the Conductor prints a one-line notice and runs without personal context —
+degraded, not broken.
+
+Why it is loaded explicitly rather than left to discovery: skills use **progressive
+disclosure**, so a skill loads when the model judges it relevant. `about-me` is always
+relevant, and its relevance is never visible from the request text — so nothing would
+ever trigger it. An always-on skill has to be named at session start.
+
+> [!NOTE]
+> `planner` is the other candidate for this skill — it is the only other agent that
+> addresses the human directly, and its QUESTION BRIEF would be better calibrated with
+> personal context. It is deliberately *not* loaded there yet: it would cost tokens on
+> every PLAN run, and the Conductor relays those questions anyway. Revisit if the
+> Planner's questions read as poorly pitched.
+
+---
+
 ## OpenCode Discovery Notes
 
 **These agents are harness-specific and not portable.** The body is shareable across
