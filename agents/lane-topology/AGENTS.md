@@ -29,7 +29,7 @@ harness/opencode-lane/
 └── guardrails.md      # persistent session guardrails
 ```
 
-`opencode/conductor.agent.md` is the **authoritative technical reference** for the
+`opencode/conductor.md` is the **authoritative technical reference** for the
 topology — the classifier table, lane procedures, verdict handling, the ledger, and
 escalation tiers all live there. `README.md` explains the same system to a human and
 must not contradict it. When they disagree, the agent file is right and the README is
@@ -39,27 +39,63 @@ a bug.
 
 ## The Roster
 
-| Agent | Model | Family | Tools | Role |
-|---|---|---|---|---|
-| `conductor` | `claude-sonnet-5` | Claude | read, edit, task | Classify, dispatch, ledger, human interface |
-| `planner` | `claude-opus-5` | Claude | read, edit, grep | Socratic planning, design, ADs, requirements |
-| `investigator` | `gemini-3.1-pro-preview` | Gemini | read, grep, bash | Read-only comprehension and root cause |
-| `builder` | `gpt-5.6-terra` | GPT | read, edit, bash, grep | Implementation |
-| `mechanic` | `claude-haiku-4.5` | Claude | read, edit, bash | Trivial mechanical edits |
-| `verifier` | `gemini-3.1-pro-preview` | Gemini | read, grep, bash | Cross-family review + independent execution |
-| `adversary` | `claude-opus-5` | Claude | read, grep, bash | Security review |
-| `scribe` | `claude-sonnet-5` | Claude | read, edit, grep | Documentation |
-| `researcher` | `claude-haiku-4.5` | Claude | read, grep, webfetch, websearch | External research |
+| File | Identifier | Model | Family | Tools | Role |
+|---|---|---|---|---|---|
+| `conductor.md` | `conductor` | `claude-sonnet-5` | Claude | read, edit, task | Classify, dispatch, ledger, human interface |
+| `planner.md` | `planner` | `claude-opus-5` | Claude | read, edit, grep | Socratic planning, design, ADs, requirements |
+| `investigator.md` | `investigator` | `gemini-3.1-pro-preview` | Gemini | read, grep, bash | Read-only comprehension and root cause |
+| `builder.md` | `builder` | `gpt-5.6-terra` | GPT | read, edit, bash, grep | Implementation |
+| `mechanic.md` | `mechanic` | `claude-haiku-4.5` | Claude | read, edit, bash | Trivial mechanical edits |
+| `verifier.md` | `verifier` | `gemini-3.1-pro-preview` | Gemini | read, grep, bash | Cross-family review + independent execution |
+| `adversary.md` | `adversary` | `claude-opus-5` | Claude | read, grep, bash | Security review |
+| `scribe.md` | `scribe` | `claude-sonnet-5` | Claude | read, edit, grep | Documentation |
+| `researcher.md` | `researcher` | `claude-haiku-4.5` | Claude | read, grep, webfetch, websearch | External research |
 
-`conductor` is `mode: primary`. Everything else is `mode: subagent` with
-`hidden: true`.
+`conductor` is `mode: primary`. Everything else is `mode: subagent`.
+
+All agents currently ship `hidden: false` so they can be `@`-mentioned directly —
+this is the fastest way to prove the roster is loading. `hidden` affects only `@`
+autocomplete, never task-tool availability, so setting it either way is safe once
+the setup is validated.
+
+---
+
+## OpenCode File Format — Read This First
+
+Two rules that are not obvious and that silently destroy the topology when broken.
+Both were learned the expensive way.
+
+**1. The agent identifier is the filename. There is no `name:` property.**
+
+OpenCode's frontmatter schema has no `name` field — see
+`skills/agent-creator-opencode/references/agent-reference.md`, whose own examples are
+`code-reviewer.md` and `security-auditor.md`. A file named `builder.agent.md`
+registers as `builder.agent`, which nothing resolves.
+
+`.agent.md` is a **GitHub Copilot** convention. It is correct in `matrix-topology/copilot/`
+and wrong in any OpenCode agents directory.
+
+**2. The directory is `agents/` — plural.**
+
+`~/.config/opencode/agents/` globally, `.opencode/agents/` per-project.
+
+### The failure mode this produces
+
+It does not error. `default_agent` falls through to OpenCode's **built-in general
+agent**, every `task` dispatch lands on a generic subagent, and the session looks
+superficially fine — while lane classification, model pinning, and cross-family
+review are all absent. You get a competent generalist wearing the Conductor's name.
+
+This is why `conductor.md` stops the session on the first dispatch that resolves to a
+general-purpose agent, and why the README's verification steps exist. **A silent
+config failure that produces plausible output is more expensive than a crash.**
 
 ---
 
 ## Invariants
 
 These are the properties the topology depends on. Breaking one is a redesign, not an
-edit — if you change one, update `README.md` and `conductor.agent.md` in the same
+edit — if you change one, update `README.md` and `conductor.md` in the same
 change and say what replaced it.
 
 1. **Only the Conductor has `task`.** Nested subagent delegation does not run
@@ -106,7 +142,7 @@ change and say what replaced it.
     reach that same artifact's reviewer — that anchors the independent review to the
     producer's frame and silently voids the cross-family control. Rationale flows
     forward to the Conductor and to the next producer, never sideways to a peer
-    reviewer. See `conductor.agent.md` → Facts Protocol.
+    reviewer. See `conductor.md` → Facts Protocol.
 
 ---
 
@@ -119,7 +155,7 @@ change and say what replaced it.
   Constraints section. Granting `task` to a subagent violates invariant 1.
 - **Role change** → update the agent file, the Conductor's routing table, the
   classifier table if lane assignment changed, and the README roster.
-- **Any change touching lanes, verdicts, or caps** → update `conductor.agent.md`
+- **Any change touching lanes, verdicts, or caps** → update `conductor.md`
   first; it is authoritative. Then reconcile the README.
 
 ---
@@ -130,7 +166,8 @@ An agent earns a slot only by providing either a **distinct cognitive job** or a
 **distinct cost tier**. "This stage feels like it deserves an agent" is not a reason —
 every agent is a dispatch, a handoff, and a place for context to be lost.
 
-1. Write the agent file in `opencode/` with full frontmatter and body
+1. Write the agent file in `opencode/` as `<identifier>.md` — **never**
+   `<identifier>.agent.md`, and with no `name:` property (see OpenCode File Format)
 2. Add it to the roster table above, with its model family
 3. Check invariants 3 and 4 against its model family
 4. Add it to the Conductor's routing table
@@ -156,7 +193,7 @@ Keep files short. Prompt length is both a resilience cost and a direct token cos
 every line competes for attention with every other line, and the primary agent's
 prompt is re-sent on every turn of every session.
 
-Current state: `conductor.agent.md` is 376 lines, every other agent is under 200.
+Current state: `conductor.md` is 376 lines, every other agent is under 200.
 The Conductor is the one that should worry you, because it is the file that gets
 re-sent most often. It is a standing candidate for the skills refactor below.
 
@@ -171,12 +208,12 @@ re-sent most often. It is a standing candidate for the skills refactor below.
 > parses. Everything else is a skill.
 >
 > Clear candidates already written into these files:
-> `adversary.agent.md` → Review Discipline (trust boundaries, hostile input,
+> `adversary.md` → Review Discipline (trust boundaries, hostile input,
 > fail-closed, what leaks, what was removed) ·
-> `scribe.agent.md` → Markdown Standards (largely duplicates the existing
+> `scribe.md` → Markdown Standards (largely duplicates the existing
 > `google-style-docs` and `markdownlint-validator` skills) ·
-> `planner.agent.md` → the AD format and RFC 2119 requirement templates ·
-> `investigator.agent.md` → the hypothesis-first protocol.
+> `planner.md` → the AD format and RFC 2119 requirement templates ·
+> `investigator.md` → the hypothesis-first protocol.
 >
 > The model pin is the one thing that genuinely cannot become a skill, and it is
 > load-bearing here: dynamically spawned agents inherit the session model, which

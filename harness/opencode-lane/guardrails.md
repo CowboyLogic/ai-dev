@@ -17,7 +17,7 @@ No agent in this topology commits, pushes, merges, or rebases. Not the Builder, 
 
 ## Lane Discipline
 
-- **Every request gets classified before anything is dispatched.** The classifier table in `conductor.agent.md` is a lookup, not a judgment call. Run it.
+- **Every request gets classified before anything is dispatched.** The classifier table in `conductor.md` is a lookup, not a judgment call. Run it.
 - **Only the Conductor dispatches agents.** No subagent has `task` permission. If a working agent believes another agent is needed, it returns an up-ramp or escalation notice — it does not attempt the other agent's work itself.
 - **The Conductor does not do the work.** It does not read source, grep, run tests, write code, or review artifacts. If the Conductor finds itself doing any of those, that is a dispatch it skipped.
 - **A missing or malformed verdict is never a pass.** Silence is not approval.

@@ -337,29 +337,68 @@ question. Not a status dump — a decision request.
 
 ## Deploying It
 
+> [!IMPORTANT]
+> **Agent files must be named `<identifier>.md`, not `<identifier>.agent.md`.**
+> OpenCode has no `name:` frontmatter property — the agent's identifier *is* its
+> filename. A file named `builder.agent.md` registers as `builder.agent`, which
+> nothing resolves, so `default_agent` falls through to OpenCode's built-in general
+> agent and every dispatch lands on a generic subagent. The system appears to run
+> while none of its controls are active. `.agent.md` is a GitHub Copilot convention;
+> do not carry it into an OpenCode agents directory.
+
 ```bash
 git clone https://github.com/CowboyLogic/ai-dev ~/src/ai-dev
 ```
 
-**Unix / WSL:**
+Symlink the three config entries individually into a **real** `~/.config/opencode/`
+directory. Do not replace the directory itself — OpenCode keeps its own state there.
+
+**Unix / WSL / macOS:**
 
 ```bash
-ln -sfn ~/src/ai-dev/harness/opencode-lane ~/.config/opencode
-ln -sfn ~/src/ai-dev/agents/lane-topology/opencode ~/.config/opencode/agent
+mkdir -p ~/.config/opencode
+ln -sfn ~/src/ai-dev/harness/opencode-lane/opencode.jsonc  ~/.config/opencode/opencode.jsonc
+ln -sfn ~/src/ai-dev/harness/opencode-lane/guardrails.md   ~/.config/opencode/guardrails.md
+ln -sfn ~/src/ai-dev/agents/lane-topology/opencode         ~/.config/opencode/agents
 ```
 
-**Windows (directory junction):**
+**Windows (directory junction for the agents folder, symlinks for the files):**
 
 ```powershell
-New-Item -ItemType Junction -Path "$env:USERPROFILE\.config\opencode" `
-  -Target "$env:USERPROFILE\src\ai-dev\harness\opencode-lane"
-New-Item -ItemType Junction -Path "$env:USERPROFILE\.config\opencode\agent" `
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.config\opencode"
+New-Item -ItemType SymbolicLink -Force `
+  -Path "$env:USERPROFILE\.config\opencode\opencode.jsonc" `
+  -Target "$env:USERPROFILE\src\ai-dev\harness\opencode-lane\opencode.jsonc"
+New-Item -ItemType SymbolicLink -Force `
+  -Path "$env:USERPROFILE\.config\opencode\guardrails.md" `
+  -Target "$env:USERPROFILE\src\ai-dev\harness\opencode-lane\guardrails.md"
+New-Item -ItemType Junction -Force `
+  -Path "$env:USERPROFILE\.config\opencode\agents" `
   -Target "$env:USERPROFILE\src\ai-dev\agents\lane-topology\opencode"
 ```
 
-`default_agent` is `conductor`. The harness lives in `harness/opencode-lane/`, kept
-separate from `harness/opencode/` so the Matrix setup is untouched — re-point the
-symlink to switch between the two.
+The agents directory is `agents/` — **plural**. `default_agent` is `conductor`, which
+resolves to `agents/conductor.md`.
+
+### Verify before you trust it
+
+Two checks, both under a minute, and worth doing every time you re-point the symlinks:
+
+1. **`@builder` in a session.** If it autocompletes and resolves, the roster is
+   loading. If it doesn't, nothing below matters. (All agents ship with
+   `hidden: false` so they're `@`-mentionable for exactly this check.)
+2. **Ask the Conductor to name its roster.** It should list the eight lowercase
+   identifiers. If it describes generic capabilities instead, you are talking to the
+   built-in agent, not the Conductor.
+
+The Conductor also self-checks on its first dispatch of every session and stops with
+a configuration error if a dispatch resolves to a general-purpose agent. That is
+deliberate: a general agent returning plausible output is the most expensive failure
+mode here, because the system looks like it is working while lane discipline, model
+pinning, and cross-family review are all silently absent.
+
+The harness lives in `harness/opencode-lane/`, kept separate from `harness/opencode/`
+so the Matrix setup is untouched — re-point the symlinks to switch between the two.
 
 ### Commands
 

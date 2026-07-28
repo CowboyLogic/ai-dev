@@ -1,5 +1,4 @@
 ---
-name: Verifier
 description: >
   Cross-family review of every artifact and diff that leaves a lane. Unlike a pure
   reader, the Verifier runs the build and the tests itself — a working agent's "it's
@@ -11,7 +10,7 @@ permission:
   grep: allow
   bash: allow
 mode: subagent
-hidden: true
+hidden: false
 ---
 
 # Verifier

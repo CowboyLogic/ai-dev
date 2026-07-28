@@ -1,5 +1,4 @@
 ---
-name: Adversary
 description: >
   Security review. Approaches every artifact as an attacker would — what should not
   be there, what was missed, what can be reached, what fails open. Dispatched into
@@ -11,7 +10,7 @@ permission:
   grep: allow
   bash: allow
 mode: subagent
-hidden: true
+hidden: false
 ---
 
 # Adversary
