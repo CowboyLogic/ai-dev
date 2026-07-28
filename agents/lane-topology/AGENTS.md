@@ -63,13 +63,13 @@ the setup is validated.
 ## External Dependency — the `about-me` skill
 
 The Conductor loads a skill named **`about-me`** as step 1 of its Session Start
-sequence. It carries the operator's working context and philosophy, and it shapes
-brief construction, question framing, and escalation tone.
+sequence. It carries the working context and philosophy of the person running the
+session, and it shapes brief construction, question framing, and escalation tone.
 
-**It is not shipped in this repository.** It lives in the operator's global skills
-directory (`~/.agents/skills/about-me/`) and is installed per machine. On a machine
-without it, the Conductor prints a one-line notice and runs without personal context —
-degraded, not broken.
+**It is not shipped in this repository.** It lives in the global skills directory
+(`~/.agents/skills/about-me/`) and is installed per machine. On a machine without it,
+the Conductor prints a one-line notice and runs without personal context — degraded,
+not broken.
 
 Why it is loaded explicitly rather than left to discovery: skills use **progressive
 disclosure**, so a skill loads when the model judges it relevant. `about-me` is always
