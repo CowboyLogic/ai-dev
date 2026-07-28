@@ -8,9 +8,9 @@
   // deterministic overrides for when you already know the lane and want to skip
   // classification, not the normal way to use the system.
 
-  // Resolves to agents/conductor.md in the linked agents directory.
-  // Agent identifiers come from FILENAMES — there is no `name:` frontmatter
-  // property in OpenCode. Files must be <identifier>.md, never <identifier>.agent.md.
+  // Resolves to agents/conductor.md in the linked agents directory. Must name a
+  // primary-mode agent; OpenCode's own default is the built-in `build` agent.
+  // Agent identifiers come from FILENAMES — there is no `name:` frontmatter property.
   "default_agent": "conductor",
 
   // MACHINE-SPECIFIC PATH. This is an absolute macOS path with a hardcoded username.

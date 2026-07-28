@@ -338,13 +338,15 @@ question. Not a status dump — a decision request.
 ## Deploying It
 
 > [!IMPORTANT]
-> **Agent files must be named `<identifier>.md`, not `<identifier>.agent.md`.**
-> OpenCode has no `name:` frontmatter property — the agent's identifier *is* its
-> filename. A file named `builder.agent.md` registers as `builder.agent`, which
-> nothing resolves, so `default_agent` falls through to OpenCode's built-in general
-> agent and every dispatch lands on a generic subagent. The system appears to run
-> while none of its controls are active. `.agent.md` is a GitHub Copilot convention;
-> do not carry it into an OpenCode agents directory.
+> **These agents are OpenCode-specific.** The `model`, `permission`, `mode`, and
+> `hidden` properties have no equivalent in other clients' agent schemas, so these
+> files do not port — the model pins and permissions that carry the cross-family
+> review control simply would not apply elsewhere.
+>
+> Subagents ship `hidden: false` deliberately. OpenCode selects subagents from the
+> `description` field, and that same field feeds `@` autocomplete — so hiding an
+> agent may also remove it from the routing the Conductor depends on, sending
+> dispatches to the built-in `general` agent instead. Verify before changing it.
 
 ```bash
 git clone https://github.com/CowboyLogic/ai-dev ~/src/ai-dev

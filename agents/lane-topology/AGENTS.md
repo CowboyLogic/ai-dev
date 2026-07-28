@@ -60,35 +60,52 @@ the setup is validated.
 
 ---
 
-## OpenCode File Format — Read This First
+## OpenCode Discovery Notes
 
-Two rules that are not obvious and that silently destroy the topology when broken.
-Both were learned the expensive way.
+**These agents are harness-specific and not portable.** The body is shareable across
+clients; the frontmatter is not. OpenCode's `model`, `permission`, `mode`, and
+`hidden` properties have no equivalent in the Copilot agent schema, so a file that
+runs here will not run there with its model pin or permissions intact. File naming is
+therefore not a compatibility concern — `.md` and `.agent.md` both load in OpenCode.
+Do not maintain a naming convention for cross-client portability that the frontmatter
+already makes impossible.
 
-**1. The agent identifier is the filename. There is no `name:` property.**
+**Discovery:** `~/.config/opencode/agents/<name>.md` globally, `.opencode/agents/`
+per-project. The directory is `agents/` — plural. There is no `name:` property; the
+identifier is the filename.
 
-OpenCode's frontmatter schema has no `name` field — see
-`skills/agent-creator-opencode/references/agent-reference.md`, whose own examples are
-`code-reviewer.md` and `security-auditor.md`. A file named `builder.agent.md`
-registers as `builder.agent`, which nothing resolves.
+**`default_agent` must name a `primary`-mode agent.** It is `conductor` here. The
+OpenCode default is the built-in `build` agent.
 
-`.agent.md` is a **GitHub Copilot** convention. It is correct in `matrix-topology/copilot/`
-and wrong in any OpenCode agents directory.
+### The failure mode to watch for
 
-**2. The directory is `agents/` — plural.**
+OpenCode ships built-in subagents — `general` (full access, multi-step research) and
+`explore` (read-only). Subagent selection is **description-driven**: the `description`
+field feeds both `@` autocomplete and auto-routing.
 
-`~/.config/opencode/agents/` globally, `.opencode/agents/` per-project.
+If the Conductor's dispatch does not resolve to one of the nine defined agents, it can
+land on `general` instead — which has full tool access and no role constraint, so it
+produces plausible work that ignores the brief. **Nothing errors.** Lane
+classification, model pinning, and cross-family review are all silently absent while
+the session looks like it is working.
 
-### The failure mode this produces
+Two things make that visible rather than silent:
 
-It does not error. `default_agent` falls through to OpenCode's **built-in general
-agent**, every `task` dispatch lands on a generic subagent, and the session looks
-superficially fine — while lane classification, model pinning, and cross-family
-review are all absent. You get a competent generalist wearing the Conductor's name.
+- `conductor.md` halts on the first dispatch that resolves to a general-purpose agent
+- The README's verification steps, run before trusting a fresh setup
 
-This is why `conductor.md` stops the session on the first dispatch that resolves to a
-general-purpose agent, and why the README's verification steps exist. **A silent
-config failure that produces plausible output is more expensive than a crash.**
+> [!IMPORTANT]
+> **`hidden` is suspected of affecting routing, not just autocomplete.** The schema
+> documents it as "hide from `@` autocomplete" — but autocomplete and auto-routing are
+> both described as consuming the `description` field, so a hidden subagent may be
+> invisible to the routing the Conductor depends on.
+>
+> All subagents here ship `hidden: false` for that reason. Do not set `hidden: true`
+> without re-verifying that dispatches still reach the named specialists rather than
+> falling through to `general`.
+
+**A silent config failure that produces plausible output is more expensive than a
+crash.** Every mechanism in this section exists to convert the former into the latter.
 
 ---
 
@@ -166,8 +183,9 @@ An agent earns a slot only by providing either a **distinct cognitive job** or a
 **distinct cost tier**. "This stage feels like it deserves an agent" is not a reason —
 every agent is a dispatch, a handoff, and a place for context to be lost.
 
-1. Write the agent file in `opencode/` as `<identifier>.md` — **never**
-   `<identifier>.agent.md`, and with no `name:` property (see OpenCode File Format)
+1. Write the agent file in `opencode/` as `<identifier>.md` — the filename is the
+   dispatch identifier, and there is no `name:` property. Ship `hidden: false` (see
+   OpenCode Discovery Notes)
 2. Add it to the roster table above, with its model family
 3. Check invariants 3 and 4 against its model family
 4. Add it to the Conductor's routing table
