@@ -13,12 +13,10 @@
   // Agent identifiers come from FILENAMES — there is no `name:` frontmatter property.
   "default_agent": "conductor",
 
-  // MACHINE-SPECIFIC PATH. This is an absolute macOS path with a hardcoded username.
-  // On a different OS or user it silently resolves to nothing and the guardrails —
-  // git safety, output conventions, post-compaction checks — never load, with no
-  // error. If guardrails are not in effect, this line is the first thing to check.
+  // The harness keeps guardrails beside this config so the setup works across
+  // users and operating systems when the directory is copied or symlinked.
   "instructions": [
-    "/Users/micheal/.config/opencode/guardrails.md"
+    "guardrails.md"
   ],
 
   "command": {

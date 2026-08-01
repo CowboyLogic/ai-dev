@@ -6,7 +6,7 @@
   "default_agent": "neo",
 
   "instructions": [
-    "/Users/micheal/.config/opencode/guardrails.md"
+    "guardrails.md"
   ],
 
   "command": {

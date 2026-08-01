@@ -110,7 +110,7 @@ MCP tools are registered as `<server-name>_<tool-name>` and managed like any oth
   "mcp": {
     "my-mcp-foo": { "type": "local", "command": ["bun", "x", "my-mcp-command-foo"] }
   },
-  "tools": { "my-mcp-foo": false }
+  "tools": { "my-mcp*": false }
 }
 ```
 
