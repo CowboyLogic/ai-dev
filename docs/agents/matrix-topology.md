@@ -6,7 +6,10 @@ A multi-agent AI development pattern for disciplined, production-quality softwar
 
 All agent files for this topology live at
 [`agents/matrix-topology/`](https://github.com/CowboyLogic/ai-dev/tree/main/agents/matrix-topology)
-in the repository and can be installed using the GitHub Copilot CLI.
+in the repository. `opencode/` is the canonical source; the GitHub Copilot format
+used by the install commands below lives in the parallel
+[`copilot/`](https://github.com/CowboyLogic/ai-dev/tree/main/agents/matrix-topology/copilot)
+directory.
 
 ---
 
@@ -24,32 +27,42 @@ the next stage begins. Problems are caught at the cheapest possible moment — b
 
 ## Agent Roster
 
+14 agents. `neo` is the primary conductor; every other agent is a subagent it dispatches.
+
 | Agent | Role | File |
 |---|---|---|
-| **Neo** | The Conductor. Orchestrates the full lifecycle, holds context, makes all judgment calls. | [neo.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/neo.agent.md) |
-| **The Architect** | Produces system architecture, key decisions, and extension points. | [the-architect.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/the-architect.agent.md) |
-| **Oracle** | Defines user experience and surfaces edge cases before implementation. | [oracle.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/oracle.agent.md) |
-| **Morpheus** | Writes formal specifications, contracts, and testable requirements. | [morpheus.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/morpheus.agent.md) |
-| **Trinity** | Implements code precisely to specification. | [trinity.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/trinity.agent.md) |
-| **Switch** | Produces test cases from specifications — every requirement gets a test. | [switch.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/switch.agent.md) |
-| **Apoc** | Executes tests and validates outcomes against specifications. | [apoc.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/apoc.agent.md) |
-| **Smith** | Adversarial security reviewer. Invoked after every generative artifact, without exception. | [smith.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/smith.agent.md) |
-| **Ghost** | Cross-cutting verification reviewer. Provides a second model family's perspective after every stage. | [ghost.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/ghost.agent.md) |
-| **Tank** | Researcher. Retrieves information and surfaces findings that inform decisions. | [tank.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/tank.agent.md) |
-| **Niobe** | Documentation writer. Captures what was built and why. | [niobe.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/niobe.agent.md) |
+| **Neo** | The Conductor. Orchestrates the full lifecycle, holds context, makes all judgment calls. | [neo.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/copilot/neo.agent.md) |
+| **Mouse** | Express-lane builder for small, well-scoped changes that skip the full lifecycle. | [mouse.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/copilot/mouse.agent.md) |
+| **The Architect** | Produces system architecture, key decisions, and extension points. | [the-architect.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/copilot/the-architect.agent.md) |
+| **Oracle** | Defines user experience and surfaces edge cases before implementation. | [oracle.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/copilot/oracle.agent.md) |
+| **Morpheus** | Writes formal specifications, contracts, and testable requirements. | [morpheus.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/copilot/morpheus.agent.md) |
+| **Switch** | Produces test cases from specifications — every requirement gets a test. | [switch.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/copilot/switch.agent.md) |
+| **Trinity** | Implements code precisely to specification. | [trinity.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/copilot/trinity.agent.md) |
+| **Apoc** | Executes tests and validates outcomes against specifications. | [apoc.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/copilot/apoc.agent.md) |
+| **Dozer** | Operational diagnostics — validates the built product actually works at runtime, not just that tests pass. | [dozer.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/copilot/dozer.agent.md) |
+| **Tank** | Researcher. Retrieves information and surfaces findings that inform decisions. | [tank.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/copilot/tank.agent.md) |
+| **Niobe** | Documentation writer. Captures what was built and why. | [niobe.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/copilot/niobe.agent.md) |
+| **Smith** | Adversarial security reviewer (GPT). Reviews Claude-family artifacts, cross-cutting. | [smith.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/copilot/smith.agent.md) |
+| **Smith-Claude** | Adversarial security reviewer (Claude). Reviews GPT-family artifacts — Trinity's implementation. | [smith-claude.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/copilot/smith-claude.agent.md) |
+| **Ghost** | Cross-cutting verification reviewer. Provides a second model family's perspective after every stage. | [ghost.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/copilot/ghost.agent.md) |
 
 ---
 
 ## Development Lifecycle
 
 ```
-Research (Tank) → Architecture (The Architect) → Design (Oracle)
+Research (Tank) → Design (Oracle) → Architecture (The Architect)
     → Specs (Morpheus) → Tests (Switch) → Implementation (Trinity)
-    → Test Execution (Apoc) → Security Review (Smith) → Verification (Ghost)
+    → Test Execution (Apoc) → Operational Validation (Dozer)
     → Documentation (Niobe)
 ```
 
-Smith and Ghost are **cross-cutting** — they review every stage's output, not just implementation.
+Smith / Smith-Claude and Ghost are **cross-cutting** — Neo invokes the correctly-familied
+security reviewer and Ghost after every generative stage, not just implementation.
+
+Most day-to-day work does not run the full lifecycle. The **express lane** —
+Mouse, reviewed by Ghost — is the default, faster path for small, well-scoped
+changes, and where Neo spends most of its time.
 
 Neo conducts the entire session: invoking agents in sequence, holding context across handoffs,
 and making all judgment calls when the path is ambiguous.
@@ -68,15 +81,18 @@ and how to handle edge cases — is documented in
 
 ```bash
 # Install all Matrix Topology agents
-gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/neo.agent.md
-gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/the-architect.agent.md
-gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/oracle.agent.md
-gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/morpheus.agent.md
-gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/trinity.agent.md
-gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/switch.agent.md
-gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/apoc.agent.md
-gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/smith.agent.md
-gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/ghost.agent.md
-gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/tank.agent.md
-gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/niobe.agent.md
+gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/neo.agent.md
+gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/mouse.agent.md
+gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/the-architect.agent.md
+gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/oracle.agent.md
+gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/morpheus.agent.md
+gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/switch.agent.md
+gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/trinity.agent.md
+gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/apoc.agent.md
+gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/dozer.agent.md
+gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/tank.agent.md
+gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/niobe.agent.md
+gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/smith.agent.md
+gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/smith-claude.agent.md
+gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/ghost.agent.md
 ```
