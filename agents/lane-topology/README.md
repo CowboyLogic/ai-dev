@@ -340,8 +340,9 @@ question. Not a status dump — a decision request.
 This section covers the OpenCode deployment — the canonical format and the one the
 rest of this document describes. A GitHub Copilot mirror also ships in
 `agents/lane-topology/copilot/`, with the same nine bodies and translated
-frontmatter; see that directory's `AGENTS.md` for the frontmatter mapping and how to
-install it as Copilot custom agents.
+frontmatter; see [`AGENTS.md`](AGENTS.md#copilot-format--synchronization) in this
+directory for the frontmatter mapping and how to install it as Copilot custom
+agents.
 
 > [!IMPORTANT]
 > **The two formats are not interchangeable at the frontmatter level.** OpenCode's

@@ -142,6 +142,7 @@ gh copilot agent install CowboyLogic/ai-dev/agents/lane-topology/copilot/scribe.
 gh copilot agent install CowboyLogic/ai-dev/agents/lane-topology/copilot/researcher.agent.md
 ```
 
+> [!NOTE]
 > Model pins and tool permissions are per-format frontmatter, not portable prompt
 > content — installing the Copilot mirror gets you the same lane discipline and
 > review loop, translated to what Copilot's agent schema can express. Path-scoped
