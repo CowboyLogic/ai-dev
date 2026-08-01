@@ -169,7 +169,7 @@ embed skill content.
 
 ```bash
 # Install dependencies
-uv pip install mkdocs-material mkdocs-callouts
+uv pip install mkdocs mkdocs-material mkdocs-callouts
 
 # Build the documentation site (outputs to site/)
 mkdocs build

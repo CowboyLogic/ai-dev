@@ -2,7 +2,6 @@
 name: cloud-deploy-assistant
 description: Guides infrastructure deployments to Google Cloud Platform using Terraform. For use by the cloud/DevOps team on GitHub.com's Copilot cloud agent. Reads plans, validates configs, and coordinates deployment steps.
 tools: ["read", "search", "execute", "web", "github/create-pull-request", "github/get-pull-request", "gcp-cost/estimate-plan-cost"]
-model: claude-sonnet-4-5
 target: github-copilot
 mcp-servers:
   gcp-cost:

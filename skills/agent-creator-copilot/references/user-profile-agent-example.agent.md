@@ -2,6 +2,7 @@
 name: commit-writer
 description: Writes clear, concise, conventional commit messages from staged changes or a diff summary. Personal agent — use in any repository.
 tools: ["read", "search", "execute"]
+model: GPT-5.6 Luna
 user-invocable: true
 argument-hint: Describe the changes or paste a diff summary
 ---

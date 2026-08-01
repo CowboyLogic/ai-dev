@@ -2,7 +2,7 @@
 name: api-reviewer
 description: Reviews REST API designs, endpoint implementations, and OpenAPI specifications for correctness, consistency, and security. Does not implement code — use the implementation agent for that.
 tools: ["read", "search", "web"]
-model: claude-sonnet-4-5
+model: Claude Sonnet 4.6
 handoffs:
   - label: Implement API Changes
     agent: api-dotnet
