@@ -29,4 +29,9 @@ Load this skill when:
 ## Key Files
 
 - **`SKILL.md`** — Core guide: format choice, file locations, permission model, step-by-step workflow, prompt writing tips
-- **`references/agent-reference.md`** — Complete property reference for every YAML/JSON configuration key with types, defaults, and examples
+- **`references/properties.md`** — Property keys, types, defaults, and annotated full config
+- **`references/permissions.md`** — Permission syntax, patterns, keys, external dirs, task rules
+- **`references/models.md`** — Model ID format and common provider tables
+- **`references/examples.md`** — Full working agent templates
+
+Load references on demand via the task map at the end of `SKILL.md` — do not pull the whole set into context for every agent-creation task.
