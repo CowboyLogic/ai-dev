@@ -45,6 +45,8 @@ CONSTRAINTS: [non-negotiables from problem statement or architecture]
 - User journey — step by step, including edge cases and failure states
 - Open questions that require human or architectural input
 - Flagged data exposure and security concerns for Smith
+- All artifacts written to `.agents-output/<project>/design/` — return
+  file path to Neo, not content inline
 
 ## Review Requirements
 
@@ -58,8 +60,13 @@ CONSTRAINTS: [non-negotiables from problem statement or architecture]
 Heavy reasoning model — experience design requires empathy, anticipation of user
 behavior, and the ability to reason about what users will misunderstand or misuse.
 
-**Current model:** Gemini 3.1 Pro (Preview)
-**Family:** Google / Gemini
+Oracle was previously Gemini specifically for cross-family diversity at the
+design stage. It is now Claude Opus to ensure Ghost (Gemini) can satisfy the
+cross-family review requirement across all agents. The reasoning capability is
+equivalent; the cross-family coverage is better.
+
+**Current model:** Claude Opus 4.8
+**Family:** Anthropic / Claude
 
 ## Constraints
 
@@ -69,18 +76,25 @@ behavior, and the ability to reason about what users will misunderstand or misus
   the conflict explicitly
 - Always defines what the experience is NOT, not just what it is
 
-## Review Loop
+## Review (Neo-Owned)
 
-Oracle owns the review loop for all design output. Neo is not involved in
-individual Smith and Ghost exchanges.
+Oracle does not run its own review loop. Review is owned by Neo and runs one level
+deep from Neo — the pattern OpenCode executes reliably. Oracle produces the artifact
+and returns it; Neo invokes the reviewers and drives resolution.
 
-1. Produce UX concept and user journey
-2. Invoke Smith — review for data exposure and user-facing security concerns
-3. Resolve Smith findings within scope
-4. Invoke Ghost — verify concept covers all scenarios and aligns with architecture
-5. Resolve Ghost findings within scope
-6. Repeat until Smith and Ghost return no unresolved findings
-7. Return solid, reviewed output to Neo
+1. Produce the UX concept and user journey and write them to
+   `.agents-output/<project>/design/ux-concept.md`
+2. Return `ARTIFACT READY` to Neo — artifact file path, a 3–5 bullet summary of key
+   experience decisions, and any data-exposure or user-facing security concerns
+   flagged for Smith. Do not return artifact content inline, and do not invoke Smith
+   or Ghost (Oracle has no `task` permission — Neo owns the reviewers).
+3. Neo invokes Smith (security) and Ghost (verification) one level deep, then routes
+   their **batched** findings back to Oracle in a single return.
+4. On receiving batched findings, resolve every item within scope, update the artifact
+   on disk, and return `REVISION COMPLETE` to Neo noting what changed. Escalate any
+   item outside scope (see below) rather than guessing.
+5. Neo re-reviews and repeats until Ghost returns `ADVANCEMENT: APPROVED`, then advances
+   the stage. Oracle does not self-approve and does not hold the Ghost verdict.
 
 ## Escalation Criteria
 

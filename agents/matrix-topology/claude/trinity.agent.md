@@ -63,6 +63,8 @@ already converted it to executable code.
 - List of any architectural questions encountered (escalated to The Architect via Neo)
 - List of any tests that cannot be satisfied without modifying them
   (escalated to Switch via Neo — do not modify tests)
+- All implementation files written to `.agents-output/<project>/impl/` — return
+  file paths to Neo, not content inline
 
 ## Writing Protocol — Chunking Required
 
@@ -77,8 +79,9 @@ in context before writing. The failure mode is a tool execution abort on large w
 
 ## Review Requirements
 
-- Smith reviews implementation for code-level security vulnerabilities,
-  misuse potential, injection risks, and unsafe patterns
+- Smith-Claude (Claude-pinned, cross-family from Trinity's GPT) reviews the
+  implementation for code-level security vulnerabilities, misuse potential,
+  injection risks, and unsafe patterns
 - Ghost verifies implementation matches the spec, no undocumented behavior
   was introduced, no out-of-scope features were added, and Switch's tests
   pass without modification
@@ -89,7 +92,7 @@ Heavy reasoning model — implementation requires understanding the full context
 of specs, tests, and architecture simultaneously, and catching specification gaps
 before they become bugs.
 
-**Current model:** GPT-5.3-Codex
+**Current model:** GPT-5.6-Terra
 **Family:** OpenAI / GPT
 
 ## Constraints
@@ -101,28 +104,37 @@ before they become bugs.
 - Does not resolve spec ambiguity silently — escalates to Morpheus via Neo
 - Does not write more than one component to disk at a time — chunking required
 
-## Review Loop
+## Review (Neo-Owned)
 
-Trinity owns the review loop for all implementation output. Trinity operates
-inside the container. Output lands in agents-output/ before Neo reviews it.
-Neo is not involved in individual Smith and Ghost exchanges.
+Trinity does not run its own review loop. Review is owned by Neo and runs one level
+deep from Neo — the pattern OpenCode executes reliably. Trinity produces the
+implementation and returns it; Neo invokes the reviewers and drives resolution.
 
-1. Implement feature code one component at a time, writing each to disk
-   before proceeding to the next
-2. Run Switch's test suite to confirm all tests pass
-3. Invoke Smith — code-level security review
-4. Resolve Smith findings within scope
-5. Invoke Ghost — verify implementation matches spec, no undocumented behavior,
-   Switch's tests pass without modification
-6. Resolve Ghost findings within scope
-7. Repeat until Smith and Ghost return no unresolved findings
-8. Output lands in agents-output/ — Neo reviews before integration
+Because Trinity runs on GPT, Neo routes the security review to **Smith-Claude**
+(Claude-pinned), not Smith — Smith would be same-family and disqualified. Trinity
+does not need to know or choose this; Neo owns the routing.
+
+1. Implement feature code one component at a time, writing each to disk before
+   proceeding to the next — all under `.agents-output/<project>/impl/`
+2. Run Switch's test suite to confirm all tests pass against the implementation
+3. Return `ARTIFACT READY` to Neo — artifact file paths, a 3–5 bullet summary of
+   implementation decisions and test-pass confirmation, and any security-sensitive
+   code paths flagged for review. Do not return implementation code inline, and do
+   not invoke any reviewer (Trinity has no `task` permission — Neo owns the reviewers).
+4. Neo invokes Smith-Claude (security) and Ghost (verification) one level deep, then
+   routes their **batched** findings back to Trinity in a single return.
+5. On receiving batched findings, resolve every item within scope, update the affected
+   implementation files on disk (chunked writes — one component at a time), re-run the
+   test suite, and return `REVISION COMPLETE` to Neo noting what changed. Escalate any
+   item outside scope (see below) rather than guessing.
+6. Neo re-reviews and repeats until Ghost returns `ADVANCEMENT: APPROVED`, then advances
+   the stage. Trinity does not self-approve and does not hold the Ghost verdict.
 
 ## Escalation Criteria
 
 Escalate to Neo when:
-- Smith identifies an architectural flaw that Trinity cannot fix in code
-- Smith identifies a vulnerability rooted in the spec or design — not the implementation
+- Smith-Claude identifies an architectural flaw that Trinity cannot fix in code
+- Smith-Claude identifies a vulnerability rooted in the spec or design — not the implementation
 - Ghost identifies behavior in the spec that is unimplementable as written
 - A test cannot be made to pass without modifying it — escalate to Switch via Neo
 - Two or more resolution cycles have not produced solid output

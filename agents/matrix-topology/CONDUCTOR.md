@@ -93,6 +93,24 @@ roster table below and, if it participates in a stage, the lifecycle.
 | Smith-Claude | Agent Smith | Security — adversarial review (Claude; reviews GPT-family artifacts) | Cross-cutting | No |
 | Ghost | Ghost | Review — verification, second set of eyes | Cross-cutting | No |
 
+### The roster is closed
+
+These fourteen are the **only** legal dispatch targets. `general`, `explore`, and every
+other built-in or all-purpose subagent are banned unconditionally — not "unless the
+roster fails to load." A rule phrased as a diagnostic for a broken config does not fire
+when the config is healthy and the roster merely looks inconvenient.
+
+If a dispatch resolves to a general-purpose agent, the roster left that request with no
+legal move. That is a **roster gap, not a loading failure** — the first diagnostic is to
+ask Neo to list its subagents by identifier, not to go looking at filenames or `hidden`.
+
+Two invariants follow:
+
+- **Any two agents must compose without a third.** When adding or narrowing an agent,
+  check for a plausible request no single agent can serve.
+- **A request that spans two agents is a sequence, not a bigger agent.** Neo decomposes;
+  it does not reach for a broader agent. See `neo.agent.md` → *When no single agent fits*.
+
 ---
 
 ## The Two-Tier Model
@@ -108,6 +126,11 @@ Trinity and Apoc operate inside an isolated container environment. These are the
 two agents with genuine filesystem blast radius — Trinity writes implementation
 code, Apoc executes commands and runs tests. The container is a targeted control
 applied precisely where the risk warrants it, not a blanket policy.
+
+Tank and Dozer also hold `edit`, but scoped to `.agents-output/**` — they write their
+own artifacts and never touch the working tree, so they carry no blast radius against
+the codebase. The scope is enforced by OpenCode's permission block; in Claude Code and
+Copilot, which cannot express a path-scoped grant, it holds by prompt discipline only.
 
 Mouse has the same class of blast radius as Trinity (edit + bash), but is **not**
 containerized: the express lane deliberately works the live tree so the human sees
@@ -175,12 +198,40 @@ triggers it and what does not.
 Neo dispatches agents in parallel whenever their work is independent.
 Queuing parallelizable work sequentially is wasted lifecycle time.
 
-### Tank is always parallel
+### No subagent-to-subagent handoff — ever
 
-Tank is on-demand at any lifecycle stage. Any time a working agent needs current
-information to make a decision, Neo dispatches Tank and the working agent
-simultaneously — not Tank first. The working agent integrates Tank's findings
-when they arrive. It does not wait.
+**Every artifact, finding, and fact flows through Neo.** A subagent returns to its
+caller and stops. There is no channel by which one subagent hands anything to
+another: working agents have no `task` permission, and OpenCode has no mechanism
+for a running subagent to receive a message from a peer.
+
+This is the same constraint that put Neo in charge of the review loop, and it
+applies to *inputs* exactly as it applies to reviews. If agent B needs something
+agent A produced, then **A completes, returns to Neo, and Neo puts the artifact
+path into B's brief.** Neo is the single writer of context.
+
+The failure is silent when this is violated. B does not error and does not wait —
+it proceeds without the input and produces a confident artifact built on its own
+training knowledge instead. Nothing downstream flags it, because the artifact looks
+complete.
+
+### Tank is parallel only with agents that do not consume its findings
+
+Tank is on-demand at any lifecycle stage, and Neo dispatches it in parallel
+wherever the parallelism is real — alongside work on an *independent* subsystem,
+or alongside an agent that does not need what Tank is retrieving.
+
+**When a working agent needs Tank's findings, Tank runs first.** Neo dispatches
+Tank, waits for `ARTIFACT READY`, and includes the findings path in the working
+agent's brief. Dispatching both simultaneously does not save time — it produces an
+artifact that silently ignored the research.
+
+> [!WARNING]
+> Earlier revisions of this document instructed Neo to dispatch Tank and the
+> consuming agent simultaneously, on the grounds that "the working agent integrates
+> Tank's findings when they arrive." **Findings never arrive.** The consuming agent
+> had already run to completion on training knowledge. If a deployed copy still says
+> this, it predates this fix — re-copy the agents.
 
 ### Independent subsystems
 
@@ -226,10 +277,11 @@ for that artifact and advances the stage when Ghost returns `ADVANCEMENT: APPROV
 Problem Statement
   └── Neo validates: is the problem stated clearly enough to proceed?
         ↓
-        ┌─────────────────── PARALLEL: Tank may be dispatched alongside any stage ───────────────────┐
+        ┌─────────── ON DEMAND: Tank may be dispatched at any stage — always via Neo ────────────────┐
         │  Tank                                                                                        │
-        │    └── Invoked on demand at any stage — Neo dispatches in parallel with working agents      │
+        │    └── Parallel ONLY with work that does not consume its findings; otherwise Tank runs first │
         │    └── Returns ARTIFACT READY to Neo: research file path + 3–5 bullet summary               │
+        │    └── Neo carries the findings path into the consuming agent's brief — never agent-to-agent│
         │    └── NEO owns review: Ghost → findings → Tank revises → re-verify (no Smith for research)  │
         └──────────────────────────────────────────────────────────────────────────────────────────────┘
         ↓
