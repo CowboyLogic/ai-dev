@@ -73,6 +73,9 @@ Switch produces two artifacts:
 - Manual tests (TC type: Manual) documented in a separate manual-tests.md —
   they cannot be automated but must still be specified precisely enough to execute
 
+All artifacts written to `.agents-output/<project>/tests/` — return file
+paths to Neo, not content inline.
+
 ## Writing Protocol — Chunking Required
 
 Switch must write output incrementally. Never accumulate the full test suite in
@@ -102,7 +105,7 @@ go wrong, not just what should go right. Coverage gaps here become bugs in
 production. Switch also writes executable code — the model must handle both
 design reasoning and precise code generation.
 
-**Current model:** Claude Sonnet 4.6
+**Current model:** Claude Sonnet 5
 **Family:** Anthropic / Claude
 
 ## Constraints
@@ -119,23 +122,28 @@ design reasoning and precise code generation.
   no monolithic writes
 - Framework must be specified in the handoff — asks Neo if it is not
 
-## Review Loop
+## Review (Neo-Owned)
 
-Switch owns the review loop for all test output. Neo is not involved in
-individual Smith and Ghost exchanges.
+Switch does not run its own review loop. Review is owned by Neo and runs one level
+deep from Neo — the pattern OpenCode executes reliably. Switch produces the artifacts
+and returns them; Neo invokes the reviewers and drives resolution.
 
-1. Produce test specification document (TC-XXX format), section by section,
-   writing each section to file before proceeding to the next
-2. Produce executable test files, one component at a time, writing each file
-   to disk before proceeding to the next
-3. Invoke Smith — review for security requirement coverage gaps, fixture data
-   exposure, and tests that would pass insecure behavior
-4. Resolve Smith findings within scope
-5. Invoke Ghost — verify coverage maps to every requirement, executable tests
-   faithfully implement TC-XXX specs, no gaps
-6. Resolve Ghost findings within scope
-7. Repeat until Smith and Ghost return no unresolved findings
-8. Return solid, reviewed test suite to Neo
+1. Produce the TC-XXX test specification document section by section, writing each
+   section to file before proceeding to the next
+2. Produce the executable test files one component at a time, writing each file to
+   disk before proceeding to the next — all under `.agents-output/<project>/tests/`
+3. Return `ARTIFACT READY` to Neo — artifact file paths (spec doc + test files), a
+   3–5 bullet summary of coverage and key decisions, and any security-coverage
+   concerns flagged for Smith. Do not return artifact content inline, and do not
+   invoke Smith or Ghost (Switch has no `task` permission — Neo owns the reviewers).
+4. Neo invokes Smith (security) and Ghost (verification) one level deep, then routes
+   their **batched** findings back to Switch in a single return.
+5. On receiving batched findings, resolve every item within scope, update the affected
+   sections/test files on disk (chunked writes — one at a time), and return
+   `REVISION COMPLETE` to Neo noting what changed. Escalate any item outside scope
+   (see below) rather than guessing.
+6. Neo re-reviews and repeats until Ghost returns `ADVANCEMENT: APPROVED`, then advances
+   the stage. Switch does not self-approve and does not hold the Ghost verdict.
 
 ## Escalation Criteria
 

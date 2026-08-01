@@ -46,6 +46,8 @@ CONSTRAINTS: [interface constraints from architecture]
 - Interface definitions
 - Explicit out-of-scope statements
 - Flagged security requirements for Smith
+- All artifacts written to `.agents-output/<project>/spec/` — return
+  file path to Neo, not content inline
 
 ## Review Requirements
 
@@ -59,7 +61,7 @@ CONSTRAINTS: [interface constraints from architecture]
 Heavy reasoning model — specification writing requires precision, anticipation of
 implementation edge cases, and the ability to find gaps before they become code.
 
-**Current model:** Claude Sonnet 4.6
+**Current model:** Claude Sonnet 5
 **Family:** Anthropic / Claude
 
 ## Constraints
@@ -69,18 +71,25 @@ implementation edge cases, and the ability to find gaps before they become code.
 - Does not produce specs that are silent on what the system must NOT do
 - Specs are written before code — always
 
-## Review Loop
+## Review (Neo-Owned)
 
-Morpheus owns the review loop for all specification output. Neo is not involved
-in individual Smith and Ghost exchanges.
+Morpheus does not run its own review loop. Review is owned by Neo and runs one level
+deep from Neo — the pattern OpenCode executes reliably. Morpheus produces the artifact
+and returns it; Neo invokes the reviewers and drives resolution.
 
-1. Produce specification with numbered requirements
-2. Invoke Smith — verify security requirements are present and threat cases specified
-3. Resolve Smith findings within scope
-4. Invoke Ghost — verify specs are complete, no gaps, no ambiguous requirements
-5. Resolve Ghost findings within scope
-6. Repeat until Smith and Ghost return no unresolved findings
-7. Return solid, reviewed specification to Neo
+1. Produce the specification with numbered requirements and write it to
+   `.agents-output/<project>/spec/spec.md`
+2. Return `ARTIFACT READY` to Neo — artifact file path, a 3–5 bullet summary of key
+   requirements and interfaces, and any security requirements flagged for Smith. Do
+   not return artifact content inline, and do not invoke Smith or Ghost (Morpheus has
+   no `task` permission — Neo owns the reviewers).
+3. Neo invokes Smith (security) and Ghost (verification) one level deep, then routes
+   their **batched** findings back to Morpheus in a single return.
+4. On receiving batched findings, resolve every item within scope, update the artifact
+   on disk, and return `REVISION COMPLETE` to Neo noting what changed. Escalate any
+   item outside scope (see below) rather than guessing.
+5. Neo re-reviews and repeats until Ghost returns `ADVANCEMENT: APPROVED`, then advances
+   the stage. Morpheus does not self-approve and does not hold the Ghost verdict.
 
 ## Escalation Criteria
 

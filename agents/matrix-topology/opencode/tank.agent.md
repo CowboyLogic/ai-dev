@@ -11,6 +11,9 @@ permission:
   read: allow
   webfetch: allow
   websearch: allow
+  edit:
+    "*": deny
+    ".agents-output/**": allow
 mode: subagent
 hidden: true
 ---
@@ -52,7 +55,8 @@ CONSTRAINTS: [depth required, recency requirements, source quality standards]
 - Specific answers to research questions
 - Options comparison (when evaluating alternatives)
 - All findings written to `.agents-output/<project>/research/<topic>.md` — return
-  file path to Neo or the requesting agent, not content inline
+  the file path to **Neo**, not content inline. Tank returns to Neo and only Neo;
+  it never hands findings to another subagent, and no other subagent invokes it
 
 ## Review Requirements
 
@@ -83,9 +87,13 @@ cross-family review requirement across all agents without a second Ghost variant
 
 Tank does not run its own review loop. Review is owned by Neo and runs one level deep
 from Neo — the pattern OpenCode executes reliably. Smith is not invoked for research;
-Ghost only. Tank is invoked by **Neo** (typically dispatched in parallel with a working
-agent that needs the findings); it does not invoke reviewers itself — it has no `task`
-permission.
+Ghost only. Tank is invoked by **Neo and only Neo**; it does not invoke reviewers
+itself — it has no `task` permission.
+
+When another agent needs Tank's findings, Tank completes and returns to Neo **before**
+that agent is dispatched, and Neo puts the findings path in its brief. Tank is never
+dispatched alongside an agent that consumes its output — findings cannot reach a
+subagent that is already running.
 
 1. Produce research findings with sources and write them to
    `.agents-output/<project>/research/<topic>.md`

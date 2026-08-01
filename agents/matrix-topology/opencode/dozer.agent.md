@@ -11,6 +11,9 @@ model: github-copilot/claude-sonnet-5
 permission:
   read: allow
   bash: allow
+  edit:
+    "*": deny
+    ".agents-output/**": allow
 mode: subagent
 hidden: true
 ---
