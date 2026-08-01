@@ -6,13 +6,16 @@
 
 ## Purpose
 
-This directory contains the Lane Topology — a nine-agent OpenCode system whose
-defining property is that **process is assigned mechanically, before work starts.**
+This directory contains the Lane Topology — a nine-agent system whose defining
+property is that **process is assigned mechanically, before work starts.**
 
-Unlike `agents/matrix-topology/`, this topology is currently **OpenCode-only**. There
-are no `claude/` or `copilot/` mirrors, and there is no body-synchronization
-requirement. If mirrors are added later, `opencode/` is the canonical source and only
-frontmatter may differ.
+It ships in two client formats: `opencode/` (canonical) and `copilot/` (derived).
+There is no `claude/` mirror yet — add one only when it is actually requested, not
+speculatively. `opencode/` is the canonical source; `copilot/` frontmatter is adapted
+per the mapping below, but **the body (everything after the frontmatter `---`) must
+be character-for-character identical between the two.** A body that diverges is a
+bug, not a variant — see Frontmatter Differences below for the synchronization rule
+this implies.
 
 ---
 
@@ -21,6 +24,7 @@ frontmatter may differ.
 ```
 agents/lane-topology/
 ├── opencode/          # Agent definitions (canonical)
+├── copilot/           # GitHub Copilot format (derived from opencode/)
 ├── AGENTS.md          # This file
 └── README.md          # Human-facing pattern documentation
 
@@ -125,6 +129,87 @@ the schema.
 > by identifier. If it names the eight, the configuration is sound and the cause is
 > in the roster or the prompt — do not go looking at file names, `hidden`, or
 > symlinks.
+
+---
+
+## Copilot Format & Synchronization
+
+`opencode/` is canonical. `copilot/` is derived from it: same nine bodies, character
+for character, with frontmatter translated per the tables below. This is the same
+rule `agents/matrix-topology/` uses for its three formats — see that directory's
+`AGENTS.md` for the fuller version of this discipline if a `claude/` mirror is ever
+added here.
+
+### Frontmatter mapping
+
+| OpenCode | Copilot | Note |
+|---|---|---|
+| `name` | *(derived from filename)* | Copilot has no `name:` requirement; the filename (`<identifier>.agent.md`) carries it. |
+| `description` | `description` | Copied verbatim. |
+| `model` | `model` | See Model Name Mapping below. |
+| `permission` | `tools` | See Tool Mapping below. |
+| `mode: primary` | *(omit `user-invocable`, defaults to shown)* | Only `conductor` is primary. |
+| `mode: subagent` | `user-invocable: false` | All eight subagents. |
+| `hidden` | *(no equivalent — omit)* | OpenCode's `hidden` only affects `@`-mention autocomplete; Copilot's nearest concept, `user-invocable`, is already carrying the primary/subagent distinction above. |
+| — | `agents:` | `conductor` only — the list of the eight subagent identifiers it may dispatch. Requires `"agent"` in `conductor`'s `tools`. |
+
+### Tool mapping
+
+Only the aliases this roster actually uses:
+
+| OpenCode permission | Copilot tool alias |
+|---|---|
+| `read` | `"read"` |
+| `edit` | `"edit"` |
+| `bash` | `"run"` |
+| `grep` | `"search"` |
+| `webfetch` / `websearch` | `"web"` |
+| `task` | `"agent"` |
+| `skill` | *(no equivalent — omit)* |
+
+### Model name mapping
+
+| OpenCode `model` | Copilot `model` |
+|---|---|
+| `github-copilot/claude-sonnet-5` | `Claude Sonnet 5 (copilot)` |
+| `github-copilot/claude-opus-5` | `Claude Opus 5 (copilot)` |
+| `github-copilot/claude-haiku-4.5` | `Claude Haiku 4.5 (copilot)` |
+| `github-copilot/gpt-5.6-terra` | `GPT-5.6-Terra (copilot)` |
+| `github-copilot/gemini-3.1-pro-preview` | `Gemini 3.1 Pro (copilot)` |
+
+### Scoped `edit` does not port
+
+`investigator` and `researcher` hold `edit` scoped to `.agent-output/**` in OpenCode
+— they write their own artifacts without touching the working tree. Copilot cannot
+express a path-scoped tool grant, so both get an unscoped `"edit"`. The scope is
+preserved by prompt discipline in the body (both name their exact output path) but is
+**not harness-enforced in the Copilot format.** Do not read the unscoped `"edit"` in
+`copilot/investigator.agent.md` or `copilot/researcher.agent.md` as license to widen
+either role — the Constraints section in the body is still the actual boundary.
+
+### Synchronization checklist
+
+When modifying any agent body:
+
+- [ ] Updated the body in both `opencode/` and `copilot/` — identical, character for
+      character
+- [ ] If frontmatter changed: applied the correct translation per the tables above
+- [ ] Verified `description` is identical across both folders
+- [ ] Body/frontmatter agreement: every capability the body assumes is actually
+      granted in `tools` (Copilot) and `permission` (OpenCode) — OpenCode defaults
+      unlisted permissions to allow, so a missing grant is invisible there and a hard
+      failure in Copilot, where `tools:` is a strict allowlist
+
+Verify body parity mechanically rather than by eye:
+
+```bash
+cd agents/lane-topology
+for f in opencode/*.md; do a=$(basename "$f" .md)
+  diff -q <(sed -n '/^---$/,$p' "$f" | sed '1,/^---$/d') \
+          <(sed -n '/^---$/,$p' "copilot/$a.agent.md" | sed '1,/^---$/d') \
+    || echo "DRIFT: $a"
+done
+```
 
 ---
 
@@ -267,15 +352,22 @@ unverified and does not matter to the decision.
 
 ## Changing an Agent
 
-- **Model change** → update the frontmatter `model:` field, then update that agent's
-  *Model Selection Rationale* section to say what changed and why. If the change
-  alters the agent's model *family*, check invariants 3 and 4 before proceeding.
-- **Tool change** → update the frontmatter `permission:` block and the agent's
-  Constraints section. Granting `task` to a subagent violates invariant 1.
-- **Role change** → update the agent file, the Conductor's routing table, the
-  classifier table if lane assignment changed, and the README roster.
-- **Any change touching lanes, verdicts, or caps** → update `conductor.md`
-  first; it is authoritative. Then reconcile the README.
+- **Body change** (anything after the frontmatter `---`) → update it in both
+  `opencode/<name>.md` and `copilot/<name>.agent.md`, identically. A body that
+  diverges between the two is a bug.
+- **Model change** → update the `model:` field in both formats (see Model Name
+  Mapping), then update that agent's *Model Selection Rationale* section (body — so
+  update it once, in both files). If the change alters the agent's model *family*,
+  check invariants 3 and 4 before proceeding.
+- **Tool change** → update `permission:` in `opencode/` and `tools:` in `copilot/`
+  (see Tool Mapping), and the agent's Constraints section in the body. Granting
+  `task` (`"agent"` in Copilot) to a subagent violates invariant 1.
+- **Role change** → update the agent file in both formats, the Conductor's routing
+  table (body — updates both automatically once synced), the classifier table if
+  lane assignment changed, and the README roster.
+- **Any change touching lanes, verdicts, or caps** → update `conductor.md` /
+  `conductor.agent.md` first; it is authoritative. Then reconcile the README.
+- Run the synchronization checklist above before considering the change done.
 
 ---
 
@@ -285,14 +377,16 @@ An agent earns a slot only by providing either a **distinct cognitive job** or a
 **distinct cost tier**. "This stage feels like it deserves an agent" is not a reason —
 every agent is a dispatch, a handoff, and a place for context to be lost.
 
-1. Write the agent file in `opencode/` as `<identifier>.md` — the filename is the
-   dispatch identifier, and there is no `name:` property. Ship `hidden: false` (see
-   OpenCode Discovery Notes)
-2. Add it to the roster table above, with its model family
-3. Check invariants 3 and 4 against its model family
-4. Add it to the Conductor's routing table
-5. Add a classifier trigger if it introduces a lane, or name the lane it serves
-6. Add it to the README roster and model-tier table
+1. Write the canonical agent in `opencode/` as `<identifier>.md` — the filename is
+   the dispatch identifier, and there is no `name:` property. Ship `hidden: false`
+   (see OpenCode Discovery Notes)
+2. Copy the body verbatim to `copilot/<identifier>.agent.md`, applying the Copilot
+   frontmatter mapping above. Add it to `conductor.agent.md`'s `agents:` list
+3. Add it to the roster table above, with its model family
+4. Check invariants 3 and 4 against its model family
+5. Add it to the Conductor's routing table (body — covers both formats once synced)
+6. Add a classifier trigger if it introduces a lane, or name the lane it serves
+7. Add it to the README roster and model-tier table
 
 ---
 
