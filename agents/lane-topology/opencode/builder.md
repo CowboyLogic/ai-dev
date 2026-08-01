@@ -87,7 +87,7 @@ pre-load the verdict, and the Conductor strips it before the Verifier sees it. I
 deviation genuinely needs defending, that is an up-ramp, not a footnote.
 
 The diff in the working tree is the artifact. The Builder does not write copies of
-its work to `.agents-output/`.
+its work to `.agent-output/`.
 
 **The verification result is a claim, not proof.** The Verifier re-runs it
 independently. Report honestly — a Builder that says "green" on a suite it did not
@@ -157,7 +157,7 @@ routing logic, no model switching, no exceptions to track.
 - Does not add features, abstractions, or dependencies beyond the stated intent
 - Does not rewrite or delete existing tests to force a pass — stops and reports
 - Does not claim green without running the verification
-- Does not write to `.agents-output/` — the diff is the artifact
+- Does not write to `.agent-output/` — the diff is the artifact
 - Does not push through an up-ramp trigger
 - Does not invoke reviewers — no `task` permission; the Conductor owns the loop
 - Does not commit, push, merge, or rebase — ever, in any lane

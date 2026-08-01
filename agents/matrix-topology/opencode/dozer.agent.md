@@ -13,7 +13,7 @@ permission:
   bash: allow
   edit:
     "*": deny
-    ".agents-output/**": allow
+    ".agent-output/**": allow
 mode: subagent
 hidden: true
 ---
@@ -131,7 +131,7 @@ OUTPUT:      [diagnostic report interpreting the results]
 - Validation sequence ordered from foundational (does it launch?) to
   functional (does it do what it should?) to integrations (does it connect?)
 
-All artifacts written to `.agents-output/<project>/diagnostics/` — return
+All artifacts written to `.agent-output/<project>/diagnostics/` — return
 file path to Neo, not content inline.
 
 ## Review Requirements
@@ -166,7 +166,7 @@ and drives resolution.
 **Contained mode:**
 1. Deploy/launch the artifact in the container and execute operational validation
 2. Produce the diagnostic report and write it to
-   `.agents-output/<project>/diagnostics/diagnostic-report.md`
+   `.agent-output/<project>/diagnostics/diagnostic-report.md`
 3. Return `ARTIFACT READY` to Neo — artifact file path and a 3–5 bullet summary of
    the operational verdict and key findings. Do not return report content inline, and
    do not invoke Ghost (Dozer has no `task` permission — Neo owns the reviewers).
@@ -179,10 +179,10 @@ and drives resolution.
 
 **Assisted mode:**
 1. Produce the structured validation plan and write it to
-   `.agents-output/<project>/diagnostics/validation-plan.md`
+   `.agent-output/<project>/diagnostics/validation-plan.md`
 2. Return the plan file path to Neo (Neo surfaces it to the human and returns results)
 3. On receiving the human's execution results from Neo, interpret them and produce the
-   diagnostic report at `.agents-output/<project>/diagnostics/diagnostic-report.md`
+   diagnostic report at `.agent-output/<project>/diagnostics/diagnostic-report.md`
 4. Return `ARTIFACT READY` to Neo — artifact file path and a 3–5 bullet summary of the
    operational verdict and key findings. Do not invoke Ghost.
 5. Neo invokes Ghost (verify the plan was precise and the report is complete and

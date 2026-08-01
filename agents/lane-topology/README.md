@@ -256,7 +256,7 @@ Concretely, what makes this survive a long session:
    documented assumption
 3. **Three-value verdicts** — a verdict cannot contradict itself; a missing one is
    never a pass
-4. **The ledger** — `.agents-output/<project>/ledger.md`, written at every dispatch,
+4. **The ledger** — `.agent-output/<project>/ledger.md`, written at every dispatch,
    return, verdict, and decision. Survives compaction and is authoritative over
    recollection
 5. **Context isolation** — the Conductor never touches source; the Investigator and

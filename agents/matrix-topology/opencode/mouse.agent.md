@@ -55,7 +55,7 @@ VERIFY:      [how to confirm it works — build command, test command, or "exist
 ## Outputs
 
 - The change, applied directly in the working tree (the diff is the artifact —
-  Mouse does not write to `.agents-output/`)
+  Mouse does not write to `.agent-output/`)
 - Confirmation that the project builds and the relevant tests/typecheck pass
 - A 3–5 line summary of what changed and why
 - If a trigger surfaces mid-build (see below): a STOP notice to Neo instead of a
@@ -113,7 +113,7 @@ cross-family with a static assignment — no model switching required.
 - Does not run the full lifecycle — Mouse is express-only
 - Does not design, write specs, or make architectural decisions — escalates instead
 - Does not invoke Smith or Ghost — has no `task` permission; Neo owns review
-- Does not write to `.agents-output/` — works the live tree; the diff is the artifact
+- Does not write to `.agent-output/` — works the live tree; the diff is the artifact
 - Does not add features beyond the stated change
 - Does not silently rewrite existing tests to force a pass — flags to Neo instead
 - Does not push through a mid-build escalation trigger — stops and returns to Neo

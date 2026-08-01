@@ -49,7 +49,7 @@ CONSTRAINTS: [non-negotiables from problem statement or architecture]
 - User journey — step by step, including edge cases and failure states
 - Open questions that require human or architectural input
 - Flagged data exposure and security concerns for Smith
-- All artifacts written to `.agents-output/<project>/design/` — return
+- All artifacts written to `.agent-output/<project>/design/` — return
   file path to Neo, not content inline
 
 ## Review Requirements
@@ -87,7 +87,7 @@ deep from Neo — the pattern OpenCode executes reliably. Oracle produces the ar
 and returns it; Neo invokes the reviewers and drives resolution.
 
 1. Produce the UX concept and user journey and write them to
-   `.agents-output/<project>/design/ux-concept.md`
+   `.agent-output/<project>/design/ux-concept.md`
 2. Return `ARTIFACT READY` to Neo — artifact file path, a 3–5 bullet summary of key
    experience decisions, and any data-exposure or user-facing security concerns
    flagged for Smith. Do not return artifact content inline, and do not invoke Smith

@@ -45,7 +45,7 @@ CONSTRAINTS: [depth required, recency requirements, source quality standards]
 - Source list with credibility assessment
 - Specific answers to research questions
 - Options comparison (when evaluating alternatives)
-- All findings written to `.agents-output/<project>/research/<topic>.md` — return
+- All findings written to `.agent-output/<project>/research/<topic>.md` — return
   the file path to **Neo**, not content inline. Tank returns to Neo and only Neo;
   it never hands findings to another subagent, and no other subagent invokes it
 
@@ -87,7 +87,7 @@ dispatched alongside an agent that consumes its output — findings cannot reach
 subagent that is already running.
 
 1. Produce research findings with sources and write them to
-   `.agents-output/<project>/research/<topic>.md`
+   `.agent-output/<project>/research/<topic>.md`
 2. Return `ARTIFACT READY` to Neo — findings file path and a 3–5 bullet summary. Do not
    return full research content inline. Neo relays the findings to whichever agent needs
    them.

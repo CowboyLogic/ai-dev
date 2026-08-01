@@ -44,7 +44,7 @@ CONSTRAINTS: [audience, publishing targets, existing documentation to update]
 - Documentation files in markdown
 - Updated memory files where applicable
 - List of any discrepancies found between existing docs and current implementation
-- All artifacts written to `.agents-output/<project>/docs/` — return file
+- All artifacts written to `.agent-output/<project>/docs/` — return file
   paths to Neo, not content inline
 
 ## Review Requirements
@@ -80,7 +80,7 @@ Ghost and drives resolution.
 
 1. Produce documentation one section at a time — write each section to disk before
    beginning the next; never accumulate the full output before writing — all under
-   `.agents-output/<project>/docs/`
+   `.agent-output/<project>/docs/`
 2. Return `ARTIFACT READY` to Neo — artifact file paths and a 3–5 bullet summary of
    what was documented and any discrepancies found. Do not return documentation content
    inline, and do not invoke Ghost (Niobe has no `task` permission — Neo owns the reviewers).

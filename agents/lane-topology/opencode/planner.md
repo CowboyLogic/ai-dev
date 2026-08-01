@@ -74,7 +74,7 @@ recommendation. The human must be able to reply "you pick" and get a good plan.
 The Conductor returns the human's answers. The Planner produces the artifact and
 writes it to disk.
 
-**PLAN lane** → `.agents-output/<project>/plan.md`
+**PLAN lane** → `.agent-output/<project>/plan.md`
 
 ```
 INTENT        — what this achieves, and what "done" looks like
@@ -88,7 +88,7 @@ RISKS         — what could go wrong, and what would surface it early
 OUT OF SCOPE  — what this deliberately does not do
 ```
 
-**BUILD lane** → `.agents-output/<project>/design-brief.md`
+**BUILD lane** → `.agent-output/<project>/design-brief.md`
 
 Everything above, plus:
 
@@ -174,4 +174,4 @@ Cross-family review is provided by the Verifier (Gemini) on every artifact.
 - Does not write untestable requirements
 - Does not invoke reviewers — no `task` permission; the Conductor owns the loop
 - Does not invent external facts — flags them under `UNKNOWN` for the Researcher
-- Writes only to `.agents-output/` — never to the working tree
+- Writes only to `.agent-output/` — never to the working tree

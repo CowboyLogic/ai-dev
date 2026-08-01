@@ -43,13 +43,13 @@ a bug.
 |---|---|---|---|---|---|
 | `conductor.md` | `conductor` | `claude-sonnet-5` | Claude | read, edit, task | Classify, dispatch, ledger, human interface |
 | `planner.md` | `planner` | `claude-opus-5` | Claude | read, edit, grep | Socratic planning, design, ADs, requirements |
-| `investigator.md` | `investigator` | `gemini-3.1-pro-preview` | Gemini | read, grep, bash, edit→`.agents-output/**` | Read-only comprehension and root cause |
+| `investigator.md` | `investigator` | `gemini-3.1-pro-preview` | Gemini | read, grep, bash, edit→`.agent-output/**` | Read-only comprehension and root cause |
 | `builder.md` | `builder` | `gpt-5.6-terra` | GPT | read, edit, bash, grep | Implementation |
 | `mechanic.md` | `mechanic` | `claude-haiku-4.5` | Claude | read, edit, bash | Trivial mechanical edits |
 | `verifier.md` | `verifier` | `gemini-3.1-pro-preview` | Gemini | read, grep, bash | Cross-family review + independent execution |
 | `adversary.md` | `adversary` | `claude-opus-5` | Claude | read, grep, bash | Security review |
 | `scribe.md` | `scribe` | `claude-sonnet-5` | Claude | read, edit, grep | Documentation |
-| `researcher.md` | `researcher` | `claude-haiku-4.5` | Claude | read, grep, webfetch, websearch, edit→`.agents-output/**` | External research |
+| `researcher.md` | `researcher` | `claude-haiku-4.5` | Claude | read, grep, webfetch, websearch, edit→`.agent-output/**` | External research |
 
 `conductor` is `mode: primary`. Everything else is `mode: subagent`.
 
@@ -208,7 +208,7 @@ one exists, either the Conductor has an explicit decomposition path for it, or t
 gap gets filled by `general` the first time it comes up.
 
 This is why `researcher` and `investigator` hold `edit` scoped to
-`.agents-output/**`. It is not a relaxation of their read-only role — the working
+`.agent-output/**`. It is not a relaxation of their read-only role — the working
 tree is still off limits — it is what lets them hand a large artifact to the next
 agent by path instead of pushing it through the Conductor's context, which is re-sent
 on every turn.
@@ -221,10 +221,10 @@ on every turn.
 > ```yaml
 > edit:
 >   "*": deny                    # catch-all FIRST
->   ".agents-output/**": allow   # specific override AFTER
+>   ".agent-output/**": allow   # specific override AFTER
 > ```
 >
-> Both agents originally shipped this inverted — `".agents-output/**": allow` first,
+> Both agents originally shipped this inverted — `".agent-output/**": allow` first,
 > `"*": deny` last — which made `"*"` the last match for every path and denied them
 > **all** edits, including the directory the grant was written for. The roster-closure
 > fix was therefore inert: `researcher` still could not write, and the two-concern

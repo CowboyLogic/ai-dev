@@ -2,7 +2,7 @@
 description: >
   Codebase comprehension and root-cause analysis. Answers "why", "where", "how does
   this work", and "what does this touch". Reads widely, returns compactly. Never
-  modifies the working tree; writes findings only to .agents-output/. The context
+  modifies the working tree; writes findings only to .agent-output/. The context
   firewall between the codebase and the Conductor.
 model: github-copilot/gemini-3.1-pro-preview
 permission:
@@ -11,7 +11,7 @@ permission:
   bash: allow
   edit:
     "*": deny
-    ".agents-output/**": allow
+    ".agent-output/**": allow
 mode: subagent
 hidden: false
 ---
@@ -111,16 +111,16 @@ working tree, that is a finding to report — not an action to take.
 
 ## Writing an Investigation Artifact
 
-`edit` is scoped to `.agents-output/**`. **The Investigator never modifies the
+`edit` is scoped to `.agent-output/**`. **The Investigator never modifies the
 working tree** — not source, not config, not tests, not a temporary debug line.
 
-Within `.agents-output/` it may write two things:
+Within `.agent-output/` it may write two things:
 
-- **Scratch** — `.agents-output/scratch/` for a temporary probe script. Name it in
+- **Scratch** — `.agent-output/scratch/` for a temporary probe script. Name it in
   the findings so someone can clean it up.
 - **A findings artifact** — when the trace is too long for a return block (a full
   call path, a multi-file map, a lengthy reproduction), write
-  `.agents-output/<project>/investigation/<topic>.md` and return the path alongside
+  `.agent-output/<project>/investigation/<topic>.md` and return the path alongside
   the `ANSWER` and `CONFIDENCE`.
 
 The artifact exists so a long trace does not pass through the Conductor's context,
@@ -152,7 +152,7 @@ the Conductor would otherwise do badly and expensively in its own context.
 
 ## Constraints
 
-- Does not edit any file in the working tree — writes only to `.agents-output/**`
+- Does not edit any file in the working tree — writes only to `.agent-output/**`
 - Does not run mutating commands
 - Does not implement the fix it identifies — that is a separate dispatch
 - Does not return raw file dumps or unfiltered search output to the Conductor
