@@ -43,31 +43,35 @@ Permissions can be set globally (top-level) or per-agent.
 
 ## Permission types
 
+Permission keys are matched as wildcard patterns against the underlying tool name — the same glob syntax works for built-ins, custom tools, and MCP tools (e.g. `"mymcp_*": "deny"` denies every tool from an MCP server).
+
 ### Rule-based (support glob patterns per-command)
 
-| Tool | Description |
-|------|-------------|
-| `read` | File reading |
-| `edit` | File editing/writing |
-| `glob` | File pattern matching |
-| `grep` | File content searching |
-| `list` | Directory listing |
-| `bash` | Shell command execution |
-| `task` | Spawning subtasks |
-| `lsp` | Language server protocol |
-| `skill` | Skill execution |
-| `external_directory` | Access outside working directory |
+| Key | Gates | Description |
+|-----|-------|-------------|
+| `read` | `read` | File reading |
+| `edit` | `write`, `edit`, `apply_patch` | File editing/writing |
+| `glob` | `glob` | File pattern matching |
+| `grep` | `grep` | File content searching |
+| `list` | `list` | Directory listing |
+| `bash` | `bash` | Shell command execution |
+| `task` | — | Which subagents/MCP tools this agent can invoke |
+| `lsp` | `lsp` | Language server protocol |
+| `skill` | `skill` | Skill execution |
+| `external_directory` | any tool | Reading/writing outside the project worktree |
 
 ### Simple action (single value only)
 
-| Tool | Description |
-|------|-------------|
-| `todowrite` | Task list writing |
-| `question` | Asking clarifying questions |
-| `webfetch` | Fetching URLs |
-| `websearch` | Web search queries |
-| `codesearch` | Codebase semantic search |
-| `doom_loop` | Loop detection override |
+| Key | Gates | Description |
+|-----|-------|-------------|
+| `todowrite` | `todowrite`, `todoread` | Task list writing/reading |
+| `question` | `question` | Asking clarifying questions |
+| `webfetch` | `webfetch` | Fetching URLs |
+| `websearch` | `websearch` | Web search queries |
+| `doom_loop` | — | Recovery prompts when an agent appears stuck |
+
+> [!NOTE]
+> `codesearch` is not a current permission key — removed/renamed upstream; don't rely on it.
 
 ---
 
@@ -94,7 +98,7 @@ The `bash` permission supports an object with glob patterns as keys:
 }
 ```
 
-`"*"` as a key sets the default for unmatched commands.
+Rules are evaluated in order and **the last matching rule wins** — put `"*"` first and more specific patterns after it, not the other way around (a trailing `"*"` would override everything above it).
 
 ---
 

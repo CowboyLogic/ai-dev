@@ -44,7 +44,8 @@ Or type `/create-agent` in Agent mode chat to have Copilot generate the profile 
 |---|---|
 | Workspace | `.github/agents/<name>.agent.md` |
 | User profile | `~/.copilot/agents/<name>.agent.md` |
-| Organization | `agents/<name>.agent.md` in `.github-private` repo |
+| Organization | `agents/<name>.agent.md` in org's `.github` or `.github-private` repo |
+| Enterprise | `agents/<name>.agent.md` in a designated org's `.github-private` repo |
 | Claude compat | `.claude/agents/<name>.md` |
 
 ## Example Files

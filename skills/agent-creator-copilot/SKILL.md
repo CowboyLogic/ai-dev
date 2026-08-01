@@ -63,7 +63,8 @@ YAML frontmatter is optional. An agent can consist of only a Markdown body.
 | Workspace | `.github/agents/` | Shared with team via version control |
 | Workspace (Claude compat) | `.claude/agents/` | Works in VS Code and Claude Code |
 | User profile | `~/.copilot/agents/` | Personal agents, available everywhere |
-| Organization | `agents/` in `.github-private` repo | Shared across all org repos |
+| Organization | `agents/` in org's `.github` or `.github-private` repo | Shared across all org repos |
+| Enterprise | `agents/` in a designated org's `.github-private` repo (set in enterprise settings) | Shared across the whole enterprise |
 
 ---
 
@@ -84,7 +85,7 @@ Apply least privilege — start read-only and add write/execute tools only when 
 
 ## Handoffs
 
-Handoffs create guided transitions between agents. After a response, handoff buttons appear so users can continue with context pre-filled.
+VS Code / IDEs only — ignored on GitHub.com's cloud agent. Handoffs create guided transitions between agents. After a response, handoff buttons appear so users can continue with context pre-filled.
 
 ```yaml
 handoffs:
@@ -100,7 +101,7 @@ handoffs:
 
 ## Subagents
 
-Agents can invoke other agents for subtasks. The `agent` tool must be in `tools`.
+VS Code / IDEs only — not supported on GitHub.com's cloud agent. Agents can invoke other agents for subtasks. The `agent` tool must be in `tools`.
 
 ```yaml
 agents:
@@ -147,11 +148,16 @@ Key principles: state scope explicitly, use imperative language, define handoff 
 ### Step 2: Create the File
 
 **VS Code UI (preferred):**
-1. Open Chat → Configure Chat (gear icon) → Agents → **New Agent (Workspace)**
+1. Open Chat → Configure Chat (gear icon) → Agents → **New Agent (Workspace)** (or **New Agent (User)** for a personal agent)
 2. Enter a filename → a `.agent.md` is created in `.github/agents/`
 
+**GitHub.com web UI (cloud agent):**
+1. Go to the agents tab at [github.com/copilot/agents](https://github.com/copilot/agents), pick the repository (and optionally branch) from the dropdown
+2. Click the Copilot icon → **Create an agent** → opens a template `my-agent.agent.md` in `.github/agents`
+3. Rename the file, configure the profile, then commit and merge it into the default branch
+
 **Via AI generation:**
-Type `/create-agent` in Agent mode chat. Copilot generates the file from a description.
+Type `/create-agent` in Agent mode chat (or select **Generate Agent** from the agents dropdown). Copilot generates the file from a description.
 
 **Manually:**
 Create `.github/agents/<name>.agent.md`. Filename: only `.`, `-`, `_`, `a-zA-Z0-9`.
@@ -197,7 +203,7 @@ Follow the template above. Be specific about scope and handoff conditions.
 | `references/prompt-writing-guide.md` | Detailed prompt principles, anti-patterns, output format guidance |
 | `references/workspace-agent-example.agent.md` | Full-featured workspace agent example |
 | `references/user-profile-agent-example.agent.md` | Minimal personal agent example |
-| `references/cloud-agent-with-mcp-example.agent.md` | Cloud agent with MCP + subagents |
+| `references/cloud-agent-with-mcp-example.agent.md` | Cloud agent with MCP config + metadata |
 
 ---
 

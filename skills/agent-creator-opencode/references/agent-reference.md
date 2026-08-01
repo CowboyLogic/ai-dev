@@ -435,23 +435,30 @@ permission:
 | `edit` | File path being written/edited/patched |
 | `glob` | Glob pattern being used |
 | `grep` | Regex being searched |
+| `list` | Directory listing (`list` tool) |
 | `bash` | Full shell command string |
-| `webfetch` | URL being fetched |
-| `websearch` / `codesearch` | Search query |
 | `task` | Subagent name being invoked |
-| `skill` | Skill name being loaded |
-| `lsp` | LSP queries (non-granular) |
 | `external_directory` | Paths outside the project working directory |
-| `doom_loop` | Repeated identical tool calls (safety guard) |
+| `lsp` | LSP queries (non-granular) |
+| `skill` | Skill name being loaded |
+| `todowrite` | Gates `todowrite`/`todoread` (shorthand only) |
+| `webfetch` | Gates the `webfetch` tool (shorthand only) |
+| `websearch` | Gates the `websearch` tool (shorthand only) |
+| `question` | Gates in-session user questions (shorthand only) |
+| `doom_loop` | Repeated identical tool call, 3x (safety guard, shorthand only) |
+
+Only `read`, `edit`, `glob`, `grep`, `list`, `bash`, `task`, `external_directory`, `lsp`, and `skill` accept the object (per-pattern) form shown above. The rest accept a plain `allow`/`ask`/`deny` value only — no per-input patterns.
 
 ### Defaults
 
 - Most permissions: `allow`
 - `doom_loop`: `ask`
 - `external_directory`: `ask`
-- `read` for `.env` files: `deny` (`.env`, `.env.*` denied, `.env.example` allowed)
+- `read` for env files: `deny` (`*.env`, `*.env.*` denied; `*.env.example` allowed)
 
 ### External directory access
+
+`external_directory` gates any tool that reads or writes paths outside the project working directory. `~` or `$HOME` at the start of a pattern expands to the home directory (e.g. `~/projects/*` → `/Users/you/projects/*`).
 
 To allow an agent to access files outside the project root:
 

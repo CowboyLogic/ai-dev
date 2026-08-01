@@ -26,24 +26,25 @@ Contains trusted folders and is managed by the CLI. Edit `settings.json` for use
 
 ```json
 {
-  "trusted_folders": [
+  "trustedFolders": [
     "/home/user/projects/my-app",
     "/home/user/safe-dir"
   ]
 }
 ```
 
-### trusted_folders (array)
+### trustedFolders (array)
 
 Controls where Copilot can read, modify, and execute files.
 
 - Add a path permanently by editing this array
 - During CLI startup you're prompted to trust the current directory for the session or permanently
+- Scoping is heuristic — GitHub does not guarantee files outside trusted directories are fully protected; avoid launching from `$HOME` or directories with untrusted executables
 - **Security note**: only trust directories whose contents you control
 
 ```json
 {
-  "trusted_folders": [
+  "trustedFolders": [
     "/home/user/projects",
     "C:\\Users\\user\\projects"
   ]
@@ -67,6 +68,7 @@ Permissions are passed as CLI flags or used as interactive slash commands. They 
 | `--allow-tool='MCP_SERVER(tool_name)'` | Allow specific MCP tool |
 | `--deny-tool='shell(rm)'` | Block a specific command (takes precedence) |
 | `--allow-all-tools --deny-tool='shell(rm)'` | Allow all except `rm` |
+| `--available-tools=LIST` | Restrict Copilot to only this set of tools |
 
 ### Path permissions
 
@@ -99,6 +101,15 @@ Interactive equivalents (during a session): `/allow-all` or `/yolo`
 1. **Allow once** — current command only
 2. **Allow for session** — rest of current session
 3. **Cancel** — reject, ask Claude for alternative
+
+### Sandboxing (public preview)
+
+Restricts what Copilot can touch even when `--allow-all`/`--yolo` is used.
+
+| Mechanism | How to enable |
+|-----------|----------------|
+| Local sandbox | `/sandbox enable` inside a session — restricts filesystem/network/system access |
+| Cloud sandbox | `copilot --cloud` — runs the whole session in an isolated, cloud-hosted environment; inherits Copilot cloud agent firewall policies |
 
 ---
 
@@ -203,6 +214,22 @@ export COPILOT_PROVIDER_BASE_URL=http://localhost:8000/v1
 export COPILOT_PROVIDER_API_KEY=your-key
 export COPILOT_MODEL=meta-llama/Llama-3-8b-instruct
 ```
+
+---
+
+## Model usage
+
+Change model with `/model` (interactive) or `--model` (CLI flag).
+
+- **Extended context**: latest models support a 1M-token context window — after selecting one you're prompted to choose default vs. extended context size.
+- **Reasoning levels**: same models support configurable reasoning depth.
+- Both extended context and higher reasoning consume more AI credits; default to regular context/reasoning and opt into the larger settings only for complex tasks.
+
+---
+
+## Agent Client Protocol (ACP)
+
+Copilot CLI can run as an ACP-compliant agent, usable from any third-party tool/IDE that speaks the Agent Client Protocol. See "Copilot CLI ACP server."
 
 ---
 

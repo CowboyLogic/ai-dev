@@ -15,11 +15,12 @@ Skills are Markdown files that give Copilot specialized instructions and resourc
 
 ```
 .github/skills/<skill-name>/SKILL.md
+.claude/skills/<skill-name>/SKILL.md
 .agents/skills/<skill-name>/SKILL.md
 ```
 
 > [!NOTE]
-> (v1.0.36+) Custom agents, skills, and commands from `~/.claude/` are **no longer loaded** by Copilot CLI. Move any files previously in `~/.claude/skills/` or `~/.claude/agents/` to `~/.copilot/skills/` or `~/.copilot/agents/` respectively.
+> (v1.0.36+) Custom agents, skills, and commands from the **global** `~/.claude/` are **no longer loaded** by Copilot CLI. Move any files previously in `~/.claude/skills/` or `~/.claude/agents/` to `~/.copilot/skills/` or `~/.copilot/agents/` respectively. Project-scoped `.claude/skills/` (inside a repo) is still read.
 
 Each skill lives in its own subdirectory. Directory names must be **lowercase with hyphens** (e.g., `frontend-design`, `api-reviewer`).
 
@@ -78,10 +79,22 @@ Describe when and how to use this skill.
 |---------|---------|
 | `/skills list` | Display all available skills |
 | `/skills` | Interactively enable/disable specific skills |
-| `/skills info` | View skill details and file location |
+| `/skills info [SKILL-NAME]` | View skill details and file location |
 | `/skills add` | Add an alternative storage location |
-| `/skills reload` | Refresh newly added or modified skills |
-| `/skills remove SKILL-DIR` | Delete a custom skill |
+| `/skills reload` | Refresh newly added or modified skills (no restart needed) |
+| `/skills remove SKILL-DIR` | Delete a custom skill (not plugin-provided ones — manage those via the plugin) |
+
+## CLI management commands (terminal, no session needed)
+
+Same `list`/`add`/`remove` operations, useful for scripting or pre-session setup:
+
+```bash
+copilot skill list
+copilot skill add <FILE | URL | DIRECTORY>
+copilot skill remove SKILL-DIR
+```
+
+You can also use `gh skill` (GitHub CLI) to search for, install, update, and publish agent skills.
 
 ---
 

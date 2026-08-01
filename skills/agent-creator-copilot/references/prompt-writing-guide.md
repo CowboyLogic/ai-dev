@@ -67,4 +67,4 @@ See the `references/` folder for full agent profile examples:
 
 - `workspace-agent-example.agent.md` — Full-featured agent with tools, handoffs, and structured prompt
 - `user-profile-agent-example.agent.md` — Minimal personal agent
-- `cloud-agent-with-mcp-example.agent.md` — Cloud agent with MCP config and subagents
+- `cloud-agent-with-mcp-example.agent.md` — Cloud agent with MCP config and metadata

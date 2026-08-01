@@ -77,7 +77,7 @@ Also supports ChatGPT Plus/Pro OAuth via `/connect`.
 ```json
 {
   "provider": {
-    "bedrock": {
+    "amazon-bedrock": {
       "options": {
         "region": "us-east-1",
         "profile": "my-aws-profile"
@@ -87,13 +87,18 @@ Also supports ChatGPT Plus/Pro OAuth via `/connect`.
 }
 ```
 
-Auth options (checked in order):
-1. `AWS_BEARER_TOKEN_BEDROCK` env var
-2. Named profile (`AWS_PROFILE` or `profile` config field)
-3. `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY`
-4. IAM roles / Web Identity
+> [!NOTE]
+> Provider ID is `amazon-bedrock` (not `bedrock`).
 
-Provider-specific fields: `region`, `profile`, `endpoint` (VPC endpoint alias)
+Auth precedence:
+1. Bearer token — `AWS_BEARER_TOKEN_BEDROCK` env var or token from `/connect`
+2. AWS credential chain — profile, access keys, shared credentials, IAM roles, Web Identity Tokens (EKS IRSA), instance metadata
+
+A bearer token, once set, takes precedence over all AWS credential chain methods including configured profiles.
+
+Provider-specific fields: `region` (default: `AWS_REGION` or `us-east-1`), `profile` (default: `AWS_PROFILE`), `endpoint` (VPC endpoint; alias for `baseURL`, takes precedence if both set)
+
+For custom inference profiles, set `models.<key>.id` to the profile ARN.
 
 ### Google Vertex AI
 ```json
@@ -110,20 +115,10 @@ Provider-specific fields: `region`, `profile`, `endpoint` (VPC endpoint alias)
 
 - Requires `GOOGLE_CLOUD_PROJECT` env var
 - Optional: `VERTEX_LOCATION` (defaults to global)
-- Auth: service account JSON or `gcloud auth application-default login`
+- Auth: `GOOGLE_APPLICATION_CREDENTIALS` (service account JSON path) or `gcloud auth application-default login`
 
-### Google AI (Gemini)
-```json
-{
-  "provider": {
-    "google": {
-      "options": {
-        "apiKey": "{env:GOOGLE_AI_API_KEY}"
-      }
-    }
-  }
-}
-```
+> [!NOTE]
+> There is no separate "Google AI / Gemini" provider in the current docs — Gemini models are accessed through Vertex AI.
 
 ### GitLab Duo
 ```json
@@ -131,60 +126,39 @@ Provider-specific fields: `region`, `profile`, `endpoint` (VPC endpoint alias)
   "provider": {
     "gitlab": {
       "options": {
-        "apiKey": "{env:GITLAB_TOKEN}"
+        "instanceUrl": "https://gitlab.com"
       }
     }
   }
 }
 ```
 
-- OAuth or Personal Access Token (PAT)
-- Self-hosted: set `GITLAB_INSTANCE_URL` and `GITLAB_TOKEN` env vars
-- Use `small_model` for `gitlab/gpt-5-nano`
+- Auth via `/connect` → OAuth (recommended) or Personal Access Token (`glpat-...`, scope `api`); or set `GITLAB_TOKEN` env var
+- Models: `duo-chat-haiku-4-5` (default), `duo-chat-sonnet-4-5`, `duo-chat-opus-4-5`; `duo-workflow-*` models route tool calls through GitLab's Duo Workflow Service instead
+- Self-hosted: set `GITLAB_INSTANCE_URL` + `GITLAB_TOKEN` env vars (add `GITLAB_AI_GATEWAY_URL` for a custom AI Gateway); OAuth needs `GITLAB_OAUTH_CLIENT_ID`
+- To lock to your own instance, set `"small_model": "gitlab/duo-chat-haiku-4-5"` and `"share": "disabled"` (default small_model is Zen-hosted `gpt-5-nano`)
+- Optional: `{ "plugin": ["opencode-gitlab-plugin"] }` for MR/issue/pipeline tools
+- Requires GitLab Duo + Agent Platform enabled on a Premium/Ultimate subscription
 
 ### GitHub Copilot
 
 Auth via GitHub OAuth — no API key required. Connect with `/connect` inside opencode.
 
 ```bash
-/connect   # select "GitHub Copilot" to authenticate
+/connect   # select "GitHub Copilot", then authorize via github.com/login/device
 ```
 
-Model IDs use the `github-copilot/` prefix:
-
-```json
-{ "model": "github-copilot/claude-sonnet-4.6" }
-```
-
-**Available models (as of April 2026)**
-
-| Model ID | Display Name |
-|---|---|
-| `github-copilot/gpt-5.1-codex-max` | GPT-5.1-Codex-max |
-| `github-copilot/gpt-5.1-codex` | GPT-5.1-Codex |
-| `github-copilot/gpt-5.1-codex-mini` | GPT-5.1-Codex-mini |
-| `github-copilot/gpt-5.2` | GPT-5.2 |
-| `github-copilot/gpt-5.2-codex` | GPT-5.2-Codex |
-| `github-copilot/gpt-5.3-codex` | GPT-5.3-Codex |
-| `github-copilot/gpt-5.4` | GPT-5.4 |
-| `github-copilot/gpt-5.4-mini` | GPT-5.4 Mini |
-| `github-copilot/gpt-5.4-nano` | GPT-5.4 Nano |
-| `github-copilot/gpt-5.5` | GPT-5.5 |
-| `github-copilot/gpt-5-mini` | GPT-5-mini |
-| `github-copilot/claude-sonnet-4` | Claude Sonnet 4 |
-| `github-copilot/claude-sonnet-4.6` | Claude Sonnet 4.6 |
-| `github-copilot/claude-opus-4.5` | Claude Opus 4.5 |
-| `github-copilot/claude-opus-4.6` | Claude Opus 4.6 |
-| `github-copilot/claude-opus-4.7` | Claude Opus 4.7 |
-| `github-copilot/claude-opus-41` | Claude Opus 4.1 |
-| `github-copilot/gemini-2.5-pro` | Gemini 2.5 Pro |
-| `github-copilot/gemini-3-flash-preview` | Gemini 3 Flash |
-| `github-copilot/gemini-3-pro-preview` | Gemini 3 Pro Preview |
-| `github-copilot/gemini-3.1-pro-preview` | Gemini 3.1 Pro Preview |
-| `github-copilot/grok-code-fast-1` | Grok Code Fast 1 |
+Model IDs use the `github-copilot/` prefix (e.g. `github-copilot/claude-sonnet-4.6`). Some models require a Copilot Pro+ subscription.
 
 > [!TIP]
-> Run `/models` inside opencode after connecting to see the live list of available Copilot models for your subscription.
+> There is no fixed model list — run `/models` inside opencode after connecting to see the live list available for your subscription.
+
+### xAI
+
+Three auth methods via `/connect` → search "xAI":
+- SuperGrok OAuth (browser) — any Grok/X Premium plan with Grok API access
+- SuperGrok device-code — for headless/VPS/CI hosts; prints a URL + code to approve from another device
+- API key — pay-as-you-go key from the xAI console
 
 ### Helicone (AI Gateway with caching)
 ```json
@@ -218,6 +192,12 @@ Model IDs use the `github-copilot/` prefix:
 
 - Use `/connect` or set `apiKey` in config
 - Provider routing: set `provider.order` and `allow_fallbacks` in model options
+
+## Custom / OpenAI-compatible providers
+
+Any provider not offered by `/connect` can be added manually — pick a unique provider ID, add a credential via `/connect` → "Other" (or set `apiKey` in config), then define it in `opencode.json` with `npm`, `name`, `options.baseURL`, and `models`.
+
+`npm` package selection: use `@ai-sdk/openai-compatible` for `/v1/chat/completions` APIs (the common case); use `@ai-sdk/openai` if the provider/model uses `/v1/responses`. Can be overridden per-model via `provider.npm` for mixed setups.
 
 ## Local / self-hosted providers
 
@@ -286,9 +266,9 @@ Model IDs use the `github-copilot/` prefix:
 | `baseURL` | Override default API endpoint |
 | `apiKey` | Inline key or `{env:VAR_NAME}` reference |
 | `headers` | Custom HTTP request headers object |
-| `region` | AWS/cloud region (Bedrock, Vertex) |
-| `profile` | Named AWS credential profile (Bedrock) |
-| `endpoint` | VPC / custom endpoint (Bedrock) |
+| `region` | AWS/cloud region (amazon-bedrock, vertex) |
+| `profile` | Named AWS credential profile (amazon-bedrock) |
+| `endpoint` | VPC / custom endpoint (amazon-bedrock) |
 | `timeout` | Request timeout in milliseconds (default: 300000) |
 | `chunkTimeout` | Streaming response timeout in ms |
 | `setCacheKey` | Ensure cache key is set on requests |
@@ -336,7 +316,7 @@ Filter which models are visible for a provider:
 
 ```json
 { "enabled_providers": ["anthropic", "openai"] }   // only these providers
-{ "disabled_providers": ["bedrock", "vertex"] }     // exclude these providers
+{ "disabled_providers": ["amazon-bedrock", "vertex"] }     // exclude these providers
 ```
 
 ## Using /models

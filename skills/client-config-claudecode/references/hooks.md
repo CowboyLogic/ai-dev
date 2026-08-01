@@ -44,24 +44,26 @@ hooks:
 
 | Event | When it fires | Matcher values | Can block? |
 | ------- | --------------- | ---------------- | ------------ |
-| `SessionStart` | Session begins/resumes | `startup`, `resume`, `clear`, `compact` | No |
+| `SessionStart` | Session begins/resumes | `startup`, `resume`, `clear`, `compact`, `fork` | No |
+| `Setup` | Only with `--init-only`, or `--init`/`--maintenance` + `-p` (NOT normal startup) | `init`, `maintenance` | No |
 | `InstructionsLoaded` | CLAUDE.md/.claude/rules loaded | `session_start`, `nested_traversal`, `path_glob_match`, `include`, `compact` | No |
 | `UserPromptSubmit` | Before Claude processes user input | none | Yes |
 | `UserPromptExpansion` | Before a slash command expands into a prompt | command name | Yes |
+| `MessageDisplay` | While an assistant message streams to screen (display-only, transcript/Claude keep original text) | none | No |
 | `PreToolUse` | Before tool execution | Tool name: `Bash`, `Edit`, `Write`, `Read`, `Glob`, `Grep`, `Agent`, `WebFetch`, `WebSearch`, `AskUserQuestion`, `ExitPlanMode`, MCP tools | Yes |
 | `PermissionRequest` | When permission dialog appears | Tool name | Yes |
 | `PostToolUse` | After tool succeeds | Tool name | No (feedback only) |
 | `PostToolUseFailure` | After tool fails | Tool name | No (feedback only) |
 | `PostToolBatch` | After a batch of tool calls, before next model call | none | Yes (stop loop) |
 | `PermissionDenied` | Auto mode denied a tool call | Tool name | No (can signal retry) |
-| `Notification` | Notification sent | `permission_prompt`, `idle_prompt`, `auth_success`, `elicitation_dialog` | No |
+| `Notification` | Notification sent | `permission_prompt`, `idle_prompt`, `auth_success`, `elicitation_dialog`, `elicitation_complete`, `elicitation_response`, `agent_needs_input`, `agent_completed` | No |
 | `SubagentStart` | Subagent spawned | Agent type name | No |
 | `SubagentStop` | Subagent finished | Agent type name | Yes |
 | `TeammateIdle` | Agent-team teammate about to go idle | none | Yes |
 | `TaskCreated` | Task created via TaskCreate | none | Yes |
 | `TaskCompleted` | Task marked complete | none | Yes |
 | `Stop` | Claude finishes responding | none | Yes |
-| `StopFailure` | Turn ends due to API error | `rate_limit`, `authentication_failed`, `billing_error`, `invalid_request`, `server_error`, `max_output_tokens`, `unknown` | No |
+| `StopFailure` | Turn ends due to API error | `rate_limit`, `overloaded`, `authentication_failed`, `oauth_org_not_allowed`, `billing_error`, `invalid_request`, `model_not_found`, `server_error`, `max_output_tokens`, `unknown` | No |
 | `PreCompact` | Before context compaction | `manual`, `auto` | Yes |
 | `PostCompact` | After compaction | `manual`, `auto` | No |
 | `ConfigChange` | Config file changed during session | `user_settings`, `project_settings`, `local_settings`, `policy_settings`, `skills` | Yes (except `policy_settings`) |
@@ -80,10 +82,12 @@ hooks:
 | Pattern | Behavior |
 | --------- | ---------- |
 | `"*"`, `""`, or omitted | Match all |
-| Letters/digits/`_`/`\|` | Exact string or pipe-separated list: `Edit\|Write` |
-| Contains other chars | JavaScript regex: `^Notebook`, `mcp__memory__.*` |
+| Letters/digits/`_`/`-`/spaces/`,`/`\|` | Exact string or list, separated by `\|` or `,`: `Edit\|Write`, `Edit, Write` |
+| Contains other chars | JavaScript regex (unanchored): `^Notebook`, `mcp__memory__.*` |
 
-`UserPromptSubmit`, `PostToolBatch`, `Stop`, `TeammateIdle`, `TaskCreated`, `TaskCompleted`, `WorktreeCreate`, `WorktreeRemove`, and `CwdChanged` do not support matchers and fire on every occurrence.
+Hyphenated exact names (e.g. `code-reviewer`) require v2.1.195+; comma separators require v2.1.191+ — earlier versions fall through to the regex path (a hyphenated name then also matches as a substring, e.g. `senior-code-reviewer`). `FileChanged` and `StopFailure` use a narrower exact-match set (letters/digits/`_`/`|` only, no hyphen/space/comma) — only `|` separates alternatives there.
+
+`UserPromptSubmit`, `PostToolBatch`, `Stop`, `TeammateIdle`, `TaskCreated`, `TaskCompleted`, `WorktreeCreate`, `WorktreeRemove`, `MessageDisplay`, and `CwdChanged` do not support matchers and fire on every occurrence.
 
 ---
 
@@ -200,9 +204,14 @@ Return JSON on stdout (exit 0) for structured control. Key fields:
 
 | Field | Effect |
 | ------- | -------- |
-| `continue: false` | Stop Claude entirely. `stopReason` shown to user |
-| `decision: "block"` | Block the action (used by `PostToolUse`, `Stop`, `UserPromptSubmit`, etc.) |
+| `continue: false` | Stop Claude entirely (any event). `stopReason` shown to user, not Claude. Takes precedence over event-specific decisions |
+| `decision: "block"` | Block the action (used by `PostToolUse`, `Stop`, `UserPromptSubmit`, `UserPromptExpansion`, `PostToolUseFailure`, `PostToolBatch`, `SubagentStop`, `ConfigChange`, `PreCompact`) |
 | `reason` | Message shown to user/Claude when blocking |
+| `suppressOutput` | Hide hook's stdout from transcript (still in debug log). Default `false` |
+| `systemMessage` | Warning string shown to the user |
+| `terminalSequence` | Terminal escape sequence Claude Code emits on your behalf (desktop notif, title, bell). Only OSC `0`/`1`/`2`/`9`/`99`/`777` and bare BEL allowed — anything else is silently ignored. Use instead of writing to `/dev/tty` (unavailable to hooks). Requires v2.1.141+ |
+
+All hook output strings (`additionalContext`, `systemMessage`, stdout) are capped at 10,000 chars; overflow is saved to a file with a preview + path.
 
 ### PreToolUse decisions (use `hookSpecificOutput`)
 
@@ -218,7 +227,18 @@ Return JSON on stdout (exit 0) for structured control. Key fields:
 }
 ```
 
-`permissionDecision` values: `"allow"` | `"deny"` | `"ask"` | `"defer"`
+`permissionDecision` values: `"allow"` | `"deny"` | `"ask"` | `"defer"`. Multiple hooks disagreeing resolves as `deny` > `defer` > `ask` > `allow`. Deny/ask permission *rules* still apply regardless of what a hook returns (deny always wins). `"allow"` never skips the prompt for connector tools your org set to `ask`, or MCP tools marked `requiresUserInteraction`.
+
+`"defer"` — only honored in non-interactive mode (`-p`); ignored with a warning in interactive sessions or when Claude makes several tool calls in one turn. Exits with `stop_reason: "tool_deferred"` and the pending call in `deferred_tool_use` (id/name/input); an external process resumes with `claude -p --resume <session-id>` and the same tool call fires `PreToolUse` again so the hook can return `"allow"` with the answer in `updatedInput`. Typical use: `AskUserQuestion` answered by a host UI with no terminal.
+
+**Legacy note**: top-level `decision`/`reason` (`"approve"`/`"block"`) are deprecated for `PreToolUse` specifically — use `hookSpecificOutput.permissionDecision`. Other events (`PostToolUse`, `Stop`, etc.) still use top-level `decision`/`reason`.
+
+### PermissionRequest (use `hookSpecificOutput.decision`)
+
+```json
+{ "hookSpecificOutput": { "hookEventName": "PermissionRequest", "decision": { "behavior": "allow", "updatedInput": { "command": "npm run lint" } } } }
+```
+`decision.behavior`: `"allow"` | `"deny"`. No prompt reaches the user; runs even for background subagents in headless mode (denies by default if no hook decides).
 
 ### PermissionDenied retry
 

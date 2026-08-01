@@ -6,15 +6,29 @@ Custom instructions give Copilot persistent context about your project, coding s
 
 | File | Scope | Notes |
 |------|-------|-------|
-| `~/.copilot/copilot-instructions.md` | Global personal | Applies to all sessions |
-| `.github/copilot-instructions.md` | Project-wide | All files in the repo |
+| `$HOME/.copilot/copilot-instructions.md` | Global personal | Applies across repositories |
+| `$HOME/.copilot/instructions/**/*.instructions.md` | Global personal, path-specific | Modular; matched by `applyTo` |
+| `.github/copilot-instructions.md` | Project-wide | Discovered in standard locations (repo root, cwd, intermediate dirs, dirs nested in a file's path) |
 | `.github/instructions/*.instructions.md` | Path-specific | Matched by `applyTo` glob |
-| `.github/instructions/**/*.instructions.md` | Path-specific | Nested subdirectories |
-| `AGENTS.md` (repo root) | Project-wide | "Primary" weight; works with other AI agents too |
-| `CLAUDE.md` (repo root) | Project-wide | Claude Code compatible |
-| `GEMINI.md` (repo root) | Project-wide | Gemini compatible |
+| `.github/instructions/**/*.instructions.md` | Path-specific | Nested subdirs; standard locations only, not intermediate dirs |
+| `AGENTS.md` | Project-wide | Discovered in standard locations |
+| `CLAUDE.md` | Project-wide | Discovered in standard locations; Copilot CLI also reads `.claude/CLAUDE.md` |
+| `GEMINI.md` | Project-wide | Discovered in standard locations |
+| Dirs in `COPILOT_CUSTOM_INSTRUCTIONS_DIRS` | Additional | Comma-separated list of extra dirs to scan for `AGENTS.md` and `*.instructions.md` |
 
-**Priority note**: `AGENTS.md` at the root is treated as "primary" and carries more weight. If both `AGENTS.md` and `.github/copilot-instructions.md` exist, both are used. Conflicting instructions are resolved non-deterministically — avoid overlapping directives.
+Setting `COPILOT_HOME` redirects both global-personal locations (instead of `$HOME/.copilot`).
+
+Use `/instructions` in-session to view which instruction files were discovered and to enable/disable individual ones.
+
+**Priority note (no fixed precedence)**: Copilot CLI **combines** all applicable user-level and repository instruction files rather than picking one. It dedupes identical copies of user-level `copilot-instructions.md`, repo-wide, and agent instruction content, but does **not** define a general precedence order between `copilot-instructions.md`, `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md` — avoid writing conflicting instructions across these files, since resolution isn't deterministic. Path-specific (`*.instructions.md`) files are included only when their `applyTo` matches a file in context; files disabled via `/instructions` are excluded.
+
+### Referencing other files
+
+Inside `.github/copilot-instructions.md`, `AGENTS.md`, or `CLAUDE.md`, use `@relative/path` to inline another file's content (read immediately; references within referenced files are also resolved). Referenced files must stay inside the repo (or inside the custom-instructions directory for personal instructions) — absolute paths and `~/`-prefixed paths are not loaded. `@`-references are **not** expanded in `GEMINI.md` or `*.instructions.md` files.
+
+### Live reload
+
+Edits to instruction files don't apply to an already-running session. Exit and resume (`copilot --continue`) or start fresh (`/new`) to pick up changes.
 
 ---
 
@@ -59,8 +73,10 @@ excludeAgent: "code-review"
 
 | Field | Description |
 |-------|-------------|
-| `applyTo` | Glob pattern — instructions apply when matched file is in context |
-| `excludeAgent` | Optionally exclude from: `"code-review"` or `"cloud-agent"` |
+| `applyTo` | Glob pattern(s), comma-separated for multiple — instructions apply when matched file is in context |
+| `excludeAgent` | Optionally exclude from: `"code-review"` or `"cloud-agent"` (default: used by both if omitted) |
+
+Glob quick reference: `*` (files in current dir), `**`/`**/*` (all files, all dirs), `*.py` (current dir only), `**/*.py` (recursive), `src/*.py` (non-recursive in `src/`), `src/**/*.py` (recursive under `src/`), `**/subdir/**/*.py` (matches `subdir` at any depth).
 
 ---
 
