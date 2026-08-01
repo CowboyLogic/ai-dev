@@ -240,11 +240,19 @@ Hidden system agents (do not override): `compaction`, `title`, `summary`.
 - Grant only what the role requires
 - Use per-command bash rules for surgical control (pattern-match the command + args)
 
-### Step 4 — Choose the model
+### Step 4 — Choose the model (required unless told otherwise)
 
-- Format: `provider/model-id` (e.g., `anthropic/claude-sonnet-4-20250514`, `openai/gpt-4o`)
-- Omit to inherit: subagents inherit from their invoking primary agent; primary agents use the global config
-- Use lighter models for planning/analysis; stronger models for code generation
+- **Always set an explicit `model`** when creating a new agent unless the user
+  tells you to omit it and inherit
+- Be intentional: pick the model for the agent's role (see role guidance in
+  `references/models.md`) — do not leave model selection to chance inheritance
+- Format: `provider/model-id` (e.g., `github-copilot/claude-sonnet-5`,
+  `anthropic/claude-sonnet-4-20250514`)
+- Only omit `model` when the user explicitly wants inheritance (subagents inherit
+  from the invoking primary; primaries use the global config)
+- Prefer lighter models for cheap/fast subagents; stronger models for coding,
+  orchestration, and deep reasoning — never auto-select extreme-cost models
+  (Opus fast-mode, Fable) without explicit user cost acceptance
 
 ### Step 5 — Create the file
 
@@ -301,4 +309,14 @@ Run `opencode models` to list all available model IDs for your configured provid
 
 ---
 
-> For the complete property reference (all YAML/JSON keys, types, defaults, and edge cases), load `references/agent-reference.md`.
+## Reference Map (load only what's needed)
+
+Do **not** load every reference file up front. Use this map after the core guide
+above when the task needs deeper detail:
+
+| Task | Reference file |
+|---|---|
+| Property keys, types, defaults, annotated full config | `references/properties.md` |
+| Permission syntax, patterns, keys, external dirs, task rules | `references/permissions.md` |
+| Model IDs and provider formats | `references/models.md` |
+| Full working agent templates (reviewer, migrator, orchestrator, auditor) | `references/examples.md` |
