@@ -10,8 +10,8 @@ permission:
   webfetch: allow
   websearch: allow
   edit:
-    ".agents-output/**": allow
     "*": deny
+    ".agents-output/**": allow
 mode: subagent
 hidden: false
 ---
