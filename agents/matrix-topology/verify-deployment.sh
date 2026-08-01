@@ -21,7 +21,14 @@ cd "$(dirname "$0")"
 MANIFEST="MANIFEST.sha256"
 FORMATS="opencode claude copilot"
 
-sha() { shasum -a 256 "$1" 2>/dev/null | awk '{print $1}'; }
+if command -v sha256sum >/dev/null 2>&1; then
+  sha() { sha256sum "$1" | awk '{print $1}'; }
+elif command -v shasum >/dev/null 2>&1; then
+  sha() { shasum -a 256 "$1" | awk '{print $1}'; }
+else
+  echo "No SHA-256 utility found; install sha256sum or shasum" >&2
+  exit 127
+fi
 
 if [ "${1:-}" = "--update" ]; then
   {
