@@ -10,7 +10,7 @@ Practical configurations and working examples for AI-powered development tools. 
 
 **[📚 Full Documentation Site](https://cowboylogic.github.io/ai-dev)**
 
-- **[Agents](agents/)** — Installable AI agent definitions (Matrix Topology + domain specialists), discoverable via GitHub CLI
+- **[Agents](agents/)** — Installable AI agent definitions (Lane Topology, Matrix Topology, and domain specialists), discoverable via GitHub CLI
 - **[Skills](skills/)** — Installable domain-specific instruction sets, discoverable via GitHub CLI
 - **[Tools](docs/tools/index.md)** — Claude Code, OpenCode CLI, and VS Code configurations with examples
 - **[MCP Servers](docs/mcp/overview.md)** — Model Context Protocol integration examples
@@ -19,8 +19,11 @@ Practical configurations and working examples for AI-powered development tools. 
 
 ### AI Assistants
 
-1. **Load directives**: Read [AGENTS.md](AGENTS.md) which points to [`.agents/manifest.xml`](.agents/manifest.xml)
-2. **Priority hierarchy**: User directives → Repository rules → Tool guidelines → Baseline behaviors
+1. **Load directives**: Read [AGENTS.md](AGENTS.md) — the authoritative directive
+   file for this repository. [`CLAUDE.md`](CLAUDE.md) imports it directly; other
+   clients should read it before taking any action.
+2. **Priority hierarchy**: Explicit user directives → `AGENTS.md` → any
+   topology-specific `AGENTS.md` under `agents/<topology>/` for work in that tree.
 
 ### Developers
 
