@@ -10,8 +10,8 @@ permission:
   grep: allow
   bash: allow
   edit:
-    ".agents-output/**": allow
     "*": deny
+    ".agents-output/**": allow
 mode: subagent
 hidden: false
 ---

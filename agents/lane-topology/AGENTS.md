@@ -213,6 +213,31 @@ tree is still off limits — it is what lets them hand a large artifact to the n
 agent by path instead of pushing it through the Conductor's context, which is re-sent
 on every turn.
 
+> [!WARNING]
+> **Rule order matters, and the failure is silent.** OpenCode evaluates permission
+> patterns in order and **the last matching rule wins**, so the catch-all `"*"` goes
+> **first** and the specific grant after it:
+>
+> ```yaml
+> edit:
+>   "*": deny                    # catch-all FIRST
+>   ".agents-output/**": allow   # specific override AFTER
+> ```
+>
+> Both agents originally shipped this inverted — `".agents-output/**": allow` first,
+> `"*": deny` last — which made `"*"` the last match for every path and denied them
+> **all** edits, including the directory the grant was written for. The roster-closure
+> fix was therefore inert: `researcher` still could not write, and the two-concern
+> request that caused the original `general` dispatch would have reproduced exactly.
+>
+> This is the same lesson one layer down. The block *reads* correct, OpenCode raises
+> no error, and nothing surfaces until an agent quietly fails to produce its artifact.
+> Authoritative source:
+> `skills/agent-creator-opencode/references/agent-reference.md` → *Pattern matching
+> rules*. Load that skill before editing any OpenCode frontmatter.
+
+Both failures above share one root, and it generalises past agent selection.
+
 > [!IMPORTANT]
 > **A rule that requires reasoning at the decision point will lose to a convenient
 > default.** Prefer closed sets, lookups, and unconditional prohibitions over
