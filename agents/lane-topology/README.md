@@ -337,15 +337,21 @@ question. Not a status dump — a decision request.
 
 ## Deploying It
 
+This section covers the OpenCode deployment — the canonical format and the one the
+rest of this document describes. A GitHub Copilot mirror also ships in
+`agents/lane-topology/copilot/`, with the same nine bodies and translated
+frontmatter; see that directory's `AGENTS.md` for the frontmatter mapping and how to
+install it as Copilot custom agents.
+
 > [!IMPORTANT]
-> **These agents are OpenCode-specific.** The `model`, `permission`, `mode`, and
-> `hidden` properties have no equivalent in other clients' agent schemas, so these
-> files do not port — the model pins and permissions that carry the cross-family
-> review control simply would not apply elsewhere.
+> **The two formats are not interchangeable at the frontmatter level.** OpenCode's
+> `model`, `permission`, `mode`, and `hidden` properties have no equivalent in
+> Copilot's agent schema — each format carries its own translated frontmatter, and
+> only the body (the prompt) is shared between them.
 >
-> Subagents ship `hidden: false` so you can `@`-mention them to confirm the roster
-> loaded. `hidden` controls user selection only — it does not affect the Conductor's
-> ability to dispatch them, so either value is safe.
+> Subagents in `opencode/` ship `hidden: false` so you can `@`-mention them to
+> confirm the roster loaded. `hidden` controls user selection only — it does not
+> affect the Conductor's ability to dispatch them, so either value is safe.
 
 ```bash
 git clone https://github.com/CowboyLogic/ai-dev ~/src/ai-dev
