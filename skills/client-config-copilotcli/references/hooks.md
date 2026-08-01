@@ -3,10 +3,13 @@
 ## File location
 
 ```
-.github/hooks/hooks.json        ← project scope (must be on default branch for cloud agent)
+.github/hooks/NAME.json          ← project scope, any number of files (must be on default branch for cloud agent)
+~/.copilot/hooks/NAME.json       ← user scope ($COPILOT_HOME/hooks/ if COPILOT_HOME is set)
 ```
 
-For CLI, hooks are loaded from the current working directory. The file must be on the default branch to work with the cloud agent.
+`.github/hooks/` is a folder — add as many `NAME.json` files as you want (name each after its purpose). For CLI, project hooks are loaded from the current working directory; the file must be on the default branch to work with the cloud agent. Hook config changes (either scope) are picked up on CLI start/restart, not live.
+
+Windows: example hooks need PowerShell 7.0+ (`pwsh`) on PATH — install with `winget install Microsoft.PowerShell` if missing.
 
 ## Structure
 
@@ -46,6 +49,7 @@ For CLI, hooks are loaded from the current working directory. The file must be o
 | `userPromptSubmitted` | After user input is received |
 | `preToolUse` | Before a tool is executed |
 | `postToolUse` | After a tool completes execution |
+| `agentStop` | When the agent finishes responding (before returning control to the user) |
 | `errorOccurred` | When an error happens |
 
 ---

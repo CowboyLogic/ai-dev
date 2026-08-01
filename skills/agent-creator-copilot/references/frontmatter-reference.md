@@ -2,7 +2,7 @@
 
 Comprehensive reference for all YAML frontmatter properties in custom agent profiles (`.agent.md`). Load this file when writing or modifying agent frontmatter.
 
-**Sources (last verified April 2026):**
+**Sources (last verified July 2026):**
 - VS Code: https://code.visualstudio.com/docs/copilot/customization/custom-agents
 - GitHub: https://docs.github.com/en/copilot/reference/custom-agents-configuration
 

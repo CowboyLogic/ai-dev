@@ -19,7 +19,7 @@ File path → command name, using `:` for namespacing:
 | `git/commit.toml` | `/git:commit` |
 | `deploy/prod.toml` | `/deploy:prod` |
 
-## File format
+## File format (TOML v1)
 
 ```toml
 # Required
@@ -58,9 +58,9 @@ Review this diff for issues before committing.
 description = "Review staged changes"
 ```
 
-The CLI prompts for confirmation before running shell commands. Inside `!{...}`, `{{args}}` is automatically shell-escaped.
+The CLI prompts for confirmation before running shell commands — it shows the exact resolved command (after `{{args}}` escaping) before executing, and reports stderr plus an exit-status line (e.g. `[Shell command exited with code 1]`) on failure. The content inside `!{...}` must have balanced braces; wrap unbalanced-brace commands (e.g. inline JSON) in an external script instead.
 
-**File injection** (`@{...}`) — embed file contents:
+**File injection** (`@{...}`) — embed file or directory contents. Processed *before* `!{...}` and `{{args}}` substitution:
 ```toml
 prompt = """
 Review this file for issues:
@@ -69,11 +69,18 @@ Review this file for issues:
 description = "Review a file"
 ```
 
-Supports multimodal content — images and PDFs are embedded directly.
+- `@{path/to/file}`: replaced by file content.
+- `@{path/to/dir}`: traversed recursively; every file inserted (respects `.gitignore`/`.geminiignore`).
+- Multimodal: images (PNG/JPEG), PDF, audio, and video files are encoded and injected as multimodal input; other binaries are skipped gracefully.
+- Workspace-aware: searches cwd and other workspace directories; absolute paths allowed if within the workspace.
+- Content inside `@{...}` (the path) must have balanced braces.
 
-## Reloading
+## Reloading and discovery
 
-After editing command files, run `/commands reload` to apply changes without restarting.
+| Command | Description |
+|---------|-------------|
+| `/commands reload` | Re-scan `.toml` files after editing, without restarting |
+| `/commands list` | List all discovered command files |
 
 ## Examples
 

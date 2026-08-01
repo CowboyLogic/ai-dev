@@ -60,6 +60,21 @@ Note: MCP servers are NOT configured in `settings.json` directly — they live i
   "headers": { "Authorization": "Bearer ${MY_TOKEN}" }
 }
 ```
+`"streamable-http"` is accepted as an alias for `"http"` (matches the MCP spec name; configs copied from server docs work as-is). A JSON entry with a `url` but no `type` is an error — Claude Code otherwise reads it as stdio and skips the server.
+
+### WebSocket (persistent bidirectional — servers that push events unprompted)
+```json
+{
+  "type": "ws",
+  "url": "wss://mcp.example.com/socket",
+  "headers": { "Authorization": "Bearer ${MY_TOKEN}" }
+}
+```
+Only configurable via `.mcp.json` or `claude mcp add-json` (no `--transport ws` flag). Accepts the same `url`, `headers`, `headersHelper`, `timeout`, and `alwaysLoad` fields as `http`. Header-only auth (no OAuth support).
+
+**Other per-server fields** (any transport): `headersHelper` (script to generate dynamic auth headers), `alwaysLoad` (skip lazy tool-search deferral for this server), `oauth: {clientId, callbackPort}` (pre-configured OAuth credentials, via `claude mcp add-json ... --client-secret`).
+
+Stdio servers receive `CLAUDE_PROJECT_DIR` (project root) in their spawned environment — same value hooks get. Reference it in `command`/`args` with `${CLAUDE_PROJECT_DIR:-.}` (needs a default outside plugin-provided configs).
 
 ---
 
@@ -125,7 +140,9 @@ These control MCP behavior but servers themselves are in `~/.claude.json`:
   "disabledMcpjsonServers": ["filesystem"],
   "allowedMcpServers": [{ "serverName": "github" }],
   "deniedMcpServers": [{ "serverName": "filesystem" }],
-  "allowManagedMcpServersOnly": true
+  "allowManagedMcpServersOnly": true,
+  "disableClaudeAiConnectors": true,
+  "allowAllClaudeAiMcps": true
 }
 ```
 
@@ -135,8 +152,10 @@ These control MCP behavior but servers themselves are in `~/.claude.json`:
 | `enabledMcpjsonServers` | Approve specific servers from `.mcp.json` |
 | `disabledMcpjsonServers` | Block specific servers from `.mcp.json` |
 | `allowedMcpServers` | (managed) Allowlist all scopes |
-| `deniedMcpServers` | (managed) Block all scopes |
+| `deniedMcpServers` | (managed) Block all scopes; block a claude.ai connector by `serverName`/`serverUrl` |
 | `allowManagedMcpServersOnly` | (managed) Only managed servers allowed |
+| `disableClaudeAiConnectors` | Disable claude.ai connectors entirely. Any-source-true: a `true` in any scope wins over a `false` elsewhere. `--mcp-config` servers unaffected |
+| `allowAllClaudeAiMcps` | (managed) Load claude.ai connectors alongside a deployed `managed-mcp.json`, which otherwise suppresses them |
 
 ---
 
@@ -152,7 +171,11 @@ These control MCP behavior but servers themselves are in `~/.claude.json`:
 }
 ```
 
-Pattern: `mcp__<server-name>__<tool-name>`
+Pattern: `mcp__<server-name>__<tool-name>`. Plugin-bundled servers use `mcp__plugin_<plugin-name>_<server-name>__<tool>`.
+
+**Tools that force a prompt regardless of allow rules / permission mode:**
+- Server marks a tool `_meta["anthropic/requiresUserInteraction"]: true` — always prompts (even `acceptEdits`/`auto`/`bypassPermissions`); denied outright in `dontAsk`.
+- Org sets a claude.ai connector tool to `ask` (via admin console) — same forced-prompt behavior. Org can also set a tool to `blocked`, which filters it out before Claude ever sees it.
 
 ---
 

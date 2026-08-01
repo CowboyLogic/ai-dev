@@ -148,8 +148,57 @@ Set the connection string in your shell profile: `export DATABASE_URL=postgresql
 ```
 Launches a guided form — enter server name, type, command/URL, and any env vars.
 
+### Via terminal subcommand (no interactive session needed)
+```bash
+# Local (stdio) — command follows `--`
+copilot mcp add SERVER-NAME -- COMMAND [ARGS...]
+copilot mcp add context7 -- npx -y @upstash/context7-mcp
+
+# Remote (http/sse)
+copilot mcp add --transport http SERVER-NAME URL
+copilot mcp add --transport http notion https://mcp.notion.com/mcp
+```
+
+| Flag | Description |
+|------|-------------|
+| `--env KEY=VALUE` | Set an env var for the server (repeatable) |
+| `--header "HEADER: VALUE"` | Set an HTTP header for remote servers (repeatable) |
+| `--transport TRANSPORT` | `stdio` (default) \| `http` \| `sse` |
+| `--tools TOOLS` | `*` (default, all), comma-separated list, or `""` for none |
+| `--timeout MS` | Timeout in milliseconds |
+
+Added servers go to the user config `~/.copilot/mcp-config.json`.
+
 ### Via direct editing
 Edit `~/.copilot/mcp-config.json` directly. Useful for sharing configs or adding multiple servers at once.
+
+### Via registry search (experimental)
+```
+/mcp search              # browse top servers by stars
+/mcp search QUERY        # search by name/keyword
+```
+Requires starting Copilot CLI with `--experimental`, or running `/experimental on` in-session. Pre-populates the add form from the registry entry; org-configured registry URLs/allowlists apply if set.
+
+---
+
+## Per-repository (project-level) MCP servers
+
+Configure servers that only load for a specific project by committing a JSON file to the repo.
+
+| Path | Recommended use |
+|------|------------------|
+| `.mcp.json` (any dir from cwd up to repo root) | Local/per-checkout config, typically at project root |
+| `.github/mcp.json` | Shared config committed to the repo |
+
+- On startup inside a git repo, Copilot CLI walks from cwd up to the repo root loading these files.
+- If both `.mcp.json` and `.github/mcp.json` exist in the same directory, `.mcp.json` wins.
+- On server-name conflicts, files closer to cwd win; project-level definitions always beat `~/.copilot/mcp-config.json`.
+- Project files may use the `mcpServers` wrapper (as above) **or** a bare top-level format — each key is directly a server name:
+  ```json
+  { "playwright": { "type": "local", "command": "npx", "args": ["@playwright/mcp@latest"] } }
+  ```
+- **Trust gate**: project-level servers load only after you've confirmed folder trust; silently skipped in untrusted dirs. In `copilot -p` (prompt mode) they're skipped by default in untrusted dirs too — set `GITHUB_COPILOT_PROMPT_MODE_WORKSPACE_MCP=true` to load them anyway (prompt mode can't show an interactive trust prompt).
+- **Not read**: VS Code's `.vscode/mcp.json` — it uses the unsupported top-level key `servers`, so it must be migrated to `.mcp.json`/`.github/mcp.json` format.
 
 ---
 
@@ -163,6 +212,14 @@ Edit `~/.copilot/mcp-config.json` directly. Useful for sharing configs or adding
 | `/mcp delete SERVER-NAME` | Remove server |
 | `/mcp disable SERVER-NAME` | Disable without removing |
 | `/mcp enable SERVER-NAME` | Re-enable disabled server |
+
+## Management commands (terminal, no session needed)
+
+| Command | Purpose |
+|---------|---------|
+| `copilot mcp list [--json]` | List servers from all sources (user, workspace, plugin) |
+| `copilot mcp get SERVER-NAME [--json]` | Show a server's type, status, and tools |
+| `copilot mcp remove SERVER-NAME` | Remove from the user config |
 
 ---
 

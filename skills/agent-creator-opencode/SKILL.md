@@ -185,14 +185,21 @@ permission:
 | `edit` | All file writes/edits/patches |
 | `glob` | File globbing (matches glob pattern) |
 | `grep` | Content search (matches regex) |
+| `list` | Directory listing |
 | `bash` | Shell commands (matches command string) |
-| `webfetch` | URL fetching (matches URL) |
 | `task` | Subagent invocation (matches subagent name) |
-| `skill` | Skill loading (matches skill name) |
 | `external_directory` | Access to paths outside project root |
-| `doom_loop` | Repeated identical tool calls |
+| `skill` | Skill loading (matches skill name) |
+| `todowrite` | Todo list writes (`todowrite`/`todoread`) |
+| `webfetch` | URL fetching |
+| `websearch` | Web search |
+| `lsp` | LSP queries (non-granular) |
+| `question` | Asking the user questions mid-execution |
+| `doom_loop` | Repeated identical tool calls (3x) |
 
-Default behavior: most permissions are `allow`. `doom_loop` and `external_directory` default to `ask`. `.env` files are denied by default.
+Only `read`, `edit`, `glob`, `grep`, `list`, `bash`, `task`, `external_directory`, `lsp`, and `skill` accept a per-pattern object — the rest (`todowrite`, `webfetch`, `websearch`, `question`, `doom_loop`) take a single `allow`/`ask`/`deny` value only.
+
+Default behavior: most permissions are `allow`. `doom_loop` and `external_directory` default to `ask`. `.env`/`.env.*` reads are denied by default (`.env.example` allowed).
 
 ---
 
@@ -204,8 +211,9 @@ These ship with OpenCode. Override them in `opencode.json` if you need different
 |---|---|---|
 | `build` | primary | Default — all tools enabled |
 | `plan` | primary | Read-only analysis — edit/bash default to `ask` |
-| `general` | subagent | Full-access general-purpose subagent |
+| `general` | subagent | Full tool access (except todo) — multi-step/parallel research and tasks |
 | `explore` | subagent | Read-only, fast codebase exploration |
+| `scout` | subagent | Read-only, external docs and dependency research |
 
 Hidden system agents (do not override): `compaction`, `title`, `summary`.
 

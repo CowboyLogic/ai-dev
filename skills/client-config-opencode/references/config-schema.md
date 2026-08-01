@@ -12,6 +12,7 @@ TUI schema: `https://opencode.ai/tui.json`
 - [Compaction](#compaction)
 - [Skills & Plugins](#skills--plugins)
 - [File watcher](#file-watcher)
+- [Config precedence order](#config-precedence-order)
 - [Managed / enterprise](#managed--enterprise)
 - [Annotated full example](#annotated-full-example)
 
@@ -24,17 +25,33 @@ TUI schema: `https://opencode.ai/tui.json`
 | `$schema` | string | Enable editor validation | `"https://opencode.ai/config.json"` |
 | `model` | string | Default model (`provider/model`) | `"anthropic/claude-sonnet-4-5"` |
 | `small_model` | string | Lightweight task model | `"anthropic/claude-haiku-4-5"` |
-| `default_agent` | string | Default primary agent | `"build"` |
-| `share` | enum | `"manual"` \| `"auto"` \| `"disabled"` | `"manual"` |
-| `autoupdate` | bool \| `"notify"` | Auto-update behavior | `"notify"` |
-| `snapshot` | boolean | Track filesystem changes | `true` |
+| `default_agent` | string | Default primary agent (must be `primary` mode; falls back to `build` with a warning if invalid). Applies across TUI, `opencode run`, desktop app, GitHub Action | `"build"` |
+| `subagent_depth` | integer | Max subagent nesting depth (default `1`: primary can launch subagents, they can't launch more; `0` blocks all subagent launches) | `2` |
+| `share` | enum | `"manual"` (default) \| `"auto"` \| `"disabled"` | `"manual"` |
+| `autoupdate` | bool \| `"notify"` | Auto-update behavior (only applies if not installed via a package manager) | `"notify"` |
+| `snapshot` | boolean | Track filesystem changes for undo/revert (default `true`); disable on large repos to avoid slow indexing | `true` |
 | `logLevel` | enum | `"DEBUG"` \| `"INFO"` \| `"WARN"` \| `"ERROR"` | `"INFO"` |
 | `username` | string | Custom display name | `"alice"` |
-| `disabled_providers` | array | Provider IDs to disable | `["bedrock"]` |
+| `shell` | string | Default shell for the interactive terminal and agent bash tool calls; absolute path or short name. Auto-detected per-OS if unset | `"pwsh"` |
+| `tools` | object (string → bool) | Enable/disable tools (built-in, custom, or `<mcp-server>_<tool>`) by name or glob | `{ "write": false, "bash": false }` |
+| `disabled_providers` | array | Provider IDs to disable (even if creds/env vars present); takes priority over `enabled_providers` | `["amazon-bedrock"]` |
 | `enabled_providers` | array | Restrict to only these providers | `["anthropic", "openai"]` |
+| `attachment` | object | `attachment.image` — `auto_resize`, `max_width`/`max_height` (default 2000px), `max_base64_bytes` (default 5242880) | `{ "image": { "auto_resize": true } }` |
+| `references` | object | Named git or local directory references (`{repository, branch?, description?, hidden?}` or `{path, description?, hidden?}`) | — |
+| `experimental` | object | Unstable, may change/be removed. Keys: `policies` (allow/deny provider access, see below), `mcp_timeout`, `batch_tool`, `openTelemetry`, `primary_tools`, `continue_loop_on_deny`, `disable_paste_summary` | `{ "policies": [...] }` |
 | `enterprise` | object | Enterprise config — `{"url": "https://your-enterprise"}` | — |
+| `reference` | object | **Deprecated** — use `references` instead | — |
+| `mode` | object | **Deprecated** — use `agent` instead | — |
 | `autoshare` | boolean | **Deprecated** — use `share` instead | — |
 | `layout` | string | **Deprecated** — always stretch layout | — |
+
+### Policies (experimental)
+
+Allow/deny opencode actions on configured resources; currently scoped to provider access.
+
+```json
+{ "experimental": { "policies": [ { "effect": "deny", "action": "provider.use", "resource": "openai" } ] } }
+```
 ---
 
 ## Server
@@ -224,11 +241,11 @@ Control how context is managed when it fills up:
 
 | Field | Description |
 |-------|-------------|
-| `auto` | Automatically compact when context is near limit |
-| `prune` | Remove older messages during compaction |
-| `reserved` | Tokens reserved for response generation |
-| `tail_turns` | Number of recent turns to always preserve during compaction |
-| `preserve_recent_tokens` | Minimum tokens to keep from recent messages |
+| `auto` | Automatically compact when context is full (default: `true`) |
+| `prune` | Remove old **tool outputs** to save tokens (default: `false`) |
+| `reserved` | Token buffer reserved during compaction, to avoid overflow |
+| `tail_turns` | Recent user turns (plus their assistant/tool responses) to keep verbatim during compaction (default: `2`) |
+| `preserve_recent_tokens` | Max tokens from recent turns to preserve verbatim after compaction |
 
 ---
 
@@ -264,6 +281,21 @@ Plugins are NPM packages or local paths. Skills are directories with markdown fi
 Glob patterns for files opencode should not watch for changes.
 
 ---
+
+## Config precedence order
+
+Configs are **merged**, not replaced — later sources override earlier ones only for conflicting keys. Load order (lowest to highest priority):
+
+1. Remote config (`.well-known/opencode` — org defaults, fetched on provider auth)
+2. Global config (`~/.config/opencode/opencode.json`)
+3. Custom config (`OPENCODE_CONFIG` env var path)
+4. Project config (`opencode.json` in project root, or nearest parent Git dir)
+5. `.opencode/` directories (agents, commands, plugins — also `OPENCODE_CONFIG_DIR`)
+6. Inline config (`OPENCODE_CONFIG_CONTENT` env var, raw JSON)
+7. Managed config files (system dirs below — admin-controlled)
+8. macOS managed preferences (`.mobileconfig` via MDM) — highest, not user-overridable
+
+`.opencode`/`~/.config/opencode` subdirectories use plural names (`agents/`, `commands/`, `modes/`, `plugins/`, `skills/`, `tools/`, `themes/`); singular forms still work for backwards compatibility.
 
 ## Managed / enterprise
 

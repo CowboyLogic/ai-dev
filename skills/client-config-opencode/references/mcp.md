@@ -40,9 +40,10 @@ Starts a local process, communicates over stdin/stdout.
 |-------|----------|-------------|
 | `type` | Yes | `"local"` |
 | `command` | Yes | Array — executable + arguments |
+| `cwd` | No | Working directory for the server process (relative paths resolve from the workspace) |
 | `environment` | No | Environment variables object |
 | `enabled` | No | `true` (default) — set `false` to disable without removing |
-| `timeout` | No | Milliseconds before timeout (default: 5000) |
+| `timeout` | No | Milliseconds for fetching tools from the server (default: 5000) |
 
 ### `remote` (HTTP / SSE)
 
@@ -96,49 +97,64 @@ Starts a local process, communicates over stdin/stdout.
 }
 ```
 
+Tokens from a successful OAuth flow are stored in `~/.local/share/opencode/mcp-auth.json`.
+
 ---
 
-## Common MCP servers
+## Enabling / disabling MCP tools
 
-### GitHub
+MCP tools are registered as `<server-name>_<tool-name>` and managed like any other tool via the top-level `tools` config (glob patterns supported):
+
 ```json
-"github": {
-  "type": "local",
-  "command": ["npx", "-y", "@modelcontextprotocol/server-github"],
-  "environment": { "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:GITHUB_TOKEN}" }
+{
+  "mcp": {
+    "my-mcp-foo": { "type": "local", "command": ["bun", "x", "my-mcp-command-foo"] }
+  },
+  "tools": { "my-mcp-foo": false }
 }
 ```
 
-### Filesystem
+Disable every tool from a server with a glob: `"tools": { "my-mcp*": false }`.
+
+**Per-agent**: disable globally, then re-enable for one agent:
 ```json
-"filesystem": {
-  "type": "local",
-  "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem", "/home/user/projects"]
+{
+  "tools": { "my-mcp*": false },
+  "agent": { "my-agent": { "tools": { "my-mcp*": true } } }
 }
 ```
 
-### Memory
+Glob syntax: `*` matches zero-or-more chars, `?` matches exactly one, all other chars are literal.
+
+---
+
+## Documented example servers
+
+### Sentry (remote, OAuth)
 ```json
-"memory": {
-  "type": "local",
-  "command": ["npx", "-y", "@modelcontextprotocol/server-memory"]
+"sentry": {
+  "type": "remote",
+  "url": "https://mcp.sentry.dev/mcp",
+  "oauth": {}
 }
 ```
+Then `opencode mcp auth sentry` to complete the OAuth flow.
 
-### PostgreSQL
+### Context7 (remote, optional API key)
 ```json
-"postgres": {
-  "type": "local",
-  "command": ["npx", "-y", "@modelcontextprotocol/server-postgres", "postgresql://user:pass@localhost/db"]
+"context7": {
+  "type": "remote",
+  "url": "https://mcp.context7.com/mcp",
+  "headers": { "CONTEXT7_API_KEY": "{env:CONTEXT7_API_KEY}" }
 }
 ```
+`headers` is optional — omit for the free tier, add for higher rate limits.
 
-### Brave Search
+### Grep by Vercel (remote — search code on GitHub)
 ```json
-"brave-search": {
-  "type": "local",
-  "command": ["npx", "-y", "@modelcontextprotocol/server-brave-search"],
-  "environment": { "BRAVE_API_KEY": "{env:BRAVE_API_KEY}" }
+"gh_grep": {
+  "type": "remote",
+  "url": "https://mcp.grep.app"
 }
 ```
 
@@ -149,6 +165,7 @@ Starts a local process, communicates over stdin/stdout.
 ```bash
 opencode mcp list                   # show all servers and auth status
 opencode mcp auth <server-name>     # authenticate with OAuth
+opencode mcp auth list              # view auth status for all OAuth-capable servers
 opencode mcp logout <server-name>   # remove stored credentials
 opencode mcp debug <server-name>    # troubleshoot connection issues
 ```

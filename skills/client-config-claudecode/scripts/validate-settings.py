@@ -38,12 +38,33 @@ KNOWN_TOP_LEVEL_KEYS = {
     "autoConnectIde", "autoScrollEnabled", "editorMode", "externalEditorContext",
     "showTurnDuration", "terminalProgressBarEnabled", "teammateMode",
     "autoInstallIdeExtension",
+    # Added 2026-08-01 update-references.py refresh:
+    "advisorModel", "fallbackModel", "switchModelsOnFlag", "theme", "verbose",
+    "syntaxHighlightingDisabled", "wheelScrollAccelerationEnabled",
+    "emojiCompletionEnabled", "vimInsertModeRemaps", "respondToBashCommands",
+    "askUserQuestionTimeout", "footerLinksRegexes", "autoMemoryEnabled",
+    "autoCompactEnabled", "fastMode", "fileCheckpointingEnabled",
+    "requiredMinimumVersion", "requiredMaximumVersion", "disableWorkflows",
+    "workflowKeywordTriggerEnabled", "workflowSizeGuideline", "ultracode",
+    "skillListingBudgetFraction", "skillListingMaxDescChars", "skillOverrides",
+    "disableBundledSkills", "gcpAuthRefresh", "processWrapper",
+    "disableClaudeAiConnectors", "remote", "remoteControlAtStartup",
+    "disableRemoteControl", "forceLoginGatewayUrl", "agentPushNotifEnabled",
+    "inputNeededNotifEnabled", "preferredNotifChannel",
+    "pluginSuggestionMarketplaces", "strictPluginOnlyCustomization",
+    "disableSideloadFlags", "disableAgentView", "disableArtifact",
+    "enableArtifact", "disableBrowserExternalNavigation",
+    "browserExternalPageTools", "disableMobileSimulatorTools", "claudeMd",
+    "claudeMdExcludes", "parentSettingsBehavior", "policyHelper",
+    "enforceAvailableModels", "allowAllClaudeAiMcps", "diffTool",
+    "permissionExplainerEnabled", "teammateDefaultModel",
 }
 
 GLOBAL_CONFIG_ONLY_KEYS = {
     "autoConnectIde", "autoInstallIdeExtension", "autoScrollEnabled",
     "editorMode", "externalEditorContext", "showTurnDuration",
     "terminalProgressBarEnabled", "teammateMode",
+    "diffTool", "permissionExplainerEnabled", "teammateDefaultModel",
 }
 
 PERMISSION_RULE_TOOLS = {

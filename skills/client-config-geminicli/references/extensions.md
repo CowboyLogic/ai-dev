@@ -1,6 +1,22 @@
 # Extensions Reference
 
-Extensions are packages that add tools, commands, hooks, themes, and MCP servers to Gemini CLI.
+Extensions are packages that add tools, commands, hooks, themes, sub-agents, agent skills, and MCP servers to Gemini CLI. Loaded from `~/.gemini/extensions/` (project: `.gemini/extensions/`).
+
+## CLI commands
+
+| Command | Description |
+|---------|-------------|
+| `gemini extensions install <source> [--ref <ref>] [--auto-update] [--pre-release] [--consent] [--skip-settings]` | Install from a GitHub URL or local path (requires `git` for GitHub sources) |
+| `gemini extensions uninstall <name...>` | Uninstall one or more extensions |
+| `gemini extensions disable <name> [--scope user\|workspace]` | Disable (globally or per-workspace) |
+| `gemini extensions enable <name> [--scope user\|workspace]` | Re-enable |
+| `gemini extensions update <name>` / `--all` | Update to the version pinned in the manifest |
+| `gemini extensions new <path> [template]` | Scaffold from a template (`mcp-server`, `context`, `custom-commands`) |
+| `gemini extensions link <path>` | Symlink a local dev directory for live testing |
+| `gemini extensions config <name> [setting] [--scope <scope>]` | Update an extension's `settings` values |
+| `/extensions list` | View installed extensions from inside the CLI (install/uninstall are not supported in interactive mode) |
+
+Installing copies the source — `gemini extensions update` is required to pull upstream changes. All management operations (including slash-command changes) take effect only after restarting the session.
 
 ## Directory structure
 
@@ -62,8 +78,8 @@ my-extension/
 | `version` | Semantic version string |
 | `description` | Shown in extension marketplace |
 | `contextFileName` | Context file to auto-load (default: `GEMINI.md`) |
-| `excludeTools` | Tool names to block from model access |
-| `mcpServers` | MCP server configurations (same format as `settings.json`) |
+| `excludeTools` | Tool names to block from model access. Supports command-specific restrictions, e.g. `"run_shell_command(rm -rf)"` blocks just that invocation |
+| `mcpServers` | MCP server configurations (same format as `settings.json`, except `trust` is not supported) |
 | `settings` | User-configurable values stored as env vars |
 | `themes` | Custom theme definitions |
 | `plan.directory` | Where planning artifacts are stored |
@@ -76,6 +92,10 @@ my-extension/
 | `${extensionPath}` | Absolute path to extension directory |
 | `${workspacePath}` | Current workspace directory |
 | `${/}` | Platform-specific path separator |
+
+## Environment variable sanitization
+
+Extensions do **not** inherit the user's full shell environment. They only get standard safe vars (`HOME`, `PATH`, `TMPDIR`) plus any `envVar` explicitly declared in the manifest's `settings` array — declare any API key, host, or config path your extension needs there so the CLI allowlists it.
 
 ## Settings configuration
 
@@ -103,11 +123,15 @@ my-extension/
 ```json
 {
   "security": {
-    "allowedExtensions": ["my-extension", "other-extension"],
-    "blockedExtensions": ["untrusted-extension"]
+    "blockGitExtensions": false,
+    "allowedExtensions": ["my-trusted-extension-pattern.*"]
   }
 }
 ```
+
+`security.allowedExtensions` holds regex patterns; if non-empty, only matching extensions are allowed, and it overrides `blockGitExtensions`. For enterprise lockdown, `admin.extensions.enabled: false` disallows installing/using extensions entirely (see `references/settings-schema.md`).
+
+Policy rules (in an extension's `policies/*.toml`) run in their own tier — higher priority than defaults, lower than user/admin policies — and the CLI ignores any `allow`/`yolo` decisions they contain, so an extension can never auto-approve its own tool calls.
 
 ## Conflict resolution
 

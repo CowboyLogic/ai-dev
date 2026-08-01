@@ -6,14 +6,16 @@
 |-------|------|-----------------|
 | `build` | primary | Full tool access — default for development work |
 | `plan` | primary | file edits and bash set to `ask` — analysis/planning |
-| `general` | subagent | Full access — multi-step research tasks |
-| `explore` | subagent | Read-only codebase exploration |
+| `general` | subagent | Full access (except todo) — multi-step research tasks, parallelizable |
+| `explore` | subagent | Read-only codebase exploration — find files/patterns fast |
+| `scout` | subagent | Read-only external docs/dependency research — clones deps into opencode's cache, cross-references upstream source |
 | `compaction` | system (hidden) | Summarises context when it fills up |
 | `title` | system (hidden) | Generates session titles |
 | `summary` | system (hidden) | Generates session summaries |
 
-Switch primary agents with Tab or the `switch_agent` keybind.
-Invoke subagents with `@general`, `@explore`, or let the primary agent call them automatically.
+Switch primary agents with Tab (`agent_cycle`) or Shift+Tab (`agent_cycle_reverse`).
+Invoke subagents with `@general`, `@explore`, `@scout`, or let the primary agent call them automatically.
+When a subagent creates a child session: `session_child_first` (default Leader+Down) enters it, `session_child_cycle`/`session_child_cycle_reverse` (default Right/Left) cycle siblings, `session_parent` (default Up) returns.
 
 ---
 
@@ -48,8 +50,8 @@ Invoke subagents with `@general`, `@explore`, or let the primary agent call them
 
 | Field | Description | Example |
 |-------|-------------|---------|
-| `description` | Purpose — used for @ autocomplete and auto-routing | `"Reviews code for quality"` |
-| `mode` | `"primary"` (user-selectable), `"subagent"` (invoked by agents), `"all"` | `"subagent"` |
+| `description` | Purpose — used for @ autocomplete and auto-routing. **Required** | `"Reviews code for quality"` |
+| `mode` | `"primary"` (user-selectable), `"subagent"` (invoked by agents), `"all"` — defaults to `"all"` if unset | `"subagent"` |
 | `model` | Override default model for this agent | `"anthropic/claude-opus-4-5"` |
 | `variant` | Model variant specification | `"thinking"` |
 | `prompt` | System prompt — inline string or `{file:path}` | `"{file:./prompts/reviewer.md}"` |
