@@ -6,7 +6,8 @@ This repository provides three tiers of AI agents:
   and sizes process to match, from a seconds-long mechanical edit to a full
   plan-build-verify lifecycle. OpenCode-native, with a GitHub Copilot mirror.
 - **Matrix Topology** — the predecessor multi-agent system: a fixed nine-stage
-  lifecycle for production-quality development work. GitHub Copilot (VS Code).
+  lifecycle for production-quality development work. OpenCode-native (canonical),
+  with Claude Code and GitHub Copilot mirrors.
 - **Domain Specialists** — focused single-purpose agents for scoped, task-level
   assistance. GitHub Copilot (VS Code).
 
