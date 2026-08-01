@@ -86,6 +86,7 @@ nav:
   - Home: index.md
   - Agents:
       - Overview: agents/index.md
+      - Lane Topology: agents/lane-topology.md
       - Matrix Topology: agents/matrix-topology.md
   - Skills:
       - Overview: skills/index.md
