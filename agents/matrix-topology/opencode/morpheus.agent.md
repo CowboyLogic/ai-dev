@@ -50,7 +50,7 @@ CONSTRAINTS: [interface constraints from architecture]
 - Interface definitions
 - Explicit out-of-scope statements
 - Flagged security requirements for Smith
-- All artifacts written to `.agents-output/<project>/spec/` — return
+- All artifacts written to `.agent-output/<project>/spec/` — return
   file path to Neo, not content inline
 
 ## Review Requirements
@@ -82,7 +82,7 @@ deep from Neo — the pattern OpenCode executes reliably. Morpheus produces the 
 and returns it; Neo invokes the reviewers and drives resolution.
 
 1. Produce the specification with numbered requirements and write it to
-   `.agents-output/<project>/spec/spec.md`
+   `.agent-output/<project>/spec/spec.md`
 2. Return `ARTIFACT READY` to Neo — artifact file path, a 3–5 bullet summary of key
    requirements and interfaces, and any security requirements flagged for Smith. Do
    not return artifact content inline, and do not invoke Smith or Ghost (Morpheus has

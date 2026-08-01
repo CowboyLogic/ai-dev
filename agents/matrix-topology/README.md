@@ -199,7 +199,7 @@ don't warrant the full lifecycle, Mouse implements the change directly in the
 working tree, gets it green, and hands it back for review. He works fast because his
 scope is narrow — one change, understood, applied, verified. If a change turns out
 to need real design, spec, or security work, Mouse stops and it escalates to the
-full loop. Mouse never writes to `.agents-output/`; the diff is the artifact.
+full loop. Mouse never writes to `.agent-output/`; the diff is the artifact.
 
 **Apoc** — *Testing*
 

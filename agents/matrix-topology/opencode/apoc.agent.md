@@ -50,7 +50,7 @@ CONSTRAINTS: [test environment, framework, and any known exclusions]
 - Requirement coverage report (which REQ-XXX are verified)
 - Root cause analysis for any failures
 - List of skipped tests with justification
-- All reports written to `.agents-output/<project>/test-results/` — return
+- All reports written to `.agent-output/<project>/test-results/` — return
   file path to Neo, not content inline
 
 ## Review Requirements
@@ -82,7 +82,7 @@ Ghost and drives resolution.
 
 1. Execute the full test suite against Trinity's implementation; record all results —
    pass, fail, skip
-2. Write the results report to `.agents-output/<project>/test-results/results.md`
+2. Write the results report to `.agent-output/<project>/test-results/results.md`
 3. Return `ARTIFACT READY` to Neo — artifact file path and a 3–5 bullet summary of
    pass/fail totals and any deferred failures. Do not return full test output inline,
    and do not invoke Ghost (Apoc has no `task` permission — Neo owns the reviewers).

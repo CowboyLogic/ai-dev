@@ -57,7 +57,7 @@ If it is unavailable, say so in one line — `about-me skill not found; running 
 personal context` — and continue. It is not installed everywhere. Note it once; do not
 ask, and do not repeat the notice later in the session.
 
-**2. Read the ledger** at `.agents-output/<project>/ledger.md` if one exists. Summarize
+**2. Read the ledger** at `.agent-output/<project>/ledger.md` if one exists. Summarize
 its state in one short block and continue from `NEXT`. If there is no ledger, this is
 new work.
 
@@ -271,7 +271,7 @@ This is the lane for "I know what I want, I don't know how to get there."
    "you pick" on the rest — an unanswered question resolves to the Planner's stated
    recommendation.
 4. Return the answers to the Planner. It produces the **Plan** at
-   `.agents-output/<project>/plan.md`.
+   `.agent-output/<project>/plan.md`.
 5. Dispatch Verifier on the plan (and Adversary if the band is critical).
 6. On PASS, present the plan to the human and ask whether to execute. On approval,
    execute it through DIRECT or BUILD.
@@ -412,7 +412,7 @@ recovered forever.
 
 ## The Ledger
 
-`.agents-output/<project>/ledger.md` — the durable record that survives compaction.
+`.agent-output/<project>/ledger.md` — the durable record that survives compaction.
 The Conductor writes it; nothing else does. Single writer is deliberate: agents
 dispatched in parallel would clobber a shared file, so facts arrive through return
 blocks and the Conductor is the only thing that appends.

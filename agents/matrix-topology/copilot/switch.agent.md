@@ -73,7 +73,7 @@ Switch produces two artifacts:
 - Manual tests (TC type: Manual) documented in a separate manual-tests.md —
   they cannot be automated but must still be specified precisely enough to execute
 
-All artifacts written to `.agents-output/<project>/tests/` — return file
+All artifacts written to `.agent-output/<project>/tests/` — return file
 paths to Neo, not content inline.
 
 ## Writing Protocol — Chunking Required
@@ -131,7 +131,7 @@ and returns them; Neo invokes the reviewers and drives resolution.
 1. Produce the TC-XXX test specification document section by section, writing each
    section to file before proceeding to the next
 2. Produce the executable test files one component at a time, writing each file to
-   disk before proceeding to the next — all under `.agents-output/<project>/tests/`
+   disk before proceeding to the next — all under `.agent-output/<project>/tests/`
 3. Return `ARTIFACT READY` to Neo — artifact file paths (spec doc + test files), a
    3–5 bullet summary of coverage and key decisions, and any security-coverage
    concerns flagged for Smith. Do not return artifact content inline, and do not

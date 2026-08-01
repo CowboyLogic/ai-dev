@@ -33,7 +33,7 @@ When uncertain, say so explicitly — "I may have lost context. Can you confirm 
 
 ## Output Directory Convention
 
-All generated, temporary, and session-scoped output files **must** go in `.agents-output/` within the current working directory.
+All generated, temporary, and session-scoped output files **must** go in `.agent-output/` within the current working directory.
 
 This includes (but is not limited to):
 - Handoff documents (`handoff.md`)
@@ -43,16 +43,16 @@ This includes (but is not limited to):
 - Any file that is ephemeral by nature or not meant to be committed
 
 **Rules:**
-- Create `.agents-output/` if it does not exist — never ask the user to create it.
+- Create `.agent-output/` if it does not exist — never ask the user to create it.
 - Never place generated output in the project root, `docs/`, `src/`, or any other tracked directory unless the user explicitly asks.
-- Do not commit anything in `.agents-output/` — it is always treated as gitignored working space.
-- If a project does not have `.agents-output/` in its `.gitignore`, note it and offer to add the entry, but do not block on it.
+- Do not commit anything in `.agent-output/` — it is always treated as gitignored working space.
+- If a project does not have `.agent-output/` in its `.gitignore`, note it and offer to add the entry, but do not block on it.
 
 ---
 
 ## Session Start: Handoff Check
 
-At the start of every new session, check for `.agents-output/handoff.md` in the current working directory.
+At the start of every new session, check for `.agent-output/handoff.md` in the current working directory.
 
 **If the file exists:**
 1. Read it fully.

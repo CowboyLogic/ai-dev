@@ -226,7 +226,7 @@ The catch-all `"*"` therefore goes **first**, with specific grants after it:
 permission:
   edit:
     "*": deny                    # catch-all FIRST
-    ".agents-output/**": allow   # specific override AFTER
+    ".agent-output/**": allow   # specific override AFTER
 ```
 
 Written the other way round, `"*": deny` is the last match for every path and the
@@ -240,7 +240,7 @@ both shipped this inversion once; check the order whenever you touch a scoped gr
 
 ### Scoped `edit` does not port
 
-`tank` and `dozer` hold `edit` scoped to `.agents-output/**` in OpenCode — they write
+`tank` and `dozer` hold `edit` scoped to `.agent-output/**` in OpenCode — they write
 their own artifacts without touching the working tree. Neither Claude Code nor Copilot
 can express a path-scoped tool grant: both get an unscoped `Edit` / `"edit"`.
 

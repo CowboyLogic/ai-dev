@@ -127,7 +127,7 @@ two agents with genuine filesystem blast radius — Trinity writes implementatio
 code, Apoc executes commands and runs tests. The container is a targeted control
 applied precisely where the risk warrants it, not a blanket policy.
 
-Tank and Dozer also hold `edit`, but scoped to `.agents-output/**` — they write their
+Tank and Dozer also hold `edit`, but scoped to `.agent-output/**` — they write their
 own artifacts and never touch the working tree, so they carry no blast radius against
 the codebase. The scope is enforced by OpenCode's permission block; in Claude Code and
 Copilot, which cannot express a path-scoped grant, it holds by prompt discipline only.
@@ -287,21 +287,21 @@ Problem Statement
         ↓
 Oracle
   └── Produces: UX concept, user journey, edge cases
-  └── Writes artifact to: .agents-output/<project>/design/ux-concept.md
+  └── Writes artifact to: .agent-output/<project>/design/ux-concept.md
   └── Returns ARTIFACT READY to Neo: artifact path + 3–5 bullet summary + Smith flags
   └── NEO owns review: Smith (GPT) → Ghost → batched findings → Oracle revises → re-verify
   └── Neo advances: to The Architect
         ↓
 The Architect
   └── Produces: architecture decisions, structure, extension points
-  └── Writes artifact to: .agents-output/<project>/architecture/arch.md
+  └── Writes artifact to: .agent-output/<project>/architecture/arch.md
   └── Returns ARTIFACT READY to Neo: artifact path + 3–5 bullet summary + Smith flags
   └── NEO owns review: Smith (GPT) → Ghost → batched findings → Architect revises → re-verify
   └── Neo advances: to Morpheus
         ↓
 Morpheus
   └── Produces: specifications — numbered, testable, RFC 2119 language
-  └── Writes artifact to: .agents-output/<project>/spec/spec.md
+  └── Writes artifact to: .agent-output/<project>/spec/spec.md
   └── Returns ARTIFACT READY to Neo: artifact path + 3–5 bullet summary + Smith flags
   └── NEO owns review: Smith (GPT) → Ghost → batched findings → Morpheus revises → re-verify
   └── Neo advances: to Switch
@@ -310,7 +310,7 @@ Switch
   └── Produces: TC-XXX test specification document AND executable test files
   └── Framework must be specified in Neo's handoff — Switch asks if missing
   └── Writes output incrementally by section/component — no monolithic writes
-  └── Writes artifacts to: .agents-output/<project>/tests/
+  └── Writes artifacts to: .agent-output/<project>/tests/
   └── Returns ARTIFACT READY to Neo: artifact paths + 3–5 bullet summary + Smith flags
   └── NEO owns review: Smith (GPT) → Ghost → batched findings → Switch revises → re-verify
   └── Neo advances: to Trinity (container)
@@ -320,14 +320,14 @@ Trinity [container]
   └── Produces: feature code that makes Switch's tests pass — Trinity does not write tests
   └── Writes output incrementally by component — no monolithic writes
   └── Does not modify Switch's tests — fixes the implementation instead
-  └── Writes artifacts to: .agents-output/<project>/impl/
+  └── Writes artifacts to: .agent-output/<project>/impl/
   └── Returns ARTIFACT READY to Neo: artifact paths + 3–5 bullet summary + Smith flags
   └── NEO owns review: Smith-Claude (Claude — Trinity is GPT) → Ghost → batched findings → Trinity revises → re-verify
   └── Neo advances: to Apoc (container)
         ↓
 Apoc [container]
   └── Executes: runs tests, validates outcomes, reports results
-  └── Writes report to: .agents-output/<project>/test-results/results.md
+  └── Writes report to: .agent-output/<project>/test-results/results.md
   └── Returns ARTIFACT READY to Neo: artifact path + 3–5 bullet summary
   └── NEO owns review: Ghost → findings → Apoc revises → re-verify (no Smith for execution)
   └── Neo advances: to Dozer
@@ -336,20 +336,20 @@ Dozer [container — Contained mode | Assisted mode]
   └── Validates: deploys/launches artifact, executes operational validation
   └── Contained mode: autonomous execution in Linux container
   └── Assisted mode: produces validation plan → human executes → Dozer interprets
-  └── Writes artifacts to: .agents-output/<project>/diagnostics/
+  └── Writes artifacts to: .agent-output/<project>/diagnostics/
   └── Returns ARTIFACT READY to Neo: artifact path + 3–5 bullet summary
   └── NEO owns review: Ghost → findings → Dozer revises → re-verify (no Smith for diagnostics)
   └── Neo advances: to Niobe
         ↓
 Niobe
   └── Produces: documentation artifacts, memory files
-  └── Writes artifacts to: .agents-output/<project>/docs/
+  └── Writes artifacts to: .agent-output/<project>/docs/
   └── Returns ARTIFACT READY to Neo: artifact paths + 3–5 bullet summary
   └── NEO owns review: Ghost → findings → Niobe revises → re-verify (no Smith for docs)
   └── Neo closes: stage complete
 ```
 
-**All working agents write artifacts to `.agents-output/<project>/<stage>/` before
+**All working agents write artifacts to `.agent-output/<project>/<stage>/` before
 returning to Neo. Agents return a compact `ARTIFACT READY` — file path and summary,
 not artifact content inline — and do not invoke reviewers. Neo owns the review loop
 (security reviewer + Ghost), holds the Ghost verdict, and reads artifact files when
@@ -376,7 +376,7 @@ level deep from Neo.
         ↓
 Mouse  (express builder — not containerized; works the live tree)
   └── Implements the change directly; gets it green (build/tests/typecheck)
-  └── Returns the diff summary to Neo — the diff is the artifact, no .agents-output
+  └── Returns the diff summary to Neo — the diff is the artifact, no .agent-output
         ↓
 Neo → Ghost  (cross-family: Gemini vs Mouse's GPT)
   └── Reviews the diff against stated intent
@@ -414,7 +414,7 @@ invoking a reviewer) does not run reliably in OpenCode.
 ### How The Loop Works
 
 ```
-Working Agent produces artifact → writes to .agents-output/<project>/<stage>/
+Working Agent produces artifact → writes to .agent-output/<project>/<stage>/
         ↓  returns ARTIFACT READY (path + summary + Smith flags) to Neo
 Neo invokes the security reviewer (where applicable), one level deep:
    • Smith (GPT)         for a Claude-family artifact
@@ -575,7 +575,7 @@ Always include original intent. Always.
 ## Session State Protocol
 
 Neo maintains a session state file for every active project at:
-`.agents-output/<project-name>/session-state.md`
+`.agent-output/<project-name>/session-state.md`
 
 This is the continuity mechanism for mid-lifecycle session re-entry and the
 primary defense against context loss during compaction. Neo writes it
@@ -748,7 +748,7 @@ Artifact content stays in the file; Neo reads it when briefing a reviewer or the
 ARTIFACT READY
 AGENT:          [returning agent]
 STAGE:          [lifecycle stage]
-ARTIFACT PATH:  [.agents-output/<project>/<stage>/<artifact>.md]
+ARTIFACT PATH:  [.agent-output/<project>/<stage>/<artifact>.md]
 SUMMARY:        [3–5 bullets — key decisions, outcomes, or findings]
 SMITH FLAGS:    [security-sensitive areas to focus the security review on, or N/A]
 ```
@@ -781,7 +781,7 @@ Ghost (and the security reviewer where warranted) to confirm.
 REVISION COMPLETE
 AGENT:          [returning agent]
 STAGE:          [lifecycle stage]
-ARTIFACT PATH:  [.agents-output/<project>/<stage>/<artifact>.md]
+ARTIFACT PATH:  [.agent-output/<project>/<stage>/<artifact>.md]
 CHANGED:        [1–3 bullets — what was changed to resolve the findings]
 UNRESOLVED:     [any finding NOT resolved and why — escalated, or NONE]
 ```

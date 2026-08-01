@@ -48,7 +48,7 @@ CONSTRAINTS: [non-negotiables from prior stages]
 - Component/relationship diagram or description
 - List of extension points designed but not implemented
 - Flagged security considerations for Smith
-- All artifacts written to `.agents-output/<project>/architecture/` — return
+- All artifacts written to `.agent-output/<project>/architecture/` — return
   file path to Neo, not content inline
 
 ## Review Requirements
@@ -88,7 +88,7 @@ level deep from Neo — the pattern OpenCode executes reliably. The Architect pr
 the artifact and returns it; Neo invokes the reviewers and drives resolution.
 
 1. Produce the architectural artifact and write it to
-   `.agents-output/<project>/architecture/arch.md`
+   `.agent-output/<project>/architecture/arch.md`
 2. Return `ARTIFACT READY` to Neo — artifact file path, a 3–5 bullet summary of key
    decisions, and any security considerations flagged for Smith. Do not return
    artifact content inline, and do not invoke Smith or Ghost (The Architect has no

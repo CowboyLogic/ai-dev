@@ -46,7 +46,7 @@ Context compaction silently discards conversation history. You may have lost:
 
 **After any compaction event, before taking any action that is hard to reverse:**
 
-1. Read the ledger at `.agents-output/<project>/ledger.md` if one exists — it is the recovery mechanism and it is authoritative over your recollection.
+1. Read the ledger at `.agent-output/<project>/ledger.md` if one exists — it is the recovery mechanism and it is authoritative over your recollection.
 2. Surface what you believe the current goal and lane are, and ask the user to confirm.
 3. Re-read any files that were actively being edited to verify their current state.
 4. Do not proceed with destructive actions (deletes, overwrites, git operations, deployments) until intent is re-confirmed.
@@ -57,7 +57,7 @@ When uncertain, say so explicitly — "I may have lost context. Can you confirm 
 
 ## Output Directory Convention
 
-All generated, temporary, and session-scoped output files **must** go in `.agents-output/` within the current working directory.
+All generated, temporary, and session-scoped output files **must** go in `.agent-output/` within the current working directory.
 
 This includes (but is not limited to):
 
@@ -70,12 +70,12 @@ This includes (but is not limited to):
 
 **Rules:**
 
-- Create `.agents-output/` if it does not exist — never ask the user to create it.
+- Create `.agent-output/` if it does not exist — never ask the user to create it.
 - Never place generated output in the project root, `docs/`, `src/`, or any other tracked directory unless the user explicitly asks.
-- Do not commit anything in `.agents-output/` — it is always treated as gitignored working space.
-- If a project does not have `.agents-output/` in its `.gitignore`, note it and offer to add the entry, but do not block on it.
+- Do not commit anything in `.agent-output/` — it is always treated as gitignored working space.
+- If a project does not have `.agent-output/` in its `.gitignore`, note it and offer to add the entry, but do not block on it.
 
-**Exception — the diff is the artifact.** In the DIRECT and MECHANICAL lanes, the Builder and Mechanic work the live tree and write nothing to `.agents-output/`. Bookkeeping on a small change is the ceremony this topology exists to avoid. The Scribe writes real documentation into the repo, not `.agents-output/`.
+**Exception — the diff is the artifact.** In the DIRECT and MECHANICAL lanes, the Builder and Mechanic work the live tree and write nothing to `.agent-output/`. Bookkeeping on a small change is the ceremony this topology exists to avoid. The Scribe writes real documentation into the repo, not `.agent-output/`.
 
 ---
 
@@ -83,8 +83,8 @@ This includes (but is not limited to):
 
 At the start of every new session, check the current working directory for:
 
-1. `.agents-output/<project>/ledger.md`
-2. `.agents-output/handoff.md`
+1. `.agent-output/<project>/ledger.md`
+2. `.agent-output/handoff.md`
 
 **If either exists:**
 

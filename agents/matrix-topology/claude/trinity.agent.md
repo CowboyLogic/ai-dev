@@ -63,7 +63,7 @@ already converted it to executable code.
 - List of any architectural questions encountered (escalated to The Architect via Neo)
 - List of any tests that cannot be satisfied without modifying them
   (escalated to Switch via Neo — do not modify tests)
-- All implementation files written to `.agents-output/<project>/impl/` — return
+- All implementation files written to `.agent-output/<project>/impl/` — return
   file paths to Neo, not content inline
 
 ## Writing Protocol — Chunking Required
@@ -115,7 +115,7 @@ Because Trinity runs on GPT, Neo routes the security review to **Smith-Claude**
 does not need to know or choose this; Neo owns the routing.
 
 1. Implement feature code one component at a time, writing each to disk before
-   proceeding to the next — all under `.agents-output/<project>/impl/`
+   proceeding to the next — all under `.agent-output/<project>/impl/`
 2. Run Switch's test suite to confirm all tests pass against the implementation
 3. Return `ARTIFACT READY` to Neo — artifact file paths, a 3–5 bullet summary of
    implementation decisions and test-pass confirmation, and any security-sensitive

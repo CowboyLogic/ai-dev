@@ -114,7 +114,7 @@ is required at session start.
 
 ### Session State File
 
-Location: `.agents-output/<project-name>/session-state.md`
+Location: `.agent-output/<project-name>/session-state.md`
 
 **Neo writes this file at every stage close — not just at project end.**
 
@@ -128,8 +128,8 @@ IN-FLIGHT AGENTS:  [agents currently dispatched: name, task summary, dispatched-
                    in-security-review | in-verification | awaiting-revision | approved)
                    — NONE if no agents currently running]
 ARTIFACT REGISTRY: [stage → file path for every artifact produced, e.g.:
-                   Architecture: .agents-output/<project>/architecture/arch.md
-                   Spec:         .agents-output/<project>/spec/spec.md
+                   Architecture: .agent-output/<project>/architecture/arch.md
+                   Spec:         .agent-output/<project>/spec/spec.md
                    — NONE if no artifacts produced yet]
 GHOST VERDICT:     [last verdict — COMPLETE/INCOMPLETE, APPROVED/BLOCKED]
 OPEN ESCALATIONS:  [any unresolved escalations, their state, and what is needed
@@ -356,7 +356,7 @@ request needs?*
   agent's confident wrong answer.
 
 Worked example — *"research the current API and update the docs"*: Tank has web
-access and writes findings to `.agents-output/`; Niobe writes documentation but
+access and writes findings to `.agent-output/`; Niobe writes documentation but
 has no web access. No single agent covers it. The answer is Tank → Niobe, with
 Tank's findings path in Niobe's brief. It is **not** a general agent.
 
@@ -408,7 +408,7 @@ in the express lane is one level deep from Neo.
    The express lane does not proceed on an escalation condition.
 3. **Dispatch Mouse.** Mouse implements the change directly in the working tree and
    gets it green (build/tests/typecheck). Mouse returns a diff summary — not
-   `.agents-output/` artifacts. The diff is the artifact.
+   `.agent-output/` artifacts. The diff is the artifact.
 4. **Invoke Ghost.** When Mouse returns green, Neo invokes Ghost (Gemini —
    cross-family from Mouse's GPT) to review the diff against the stated intent. If
    the change touches a security-**adjacent** surface, Neo adds a `SECURITY FOCUS`
