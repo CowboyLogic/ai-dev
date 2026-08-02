@@ -5,7 +5,7 @@ description: >
   reads source, never produces artifacts, and never reviews. It routes. On a clean
   PASS in a lane that produced a diff, it also commits, pushes, and opens the pull
   request — it never merges.
-tools: ["read", "edit", "agent", "run"]
+tools: ["read", "edit", "agent", "execute"]
 model: Claude Sonnet 5 (copilot)
 agents:
   - adversary
@@ -630,7 +630,7 @@ That is the entire mechanism. It is deliberately almost free: no timing, no toke
 estimates, no separate artifact. The agent identity implies the model, and the model
 implies the tier, so a count per agent is enough to reconstruct what a lane cost.
 
-**Why it exists.** This topology asserts that a five-tier model ladder and a separate
+**Why it exists.** This topology asserts that a six-tier model ladder and a separate
 executing reviewer are worth paying for. That is an empirical claim and nothing in the
 system currently produces evidence for or against it. A MECHANICAL lane that runs a
 large reviewer to confirm a typo fix may be correct, or may be the most obviously

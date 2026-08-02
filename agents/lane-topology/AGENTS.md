@@ -51,7 +51,7 @@ a bug.
 | `investigator.md` | `investigator` | `gpt-5.6-sol` | GPT | read, grep, bash, edit→`.agent-output/**` | Read-only comprehension and root cause |
 | `builder.md` | `builder` | `gpt-5.6-terra` | GPT | read, edit, bash, grep | Implementation |
 | `mechanic.md` | `mechanic` | `claude-haiku-4.5` | Claude | read, edit, bash | Trivial mechanical edits |
-| `verifier.md` | `verifier` | `gemini-3.1-pro-preview` | Gemini | read, grep, bash | Cross-family review + independent execution |
+| `verifier.md` | `verifier` | `gemini-3.6-flash` | Gemini | read, grep, bash | Cross-family review + independent execution |
 | `adversary.md` | `adversary` | `claude-opus-5` | Claude | read, grep, bash | Security review |
 | `scribe.md` | `scribe` | `claude-sonnet-5` | Claude | read, edit, grep | Documentation |
 | `researcher.md` | `researcher` | `claude-haiku-4.5` | Claude | read, grep, webfetch, websearch, edit→`.agent-output/**` | External research |
@@ -244,7 +244,7 @@ Only the aliases this roster actually uses:
 |---|---|
 | `read` | `"read"` |
 | `edit` | `"edit"` |
-| `bash` | `"run"` |
+| `bash` | `"execute"` |
 | `grep` | `"search"` |
 | `webfetch` / `websearch` | `"web"` |
 | `task` | `"agent"` |
@@ -257,9 +257,9 @@ Only the aliases this roster actually uses:
 | `github-copilot/claude-sonnet-5` | `Claude Sonnet 5 (copilot)` |
 | `github-copilot/claude-opus-5` | `Claude Opus 5 (copilot)` |
 | `github-copilot/claude-haiku-4.5` | `Claude Haiku 4.5 (copilot)` |
-| `github-copilot/gpt-5.6-terra` | `GPT-5.6-Terra (copilot)` |
-| `github-copilot/gpt-5.6-sol` | `GPT-5.6-Sol (copilot)` |
-| `github-copilot/gemini-3.1-pro-preview` | `Gemini 3.1 Pro (copilot)` |
+| `github-copilot/gpt-5.6-terra` | `GPT-5.6 Terra (copilot)` |
+| `github-copilot/gpt-5.6-sol` | `GPT-5.6 Sol (copilot)` |
+| `github-copilot/gemini-3.6-flash` | `Gemini 3.6 Flash (copilot)` |
 
 ### Scoped `edit` does not port
 
@@ -277,10 +277,10 @@ either role — the Constraints section in the body is still the actual boundary
 commands (see its frontmatter and its Shipping section) — every command not on that
 list is denied by the permission engine itself. Copilot's `tools:` grant is a flat
 boolean list with no per-command scoping, so `copilot/conductor.agent.md` carries an
-unscoped `"run"`. The git-only boundary there is enforced by the body's Shipping
+unscoped `"execute"`. The git-only boundary there is enforced by the body's Shipping
 section and Constraints alone — the same category of gap already accepted for
 `investigator`/`researcher`'s `.agent-output/**` edit scope. Do not read the unscoped
-`"run"` in the Copilot Conductor as license to widen its job; Shipping is still the
+`"execute"` in the Copilot Conductor as license to widen its job; Shipping is still the
 actual boundary.
 
 The same asymmetry applies in the other direction for `builder`, `mechanic`,
@@ -288,11 +288,11 @@ The same asymmetry applies in the other direction for `builder`, `mechanic`,
 git-mutation command bare and wrapped, which raises the bar for invariant 9 without
 reaching enforcement — they are based on `"*": allow` and need to be, so a shell
 indirection still gets through (see Bash patterns match the whole command string).
-Their Copilot mirrors keep the unscoped `"run"` they always had, which was prompt-only
+Their Copilot mirrors keep the unscoped `"execute"` they always had, which was prompt-only
 before and remains so.
 
 `planner`, `scribe`, and `researcher` are the exception in both formats: they carry
-`bash: deny` in OpenCode and no `"run"` in Copilot, so for those three the boundary is
+`bash: deny` in OpenCode and no `"execute"` in Copilot, so for those three the boundary is
 real on both sides.
 
 ### Synchronization checklist
@@ -603,7 +603,7 @@ re-sent most often. It is a standing candidate for the skills refactor below.
 > The model pin is the one thing that genuinely cannot become a skill, and it is
 > load-bearing here: dynamically spawned agents inherit the session model, which
 > would collapse both the cross-family review control (invariants 3 and 4) and the
-> five-tier cost ladder into a single model.
+> six-tier cost ladder into a single model.
 
 ---
 

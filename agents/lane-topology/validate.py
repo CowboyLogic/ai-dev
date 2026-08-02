@@ -49,7 +49,7 @@ SANDBOXED_EDIT = {"planner", "investigator", "researcher"}
 TOOL_MAP = {
     "read": "read",
     "edit": "edit",
-    "bash": "run",
+    "bash": "execute",
     "grep": "search",
     "webfetch": "web",
     "websearch": "web",

@@ -3,7 +3,7 @@ description: >
   Trivial mechanical edits — typos, version bumps, config values, formatting,
   comments, log lines, mechanical renames. No logic changes, no control flow, no new
   dependencies. Fast and cheap by design. Stops the moment a change requires thought.
-tools: ["read", "edit", "run"]
+tools: ["read", "edit", "execute"]
 model: Claude Haiku 4.5 (copilot)
 user-invocable: false
 ---

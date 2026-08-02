@@ -3,7 +3,7 @@ description: >
   Implementation. Writes code in the working tree against a stated intent (DIRECT
   lane) or a Design Brief (BUILD lane), and gets it green. Does not design, does not
   decide architecture, does not review its own work. Up-ramps instead of guessing.
-tools: ["read", "edit", "run", "search"]
+tools: ["read", "edit", "execute", "search"]
 model: GPT-5.6 Terra (copilot)
 user-invocable: false
 ---

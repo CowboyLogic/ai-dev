@@ -127,7 +127,7 @@ fifteen questions isn't thorough — it's the Planner offloading its job onto yo
 
 ## The Crew
 
-Nine agents, five model tiers. Every role earns its slot on either a distinct
+Nine agents, six model tiers. Every role earns its slot on either a distinct
 cognitive job or a distinct cost tier.
 
 | Agent | Model | Job |
@@ -137,7 +137,7 @@ cognitive job or a distinct cost tier.
 | **Investigator** | `gpt-5.6-sol` | Read-only comprehension and root-cause work |
 | **Builder** | `gpt-5.6-terra` | Implementation |
 | **Mechanic** | `claude-haiku-4.5` | Trivial mechanical edits |
-| **Verifier** | `gemini-3.1-pro` | Cross-family review **+ runs the tests itself** |
+| **Verifier** | `gemini-3.6-flash` | Cross-family review **+ runs the tests itself** |
 | **Adversary** | `claude-opus-5` | Security review, dispatched by risk band |
 | **Scribe** | `claude-sonnet-5` | Documentation |
 | **Researcher** | `claude-haiku-4.5` | External research |
@@ -323,10 +323,10 @@ permits by design. Only the sideways flow into a reviewer has to cross a family 
 
 ## Model Sizing
 
-Five tiers, assigned by consequence and frequency — not by seniority.
+Six tiers, assigned by consequence and frequency — not by seniority.
 
 > [!NOTE]
-> **This ladder is an assertion, not a measurement.** The claim that five tiers and a
+> **This ladder is an assertion, not a measurement.** The claim that six tiers and a
 > separately-pinned executing reviewer are worth paying for is empirical, and until
 > recently nothing here produced evidence either way. The Conductor now reports a
 > dispatch count when a lane closes — `LANE COST: MECHANICAL — 2 dispatches (mechanic
@@ -341,7 +341,7 @@ Five tiers, assigned by consequence and frequency — not by seniority.
 | Heavy reasoning | `claude-opus-5` | Planner, Adversary | Expensive to be wrong, infrequent to run |
 | Balanced reasoning | `claude-sonnet-5` | Conductor, Scribe | Constant use, moderate cognitive load |
 | Agentic coding | `gpt-5.6-terra` | Builder | Long tool loops, iterate to green |
-| Long-context review | `gemini-3.1-pro` | Verifier | Holds intent + artifact + full output at once |
+| Cross-family review | `gemini-3.6-flash` | Verifier | Runs on every lane — the tier is chosen for frequency, the family for independence |
 | Long-context tracing | `gpt-5.6-sol` | Investigator | Same context demand, pinned off the Verifier's family |
 | Fast and cheap | `claude-haiku-4.5` | Mechanic, Researcher | High frequency, fully specified work |
 
