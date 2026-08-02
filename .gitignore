@@ -4,6 +4,8 @@
 bin/
 obj/
 
+__pycache__/
+
 # mkdocs site output
 site/
 

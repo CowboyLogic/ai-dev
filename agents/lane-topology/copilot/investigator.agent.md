@@ -131,7 +131,7 @@ Return an escalation instead of findings when:
 
 ## Model Selection Rationale
 
-**Current model:** GPT-5.6-Sol · **Family:** OpenAI / GPT
+**Current model:** GPT-5.6 Sol · **Family:** OpenAI / GPT
 
 Investigation is a long-context problem. The Investigator routinely holds dozens of
 files, full test output, and command history at once, and its quality depends

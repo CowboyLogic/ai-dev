@@ -198,6 +198,15 @@ boundary.** It does not stop `bash -c`, `env`, `xargs`, an alias, or a shell scr
 agent writes and then runs, and no pattern list will — the five agents based on
 `"*": allow` need arbitrary build and test commands, and that is the same grant.
 
+**The same shape appears inside the Conductor's own allowlist.** `git add` is granted
+broadly (`"git add *": allow`) because "an explicit file path" cannot be expressed as
+a glob, so every stage-everything form has to be denied by enumeration: `-A`,
+`--all`, `-u`, `--update`, any dot path (`.`, `./`, `../`), pathspec-magic `:/`, and
+the `--` separator form. That list was incomplete on the first pass — only `.`, `-A`,
+and `--all` were denied, so `git add ./` and `git add -u` both staged everything. A
+denylist over an allow base is best-effort by construction; `validate.py` now asserts
+every one of these resolves to `deny` so the list cannot silently regress again.
+
 The Conductor is the only agent whose bash grant is genuinely enforced, because it is
 the only one based on `"*": deny`. **State this honestly in any documentation of this
 topology**: the git boundary for the producing agents is prompt discipline plus a
