@@ -5,7 +5,7 @@ description: >
   specifications, and implementation — every time, without exception. Smith finds
   what should not be there.
 tools: ["read", "search"]
-model: GPT-5.6-Terra (copilot)
+model: GPT-5.6 Terra (copilot)
 user-invocable: false
 ---
 
@@ -70,7 +70,7 @@ cannot change its running model, and Neo cannot override a subagent's model at
 invocation (OpenCode limitation). The cross-family invariant is enforced by Neo's
 **routing**, not by self-switching:
 
-**Model:** GPT-5.6-Terra
+**Model:** GPT-5.6 Terra
 **Family:** OpenAI / GPT
 **Reviews:** Anthropic / Claude (and any Google / xAI) family agents — cross-family
 

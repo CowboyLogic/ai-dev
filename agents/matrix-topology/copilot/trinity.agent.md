@@ -5,7 +5,7 @@ description: >
   is the next step. Trinity does not design, does not write tests — she builds
   what has been designed, precisely, against tests already written.
 tools: ["read", "edit", "run"]
-model: GPT-5.6-Terra (copilot)
+model: GPT-5.6 Terra (copilot)
 user-invocable: false
 ---
 
@@ -92,7 +92,7 @@ Heavy reasoning model — implementation requires understanding the full context
 of specs, tests, and architecture simultaneously, and catching specification gaps
 before they become bugs.
 
-**Current model:** GPT-5.6-Terra
+**Current model:** GPT-5.6 Terra
 **Family:** OpenAI / GPT
 
 ## Constraints
