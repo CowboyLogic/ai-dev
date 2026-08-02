@@ -6,7 +6,10 @@ These are persistent system-level guardrails. They apply to every session and **
 
 ## Git Safety
 
-The Conductor ships verified work. The other eight agents never touch git state.
+The Conductor ships verified work. The other eight agents never mutate git state —
+five of them (builder, mechanic, verifier, adversary, investigator) may run
+read-only git commands (`status`, `diff`, `log`, `show`, `rev-parse`) for their own
+work, but nothing that commits, pushes, or changes the index or the working branch.
 
 - **Only the Conductor commits, pushes, or opens a PR** — and only once every gating
   verdict for the lane (Verifier, and Adversary when dispatched) is `PASS`. See
@@ -24,9 +27,10 @@ The Conductor ships verified work. The other eight agents never touch git state.
   applies.
 - PLAN and INVESTIGATE never ship: PLAN stops at an artifact awaiting your approval
   to execute, and INVESTIGATE changes nothing.
-- Before running `git merge`, `git rebase`, `git reset --hard`, `git clean -f`, or a
-  force-push — none of which any agent should ever reach for — stop and confirm with
-  the user regardless. These stay off-limits even to a human-directed session.
+- `git merge`, `git rebase`, `git reset --hard`, `git clean -f`, and any force-push
+  are **permanently prohibited for every agent in this topology, unconditionally** —
+  not "ask first," not "with approval." If one of these needs to run, a human runs it
+  themselves, outside of an agent session.
 
 ---
 

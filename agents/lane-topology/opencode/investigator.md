@@ -10,14 +10,14 @@ permission:
   grep: allow
   bash:
     "*": allow
-    "git commit*": deny
-    "git push*": deny
-    "git merge*": deny
-    "git rebase*": deny
-    "git reset*": deny
-    "git cherry-pick*": deny
-    "gh pr create*": deny
-    "gh pr merge*": deny
+    "gh *": deny
+    "git *": deny
+    "git status*": allow
+    "git diff*": allow
+    "git log*": allow
+    "git show*": allow
+    "git blame*": allow
+    "git rev-parse*": allow
   edit:
     "*": deny
     ".agent-output/**": allow
