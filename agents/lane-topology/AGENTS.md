@@ -45,7 +45,7 @@ a bug.
 
 | File | Identifier | Model | Family | Tools | Role |
 |---|---|---|---|---|---|
-| `conductor.md` | `conductor` | `claude-sonnet-5` | Claude | read, edit, task | Classify, dispatch, ledger, human interface |
+| `conductor.md` | `conductor` | `claude-sonnet-5` | Claude | read, edit, task, bash (scoped: git/gh) | Classify, dispatch, ledger, human interface, shipping |
 | `planner.md` | `planner` | `claude-opus-5` | Claude | read, edit, grep | Socratic planning, design, ADs, requirements |
 | `investigator.md` | `investigator` | `gemini-3.1-pro-preview` | Gemini | read, grep, bash, edit→`.agent-output/**` | Read-only comprehension and root cause |
 | `builder.md` | `builder` | `gpt-5.6-terra` | GPT | read, edit, bash, grep | Implementation |
@@ -187,6 +187,25 @@ preserved by prompt discipline in the body (both name their exact output path) b
 `copilot/investigator.agent.md` or `copilot/researcher.agent.md` as license to widen
 either role — the Constraints section in the body is still the actual boundary.
 
+### Scoped bash does not port
+
+`conductor` holds a `bash` grant in OpenCode scoped to an exact allowlist of git/gh
+commands (see its frontmatter and its Shipping section) — every command not on that
+list is denied by the permission engine itself. Copilot's `tools:` grant is a flat
+boolean list with no per-command scoping, so `copilot/conductor.agent.md` carries an
+unscoped `"run"`. The git-only boundary there is enforced by the body's Shipping
+section and Constraints alone — the same category of gap already accepted for
+`investigator`/`researcher`'s `.agent-output/**` edit scope. Do not read the unscoped
+`"run"` in the Copilot Conductor as license to widen its job; Shipping is still the
+actual boundary.
+
+The same asymmetry applies in the other direction for `builder`, `mechanic`,
+`verifier`, `adversary`, and `investigator`: their OpenCode `bash` blocks explicitly
+deny every git-mutation command, so invariant 9 is permission-enforced for them in
+OpenCode. Their Copilot mirrors keep the unscoped `"run"` they always had — that was
+already prompt-only before this capability existed and remains so. Nothing about
+their bodies changed, so no Copilot file needed touching for this.
+
 ### Synchronization checklist
 
 When modifying any agent body:
@@ -254,8 +273,15 @@ change and say what replaced it.
    judgment call, the system loses the property it is named for. Fix misclassification
    by tightening trigger wording, not by adding discretion.
 
-9. **No agent performs git state changes.** No commit, push, merge, rebase, or reset,
-   in any lane, by any agent.
+9. **Only the Conductor ships, and only the safe verbs.** Once every gating verdict
+   for a lane that produced a diff (MECHANICAL, DIRECT, BUILD) is `PASS`, the
+   Conductor may `git add`/`commit`/`push` and open a PR (`gh pr create`) — see
+   `conductor.md` → Shipping. **No agent, including the Conductor, ever merges,
+   rebases, resets, or force-pushes, in any lane, under any circumstance.** Merging a
+   PR stays a human action, always. The other eight agents have no git-mutation
+   permission at all: in OpenCode this is enforced by the permission engine itself
+   (every git-mutation command and `gh pr create`/`gh pr merge` is explicitly denied
+   in their `bash` block), not by prompt discipline alone.
 
 10. **Facts propagate; reasoning does not flow sideways.** Agents return a `FACTS:`
     block; the Conductor is the single writer that collects it and carries it into

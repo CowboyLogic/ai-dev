@@ -7,7 +7,16 @@ model: github-copilot/claude-haiku-4.5
 permission:
   read: allow
   edit: allow
-  bash: allow
+  bash:
+    "*": allow
+    "git commit*": deny
+    "git push*": deny
+    "git merge*": deny
+    "git rebase*": deny
+    "git reset*": deny
+    "git cherry-pick*": deny
+    "gh pr create*": deny
+    "gh pr merge*": deny
 mode: subagent
 hidden: false
 ---

@@ -8,7 +8,16 @@ model: github-copilot/gemini-3.1-pro-preview
 permission:
   read: allow
   grep: allow
-  bash: allow
+  bash:
+    "*": allow
+    "git commit*": deny
+    "git push*": deny
+    "git merge*": deny
+    "git rebase*": deny
+    "git reset*": deny
+    "git cherry-pick*": deny
+    "gh pr create*": deny
+    "gh pr merge*": deny
   edit:
     "*": deny
     ".agent-output/**": allow
