@@ -42,23 +42,21 @@ This repository emphasizes **examples over explanations**. We provide working co
 
 ### Agents
 
-**[Agents](agents/index.md)** — Specialized AI agent definitions for various development tasks:
+**[Agents](agents/index.md)** — Two multi-agent topologies for AI-assisted development:
 
-- API design and .NET development
-- Architecture and cloud platforms (GCP, AWS, Azure)
-- Database and performance optimization
-- Security and testing
-- Documentation and web research
+- **Lane Topology** — classifies each request into a lane and sizes process to match, from a mechanical edit to a full plan-build-verify lifecycle (OpenCode-native, GitHub Copilot mirror)
+- **Matrix Topology** — a fixed nine-stage lifecycle for production-quality development work (OpenCode-native, with Claude Code and GitHub Copilot mirrors)
 
 ### Skills
 
 **[Skills](skills/index.md)** — Domain-specific instruction sets teaching AI agents specialized capabilities:
 
-- Programming languages and frameworks (.NET, React, Node.js, PostgreSQL)
-- Documentation (Google Style Docs)
-- DevOps and cloud tools (Docker, Terraform, AWS, Azure, GCP)
-- Git workflows and Copilot customization
-- MkDocs site management
+- Agent creation for GitHub Copilot and OpenCode CLI
+- Client configuration for Claude Code, Copilot CLI, Gemini CLI, and OpenCode
+- Documentation (Google Style Docs, Markdownlint validation, MkDocs site management)
+- Docker image management
+- Git commit messages, Copilot instructions, and Copilot prompts
+- High-fidelity XML context scaffolding for agent orchestration
 
 ### Tools
 
@@ -117,18 +115,19 @@ ai-dev/
 │   ├── index.md                     # Home page
 │   ├── about.md                     # This page
 │   ├── contributing.md              # Contributing guidelines
-│   ├── agents/                      # Agent configuration documentation
-│   ├── skills/                      # Domain-specific instruction sets
+│   ├── agents/                      # Agent catalog pages
+│   ├── skills/                      # Skills catalog page
 │   ├── tools/                       # Tool configuration guides
 │   └── mcp/                         # MCP server documentation
+├── agents/                           # Installable agent definitions
+│   ├── lane-topology/               # Lane Topology multi-agent system
+│   └── matrix-topology/             # Matrix Topology multi-agent system
+├── skills/                           # Installable skill definitions
+│   └── <skill-name>/                # Each skill: SKILL.md + README + references/
+├── harness/                           # Client harness configs (OpenCode symlink targets)
 ├── AGENTS.md                         # Repository-wide agent guidelines
 ├── README.md                         # Repository overview
 ├── mkdocs.yml                        # MkDocs configuration
-├── agents/                           # Agent configuration files
-├── tools/                            # Tool-specific configurations
-│   ├── opencode/                    # OpenCode CLI configurations
-│   └── vscode/                      # VS Code integration guides
-├── mcp/                              # MCP server examples
 └── site/                             # Generated documentation (build output)
 ```
 
@@ -176,7 +175,7 @@ Contributions welcome! See our **[Contributing Guide](contributing.md)** and Git
 
 ## License
 
-This repository is provided as-is for community use. Check the repository LICENSE file for specific terms.
+This repository is provided as-is for community use. No LICENSE file is currently published at the repository root; contact the maintainer with licensing questions.
 
 ## Acknowledgments
 

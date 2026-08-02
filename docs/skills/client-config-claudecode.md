@@ -34,6 +34,12 @@ requires, rather than injecting the full schema on every request.
 
 **Scope precedence (highest → lowest):** managed → local project → project → user
 
+The schema reference also covers global Claude Code state in `~/.claude.json`; the
+skill's editing workflow is centered on `settings.json` files.
+
+**Subagent files:** User subagents live in `~/.claude/agents/`; project subagents
+live in `.claude/agents/`.
+
 ---
 
 ## Install

@@ -29,8 +29,7 @@ opencode/
 │   │   ├── security.md        # Security audits
 │   │   ├── testing.md         # Test development
 │   │   └── uxui.md            # UI/UX design
-│   └── README.md              # Modular config documentation
-├── README.md                  # User guide
+│   └── prompts/               # Reusable prompt templates
 └── AGENTS.md                  # This file
 ```
 
@@ -164,13 +163,11 @@ Pre-defined commands that leverage the tiered agent approach:
 | Command | Agent | Purpose |
 |---------|-------|---------|
 | `quick-fix` | `quick` | Fast, simple fixes |
-| `analyze` | `reasoning` | Deep architecture/pattern analysis |
 | `build` | (default) | Build and test project |
 | `review` | `reviewer` | Code quality/security review (read-only) |
 | `document` | `docs` | Create/update documentation |
 | `test` | (default) | Run and fix tests |
 | `deploy` | (default) | Deployment tasks |
-| `refactor` | `reasoning` | Advanced code refactoring |
 
 **Command Template Variables**: Use `$ARGUMENTS` in templates to reference user input.
 
@@ -306,7 +303,7 @@ The API agent is designed to assist with API design, documentation, and integrat
 | Agent | Focus | Model | Temp | Access |
 |-------|-------|-------|------|--------|
 | `api` | REST/GraphQL API design, OpenAPI | github-copilot/grok-code-fast-1 | 0.2 | Full |
-| `architect` | System design, architecture | Qwen2.5-Coder:32b | 0.2 | Read-only |
+| `architect` | System design, architecture | github-copilot/claude-sonnet-4.5 | 0.2 | Read-only |
 | `cloud` | AWS/Azure/GCP, IaC | github-copilot/grok-code-fast-1 | 0.1 | Full |
 | `data` | Data analysis, ETL | GPT-5-mini | 0.2 | Full |
 | `database` | Schema design, query optimization | github-copilot/grok-code-fast-1 | 0.1 | Full |
@@ -360,7 +357,7 @@ opencode @build "Implement user authentication API"
 3. Add documentation about purpose and usage
 4. Agent is automatically available as `@yourname`
 
-See `../agent-subagent-config/README.md` for comprehensive documentation.
+See the modular agent configuration files in `agent-subagent-config/agent/` for each specialized agent.
 
 ## Traditional Configuration vs Modular Configuration
 
@@ -470,7 +467,7 @@ Changes to files in `docs/tools/opencode/agent-subagent-config/`:
 2. **`opencode/standard-config/AGENTS.md`** - Update sample configuration explanations
 3. **`docs/tools/opencode/samples.md`** - Comprehensive sample documentation
 4. **`docs/mcp/overview.md`** - MCP-specific documentation
-5. **`agent-subagent-config/README.md`** - Update if modular config changes
+5. **`agent-subagent-config/agent/*.md`** - Update if modular agents change
 
 ### Common Update Scenarios
 

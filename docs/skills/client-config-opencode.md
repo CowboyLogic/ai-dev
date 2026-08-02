@@ -29,9 +29,14 @@ material only for the config area the task requires.
 | `.opencode/agents/<name>.md` | Project | Project-scoped custom agents |
 | `~/.config/opencode/commands/<name>.md` | Global | Custom slash command definitions |
 | `.opencode/commands/<name>.md` | Project | Project-scoped custom commands |
+| `~/.config/opencode/skills/` | Global | Skill directories referenced by `skills.paths` |
+| `.opencode/skills/` | Project | Project-scoped skill directories |
 | `~/.local/share/opencode/auth.json` | Global | OAuth credentials (CLI-managed, not hand-edited) |
 
 **Merge behavior:** all config files are merged — later configs only override conflicting keys.
+
+**Environment overrides:** `OPENCODE_CONFIG` selects a custom config path, and
+`OPENCODE_CONFIG_CONTENT` supplies inline JSON configuration.
 
 ---
 

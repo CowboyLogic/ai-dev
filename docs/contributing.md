@@ -16,9 +16,9 @@ Contributions of all kinds are welcome — agent configurations, MCP integration
 
 | Type | Where to Put It |
 | ---- | --------------- |
-| MCP server configs | `mcp/sample-configs/` |
-| Agent definitions | `docs/agents/` |
-| Skill instructions | `docs/skills/<skill-name>/` |
+| MCP server configs | `docs/mcp/sample-configs/` |
+| Agent definitions | `agents/` |
+| Skill instructions | `skills/<skill-name>/` |
 | Tool documentation | `docs/tools/<tool-name>/` |
 | General docs | `docs/` |
 
