@@ -32,8 +32,14 @@ permission:
     "git add *": allow
     "git add -A*": deny
     "git add --all*": deny
-    "git add .": deny
     "git add *-A*": deny
+    "git add .*": deny
+    "git add :/*": deny
+    "git add -u*": deny
+    "git add --update*": deny
+    "git add *-u": deny
+    "git add * -u *": deny
+    "git add -- .*": deny
     "git commit *": allow
     "git commit *--amend*": deny
     "git commit *--no-verify*": deny

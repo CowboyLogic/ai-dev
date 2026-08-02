@@ -134,7 +134,7 @@ cycle. Two cycles without convergence escalates to the human.
 
 ## Model Selection Rationale
 
-**Current model:** GPT-5.6-Terra · **Family:** OpenAI / GPT
+**Current model:** GPT-5.6 Terra · **Family:** OpenAI / GPT
 
 A strong agentic coding model — the Builder runs long tool loops, edits across files,
 reads test output, and iterates to green, which is exactly what this tier is built

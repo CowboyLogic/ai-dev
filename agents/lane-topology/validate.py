@@ -105,7 +105,13 @@ def granted(perm: dict, key: str) -> bool:
         return True  # absent == granted
     v = perm[key]
     if isinstance(v, dict):
-        return any(a == "allow" for a in v.values())
+        # A pattern map with no catch-all still defaults to allow for anything it
+        # does not match, so a deny-only block grants everything it forgot to name.
+        # Treating it as "not granted" would be the default-allow trap a second time,
+        # this time in the checker meant to catch it.
+        if "*" not in v:
+            return True
+        return v["*"] == "allow" or any(a == "allow" for p, a in v.items() if p != "*")
     return v == "allow"
 
 
@@ -177,7 +183,17 @@ def main() -> int:
         ("git commit -m msg", "allow"),
         ("git commit --amend -m msg", "deny"),  # rewrites history
         ("git add src/a.py", "allow"),
+        # Every stage-everything form. `git add .` alone is not enough — `./`, `:/`,
+        # `-u` and the `--` separator all stage broadly and every one of them fell
+        # through the allow base until it was checked here.
         ("git add -A", "deny"),                 # contradicts "exactly the CHANGED list"
+        ("git add --all", "deny"),
+        ("git add .", "deny"),
+        ("git add ./", "deny"),
+        ("git add :/", "deny"),
+        ("git add -u", "deny"),
+        ("git add --update", "deny"),
+        ("git add -- .", "deny"),
         ("git push origin fix/x", "allow"),
         ("git revert --no-edit abc123", "allow"),
         ("gh pr create --title x", "allow"),
@@ -190,6 +206,23 @@ def main() -> int:
         check("model" in fm, "no model pin", name)
         if fm.get("mode") == "subagent":
             check("hidden" in fm, "subagent missing 'hidden'", name)
+
+    # 4b. The Copilot frontmatter label and the body's "Current model:" agree.
+    #     These drifted apart on the two GPT agents — spaces in the header, hyphens
+    #     in the rationale — which is invisible until someone scans one and trusts it.
+    for name in agents:
+        mirror = COPILOT / f"{name}.agent.md"
+        if not mirror.exists():
+            continue
+        cfm, body = frontmatter(mirror)
+        label = str(cfm.get("model", "")).replace(" (copilot)", "").strip()
+        m = re.search(r"^\*\*(?:Current model|Model):\*\*\s*([^·\n]+)", body, re.M)
+        if m and label:
+            check(
+                m.group(1).strip() == label,
+                f"{name}: frontmatter model '{label}'",
+                f"body says '{m.group(1).strip()}'",
+            )
 
     # 5. Cross-family review (invariants 3 and 4). The Investigator counts as a
     #    producer: its MAP enters the Verifier's brief and the Verifier is told not to
