@@ -8,6 +8,10 @@ permission:
   read: allow
   edit: allow
   grep: allow
+  bash: deny
+  task: deny
+  webfetch: deny
+  websearch: deny
 mode: subagent
 hidden: false
 ---

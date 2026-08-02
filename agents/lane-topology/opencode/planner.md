@@ -7,8 +7,14 @@ description: >
 model: github-copilot/claude-opus-5
 permission:
   read: allow
-  edit: allow
   grep: allow
+  edit:
+    "*": deny
+    ".agent-output/**": allow
+  bash: deny
+  task: deny
+  webfetch: deny
+  websearch: deny
 mode: subagent
 hidden: false
 ---

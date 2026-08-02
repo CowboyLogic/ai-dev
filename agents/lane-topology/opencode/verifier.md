@@ -12,11 +12,16 @@ permission:
     "*": allow
     "gh *": deny
     "git *": deny
+    "* gh *": deny
+    "* git *": deny
     "git status*": allow
     "git diff*": allow
     "git log*": allow
     "git show*": allow
     "git rev-parse*": allow
+  task: deny
+  webfetch: deny
+  websearch: deny
 mode: subagent
 hidden: false
 ---
@@ -88,11 +93,14 @@ the producer chose it is not evidence that it is correct.
    failure — not just the happy path the tests cover.
 5. For a plan or design brief: check that every stated decision is actually resolved,
    that requirements are testable, and that the steps produce the stated intent.
-6. If `SECURITY FOCUS` is set, run a targeted pass on the named surface: input
+6. For documentation: check it against the diff, not against the plan. The failure
+   mode is documenting what was designed rather than what shipped — every claim must
+   be true of the code as merged, and anything built but undocumented is a `GAP`.
+7. If `SECURITY FOCUS` is set, run a targeted pass on the named surface: input
    validation, injection safety, path handling, and what crosses a trust boundary.
-7. If `ADVERSARY` findings are attached, sanity-check them for completeness. The
+8. If `ADVERSARY` findings are attached, sanity-check them for completeness. The
    security reviewer is not exempt from review.
-8. Emit the verdict block.
+9. Emit the verdict block.
 
 ## Outputs
 
@@ -163,9 +171,15 @@ is done.
 **Current model:** Gemini 3.1 Pro · **Family:** Google / Gemini
 
 Cross-family independence is the control this agent provides, and Gemini is
-cross-family from every producer in the topology without exception — the Planner and
-Scribe (Claude), the Builder (GPT), and the Mechanic (Claude). One static pin, no
-routing table, no model switching, no gaps to track.
+cross-family from every producer in the topology without exception — the Planner,
+Scribe, and Mechanic (Claude), and the Builder and Investigator (GPT). One static pin,
+no routing table, no model switching, no gaps to track.
+
+The Investigator counts here even though it produces no reviewed artifact, because its
+`MAP` enters this brief and this agent is told to start from it rather than rebuild
+it. A map is a model of the codebase; inheriting one from the same family, under
+instructions not to re-derive it, would void the independence this pin exists to
+provide. It is pinned to GPT for that reason.
 
 Models within a family share training approaches and inherent tendencies. The flaw a
 Claude agent missed is disproportionately the flaw a Claude reviewer also misses — not

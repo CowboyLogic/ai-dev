@@ -11,11 +11,16 @@ permission:
     "*": allow
     "gh *": deny
     "git *": deny
+    "* gh *": deny
+    "* git *": deny
     "git status*": allow
     "git diff*": allow
     "git log*": allow
     "git show*": allow
     "git rev-parse*": allow
+  task: deny
+  webfetch: deny
+  websearch: deny
 mode: subagent
 hidden: false
 ---

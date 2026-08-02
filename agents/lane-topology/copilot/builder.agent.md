@@ -4,7 +4,7 @@ description: >
   lane) or a Design Brief (BUILD lane), and gets it green. Does not design, does not
   decide architecture, does not review its own work. Up-ramps instead of guessing.
 tools: ["read", "edit", "run", "search"]
-model: GPT-5.6-Terra (copilot)
+model: GPT-5.6 Terra (copilot)
 user-invocable: false
 ---
 

@@ -34,23 +34,43 @@ use:
 
 ## The Core Idea: Lanes
 
-Every request is classified into one of five lanes by a **table lookup, not a
+Every request is classified into one of six lanes by a **table lookup, not a
 judgment call.** First match wins. This is what lets the system know the difference
 between a task you want done and a task you want thought about — without you having
 to say which.
 
 | Lane | Trigger | Agents | Feels like |
 |---|---|---|---|
+| **REVERT** | Undo something already committed or shipped | Conductor + Verifier | Seconds — a revert commit on a branch |
 | **MECHANICAL** | Textual/config change, no logic, no new dependency | Mechanic → Verifier | Seconds |
 | **INVESTIGATE** | A question, or a bug with unknown cause | Investigator | Read-only, ends in an answer |
 | **DIRECT** | Scope understood, approach obvious, bounded blast radius | Builder → Verifier | Minutes |
 | **PLAN** | Goal known, approach isn't; a tradeoff; a contract change | Planner (Socratic) → Verifier | One question round, then a plan |
-| **BUILD** | Net-new with no existing shape to follow | Planner → Builder → Verifier → Scribe | The full lifecycle |
+| **BUILD** | Net-new with no existing shape to follow | Planner → Builder → Verifier → Scribe → Verifier | The full lifecycle |
 
-MECHANICAL, DIRECT, and BUILD also commit, push, and open the PR once their verdict is
-`PASS` — see [Shipping](#shipping--autonomous-but-merging-stays-yours). PLAN and
-INVESTIGATE never do; one stops at an artifact awaiting your approval, the other
-changes nothing.
+REVERT, MECHANICAL, DIRECT, and BUILD all commit, push, and open the PR once their
+verdict is `PASS` — see [Shipping](#shipping--autonomous-but-merging-stays-yours).
+PLAN and INVESTIGATE never do; one stops at an artifact awaiting your approval, the
+other changes nothing.
+
+### The way back
+
+Everything else in this topology moves forward. It commits, pushes, and opens PRs on
+its own authority — so it needs a fast way back that does not require you to reason
+about git while something is broken.
+
+**REVERT is that path, and it is `git revert` only.** A revert is a new commit that
+undoes an old one: history is never rewritten, nothing is lost, and the revert can
+itself be reverted. `reset`, `rebase`, force-push, and `checkout -- <path>` stay denied
+in this lane exactly as they are everywhere else. The lane does not relax the hard
+line — it exists so nobody reaches past it under pressure.
+
+The Conductor confirms the target commit back to you before touching anything,
+reverts on a branch, and **still dispatches the Verifier** — a clean revert can break
+the build when later work depended on what it removed. If the revert conflicts, it
+aborts and hands you the conflicting paths rather than resolving them itself.
+
+`/revert` runs it directly when you already know what you want undone.
 
 ### The tie-break rule
 
@@ -114,7 +134,7 @@ cognitive job or a distinct cost tier.
 |---|---|---|
 | **Conductor** | `claude-sonnet-5` | Classifies, dispatches, holds the ledger, talks to you. Nothing else. |
 | **Planner** | `claude-opus-5` | Socratic planning → design → Architecture Decisions → numbered requirements |
-| **Investigator** | `gemini-3.1-pro` | Read-only comprehension and root-cause work |
+| **Investigator** | `gpt-5.6-sol` | Read-only comprehension and root-cause work |
 | **Builder** | `gpt-5.6-terra` | Implementation |
 | **Mechanic** | `claude-haiku-4.5` | Trivial mechanical edits |
 | **Verifier** | `gemini-3.1-pro` | Cross-family review **+ runs the tests itself** |
@@ -208,14 +228,31 @@ either. By the time a commit happens, `HEAD` cannot be a protected branch.
 topology's default — the Conductor checks for it before shipping anything and stops,
 verdict in hand, if it applies.
 
-**The boundary is technically enforced, not just written down.** OpenCode's `bash`
-permission supports per-command patterns, so the eight agents that are not the
-Conductor have every git-mutation command (`commit`, `push`, `merge`, `rebase`,
-`reset`, `cherry-pick`) and `gh pr create`/`gh pr merge` explicitly denied at the
-permission layer. The Conductor's own `bash` grant is the inverse: everything denied
-by default, with only the specific git/gh commands shipping requires allowed back in.
-Neither is achievable in the Copilot format, which grants tools as an unscoped
-boolean — see `AGENTS.md` → *Scoped bash does not port* for that tradeoff.
+**How far the boundary is technically enforced — stated honestly, because the honest
+version is less impressive than the marketing version.**
+
+The Conductor's `bash` grant is default-deny: everything blocked, with only the
+specific git/gh verbs shipping requires allowed back in, and `merge`, `rebase`,
+`reset`, `cherry-pick`, `gh pr merge`, force-push, and path-form `git checkout`
+denied outright. That one is genuinely enforced.
+
+Of the other eight, three (`planner`, `scribe`, `researcher`) carry `bash: deny` and
+run no shell at all — also genuinely enforced. The remaining five need open-ended
+shell to run builds and test suites, so their grant is default-*allow* with git and
+`gh` denied bare and wrapped. That stops the obvious case. It does not stop a shell
+indirection, and no pattern list would.
+
+So: the git boundary is a hard wall for four of the nine agents and a speed bump for
+five. The load-bearing control is not the permission layer — it is that only the
+Conductor is ever *asked* to ship, and only after a `PASS`.
+
+**Two traps worth knowing if you adapt this.** OpenCode defaults *unlisted*
+permission keys to allow, so a capability you never mentioned is a capability you
+granted; and `bash` patterns match the full command string, so a deny anchored at the
+start is evaded by any prefix. Both are written up in `AGENTS.md` → *Default-Allow Is
+The Trap*. The Copilot format has neither problem — its `tools:` list is a strict
+allowlist — but it cannot express per-command or per-path scoping at all. See
+`AGENTS.md` → *Scoped bash does not port*.
 
 ---
 
@@ -259,6 +296,25 @@ is adversarial posture and domain knowledge more than family independence. If th
 proves wrong in practice, the fix is additive — add a GPT-pinned second Adversary and
 route by producer family. Nothing else changes.
 
+- **Investigator is GPT** — for a subtler reason than the other two, and it is worth
+  spelling out because it is the kind of gap that hides well.
+
+**The map channel.** The Investigator produces no reviewed artifact, so on a naive
+reading its family does not matter. But its `file:line` map is carried forward into
+the Verifier's brief, and the Verifier is told to start from that map rather than
+rebuild it — that is what keeps the same code from being read twice at full cost.
+
+So while the Investigator was *also* Gemini, the independent reviewer began every
+review from a same-family model of the codebase, under instructions not to re-derive
+it. If the Investigator misread the architecture, the Verifier inherited the misreading
+and was told not to check. The Facts Protocol firewalls a producer's **reasoning** from
+that artifact's reviewer for exactly this reason; the map was a second channel doing
+quietly similar work, and it was not firewalled.
+
+Pinning the Investigator to GPT closes it. Sharing a family with the Builder is fine —
+the map flows *forward* to the Builder, producer to producer, which the Facts Protocol
+permits by design. Only the sideways flow into a reviewer has to cross a family line.
+
 > **If the roster ever gains a Gemini-family producer,** the Verifier's guarantee
 > breaks for it. Fix that by pinning the producer to another family, not by relaxing
 > the requirement.
@@ -269,12 +325,24 @@ route by producer family. Nothing else changes.
 
 Five tiers, assigned by consequence and frequency — not by seniority.
 
+> [!NOTE]
+> **This ladder is an assertion, not a measurement.** The claim that five tiers and a
+> separately-pinned executing reviewer are worth paying for is empirical, and until
+> recently nothing here produced evidence either way. The Conductor now reports a
+> dispatch count when a lane closes — `LANE COST: MECHANICAL — 2 dispatches (mechanic
+> ×1, verifier ×1)` — including retries and fix cycles. Agent identity implies the
+> model, so a count per agent is enough to reconstruct what a lane cost. Watch it for
+> a while before changing any pin; a MECHANICAL lane that runs a large reviewer to
+> confirm a typo may be right, or may be the most obviously wasteful path in the
+> design, and the count is what turns that into a question with an answer.
+
 | Tier | Model | Who | Why |
 |---|---|---|---|
 | Heavy reasoning | `claude-opus-5` | Planner, Adversary | Expensive to be wrong, infrequent to run |
 | Balanced reasoning | `claude-sonnet-5` | Conductor, Scribe | Constant use, moderate cognitive load |
 | Agentic coding | `gpt-5.6-terra` | Builder | Long tool loops, iterate to green |
-| Long-context review | `gemini-3.1-pro` | Verifier, Investigator | Holds intent + artifact + full output at once |
+| Long-context review | `gemini-3.1-pro` | Verifier | Holds intent + artifact + full output at once |
+| Long-context tracing | `gpt-5.6-sol` | Investigator | Same context demand, pinned off the Verifier's family |
 | Fast and cheap | `claude-haiku-4.5` | Mechanic, Researcher | High frequency, fully specified work |
 
 Two of these are worth calling out because they invert the obvious choice:
@@ -310,9 +378,10 @@ Concretely, what makes this survive a long session:
 7. **Explicit failure handling** — an agent that errors or returns off-format twice
    stops the lane and surfaces to you by name. The Conductor never quietly does the
    work itself to cover a gap
-8. **A permission-enforced git boundary** — merge, rebase, reset, and force-push are
-   denied at the OpenCode permission layer for every agent, not just written into a
-   prompt. Only the Conductor can commit, push, or open a PR, and only after `PASS`
+8. **A layered git boundary** — merge, rebase, reset, and force-push are denied at the
+   OpenCode permission layer for every agent, absolutely for the four whose shell is
+   default-deny and as a strong speed bump for the five that need open-ended build
+   commands. Only the Conductor can commit, push, or open a PR, and only after `PASS`
 
 Point 7 matters more than it looks. Filling a failed agent's gap with the
 orchestrator's own output is exactly how a routing agent turns back into the
@@ -446,11 +515,18 @@ Two checks, both under a minute, and worth doing every time you re-point the sym
    identifiers. If it describes generic capabilities instead, you are talking to the
    built-in agent, not the Conductor.
 
-The Conductor also self-checks on its first dispatch of every session and stops with
-a configuration error if a dispatch resolves to a general-purpose agent. That is
-deliberate: a general agent returning plausible output is the most expensive failure
-mode here, because the system looks like it is working while lane discipline, model
-pinning, and cross-family review are all silently absent.
+The Conductor refuses to dispatch a general-purpose agent at all — unconditionally,
+not as a diagnostic. That distinction was learned the hard way. The original rule said
+to treat a `general` dispatch as a sign the roster had failed to load, which meant it
+never fired in the case that actually happened: the roster loaded fine, and the
+Conductor reached for `general` because a two-concern request looked like it had no
+legal move. A rule phrased as a diagnostic for a config problem does not fire when the
+config is healthy.
+
+It matters because a general agent returning plausible output is the most expensive
+failure mode here: the system looks like it is working while lane discipline, model
+pinning, and cross-family review are all silently absent. If a request genuinely spans
+two agents, the answer is to decompose it into a sequence — never to widen the agent.
 
 The harness lives in `harness/opencode-lane/`, kept separate from `harness/opencode/`
 so the Matrix setup is untouched — re-point the symlinks to switch between the two.
@@ -466,6 +542,7 @@ already know the lane:
 | `/plan <request>` | PLAN — Socratic |
 | `/find <question>` | INVESTIGATE — read-only |
 | `/build <request>` | BUILD — full lifecycle |
+| `/revert <target>` | REVERT — undo a commit, verified, on a branch |
 | `/handoff` | Write a session handoff document |
 
 Just talking to it works too. The commands exist for when you want to skip

@@ -12,6 +12,8 @@ permission:
   edit:
     "*": deny
     ".agent-output/**": allow
+  bash: deny
+  task: deny
 mode: subagent
 hidden: false
 ---
