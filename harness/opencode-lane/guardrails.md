@@ -10,14 +10,17 @@ The Conductor ships verified work. The other eight agents never mutate git state
 five of them (builder, mechanic, verifier, adversary, investigator) may run
 read-only git commands (`status`, `diff`, `log`, `show`, `rev-parse`) for their own
 work, but nothing that commits, pushes, or changes the index or the working branch.
+The remaining three (planner, scribe, researcher) run no shell at all.
 
 - **Only the Conductor commits, pushes, or opens a PR** — and only once every gating
   verdict for the lane (Verifier, and Adversary when dispatched) is `PASS`. See
   `conductor.md` → Shipping for the exact procedure.
-- **No agent, including the Conductor, ever merges, rebases, resets, or
-  force-pushes.** This is enforced by OpenCode's `bash` permission patterns, not
-  prompt discipline alone — every bash-holding agent has these commands explicitly
-  denied. Merging a PR stays a human action, always.
+- **No agent, including the Conductor, ever merges, rebases, resets, force-pushes, or
+  runs `git checkout` on a path.** For the Conductor and for planner/scribe/researcher
+  this is enforced by OpenCode's permission engine. For the five build-and-test agents
+  the denies are real but not airtight — their `bash` is necessarily open-ended, so
+  treat this rule as binding on your behavior and not as something the harness will
+  catch for you. Merging a PR stays a human action, always.
 - **Never ships from `main` or `master`.** The Conductor checks the current branch
   before the first edit in any lane that will ship, and creates a feature branch
   first if it is on either.
@@ -27,19 +30,26 @@ work, but nothing that commits, pushes, or changes the index or the working bran
   applies.
 - PLAN and INVESTIGATE never ship: PLAN stops at an artifact awaiting your approval
   to execute, and INVESTIGATE changes nothing.
-- `git merge`, `git rebase`, `git reset --hard`, `git clean -f`, and any force-push
-  are **permanently prohibited for every agent in this topology, unconditionally** —
-  not "ask first," not "with approval." If one of these needs to run, a human runs it
-  themselves, outside of an agent session.
+- `git merge`, `git rebase`, `git reset --hard`, `git clean -f`, `git checkout -- <path>`,
+  and any force-push are **permanently prohibited for every agent in this topology,
+  unconditionally** — not "ask first," not "with approval." If one of these needs to
+  run, a human runs it themselves, outside of an agent session.
+- **Undoing landed work is `git revert`, never a reset.** A revert is a new commit: it
+  rewrites nothing, loses nothing, and can itself be reverted. The Conductor confirms
+  the target SHA with the human first, reverts on a branch, and still dispatches the
+  Verifier — a clean revert can break the build if later work depended on what it
+  removed. A conflicting revert is aborted and handed back, never resolved by hand.
+  See `conductor.md` -> REVERT.
 
 ---
 
 ## Lane Discipline
 
 - **Every request gets classified before anything is dispatched.** The classifier table in `conductor.md` is a lookup, not a judgment call. Run it.
-- **Only the Conductor dispatches agents.** No subagent has `task` permission. If a working agent believes another agent is needed, it returns an up-ramp or escalation notice — it does not attempt the other agent's work itself.
+- **Only the Conductor dispatches agents.** Every subagent carries an explicit `task: deny`. If a working agent believes another agent is needed, it returns an up-ramp or escalation notice — it does not attempt the other agent's work itself.
 - **The Conductor does not do the work.** It does not read source, grep, run tests, write code, or review artifacts. If the Conductor finds itself doing any of those, that is a dispatch it skipped.
 - **A missing or malformed verdict is never a pass.** Silence is not approval.
+- **Report the dispatch count when a lane closes.** One line: `LANE COST: <lane> — N dispatches (agent x1, ...)`. Count retries and fix cycles; a number that excludes failure is worse than no number. This is the only cost signal the system produces — do not act on it unilaterally, just report it.
 - **Two cycles, then a human.** Two fix cycles on one artifact, or two Socratic rounds on one plan. After that it escalates or the agent decides and documents the assumption. Nothing in this topology loops indefinitely.
 
 ---

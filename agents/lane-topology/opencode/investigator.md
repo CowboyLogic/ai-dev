@@ -4,7 +4,7 @@ description: >
   this work", and "what does this touch". Reads widely, returns compactly. Never
   modifies the working tree; writes findings only to .agent-output/. The context
   firewall between the codebase and the Conductor.
-model: github-copilot/gemini-3.1-pro-preview
+model: github-copilot/gpt-5.6-sol
 permission:
   read: allow
   grep: allow
@@ -12,6 +12,8 @@ permission:
     "*": allow
     "gh *": deny
     "git *": deny
+    "* gh *": deny
+    "* git *": deny
     "git status*": allow
     "git diff*": allow
     "git log*": allow
@@ -21,6 +23,9 @@ permission:
   edit:
     "*": deny
     ".agent-output/**": allow
+  task: deny
+  webfetch: deny
+  websearch: deny
 mode: subagent
 hidden: false
 ---
@@ -147,14 +152,28 @@ Return an escalation instead of findings when:
 
 ## Model Selection Rationale
 
-**Current model:** Gemini 3.1 Pro · **Family:** Google / Gemini
+**Current model:** GPT-5.6-Sol · **Family:** OpenAI / GPT
 
 Investigation is a long-context problem. The Investigator routinely holds dozens of
 files, full test output, and command history at once, and its quality depends
 directly on how much of that it can reason over simultaneously. A large-context model
-is the correct tool, and running it on a different family from both the Planner
-(Claude) and the Builder (GPT) means investigation findings are not shaped by the
-same assumptions the implementation will be.
+is the correct tool.
+
+**The family pin is the load-bearing part, and it is a pin *away* from Gemini.** The
+Investigator's `file:line` map is carried forward into the Verifier's brief, and the
+Verifier is told to start from that map rather than rebuild it — that is what stops
+the same code being read twice at full cost. While this agent was also Gemini, that
+made the independent reviewer begin from a *same-family* model of the codebase, with
+instructions not to re-derive it: if the Investigator misread the architecture, the
+Verifier inherited the misreading and was told not to check. The Facts Protocol
+firewalls a producer's *reasoning* from that artifact's reviewer for exactly this
+reason; the map was a second channel doing quietly similar work and was not
+firewalled. Pinning here to GPT closes it.
+
+Sharing a family with the Builder is fine and is not the same problem. The map flows
+**forward** to the Builder — producer to producer — which the Facts Protocol permits
+by design. It is only the sideways flow into a reviewer that has to cross a family
+line, and it now does.
 
 Cost is acceptable because the Investigator's output is small and it replaces work
 the Conductor would otherwise do badly and expensively in its own context.

@@ -2,6 +2,12 @@
 cerebro: "1"
 name: CowboyLogic AI-Dev Catalog
 artifacts:
+  - id: about-me
+    name: About Me
+    description: Template skill carrying durable personal context — background, tooling, constraints, and autonomy preferences — into every agent session
+    type: skill
+    source: skills/about-me
+    tags: [skills, context, personalization]
   - id: skill-creator
     name: Skill Creator
     description: Provides utilities for creating and improving AI agent skills

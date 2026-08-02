@@ -41,6 +41,20 @@ gh copilot skill list CowboyLogic/ai-dev
 
 ## Core Skills
 
+### About Me
+
+Carry durable personal context — background, tooling, constraints, and how much autonomy
+you want — into every agent session. Ships as a template: on first load an agent notices
+it has not been customized and walks you through filling it in. Used by the
+[Lane Topology](../agents/lane-topology.md) Conductor as step one of every session.
+
+Install it to your global skills directory, not a project — a filled-in copy is personal
+and is not meant to be committed.
+
+[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/about-me)
+
+---
+
 ### High-Fidelity Context Scaffolder
 
 Generate machine-optimized XML context files (`AGENTS.xml`, `ARCHITECTURE.xml`) for AI agent orchestration.

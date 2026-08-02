@@ -31,16 +31,17 @@ day-to-day:
 
 ## The Lanes
 
-Every request is classified into one of five lanes by a **table lookup, not a
+Every request is classified into one of six lanes by a **table lookup, not a
 judgment call** — first match wins.
 
 | Lane | Trigger | Agents | Feels like |
 |---|---|---|---|
+| **REVERT** | Undo something already committed or shipped | Conductor + Verifier | Seconds — a revert commit on a branch |
 | **MECHANICAL** | Textual/config change, no logic, no new dependency | Mechanic → Verifier | Seconds |
 | **INVESTIGATE** | A question, or a bug with unknown cause | Investigator | Read-only, ends in an answer |
 | **DIRECT** | Scope understood, approach obvious, bounded blast radius | Builder → Verifier | Minutes |
 | **PLAN** | Goal known, approach isn't; a tradeoff; a contract change | Planner (Socratic) → Verifier | One question round, then a plan |
-| **BUILD** | Net-new with no existing shape to follow | Planner → Builder → Verifier → Scribe | The full lifecycle |
+| **BUILD** | Net-new with no existing shape to follow | Planner → Builder → Verifier → Scribe → Verifier | The full lifecycle |
 
 When two lanes both apply, the Conductor takes the lighter one — except a new
 architectural decision, a public contract change, or a security-critical surface
@@ -63,7 +64,7 @@ findings between agents without re-deriving them.
 |---|---|---|---|
 | **Conductor** | Claude Sonnet 5 | Classifies, dispatches, holds the ledger, talks to you. Nothing else. | [conductor](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/conductor.md) |
 | **Planner** | Claude Opus 5 | Socratic planning → design → Architecture Decisions → numbered requirements | [planner](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/planner.md) |
-| **Investigator** | Gemini 3.1 Pro | Read-only comprehension and root-cause work | [investigator](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/investigator.md) |
+| **Investigator** | GPT-5.6-Sol | Read-only comprehension and root-cause work | [investigator](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/investigator.md) |
 | **Builder** | GPT-5.6-Terra | Implementation | [builder](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/builder.md) |
 | **Mechanic** | Claude Haiku 4.5 | Trivial mechanical edits | [mechanic](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/mechanic.md) |
 | **Verifier** | Gemini 3.1 Pro | Cross-family review **+ runs the tests itself** | [verifier](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/verifier.md) |
