@@ -166,7 +166,7 @@ BYOK models, and authentication.
 ---
 
 > [!NOTE]
-> The Gemini CLI Configuration Manager skill was removed because Google has deprecated the Gemini CLI.
+> The Gemini CLI Configuration Manager skill was removed following Google's [announcement that Gemini CLI is being replaced by Antigravity CLI for unpaid-tier and Google One users](https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli/).
 
 ---
 
