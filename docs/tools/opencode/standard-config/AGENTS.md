@@ -267,20 +267,20 @@ Demonstrates how to configure the **Docker Desktop MCP Toolbox GitHub server**:
 
 ## Modular Subagent Configuration
 
-The `agent-subagent-config/` directory demonstrates an **advanced modular pattern** for managing specialized subagents. Instead of defining all agents in `opencode.json`, this approach uses individual markdown files with YAML frontmatter to configure agents.
+The `../agent-subagent-config/` directory demonstrates an **advanced modular pattern** for managing specialized subagents. Instead of defining all agents in `opencode.json`, this approach uses individual markdown files with YAML frontmatter to configure agents.
 
 ### How It Works
 
-**Main Configuration** (`agent-subagent-config/opencode.json`):
+**Main Configuration** (`../agent-subagent-config/opencode.json`):
 - Defines only **primary agents** (plan, build)
 - Minimal configuration focused on top-level workflow
 
-**Agent Definitions** (`agent-subagent-config/agent/*.md`):
+**Agent Definitions** (`../agent-subagent-config/agent/*.md`):
 - Each specialized agent in its own markdown file
 - YAML frontmatter contains OpenCode configuration
 - Automatic discovery and loading via instruction system
 
-**Example Agent File** (`agent/api.md`):
+**Example Agent File** (`../agent-subagent-config/agent/api.md`):
 ```markdown
 ---
 description: REST/GraphQL API design, OpenAPI specs, and API integration
@@ -357,7 +357,7 @@ opencode @build "Implement user authentication API"
 3. Add documentation about purpose and usage
 4. Agent is automatically available as `@yourname`
 
-See the modular agent configuration files in `agent-subagent-config/agent/` for each specialized agent.
+See the modular agent configuration files in `../agent-subagent-config/agent/` for each specialized agent.
 
 ## Traditional Configuration vs Modular Configuration
 
@@ -367,7 +367,7 @@ See the modular agent configuration files in `agent-subagent-config/agent/` for 
 - Direct, straightforward configuration
 - Examples: `quick`, `reviewer`, `docs` agents
 
-**Modular** (`agent-subagent-config/`):
+**Modular** (`../agent-subagent-config/`):
 - Agents defined in individual markdown files
 - Ideal for complex workflows with many specialized agents
 - Modular, scalable, maintainable
@@ -467,7 +467,7 @@ Changes to files in `docs/tools/opencode/agent-subagent-config/`:
 2. **`opencode/standard-config/AGENTS.md`** - Update sample configuration explanations
 3. **`docs/tools/opencode/samples.md`** - Comprehensive sample documentation
 4. **`docs/mcp/overview.md`** - MCP-specific documentation
-5. **`agent-subagent-config/agent/*.md`** - Update if modular agents change
+5. **`../agent-subagent-config/agent/*.md`** - Update if modular agents change
 
 ### Common Update Scenarios
 

@@ -117,12 +117,6 @@
       "agent": "quick"
     },
     
-    "analyze": {
-      "template": "Perform deep analysis of: $ARGUMENTS. Consider architecture, patterns, and best practices.",
-      "description": "Deep analysis using advanced reasoning",
-      "agent": "reasoning"
-    },
-    
     "build": {
       "template": "Build and test the project. Focus on: $ARGUMENTS",
       "description": "Build tasks optimized for compilation"
@@ -150,10 +144,6 @@
       "description": "Deployment tasks"
     },
 
-    "refactor": {
-      "template": "Refactor $ARGUMENTS while maintaining functionality. Consider performance and maintainability.",
-      "description": "Code refactoring with advanced analysis",
-      "agent": "reasoning"
     }
   },
 
