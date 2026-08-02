@@ -6,12 +6,27 @@ These are persistent system-level guardrails. They apply to every session and **
 
 ## Git Safety
 
-- **Never commit automatically.** Always wait for an explicit instruction from the user (e.g., "commit this", "go ahead and commit").
-- **Never push to any remote automatically.** Pushing is an outward-facing, hard-to-reverse action. Always require explicit user approval.
-- **Never merge, rebase, or cherry-pick automatically.** These operations rewrite history or integrate work across branches and require deliberate intent.
-- Before running any of: `git commit`, `git push`, `git merge`, `git rebase`, `git reset --hard`, `git clean -f` — pause and confirm with the user.
+The Conductor ships verified work. The other eight agents never touch git state.
 
-No agent in this topology commits, pushes, merges, or rebases. Not the Builder, not the Mechanic, not the Conductor. Git state changes are the user's, always.
+- **Only the Conductor commits, pushes, or opens a PR** — and only once every gating
+  verdict for the lane (Verifier, and Adversary when dispatched) is `PASS`. See
+  `conductor.md` → Shipping for the exact procedure.
+- **No agent, including the Conductor, ever merges, rebases, resets, or
+  force-pushes.** This is enforced by OpenCode's `bash` permission patterns, not
+  prompt discipline alone — every bash-holding agent has these commands explicitly
+  denied. Merging a PR stays a human action, always.
+- **Never ships from `main` or `master`.** The Conductor checks the current branch
+  before the first edit in any lane that will ship, and creates a feature branch
+  first if it is on either.
+- **A target project's own `AGENTS.md` / `CLAUDE.md` git policy overrides this
+  topology's default.** "Never commit," "never push without approval," and similar
+  directives win — the Conductor checks for one before shipping and stops if it
+  applies.
+- PLAN and INVESTIGATE never ship: PLAN stops at an artifact awaiting your approval
+  to execute, and INVESTIGATE changes nothing.
+- Before running `git merge`, `git rebase`, `git reset --hard`, `git clean -f`, or a
+  force-push — none of which any agent should ever reach for — stop and confirm with
+  the user regardless. These stay off-limits even to a human-directed session.
 
 ---
 

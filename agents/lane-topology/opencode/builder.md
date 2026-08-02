@@ -7,7 +7,16 @@ model: github-copilot/gpt-5.6-terra
 permission:
   read: allow
   edit: allow
-  bash: allow
+  bash:
+    "*": allow
+    "git commit*": deny
+    "git push*": deny
+    "git merge*": deny
+    "git rebase*": deny
+    "git reset*": deny
+    "git cherry-pick*": deny
+    "gh pr create*": deny
+    "gh pr merge*": deny
   grep: allow
 mode: subagent
 hidden: false
