@@ -23,7 +23,7 @@ Windows 11 / WSL2 / Docker Desktop environment. The container:
 - Accepts your GitHub token via environment variable — no rebuild on token rotation
 - Spins up in 5–15 seconds after the initial build
 
-The repository only needs two things: `agents-output/` in `.gitignore`. Everything else
+The repository only needs two things: `.agent-output/` in `.gitignore`. Everything else
 lives in the container.
 
 ---
@@ -106,7 +106,7 @@ RUN groupadd --gid 1001 agent \
 
 # Create workspace directory with correct ownership
 # /workspace is mounted at runtime — agent user must own it
-RUN mkdir -p /workspace/agents-output \
+RUN mkdir -p /workspace/.agent-output \
     && chown -R agent:agent /workspace
 
 # Give agent user ownership of the entrypoint
@@ -168,10 +168,10 @@ else
   echo "⚠️  Copilot CLI not responding — may need reinstall"
 fi
 
-# Ensure agents-output exists and is writable
+# Ensure .agent-output exists and is writable
 if [ -d "/workspace" ]; then
-  mkdir -p /workspace/agents-output
-  echo "✅ agents-output/ scratch space ready"
+  mkdir -p /workspace/.agent-output
+  echo "✅ .agent-output/ scratch space ready"
 fi
 
 # Show git context if inside a repo
@@ -196,7 +196,7 @@ fi
 echo ""
 echo "🚀 Agent execution environment ready."
 echo "   Workspace: /workspace"
-echo "   Scratch space: /workspace/agents-output"
+echo "   Scratch space: /workspace/.agent-output"
 echo ""
 
 # Execute the command passed to the container (default: bash)
@@ -247,26 +247,26 @@ fi
 REPO_PATH=$(realpath "$REPO_PATH")
 echo "📂 Mounting: $REPO_PATH"
 
-# ── Ensure agents-output exists in the repo ─────────────────────────────────────
+# ── Ensure .agent-output exists in the repo ─────────────────────────────────────
 
-AGENTS_OUTPUT="$REPO_PATH/agents-output"
+AGENTS_OUTPUT="$REPO_PATH/.agent-output"
 GITIGNORE="$REPO_PATH/.gitignore"
 
-# Create agents-output if it doesn't exist
+# Create .agent-output if it doesn't exist
 if [ ! -d "$AGENTS_OUTPUT" ]; then
   mkdir -p "$AGENTS_OUTPUT"
-  echo "✅ Created agents-output/ in repo"
+  echo "✅ Created .agent-output/ in repo"
 fi
 
 # Add to .gitignore if not already there
 if [ -f "$GITIGNORE" ]; then
-  if ! grep -q "agents-output" "$GITIGNORE"; then
-    echo "agents-output/" >> "$GITIGNORE"
-    echo "✅ Added agents-output/ to .gitignore"
+  if ! grep -q ".agent-output" "$GITIGNORE"; then
+    echo ".agent-output/" >> "$GITIGNORE"
+    echo "✅ Added .agent-output/ to .gitignore"
   fi
 else
-  echo "agents-output/" > "$GITIGNORE"
-  echo "✅ Created .gitignore with agents-output/"
+  echo ".agent-output/" > "$GITIGNORE"
+  echo "✅ Created .gitignore with .agent-output/"
 fi
 
 # ── Check image exists, build if not ───────────────────────────────────────────
@@ -372,7 +372,7 @@ cd /path/to/cerebro
 
 The run script will:
 
-1. Create `agents-output/` in the repo if it doesn't exist
+1. Create `.agent-output/` in the repo if it doesn't exist
 2. Add it to `.gitignore` if not already there
 3. Start the container with the repo mounted at `/workspace`
 4. Authenticate Copilot CLI using your `GH_TOKEN`
@@ -403,10 +403,10 @@ copilot suggest --model gpt-4.1 "your task prompt here"
 
 1. Write your handoff prompt first (outside the container, with the thinking agent)
 2. Paste the prompt to `copilot suggest` inside the container
-3. Direct output to `agents-output/`: the agent should write there by default per
+3. Direct output to `.agent-output/`: the agent should write there by default per
    your skill directives; explicitly instruct it if needed
 4. Exit the container (`exit`)
-5. Review `agents-output/` contents on your host before touching your working tree
+5. Review `.agent-output/` contents on your host before touching your working tree
 
 ---
 
@@ -440,15 +440,15 @@ git checkout main
 # ⚠️  WARNING: You are on the 'main' branch.
 ```
 
-**Test C — Verify agents-output is gitignored:**
+**Test C — Verify .agent-output is gitignored:**
 
 ```bash
 # On host, after running the container at least once
-cat .gitignore | grep agents-output
-# Expected: agents-output/
+cat .gitignore | grep .agent-output
+# Expected: .agent-output/
 
 git status
-# agents-output/ should not appear as a tracked path
+# .agent-output/ should not appear as a tracked path
 ```
 
 ---
@@ -513,10 +513,10 @@ docker build --no-cache -t agent-execution-env:latest .
 - If you see permission errors: `ls -la /path/to/repo` — verify your user owns it
 - On WSL2 this is rarely an issue since your home directory files are owned by your user
 
-**agents-output/ appearing in git status:**
+**.agent-output/ appearing in git status:**
 
-- Verify `.gitignore` contains `agents-output/`
-- If already tracked: `git rm -r --cached agents-output/`
+- Verify `.gitignore` contains `.agent-output/`
+- If already tracked: `git rm -r --cached .agent-output/`
 
 **Docker Desktop not seeing WSL2 filesystem paths:**
 
@@ -539,7 +539,7 @@ before moving to the work context:
 - [ ] Copilot CLI model performance differences observed during testing
 - [ ] Any friction points in the setup that would affect engineer adoption
 - [ ] Branch guard behavior — does it catch what you expect?
-- [ ] agents-output/ workflow — is the review-before-integrate pattern natural?
+- [ ] .agent-output/ workflow — is the review-before-integrate pattern natural?
 - [ ] Anything that would need to change for an internal Artifact Registry base image
 
 These observations feed directly into Section 8 (Implementation Guidance) of the
@@ -556,7 +556,7 @@ architecture pattern document.
   run.sh              ← launch script (run from any repo root)
 
 [your-repo]/
-  agents-output/      ← gitignored scratch space (created by run.sh)
+  .agent-output/      ← gitignored scratch space (created by run.sh)
   .gitignore          ← updated by run.sh if needed
 ```
 

@@ -51,18 +51,23 @@ For detailed integration instructions, see:
 
 ## Configuration Format
 
-All sample files follow this general structure:
+All sample files follow this structure with top-level `mcp` key:
 
 ```json
 {
-  "mcpServers": {
+  "mcp": {
     "server-name": {
-      "command": "docker|npx|path-to-executable",
-      "args": ["arg1", "arg2"],
-      "env": {
+      "type": "local",
+      "command": ["docker", "run", "..."],
+      "enabled": true,
+      "environment": {
         "ENV_VAR": "value"
-      }
+      },
+      "timeout": 10000
     }
+  },
+  "tools": {
+    "server-name": true
   }
 }
 ```

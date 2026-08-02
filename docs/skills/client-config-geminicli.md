@@ -10,7 +10,7 @@ Manages `settings.json`, `GEMINI.md`, hooks, MCP servers, extensions, custom com
 
 ## What it does
 
-Gemini CLI's `settings.json` has grown significantly — it now has 14 top-level sections, many with renamed or restructured fields. Without the skill, an agent may give outdated field paths or miss entire sections entirely.
+Gemini CLI's `settings.json` has grown significantly — it now has 19 top-level sections, many with renamed or restructured fields. Without the skill, an agent may give outdated field paths or miss entire sections entirely.
 
 The skill covers every config file and scope:
 
@@ -20,11 +20,13 @@ The skill covers every config file and scope:
 | `.gemini/settings.json` | Project | Project overrides (requires trusted folder) |
 | `~/.gemini/GEMINI.md` | User | Global context injected into every session |
 | `GEMINI.md` | Project | Project context (hierarchical discovery) |
+| `~/.gemini/trustedFolders.json` | User | Trusted folder registry (managed by the CLI) |
 | `~/.gemini/commands/*.toml` | User | Global custom slash commands |
 | `.gemini/commands/*.toml` | Project | Project custom slash commands |
+| `~/.gemini/tmp/<hash>/shell_history` | User | Per-project shell history |
 
 **Key sections covered in `settings.json`:**
-`general` · `ui` · `output` · `model` · `tools` · `security` · `context` · `mcpServers` · `agents` · `advanced` · `experimental` · `skills` · `hooksConfig` · `ide` · `billing`
+`general` · `ui` · `output` · `model` · `tools` · `mcp` · `security` · `context` · `mcpServers` · `agents` · `privacy` · `advanced` · `experimental` · `contextManagement` · `admin` · `skills` · `hooksConfig` · `ide` · `billing`
 
 **Important correct behaviors the skill enforces:**
 

@@ -1,6 +1,6 @@
 # AI Agents
 
-This repository provides three tiers of AI agents:
+This repository provides two topologies of AI agents:
 
 - **Lane Topology** — a multi-agent system that classifies each request into a lane
   and sizes process to match, from a seconds-long mechanical edit to a full
@@ -8,25 +8,18 @@ This repository provides three tiers of AI agents:
 - **Matrix Topology** — the predecessor multi-agent system: a fixed nine-stage
   lifecycle for production-quality development work. OpenCode-native (canonical),
   with Claude Code and GitHub Copilot mirrors.
-- **Domain Specialists** — focused single-purpose agents for scoped, task-level
-  assistance. GitHub Copilot (VS Code).
 
-All agent files live at the root of the repository under [`agents/`](https://github.com/CowboyLogic/ai-dev/tree/main/agents).
-Copilot-format agents can be installed directly using the GitHub Copilot CLI; the
-Lane Topology's OpenCode format is installed by symlinking into `~/.config/opencode/`
-— see its page for both.
+Agent installations are topology-specific. Each topology provides installation
+instructions for its OpenCode and GitHub Copilot formats.
 
 ---
 
 ## Installing Agents
 
-```bash
-# Install a specific agent
-gh copilot agent install CowboyLogic/ai-dev/agents/<agent-file>.agent.md
-
-# Browse all agents
-gh copilot agent list CowboyLogic/ai-dev
-```
+- **[Lane Topology](lane-topology.md#installing-it-opencode)** — the recommended pattern
+  for new projects, with proportional process sizing.
+- **[Matrix Topology](matrix-topology.md#installing-the-topology)** — the structured
+  lifecycle pattern, still published and usable.
 
 ---
 
@@ -83,26 +76,6 @@ See the [Matrix Topology](matrix-topology.md) page for the full pattern descript
 | **Niobe** | Documentation writer — captures what was built and why |
 
 ---
-
-## Domain Specialists
-
-Single-agent tools for focused, domain-specific tasks within GitHub Copilot.
-Useful when you need quick, scoped assistance without running a full topology session.
-
-| Agent | Domain | Source |
-|---|---|---|
-| **API Specialist (.NET)** | .NET REST API design and implementation | [api-dotnet.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/api-dotnet.agent.md) |
-| **Architect** | Multi-tier system design (React/.NET/PostgreSQL) | [architect-react-dotnet-postgres.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/architect-react-dotnet-postgres.agent.md) |
-| **Cloud Specialist (GCP)** | GCP infrastructure and deployment | [cloud-gcp.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/cloud-gcp.agent.md) |
-| **Code Reviewer** | Code quality, security, and architecture review | [code-reviewer.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/code-reviewer.agent.md) |
-| **Database Specialist** | PostgreSQL schema and EF Core migrations | [database-postgres-ef.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/database-postgres-ef.agent.md) |
-| **DevOps** | GitHub Actions CI/CD and container builds | [devops.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/devops.agent.md) |
-| **Documentation** | Technical docs following Google style | [documentation.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/documentation.agent.md) |
-| **Performance** | Performance analysis and optimization | [performance.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/performance.agent.md) |
-| **Plan** | Feature planning and cross-agent coordination | [plan.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/plan.agent.md) |
-| **Security Analyst** | OWASP analysis and security review | [security-analyst.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/security-analyst.agent.md) |
-| **Testing Specialist** | Unit, integration, and E2E test creation | [testing-specialist.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/testing-specialist.agent.md) |
-| **UX/UI Specialist** | React components and Tailwind CSS | [uxui-nodejs.agent.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/uxui-nodejs.agent.md) |
 
 ---
 

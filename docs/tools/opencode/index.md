@@ -189,10 +189,8 @@ Ready-to-use commands that leverage specialized agents:
 | Command | Description | Example |
 |---------|-------------|---------|
 | `quick-fix` | Fast fixes using lightweight model | `opencode quick-fix "fix typo"` |
-| `analyze` | Deep code analysis | `opencode analyze "review auth system"` |
 | `review` | Code review (read-only) | `opencode review "security in api/"` |
 | `document` | Generate documentation | `opencode document "user API"` |
-| `refactor` | Intelligent refactoring | `opencode refactor "optimize queries"` |
 | `build` | Build and test | `opencode build "run tests"` |
 | `deploy` | Deployment tasks | `opencode deploy "staging environment"` |
 | `test` | Run and fix tests | `opencode test "user authentication"` |

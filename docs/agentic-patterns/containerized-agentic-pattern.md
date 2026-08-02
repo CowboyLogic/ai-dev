@@ -216,7 +216,7 @@ The mount scope is the primary control mechanism in the local context.
 
 - Source code: read-only by default; read-write only when the agent is explicitly
   generating or modifying files as the task output
-- `agents-output/` directory: read-write always — this is the agent's designated
+- `.agent-output/` directory: read-write always — this is the agent's designated
   scratch space (see Scratch Space below)
 - `.git/` directory: read-only — the agent can read branch and history context
   but cannot make git operations directly
@@ -241,17 +241,17 @@ The mount scope is the primary control mechanism in the local context.
 **Execution agent responsibilities (inside the container):**
 
 - Execute exactly what the handoff prompt specifies
-- Write output to `agents-output/` unless the task is an explicit file modification
+- Write output to `.agent-output/` unless the task is an explicit file modification
 - Flag ambiguity rather than resolve it independently
 - Produce a diff or artifact for review — not a completed integration
 
-### Scratch Space — `agents-output/`
+### Scratch Space — `.agent-output/`
 
-- All temporary files, intermediate artifacts, and generated drafts go to `agents-output/`
+- All temporary files, intermediate artifacts, and generated drafts go to `.agent-output/`
   in the project root inside the container
-- If `agents-output/` does not exist, the agent creates it
-- `agents-output/` must be in `.gitignore` — the agent adds it if not present
-- Contents of `agents-output/` are reviewed by the engineer before any artifact is
+- If `.agent-output/` does not exist, the agent creates it
+- `.agent-output/` must be in `.gitignore` — the agent adds it if not present
+- Contents of `.agent-output/` are reviewed by the engineer before any artifact is
   promoted to the working tree
 
 ### Branch Protection
@@ -403,7 +403,7 @@ docker pull [INTERNAL_REGISTRY]/[APPROVED_BASE_IMAGE]:[VERSION]
 docker run -it \
   --rm \
   -v /path/to/your/service:/workspace:ro \
-  -v /path/to/your/service/agents-output:/workspace/agents-output:rw \
+  -v /path/to/your/service/.agent-output:/workspace/.agent-output:rw \
   [INTERNAL_REGISTRY]/[APPROVED_BASE_IMAGE]:[VERSION]
 ```
 
@@ -415,14 +415,14 @@ docker run -it \
 **Confirming the scratch space:**
 
 ```bash
-# Inside the container — verify agents-output exists and is writable
-ls -la /workspace/agents-output
+# Inside the container — verify .agent-output exists and is writable
+ls -la /workspace/.agent-output
 
 # If it doesn't exist, create it
-mkdir -p /workspace/agents-output
+mkdir -p /workspace/.agent-output
 
 # Confirm .gitignore coverage (from host, after container run)
-grep "agents-output" /path/to/your/service/.gitignore
+grep ".agent-output" /path/to/your/service/.gitignore
 ```
 
 ### Pipeline Integration (Context B)
@@ -440,7 +440,7 @@ High-level GitHub workflow step structure:
   with:
     image: [INTERNAL_REGISTRY]/[APPROVED_BASE_IMAGE]@[DIGEST]
     prompt_file: .github/agent-prompts/[TASK_PROMPT].md
-    output_path: agents-output/
+    output_path: .agent-output/
     max_execution_time: [TIME_LIMIT]
   env:
     AGENT_VENDOR_ENDPOINT: ${{ vars.APPROVED_AGENT_ENDPOINT }}
@@ -451,7 +451,7 @@ Key implementation requirements:
 
 - Use digest-pinned image references — never tags
 - Prompt stored as a versioned file in the repository — not inline in the workflow
-- Output path explicitly bounded to `agents-output/`
+- Output path explicitly bounded to `.agent-output/`
 - Execution time limit enforced — unbounded agent execution is not permitted
 - Downstream PR creation step is separate from agent execution step
 
@@ -460,7 +460,7 @@ Key implementation requirements:
 - This pattern is a candidate for inclusion in the engineering handbook as an approved
   development practice
 - A Backstage software template for scaffolding agent-ready service repositories
-  (pre-configured `.gitignore`, `agents-output/` structure, approved base image reference)
+  (pre-configured `.gitignore`, `.agent-output/` structure, approved base image reference)
   is a logical extension once the pattern is formally approved
 - TechDocs publication of this document will be configured via the standard publishing
   pipeline upon approval
@@ -586,7 +586,7 @@ and CI/CD pipeline integration.
 | Handoff Prompt | A self-contained task prompt produced by the thinking agent for the execution agent |
 | Blast Radius | The scope of unintended impact if an agent misunderstands or misexecutes a task |
 | Mount | A filesystem path from the host machine made accessible inside a container |
-| `agents-output/` | The designated scratch space inside the container for agent-generated temporary artifacts |
+| `.agent-output/` | The designated scratch space inside the container for agent-generated temporary artifacts |
 | Class 4 Sensitive | Class 4 repositories with elevated risk profiles requiring separate security review |
 | PR Gate | The requirement that agent output surfaces as a pull request for human review before integration |
 

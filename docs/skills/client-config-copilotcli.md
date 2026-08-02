@@ -29,9 +29,14 @@ everything at once.
 | MCP servers | `~/.copilot/mcp-config.json` | Global |
 | Hooks | `.github/hooks/hooks.json` | Project |
 | Skills | `~/.copilot/skills/<name>/SKILL.md` | Global personal |
+| Skills | `.github/skills/<name>/SKILL.md` | Project |
 | Custom agents | `~/.copilot/agents/<name>.agent.md` | Global personal |
 | Custom instructions | `~/.copilot/copilot-instructions.md` | Global personal |
 | Path-scoped instructions | `.github/instructions/*.instructions.md` | Project |
+
+Set `COPILOT_HOME` to redirect the global personal locations from `~/.copilot`.
+Copilot CLI v1.0.36 and later no longer load global customizations from
+`~/.claude/`, but project-scoped `.claude/skills/` remains supported.
 
 ---
 
