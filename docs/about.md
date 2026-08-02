@@ -52,7 +52,7 @@ This repository emphasizes **examples over explanations**. We provide working co
 **[Skills](skills/index.md)** — Domain-specific instruction sets teaching AI agents specialized capabilities:
 
 - Agent creation for GitHub Copilot and OpenCode CLI
-- Client configuration for Claude Code, Copilot CLI, Gemini CLI, and OpenCode
+- Client configuration for Claude Code, Copilot CLI, and OpenCode
 - Documentation (Google Style Docs, Markdownlint validation, MkDocs site management)
 - Docker image management
 - Git commit messages, Copilot instructions, and Copilot prompts

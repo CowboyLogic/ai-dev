@@ -165,12 +165,8 @@ BYOK models, and authentication.
 
 ---
 
-### Gemini CLI Configuration Manager
-
-Manage Gemini CLI configuration files — `settings.json`, MCP servers, hooks, extensions,
-custom commands, themes, and trusted folders. Covers all settings exposed by the Gemini CLI.
-
-[Skill Overview](client-config-geminicli.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-geminicli)
+> [!NOTE]
+> The Gemini CLI Configuration Manager skill was removed because Google has deprecated the Gemini CLI.
 
 ---
 
