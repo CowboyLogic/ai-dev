@@ -23,8 +23,8 @@ Windows 11 / WSL2 / Docker Desktop environment. The container:
 - Accepts your GitHub token via environment variable — no rebuild on token rotation
 - Spins up in 5–15 seconds after the initial build
 
-The repository only needs two things: `.agent-output/` in `.gitignore`. Everything else
-lives in the container.
+The repository only needs `.agent-output/` in `.gitignore`. Everything else lives in
+the container.
 
 ---
 
