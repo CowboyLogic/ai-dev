@@ -22,9 +22,14 @@ permission:
     "git commit *": allow
     "git push *": allow
     "git push *--force*": deny
+    "git push *-f": deny
     "git push *-f *": deny
-    "git push origin main*": deny
-    "git push origin master*": deny
+    "git push * main*": deny
+    "git push * master*": deny
+    "git push *:main*": deny
+    "git push *:master*": deny
+    "git push *refs/heads/main*": deny
+    "git push *refs/heads/master*": deny
     "git merge*": deny
     "git rebase*": deny
     "git reset*": deny
