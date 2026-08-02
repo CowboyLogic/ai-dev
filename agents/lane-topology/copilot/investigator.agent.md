@@ -4,7 +4,7 @@ description: >
   this work", and "what does this touch". Reads widely, returns compactly. Never
   modifies the working tree; writes findings only to .agent-output/. The context
   firewall between the codebase and the Conductor.
-tools: ["read", "search", "run", "edit"]
+tools: ["read", "search", "execute", "edit"]
 model: GPT-5.6 Sol (copilot)
 user-invocable: false
 ---

@@ -4,7 +4,7 @@ description: >
   reader, the Verifier runs the build and the tests itself — a working agent's "it's
   green" is a claim, and the Verifier is where it becomes evidence. Finds gaps, not
   just bugs. Returns PASS / FIX / ESCALATE.
-model: github-copilot/gemini-3.1-pro-preview
+model: github-copilot/gemini-3.6-flash
 permission:
   read: allow
   grep: allow
@@ -168,7 +168,7 @@ is done.
 
 ## Model Selection Rationale
 
-**Current model:** Gemini 3.1 Pro · **Family:** Google / Gemini
+**Current model:** Gemini 3.6 Flash · **Family:** Google / Gemini
 
 Cross-family independence is the control this agent provides, and Gemini is
 cross-family from every producer in the topology without exception — the Planner,
@@ -186,8 +186,25 @@ Claude agent missed is disproportionately the flaw a Claude reviewer also misses
 because either is weak, but because they are looking through the same lens. A
 different family is a genuinely different lens, and that difference is the control.
 
-Large context also matters here: the Verifier holds the intent, the artifact, the
-diff, and full test output simultaneously.
+**Why Flash rather than a Pro tier — the honest version.** Gemini is *forced* here:
+the producers span Claude and GPT, so the only third family available is Google's. But
+there is no GA Gemini Pro in the Copilot catalog — the Pro tier is preview-only, and
+this agent is the topology's main reliability property. Flash is the trade: a GA
+endpoint and a cheap one, on the agent that runs in **every single lane** and is
+therefore the highest-frequency dispatch in the system after the Conductor.
+
+**What that costs, stated plainly.** This agent's hardest job is not running the suite
+— that is tool use, and Flash is fine at it. It is hunting *gaps* against the original
+intent on plans and design briefs: noticing the requirement nobody wrote a test for,
+the decision the plan left dangling. That is reasoning-heavy and it is where a Flash
+tier is weakest. Expect the executed-verification property to hold and the gap-finding
+to be thinner than a Pro tier would give.
+
+**The signal to watch:** `FIX` verdicts that are vague or non-actionable, `PASS` on an
+artifact with an obvious hole, or BUILD-lane `COVERAGE` that misses an uncovered
+`REQ-###`. Any of those recurring means the tier is too low for the design-review half
+of this job — and the fix then is to reconsider the pin, not to lower the bar for what
+counts as a finding.
 
 > **If the roster ever gains a Gemini-family producer,** the Verifier's cross-family
 > guarantee breaks for that agent. Fix it by pinning that producer to another family,
