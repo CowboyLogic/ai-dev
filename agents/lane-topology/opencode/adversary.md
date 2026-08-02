@@ -8,7 +8,15 @@ model: github-copilot/claude-opus-5
 permission:
   read: allow
   grep: allow
-  bash: allow
+  bash:
+    "*": allow
+    "gh *": deny
+    "git *": deny
+    "git status*": allow
+    "git diff*": allow
+    "git log*": allow
+    "git show*": allow
+    "git rev-parse*": allow
 mode: subagent
 hidden: false
 ---

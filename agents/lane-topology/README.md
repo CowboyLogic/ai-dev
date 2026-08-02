@@ -47,6 +47,11 @@ to say which.
 | **PLAN** | Goal known, approach isn't; a tradeoff; a contract change | Planner (Socratic) → Verifier | One question round, then a plan |
 | **BUILD** | Net-new with no existing shape to follow | Planner → Builder → Verifier → Scribe | The full lifecycle |
 
+MECHANICAL, DIRECT, and BUILD also commit, push, and open the PR once their verdict is
+`PASS` — see [Shipping](#shipping--autonomous-but-merging-stays-yours). PLAN and
+INVESTIGATE never do; one stops at an artifact awaiting your approval, the other
+changes nothing.
+
 ### The tie-break rule
 
 When two lanes both apply, **take the lighter one.** A DIRECT that up-ramps costs one
@@ -122,6 +127,10 @@ cognitive job or a distinct cost tier.
 It does not read source. It does not grep. It does not run tests. It does not write
 code, plans, or docs. It does not review anything.
 
+**Shipping is the one exception.** Once a lane's gating verdict is `PASS`, committing,
+pushing, and opening the PR is git/gh plumbing, not a cognitive job — see
+[Shipping](#shipping--autonomous-but-merging-stays-yours) below.
+
 That is not modesty — it is the resilience mechanism. The Conductor's context must
 stay routing-shaped. The moment it fills with file contents and test output, it stops
 routing well and everything downstream degrades with it. When the Conductor needs to
@@ -172,6 +181,41 @@ conditional pass and no pass-with-outstanding-items.
 
 Nothing in this topology loops indefinitely. Every loop has a hard cap and a defined
 action on exhaustion.
+
+---
+
+## Shipping — Autonomous, But Merging Stays Yours
+
+This topology is built to run without you in the loop for well-defined work, and
+that includes the last step. Once MECHANICAL, DIRECT, or BUILD reaches a clean `PASS`
+— the Verifier alone, or the Verifier and the Adversary on a critical surface — the
+**Conductor** commits, pushes, and opens the pull request. You get a link, not a diff
+to apply yourself.
+
+**Merging is the one thing that stays manual, always.** No agent, including the
+Conductor, ever merges, rebases, resets, or force-pushes — in any lane, under any
+circumstance. Opening the PR is the full extent of this topology's authority over the
+remote. That line is deliberate: it is the one decision in the whole system that is
+expensive to unwind and visible to everyone else on the project the moment it is
+wrong, so it is the one decision that is never automated.
+
+**Never ships from `main` or `master`.** Before the first edit in any shipping lane,
+the Conductor checks the current branch and creates a feature branch first if it is on
+either. By the time a commit happens, `HEAD` cannot be a protected branch.
+
+**A stricter project policy always wins.** If the repository's own `AGENTS.md` or
+`CLAUDE.md` says "never commit" or "never push without approval," that overrides this
+topology's default — the Conductor checks for it before shipping anything and stops,
+verdict in hand, if it applies.
+
+**The boundary is technically enforced, not just written down.** OpenCode's `bash`
+permission supports per-command patterns, so the eight agents that are not the
+Conductor have every git-mutation command (`commit`, `push`, `merge`, `rebase`,
+`reset`, `cherry-pick`) and `gh pr create`/`gh pr merge` explicitly denied at the
+permission layer. The Conductor's own `bash` grant is the inverse: everything denied
+by default, with only the specific git/gh commands shipping requires allowed back in.
+Neither is achievable in the Copilot format, which grants tools as an unscoped
+boolean — see `AGENTS.md` → *Scoped bash does not port* for that tradeoff.
 
 ---
 
@@ -266,8 +310,11 @@ Concretely, what makes this survive a long session:
 7. **Explicit failure handling** — an agent that errors or returns off-format twice
    stops the lane and surfaces to you by name. The Conductor never quietly does the
    work itself to cover a gap
+8. **A permission-enforced git boundary** — merge, rebase, reset, and force-push are
+   denied at the OpenCode permission layer for every agent, not just written into a
+   prompt. Only the Conductor can commit, push, or open a PR, and only after `PASS`
 
-That last one matters more than it looks. Filling a failed agent's gap with the
+Point 7 matters more than it looks. Filling a failed agent's gap with the
 orchestrator's own output is exactly how a routing agent turns back into the
 generalist agent this whole pattern exists to replace.
 
