@@ -201,7 +201,7 @@ a new pin is introduced — do not leave retired IDs in the table.
 | `github-copilot/claude-opus-4.8` | `opus` | `Claude Opus 4.8 (copilot)` |
 | `github-copilot/claude-sonnet-5` | `sonnet` | `Claude Sonnet 5 (copilot)` |
 | `github-copilot/claude-haiku-4.5` | `haiku` | `Claude Haiku 4.5 (copilot)` |
-| `github-copilot/gpt-5.6-terra` | `inherit` *(GPT — not available)* | `GPT-5.6-Terra (copilot)` |
+| `github-copilot/gpt-5.6-terra` | `inherit` *(GPT — not available)* | `GPT-5.6 Terra (copilot)` |
 | `github-copilot/gemini-3.1-pro-preview` | `inherit` *(Gemini — not available)* | `Gemini 3.1 Pro (copilot)` |
 
 > [!NOTE]
