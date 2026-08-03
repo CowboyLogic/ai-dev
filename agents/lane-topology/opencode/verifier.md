@@ -8,6 +8,7 @@ model: github-copilot/gemini-3.6-flash
 permission:
   read: allow
   grep: allow
+  edit: deny
   bash:
     "*": allow
     "gh *": deny

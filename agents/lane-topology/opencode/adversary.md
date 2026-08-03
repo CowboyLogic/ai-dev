@@ -8,6 +8,7 @@ model: github-copilot/claude-opus-5
 permission:
   read: allow
   grep: allow
+  edit: deny
   bash:
     "*": allow
     "gh *": deny
