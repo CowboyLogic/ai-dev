@@ -30,7 +30,8 @@ agents/lane-topology/
 └── README.md          # Human-facing pattern documentation
 
 harness/opencode-lane/
-├── opencode.jsonc     # default_agent, lane commands, MCP
+├── opencode.jsonc     # default_agent, MCP
+├── commands/          # lane-override slash commands (/change, /plan, ...)
 └── guardrails.md      # persistent session guardrails
 ```
 

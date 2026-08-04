@@ -4,9 +4,9 @@
   // Harness config for the Lane Topology (agents/lane-topology/opencode).
   // Kept separate from harness/opencode/ so the Matrix topology setup is untouched.
   //
-  // The Conductor classifies every request automatically — the commands below are
-  // deterministic overrides for when you already know the lane and want to skip
-  // classification, not the normal way to use the system.
+  // The Conductor classifies every request automatically — the commands in
+  // commands/*.md are deterministic overrides for when you already know the
+  // lane and want to skip classification, not the normal way to use the system.
 
   // Resolves to agents/conductor.md in the linked agents directory. Must name a
   // primary-mode agent; OpenCode's own default is the built-in `build` agent.
@@ -19,42 +19,9 @@
     "guardrails.md"
   ],
 
-  "command": {
-    "change": {
-      "description": "DIRECT lane — a small, well-scoped change. Builder implements, Verifier independently runs the tests. Skips classification.",
-      "agent": "conductor",
-      "template": "DIRECT LANE. Run the DIRECT lane procedure from your agent file. Do not re-classify unless a hard trigger fires (new architectural decision, public contract change, or security-critical surface) — in that case tell me and take the heavier lane.\n\nREQUEST: $ARGUMENTS\n\n1. Run the branch check from your Shipping section before dispatching Builder.\n2. State your understanding in one line and proceed. Non-blocking.\n3. Determine the security band (CRITICAL / ADJACENT / NONE).\n4. Dispatch Builder. Include the security band and the verification command in the brief.\n5. Dispatch Verifier — and Adversary if the band is CRITICAL. The Verifier RUNS the build and tests itself; the Builder's claim of green is not evidence.\n6. Act on the verdict: PASS -> ship (commit, push, open the PR — never merge) and report the link. FIX -> one Builder cycle, max two. ESCALATE -> re-lane or surface to me.\n\nKeep it lean. The diff is the artifact, and there is no full ledger or Facts Protocol bookkeeping unless something escalates — but Shipping needs the branch name, the one-line INTENT, and the PR link to compose the commit and the PR body, so track at least that much."
-    },
-
-    "plan": {
-      "description": "PLAN lane — Socratic planning. Planner interrogates the request, you answer what matters, it produces a reviewed plan. Skips classification.",
-      "agent": "conductor",
-      "template": "PLAN LANE. Run the PLAN lane procedure from your agent file.\n\nREQUEST: $ARGUMENTS\n\n1. If the codebase must be understood first, dispatch Investigator IN PARALLEL with the Planner — do not serialize.\n2. Dispatch Planner for Pass 1. It returns a QUESTION BRIEF.\n3. Relay the QUESTION BRIEF to me as a numbered question set, with each decision's options, tradeoffs, and the Planner's recommendation. Also show me what it has ASSUMED so I can catch a wrong assumption.\n4. Return my answers to the Planner. Anything I do not answer resolves to its recommendation. It writes the plan to .agent-output/<project>/plan.md.\n5. Dispatch Verifier on the plan (and Adversary if the security band is CRITICAL).\n6. On PASS, show me the plan and ask whether to execute.\n\nHard cap: two Socratic rounds. After the second, the Planner decides the rest itself and records the calls under ASSUMPTIONS. Do not keep asking."
-    },
-
-    "find": {
-      "description": "INVESTIGATE lane — read-only. Investigator traces the answer and reports with file:line evidence. Changes nothing.",
-      "agent": "conductor",
-      "template": "INVESTIGATE LANE. Run the INVESTIGATE lane procedure from your agent file.\n\nQUESTION: $ARGUMENTS\n\n1. Dispatch Investigator with the question, any symptoms I gave, and DEPTH (QUICK unless the question implies a full trace).\n2. Nothing is edited in this lane. Read-only, no exceptions.\n3. When findings return, give me the ANSWER, the EVIDENCE, and the CONFIDENCE.\n4. Re-run the classifier on the original request plus the findings and tell me which lane the follow-on work would take — but do not start it without my go-ahead.\n\nIf the answer IS the deliverable, stop there. Not every investigation needs to become a change."
-    },
-
-    "build": {
-      "description": "BUILD lane — full lifecycle for net-new work. Planner produces a Design Brief with ADs and REQ-### requirements, Builder writes tests first, Scribe documents.",
-      "agent": "conductor",
-      "template": "BUILD LANE. Run the BUILD lane procedure from your agent file.\n\nREQUEST: $ARGUMENTS\n\n1. Run the PLAN lane first. The Planner's artifact is a DESIGN BRIEF: user-facing FLOW first, then STRUCTURE with AD-### Architecture Decisions, then numbered testable REQ-### requirements in RFC 2119 language.\n2. Verifier + Adversary review the Design Brief. Loop to PASS before any code is written.\n3. Run the branch check from your Shipping section before dispatching Builder.\n4. Dispatch Builder with the Design Brief. Tests against the REQ-### numbers first, then implementation, then green.\n5. Verifier runs the suite independently and checks REQ-### coverage. Adversary reviews if the band is CRITICAL. Loop to PASS.\n6. Dispatch Scribe to document what was actually built.\n7. Ship: commit the code and docs together, push, open the PR — never merge — and report the link to me.\n8. Maintain the ledger at .agent-output/<project>/ledger.md throughout — this lane is long enough to lose to a compaction event.\n\nRun independent subsystems in parallel. Do not serialize work whose inputs are already satisfied."
-    },
-
-    "revert": {
-      "description": "REVERT lane — undo something already committed. git revert only, on a branch, verified before it ships. Never resets or rewrites history.",
-      "agent": "conductor",
-      "template": "REVERT LANE. Run the REVERT lane procedure from your agent file.\n\nTARGET: $ARGUMENTS\n\n1. Resolve the target to an exact commit SHA using git log / git show. If it is ambiguous, ask me — do not guess.\n2. STATE THE SHA AND ITS SUBJECT BACK TO ME before touching anything. Reverting the wrong commit is the one expensive mistake in this lane.\n3. Determine where it landed. If it is unmerged on a feature branch, ask whether I would rather you close the PR and start over. If it is on main, run the branch check — the revert gets its own branch and its own PR.\n4. `git revert --no-edit <sha>`. Several commits get reverted individually, in reverse chronological order.\n5. On conflict: `git revert --abort`, report the conflicting paths, and re-lane to DIRECT. Never resolve a revert conflict by hand.\n6. Dispatch Verifier. A clean revert can still break the build if later work depended on what it removed. Not skippable.\n7. On PASS, ship — commit, push, open the PR, never merge — and report the link.\n\nCap: one. If the revert fails verification, stop and escalate to me with the failure output. Do not attempt a second revert or a fix on top of it.\n\nNever reset, rebase, force-push, or `git checkout -- <path>` in this lane. Undoing is a new commit, always."
-    },
-
-    "handoff": {
-      "description": "Capture current conversation context and write a handoff document to .agent-output/handoff.md",
-      "template": "Capture all key context from this conversation and write a structured handoff document to `.agent-output/handoff.md`. Create the `.agent-output/` directory if it does not already exist.\n\nThe document must include the following sections:\n\n## Session Info\n- Date and time of this handoff\n- Project name and absolute working directory\n\n## Objective\nWhat was the user trying to accomplish in this session? State it clearly.\n\n## Lane and Ledger\nWhich lane the work was in, and the current contents of the ledger if one exists.\n\n## Work Completed\nKey decisions made, files created or modified (include full relative paths), and the reasoning behind significant choices.\n\n## Current State\nWhere things stand right now — what is working, what is broken or incomplete, and any partially applied changes.\n\n## Next Steps\nWhat should be done next, ordered by priority. Be specific enough that a fresh agent can act without asking for clarification.\n\n## Open Questions\nUnresolved questions, blockers, or items the user still needs to decide.\n\n## Critical Context\nAnything important that would not be obvious from reading the code alone: environment quirks, workarounds in place, non-obvious decisions, credentials or config locations, flags to avoid, etc.\n\n$ARGUMENTS\n\nAfter writing the file, confirm the full path and print a brief summary of what was captured."
-    }
-  },
+  // The lane-override slash commands (/change, /plan, /find, /build, /revert,
+  // /handoff) are defined individually in commands/ rather than inline here —
+  // see commands/*.md, loaded automatically by OpenCode.
 
   "mcp": {
     "github": {

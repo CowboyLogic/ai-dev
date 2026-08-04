@@ -474,7 +474,7 @@ agents.
 git clone https://github.com/CowboyLogic/ai-dev ~/src/ai-dev
 ```
 
-Symlink the three config entries individually into a **real** `~/.config/opencode/`
+Symlink the four config entries individually into a **real** `~/.config/opencode/`
 directory. Do not replace the directory itself — OpenCode keeps its own state there.
 
 **Unix / WSL / macOS:**
@@ -483,10 +483,11 @@ directory. Do not replace the directory itself — OpenCode keeps its own state 
 mkdir -p ~/.config/opencode
 ln -sfn ~/src/ai-dev/harness/opencode-lane/opencode.jsonc  ~/.config/opencode/opencode.jsonc
 ln -sfn ~/src/ai-dev/harness/opencode-lane/guardrails.md   ~/.config/opencode/guardrails.md
+ln -sfn ~/src/ai-dev/harness/opencode-lane/commands        ~/.config/opencode/commands
 ln -sfn ~/src/ai-dev/agents/lane-topology/opencode         ~/.config/opencode/agents
 ```
 
-**Windows (directory junction for the agents folder, symlinks for the files):**
+**Windows (directory junction for the agents and commands folders, symlinks for the files):**
 
 ```powershell
 New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.config\opencode"
@@ -496,6 +497,9 @@ New-Item -ItemType SymbolicLink -Force `
 New-Item -ItemType SymbolicLink -Force `
   -Path "$env:USERPROFILE\.config\opencode\guardrails.md" `
   -Target "$env:USERPROFILE\src\ai-dev\harness\opencode-lane\guardrails.md"
+New-Item -ItemType Junction -Force `
+  -Path "$env:USERPROFILE\.config\opencode\commands" `
+  -Target "$env:USERPROFILE\src\ai-dev\harness\opencode-lane\commands"
 New-Item -ItemType Junction -Force `
   -Path "$env:USERPROFILE\.config\opencode\agents" `
   -Target "$env:USERPROFILE\src\ai-dev\agents\lane-topology\opencode"
