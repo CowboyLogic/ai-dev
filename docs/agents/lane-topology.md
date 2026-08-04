@@ -110,6 +110,7 @@ git clone https://github.com/CowboyLogic/ai-dev ~/src/ai-dev
 mkdir -p ~/.config/opencode
 ln -sfn ~/src/ai-dev/harness/opencode-lane/opencode.jsonc  ~/.config/opencode/opencode.jsonc
 ln -sfn ~/src/ai-dev/harness/opencode-lane/guardrails.md   ~/.config/opencode/guardrails.md
+ln -sfn ~/src/ai-dev/harness/opencode-lane/commands         ~/.config/opencode/commands
 ln -sfn ~/src/ai-dev/agents/lane-topology/opencode          ~/.config/opencode/agents
 ```
 
