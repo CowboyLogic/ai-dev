@@ -4,7 +4,7 @@ description: >
   comments, log lines, mechanical renames. No logic changes, no control flow, no new
   dependencies. Fast and cheap by design. Stops the moment a change requires thought.
 tools: ["read", "edit", "execute"]
-model: Claude Haiku 4.5 (copilot)
+model: GPT-5.6 Terra (copilot)
 user-invocable: false
 ---
 
@@ -95,7 +95,7 @@ Builder takes it.
 
 ## Model Selection Rationale
 
-**Current model:** Claude Haiku 4.5 · **Family:** Anthropic / Claude
+**Current model:** GPT-5.6 Terra · **Family:** OpenAI / GPT
 
 The cheapest and fastest tier available, which is the entire point. This work is
 high-frequency, low-stakes, and fully specified before the agent starts. The risk of
