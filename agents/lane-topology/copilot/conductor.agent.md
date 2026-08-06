@@ -6,7 +6,7 @@ description: >
   PASS in a lane that produced a diff, it also commits, pushes, and opens the pull
   request — it never merges.
 tools: ["read", "edit", "agent", "execute"]
-model: Claude Sonnet 5 (copilot)
+model: Claude Sonnet 4.6 (copilot)
 agents:
   - adversary
   - builder

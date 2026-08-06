@@ -48,7 +48,7 @@ a bug.
 | File | Identifier | Model | Family | Tools | Role |
 |---|---|---|---|---|---|
 | `conductor.md` | `conductor` | `claude-sonnet-5` | Claude | read, task, skill, edit→ledger + `AGENTS.md`/`CLAUDE.md`, bash (scoped: git/gh) | Classify, dispatch, ledger, human interface, shipping |
-| `planner.md` | `planner` | `claude-opus-5` | Claude | read, grep, edit→`.agent-output/**` | Socratic planning, design, ADs, requirements |
+| `planner.md` | `planner` | `gpt-5.6-sol` | GPT | read, grep, edit→`.agent-output/**` | Socratic planning, design, ADs, requirements |
 | `investigator.md` | `investigator` | `gpt-5.6-sol` | GPT | read, grep, bash, edit→`.agent-output/**` | Read-only comprehension and root cause |
 | `builder.md` | `builder` | `gpt-5.6-terra` | GPT | read, edit, bash, grep | Implementation |
 | `mechanic.md` | `mechanic` | `claude-haiku-4.5` | Claude | read, edit, bash | Trivial mechanical edits |

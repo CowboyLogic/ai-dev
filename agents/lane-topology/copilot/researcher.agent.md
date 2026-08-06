@@ -4,7 +4,7 @@ description: >
   compatibility, error messages, vendor documentation. Returns findings with sources.
   Does not decide anything and does not touch the codebase.
 tools: ["read", "search", "web", "edit"]
-model: Claude Haiku 4.5 (copilot)
+model: GPT-5.6 Luna (copilot)
 user-invocable: false
 ---
 
@@ -106,7 +106,7 @@ is a different agent's job and the Conductor sequences it.
 
 ## Model Selection Rationale
 
-**Current model:** Claude Haiku 4.5 · **Family:** Anthropic / Claude
+**Current model:** GPT-5.6 Luna · **Family:** OpenAI / GPT
 
 The cheapest tier, matched to the task: retrieval and summarization against sources
 that are already authoritative. There is no synthesis or judgment here — the

@@ -5,7 +5,7 @@ description: >
   modifies the working tree; writes findings only to .agent-output/. The context
   firewall between the codebase and the Conductor.
 tools: ["read", "search", "execute", "edit"]
-model: GPT-5.6 Sol (copilot)
+model: GPT-5.6 Terra (copilot)
 user-invocable: false
 ---
 
