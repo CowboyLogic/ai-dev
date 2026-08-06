@@ -47,15 +47,15 @@ a bug.
 
 | File | Identifier | Model | Family | Tools | Role |
 |---|---|---|---|---|---|
-| `conductor.md` | `conductor` | `claude-sonnet-5` | Claude | read, task, skill, edit→ledger + `AGENTS.md`/`CLAUDE.md`, bash (scoped: git/gh) | Classify, dispatch, ledger, human interface, shipping |
+| `conductor.md` | `conductor` | `claude-sonnet-4.6` | Claude | read, task, skill, edit→ledger + `AGENTS.md`/`CLAUDE.md`, bash (scoped: git/gh) | Classify, dispatch, ledger, human interface, shipping |
 | `planner.md` | `planner` | `gpt-5.6-sol` | GPT | read, grep, edit→`.agent-output/**` | Socratic planning, design, ADs, requirements |
-| `investigator.md` | `investigator` | `gpt-5.6-sol` | GPT | read, grep, bash, edit→`.agent-output/**` | Read-only comprehension and root cause |
+| `investigator.md` | `investigator` | `gpt-5.6-terra` | GPT | read, grep, bash, edit→`.agent-output/**` | Read-only comprehension and root cause |
 | `builder.md` | `builder` | `gpt-5.6-terra` | GPT | read, edit, bash, grep | Implementation |
-| `mechanic.md` | `mechanic` | `claude-haiku-4.5` | Claude | read, edit, bash | Trivial mechanical edits |
+| `mechanic.md` | `mechanic` | `gpt-5.6-terra` | GPT | read, edit, bash | Trivial mechanical edits |
 | `verifier.md` | `verifier` | `gemini-3.6-flash` | Gemini | read, grep, bash | Cross-family review + independent execution |
 | `adversary.md` | `adversary` | `claude-opus-5` | Claude | read, grep, bash | Security review |
-| `scribe.md` | `scribe` | `claude-sonnet-5` | Claude | read, edit, grep | Documentation |
-| `researcher.md` | `researcher` | `claude-haiku-4.5` | Claude | read, grep, webfetch, websearch, edit→`.agent-output/**` | External research |
+| `scribe.md` | `scribe` | `gpt-5.6-luna` | GPT | read, edit, grep | Documentation |
+| `researcher.md` | `researcher` | `gpt-5.6-luna` | GPT | read, grep, webfetch, websearch, edit→`.agent-output/**` | External research |
 
 `conductor` is `mode: primary`. Everything else is `mode: subagent`.
 
@@ -269,7 +269,9 @@ Only the aliases this roster actually uses:
 | `github-copilot/claude-haiku-4.5` | `Claude Haiku 4.5 (copilot)` |
 | `github-copilot/gpt-5.6-terra` | `GPT-5.6 Terra (copilot)` |
 | `github-copilot/gpt-5.6-sol` | `GPT-5.6 Sol (copilot)` |
+| `github-copilot/gpt-5.6-luna` | `GPT-5.6 Luna (copilot)` |
 | `github-copilot/gemini-3.6-flash` | `Gemini 3.6 Flash (copilot)` |
+| `github-copilot/claude-sonnet-4.6` | `Claude Sonnet 4.6 (copilot)` |
 
 ### Scoped `edit` does not port
 

@@ -3,7 +3,7 @@ description: >
   External information retrieval. Current library APIs, protocol details, version
   compatibility, error messages, vendor documentation. Returns findings with sources.
   Does not decide anything and does not touch the codebase.
-model: github-copilot/claude-haiku-4.5
+model: github-copilot/gpt-5.6-luna
 permission:
   read: allow
   grep: allow
@@ -116,7 +116,7 @@ is a different agent's job and the Conductor sequences it.
 
 ## Model Selection Rationale
 
-**Current model:** Claude Haiku 4.5 · **Family:** Anthropic / Claude
+**Current model:** GPT-5.6 Luna · **Family:** OpenAI / GPT
 
 The cheapest tier, matched to the task: retrieval and summarization against sources
 that are already authoritative. There is no synthesis or judgment here — the
