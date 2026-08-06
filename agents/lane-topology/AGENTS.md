@@ -88,16 +88,16 @@ The Conductor loads a skill named **`about-me`** as step 1 of its Session Start
 sequence. It carries the working context and philosophy of the person running the
 session, and it shapes brief construction, question framing, and escalation tone.
 
-**A generic template ships at `skills/about-me/`. No filled-in copy ever will.** The
-template contains nobody's actual profile; a customized copy carries personal context
-and is deliberately not published. The working copy lives at
-`~/.claude/skills/about-me/`, symlinked into `~/.agents/skills/about-me/` where
-OpenCode discovers it, and is installed per machine.
+**The repository ships an `about-me-skill-creator` at
+`skills/about-me-skill-creator/`, never a filled-in profile.** The creator runs a
+wizard that produces a private `about-me` skill. It defaults to writing
+`~/.claude/skills/about-me/SKILL.md`, but lets the user choose
+`~/.agents/skills/about-me/` or another absolute destination. The generated profile
+contains personal context and is deliberately not published.
 
-The template carries a `STATUS: TEMPLATE` callout at the top. An agent that loads it
-and still sees that callout offers to run the customization interview instead of
-treating the placeholder content as fact. Deleting the callout is what marks the file
-as real — so do not remove it from the shipped template.
+The creator confirms the destination before replacing an existing profile. It gathers
+only durable, high-signal facts and excludes secrets, repository-local instructions,
+and temporary task details.
 
 On a machine with no copy at all, the Conductor prints a one-line notice and runs
 without personal context — degraded, not broken.
@@ -105,11 +105,9 @@ without personal context — degraded, not broken.
 > [!IMPORTANT]
 > **The degraded path is still the default for a new adopter, and that is worth
 > stating plainly.** `about-me` is load-bearing: it shapes brief construction,
-> question framing, autonomy, and escalation tone. Shipping the template closes the
-> "file does not exist for its readers" gap, but a reader who installs the topology
-> and never customizes the skill is running on placeholder scaffolding, which is
-> worse than nothing if it is mistaken for a profile. That is precisely what the
-> `STATUS: TEMPLATE` callout exists to prevent.
+> question framing, autonomy, and escalation tone. A reader who installs the topology
+> without generating a profile is running without this calibration, so the creator
+> should be offered during setup rather than silently substituted as personal context.
 
 Why it is loaded explicitly rather than left to discovery: skills use **progressive
 disclosure**, so a skill loads when the model judges it relevant. `about-me` is always
