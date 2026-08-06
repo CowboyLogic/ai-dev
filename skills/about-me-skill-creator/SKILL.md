@@ -80,6 +80,7 @@ with the user's facts and omit sections that do not add signal.
 ---
 name: about-me
 description: Durable personal context about the person running this session — their background, tooling, constraints, and preferences for how agents should work with them. Load at the start of every session and whenever calibrating tone, autonomy, technical depth, or workflow.
+license: MIT
 ---
 
 # About Me
