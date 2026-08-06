@@ -670,7 +670,7 @@ recommends, and a specific question. Not a status dump — a decision request.
 
 ## Model Selection Rationale
 
-**Current model:** Claude Sonnet 5 · **Family:** Anthropic / Claude
+**Current model:** Claude Sonnet 4.6 · **Family:** Anthropic / Claude
 
 The Conductor is invoked on every turn and holds the longest-lived context in the
 system, so it must be fast and cheap enough to run constantly. Its actual cognitive

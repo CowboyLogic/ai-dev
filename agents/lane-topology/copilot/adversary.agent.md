@@ -5,7 +5,7 @@ description: >
   whatever lane the work is already in whenever the security band is critical.
   Returns PASS / FIX / ESCALATE with findings by severity.
 tools: ["read", "search", "execute"]
-model: GPT-5.6 Terra (copilot)
+model: Claude Opus 5 (copilot)
 user-invocable: false
 ---
 

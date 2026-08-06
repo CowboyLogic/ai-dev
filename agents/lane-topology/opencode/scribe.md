@@ -3,7 +3,7 @@ description: >
   Documentation. Writes docs that describe what the code actually does, not what it
   was supposed to do. Runs at the close of the BUILD lane or on demand. Reads the
   implementation before writing a word about it.
-model: github-copilot/claude-sonnet-5
+model: github-copilot/gpt-5.6-luna
 permission:
   read: allow
   edit: allow
@@ -87,7 +87,7 @@ claims the code does not support. On `FIX`, the Scribe corrects in one cycle.
 
 ## Model Selection Rationale
 
-**Current model:** Claude Sonnet 5 · **Family:** Anthropic / Claude
+**Current model:** GPT-5.6 Luna · **Family:** OpenAI / GPT
 
 Documentation requires accurate comprehension of a full implementation plus the
 judgment to decide what a reader actually needs — real reasoning, but not the heaviest

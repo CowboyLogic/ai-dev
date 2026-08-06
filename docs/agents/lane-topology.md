@@ -62,15 +62,15 @@ findings between agents without re-deriving them.
 
 | Agent | Model | Job | File |
 |---|---|---|---|
-| **Conductor** | Claude Sonnet 5 | Classifies, dispatches, holds the ledger, talks to you. Nothing else. | [conductor](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/conductor.md) |
+| **Conductor** | Claude Sonnet 4.6 | Classifies, dispatches, holds the ledger, talks to you. Nothing else. | [conductor](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/conductor.md) |
 | **Planner** | GPT-5.6 Sol | Socratic planning → design → Architecture Decisions → numbered requirements | [planner](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/planner.md) |
-| **Investigator** | GPT-5.6 Sol | Read-only comprehension and root-cause work | [investigator](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/investigator.md) |
+| **Investigator** | GPT-5.6 Terra | Read-only comprehension and root-cause work | [investigator](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/investigator.md) |
 | **Builder** | GPT-5.6 Terra | Implementation | [builder](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/builder.md) |
-| **Mechanic** | Claude Haiku 4.5 | Trivial mechanical edits | [mechanic](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/mechanic.md) |
+| **Mechanic** | GPT-5.6 Terra | Trivial mechanical edits | [mechanic](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/mechanic.md) |
 | **Verifier** | Gemini 3.6 Flash | Cross-family review **+ runs the tests itself** | [verifier](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/verifier.md) |
 | **Adversary** | Claude Opus 5 | Security review, dispatched by risk band | [adversary](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/adversary.md) |
-| **Scribe** | Claude Sonnet 5 | Documentation | [scribe](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/scribe.md) |
-| **Researcher** | Claude Haiku 4.5 | External research | [researcher](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/researcher.md) |
+| **Scribe** | GPT-5.6 Luna | Documentation | [scribe](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/scribe.md) |
+| **Researcher** | GPT-5.6 Luna | External research | [researcher](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/researcher.md) |
 
 The Conductor is the only agent you talk to and the only one with dispatch
 authority (`mode: primary`); the other eight are subagents it routes work to. It
