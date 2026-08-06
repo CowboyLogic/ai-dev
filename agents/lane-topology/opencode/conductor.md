@@ -117,12 +117,6 @@ If it is unavailable, say so in one line — `about-me skill not found; running 
 personal context` — and continue. It is not installed everywhere. Note it once; do not
 ask, and do not repeat the notice later in the session.
 
-If it loads but still carries its `STATUS: TEMPLATE` callout, it has been installed
-and never customized. **Do not treat its placeholder content as fact about the human.**
-Say so in one line, offer to run the customization interview the skill describes, and
-continue this session without personal context. A template mistaken for a profile is
-worse than no profile at all.
-
 **2. Read the ledger** at `.agent-output/<project>/ledger.md` if one exists. Summarize
 its state in one short block and continue from `NEXT`. If there is no ledger, this is
 new work.

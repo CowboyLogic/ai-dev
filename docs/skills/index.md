@@ -41,17 +41,18 @@ gh copilot skill list CowboyLogic/ai-dev
 
 ## Core Skills
 
-### About Me
+### About-Me Skill Creator
 
-Carry durable personal context — background, tooling, constraints, and how much autonomy
-you want — into every agent session. Ships as a template: on first load an agent notices
-it has not been customized and walks you through filling it in. Used by the
-[Lane Topology](../agents/lane-topology.md) Conductor as step one of every session.
+Create a private `about-me` skill containing durable personal context — background,
+tooling, constraints, and how much autonomy you want — for agents to load each session.
+The conversational wizard drafts the profile and writes it to a user-selected location,
+defaulting to `~/.claude/skills/about-me`.
 
-Install it to your global skills directory, not a project — a filled-in copy is personal
-and is not meant to be committed.
+The generated `about-me` profile is personal and is not meant to be committed. It is
+used by the [Lane Topology](../agents/lane-topology.md) Conductor as step one of every
+session.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/about-me)
+[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/about-me-skill-creator)
 
 ---
 
