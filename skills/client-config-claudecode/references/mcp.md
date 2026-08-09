@@ -50,7 +50,7 @@ Note: MCP servers are NOT configured in `settings.json` directly — they live i
 {
   "type": "sse",
   "url": "https://mcp.example.com/sse",
-  "headers": { "Authorization": "******" }
+  "headers": { "Authorization": "Bearer ${MY_TOKEN}" }
 }
 ```
 
@@ -60,7 +60,7 @@ Note: MCP servers are NOT configured in `settings.json` directly — they live i
 {
   "type": "http",
   "url": "https://mcp.example.com/mcp",
-  "headers": { "Authorization": "******" }
+  "headers": { "Authorization": "Bearer ${MY_TOKEN}" }
 }
 ```
 
@@ -111,7 +111,7 @@ Stdio servers receive `CLAUDE_PROJECT_DIR` (project root) in their spawned envir
 "postgres": {
   "type": "stdio",
   "command": "npx",
-  "args": ["-y", "@modelcontextprotocol/server-postgres", "******localhost/db"]
+  "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost/${POSTGRES_DB}"]
 }
 ```
 
