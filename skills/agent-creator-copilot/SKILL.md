@@ -9,7 +9,7 @@ license: MIT
 Custom agents for GitHub Copilot and VS Code are defined in `.agent.md` Markdown files called **agent profiles**. They encode a role, behavioral instructions, and tool access without requiring extension development.
 
 > **Always verify against official docs.** The canonical references are:
-> - [About custom agents](https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-custom-agents)
+> - [About custom agents](https://docs.github.com/en/copilot/concepts/agents/coding-agent/about-custom-agents)
 > - [VS Code custom agents](https://code.visualstudio.com/docs/copilot/customization/custom-agents)
 > - [Configuration reference](https://docs.github.com/en/copilot/reference/custom-agents-configuration)
 
@@ -50,7 +50,7 @@ tools: ["read", "search"]
 Write your agent's prompt here. This content is prepended to every chat message.
 ```
 
-YAML frontmatter is optional. An agent can consist of only a Markdown body.
+Custom agents require YAML frontmatter with a `description`. The Markdown body contains the agent instructions.
 
 > For the full property reference, load `references/frontmatter-reference.md`.
 
@@ -211,8 +211,8 @@ Follow the template above. Be specific about scope and handoff conditions.
 
 | Resource | URL |
 |---|---|
-| About custom agents | https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-custom-agents |
-| Create custom agents | https://docs.github.com/en/copilot/how-tos/use-copilot-agents/cloud-agent/create-custom-agents |
+| About custom agents | https://docs.github.com/en/copilot/concepts/agents/coding-agent/about-custom-agents |
+| Create custom agents | https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/create-custom-agents |
 | Configuration reference | https://docs.github.com/en/copilot/reference/custom-agents-configuration |
 | Custom agents in VS Code | https://code.visualstudio.com/docs/copilot/customization/custom-agents |
 | Awesome Copilot agents | https://github.com/github/awesome-copilot/tree/main/agents |

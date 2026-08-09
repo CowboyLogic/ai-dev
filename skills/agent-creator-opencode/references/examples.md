@@ -19,9 +19,9 @@ temperature: 0.1
 permission:
   edit: deny
   bash:
+    "*": deny
     "git diff*": allow
     "git log*": allow
-    "*": deny
   webfetch: deny
 ---
 
@@ -58,10 +58,10 @@ permission:
     "migrations/**": allow
     "*": deny
   bash:
+    "*": ask
     "psql --dry-run*": allow
     "alembic check": allow
     "alembic history": allow
-    "*": ask
   webfetch: deny
 ---
 
@@ -130,12 +130,12 @@ temperature: 0.0
 permission:
   edit: deny
   bash:
+    "*": deny
     "grep *": allow
     "find *": allow
     "cat *": allow
     "git log*": allow
     "git diff*": allow
-    "*": deny
   webfetch: deny
 ---
 

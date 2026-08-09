@@ -58,8 +58,8 @@ Or type `/create-agent` in Agent mode chat to have Copilot generate the profile 
 
 | Resource | URL |
 |---|---|
-| About custom agents | https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-custom-agents |
-| Create custom agents | https://docs.github.com/en/copilot/how-tos/use-copilot-agents/cloud-agent/create-custom-agents |
+| About custom agents | https://docs.github.com/en/copilot/concepts/agents/coding-agent/about-custom-agents |
+| Create custom agents | https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/create-custom-agents |
 | Configuration reference | https://docs.github.com/en/copilot/reference/custom-agents-configuration |
 | Custom agents in VS Code | https://code.visualstudio.com/docs/copilot/customization/custom-agents |
 | Awesome Copilot agents | https://github.com/github/awesome-copilot/tree/main/agents |

@@ -10,8 +10,11 @@ from pathlib import Path
 
 COPILOT_HOME = Path(os.environ.get("COPILOT_HOME", Path.home() / ".copilot"))
 CONFIG_FILE = COPILOT_HOME / "config.json"
+SETTINGS_FILE = COPILOT_HOME / "settings.json"
 MCP_FILE = COPILOT_HOME / "mcp-config.json"
 SKILLS_DIR = COPILOT_HOME / "skills"
+HOOKS_DIR = COPILOT_HOME / "hooks"
+INSTRUCTIONS_DIR = COPILOT_HOME / "instructions"
 INSTRUCTIONS_FILE = COPILOT_HOME / "copilot-instructions.md"
 
 BYOK_VARS = [
@@ -57,12 +60,12 @@ def main():
         if as_json:
             print(json.dumps(config, indent=2))
         else:
-            trusted = config.get("trusted_folders", [])
-            print(f"  trusted_folders: ({len(trusted)} entries)")
+            trusted = config.get("trustedFolders", [])
+            print(f"  trustedFolders: ({len(trusted)} entries)")
             for folder in trusted:
                 print(f"    - {folder}")
             for key, val in config.items():
-                if key != "trusted_folders":
+                if key != "trustedFolders":
                     print(f"  {key}: {val}")
 
     # --- mcp-config.json ---
@@ -85,6 +88,19 @@ def main():
                 print(f"      tools: {tool_str}")
                 if "env" in cfg:
                     print(f"      env vars: {list(cfg['env'].keys())}")
+
+    # --- settings.json ---
+    section(f"USER SETTINGS ({SETTINGS_FILE})")
+    settings = load_json(SETTINGS_FILE)
+    if settings is None:
+        print("  (file not found — defaults apply)")
+    elif not settings:
+        print("  (empty)")
+    elif as_json:
+        print(json.dumps(settings, indent=2))
+    else:
+        for key, value in settings.items():
+            print(f"  {key}: {value}")
 
     # --- skills ---
     section(f"PERSONAL SKILLS ({SKILLS_DIR})")
@@ -125,12 +141,32 @@ def main():
     else:
         print("  (file not found)")
 
+    # --- global hooks and path-specific instructions ---
+    section(f"PERSONAL HOOKS ({HOOKS_DIR})")
+    hook_files = sorted(HOOKS_DIR.glob("*.json")) if HOOKS_DIR.exists() else []
+    if hook_files:
+        for hook_file in hook_files:
+            print(f"  {hook_file.name} ({hook_file.stat().st_size} bytes)")
+    else:
+        print("  (no hook files found)")
+
+    section(f"PERSONAL PATH-SPECIFIC INSTRUCTIONS ({INSTRUCTIONS_DIR})")
+    instruction_files = sorted(INSTRUCTIONS_DIR.rglob("*.instructions.md")) if INSTRUCTIONS_DIR.exists() else []
+    if instruction_files:
+        for instruction_file in instruction_files:
+            print(f"  {instruction_file.relative_to(INSTRUCTIONS_DIR)} ({instruction_file.stat().st_size} bytes)")
+    else:
+        print("  (no path-specific instruction files found)")
+
     # --- project config files ---
     cwd = Path.cwd()
     project_files = [
         (cwd / ".github" / "copilot-instructions.md", "Project instructions"),
         (cwd / "AGENTS.md", "AGENTS.md (project-wide)"),
-        (cwd / ".github" / "hooks" / "hooks.json", "Hooks"),
+        (cwd / ".mcp.json", "Project MCP configuration"),
+        (cwd / ".github" / "mcp.json", "Project MCP configuration"),
+        (cwd / ".github" / "hooks", "Project hooks"),
+        (cwd / ".github" / "instructions", "Project path-specific instructions"),
         (cwd / ".github" / "skills", "Project skills dir"),
     ]
     found_any = any(f.exists() for f, _ in project_files)

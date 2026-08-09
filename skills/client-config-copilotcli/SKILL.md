@@ -14,12 +14,15 @@ You help the user manage all GitHub Copilot CLI configuration files.
 | Trusted folders | `~/.copilot/config.json` | Global |
 | User settings (continueOnAutoMode etc.) | `~/.copilot/settings.json` | Global |
 | MCP servers | `~/.copilot/mcp-config.json` | Global |
-| Hooks | `.github/hooks/hooks.json` | Project (default branch) |
+| MCP servers | `.mcp.json` or `.github/mcp.json` | Project |
+| Hooks | `~/.copilot/hooks/<name>.json` | Global |
+| Hooks | `.github/hooks/<name>.json` | Project (default branch) |
 | Skills | `~/.copilot/skills/<name>/SKILL.md` | Global personal |
 | Skills | `.github/skills/<name>/SKILL.md` | Project |
 | Custom agents | `~/.copilot/agents/<name>.agent.md` | Global personal |
 | Custom agents | `.github/agents/<name>.agent.md` | Project |
 | Custom instructions | `~/.copilot/copilot-instructions.md` | Global personal |
+| Path-specific instructions | `~/.copilot/instructions/**/*.instructions.md` | Global personal |
 | Custom instructions | `.github/copilot-instructions.md` | Project-wide |
 | Path-specific instructions | `.github/instructions/*.instructions.md` | Project (glob-matched) |
 
@@ -51,7 +54,7 @@ You help the user manage all GitHub Copilot CLI configuration files.
 
 ```bash
 # Trust a folder permanently (edit config.json)
-# Add path to "trusted_folders" array
+# Add path to "trustedFolders" array
 
 # Check auth status
 gh auth status
@@ -72,10 +75,10 @@ gh auth status
 export COPILOT_OFFLINE=true
 
 # Name a session at startup
-gh copilot --name my-feature-work
+copilot --name my-feature-work
 
 # Resume a named session
-gh copilot --resume=my-feature-work
+copilot --resume=my-feature-work
 
 # Delete a session (inside session)
 /session delete
@@ -101,17 +104,18 @@ Run with: `python scripts/<script>.py`
 
 When the user asks to **update**, **refresh**, or **sync** this skill:
 
-1. Run `python scripts/update-references.py --all` → fetches docs to `_fetched/`
-2. Read each `_fetched/` file alongside its corresponding `references/` file
-3. Update `references/` files to reflect documentation changes
-4. Delete `_fetched/` and report what changed
+1. Run `python scripts/update-references.py --all` → fetches each configured reference source to `_fetched/`
+2. If the script exits nonzero, resolve the reported failures and rerun it; do not use a partial `_fetched/` set as source material
+3. Read each `_fetched/` file alongside its corresponding `references/` file
+4. Update `references/` files to reflect documentation changes
+5. Delete `_fetched/` and report what changed
 
 Source URLs are in `sources.json`.
 
 ## Safety rules
 
 - Always read the file before editing
-- Never remove `trusted_folders` entries without confirming with the user
+- Never remove `trustedFolders` entries without confirming with the user
 - Hooks and skills live in project directories — confirm scope (global vs project) before creating
 - JSON files: validate well-formed after any edit
 - Markdown files: preserve frontmatter structure

@@ -2,7 +2,7 @@
 
 Configuration keys for OpenCode agents (Markdown frontmatter or `opencode.json`).
 
-**Sources:** https://opencode.ai/docs/agents/ · https://opencode.ai/docs/permissions/
+**Sources:** https://opencode.ai/docs/agents/ · https://opencode.ai/docs/permissions/ · https://opencode.ai/config.json
 
 Load this file when you need types, defaults, or edge cases for a specific key.
 For permission syntax and patterns, load `permissions.md`. For model IDs, load
@@ -24,6 +24,9 @@ mode: subagent          # primary | subagent | all (default: all)
 
 # Model — uses provider/model-id format
 model: anthropic/claude-sonnet-4-20250514
+
+# Optional model variant
+variant: <variant-id>
 
 # Inline prompt or file reference
 prompt: "You are a specialized assistant."
@@ -75,6 +78,7 @@ System prompt body goes here. This is the agent's instructions.
       "description": "Short description of what this agent does",
       "mode": "subagent",
       "model": "anthropic/claude-sonnet-4-20250514",
+      "variant": "<variant-id>",
       "prompt": "You are a specialized assistant.",
       "temperature": 0.1,
       "top_p": 0.9,
@@ -171,6 +175,16 @@ See `models.md` for valid values. Run `opencode models` to list all available mo
 - Be intentional: match the model to the agent's role (see `models.md`)
 - Use faster/cheaper models for lightweight subagents; stronger models for coding, orchestration, and deep reasoning
 - Omit `model` only when inheritance is desired (subagent follows its primary; primary uses global config)
+
+---
+
+### variant
+
+Optional model variant. Valid values are model- and provider-specific.
+
+```yaml
+variant: <variant-id>
+```
 
 ---
 

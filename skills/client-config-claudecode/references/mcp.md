@@ -34,6 +34,7 @@ Note: MCP servers are NOT configured in `settings.json` directly — they live i
 ## Transport types
 
 ### stdio (most common — local process)
+
 ```json
 {
   "type": "stdio",
@@ -44,33 +45,26 @@ Note: MCP servers are NOT configured in `settings.json` directly — they live i
 ```
 
 ### SSE (Server-Sent Events — remote HTTP)
+
 ```json
 {
   "type": "sse",
   "url": "https://mcp.example.com/sse",
-  "headers": { "Authorization": "Bearer ${MY_TOKEN}" }
+  "headers": { "Authorization": "******" }
 }
 ```
 
 ### HTTP (streamable HTTP)
+
 ```json
 {
   "type": "http",
   "url": "https://mcp.example.com/mcp",
-  "headers": { "Authorization": "Bearer ${MY_TOKEN}" }
+  "headers": { "Authorization": "******" }
 }
 ```
-`"streamable-http"` is accepted as an alias for `"http"` (matches the MCP spec name; configs copied from server docs work as-is). A JSON entry with a `url` but no `type` is an error — Claude Code otherwise reads it as stdio and skips the server.
 
-### WebSocket (persistent bidirectional — servers that push events unprompted)
-```json
-{
-  "type": "ws",
-  "url": "wss://mcp.example.com/socket",
-  "headers": { "Authorization": "Bearer ${MY_TOKEN}" }
-}
-```
-Only configurable via `.mcp.json` or `claude mcp add-json` (no `--transport ws` flag). Accepts the same `url`, `headers`, `headersHelper`, `timeout`, and `alwaysLoad` fields as `http`. Header-only auth (no OAuth support).
+Use `http` for streamable HTTP servers. A JSON entry with a `url` but no `type` is an error — Claude Code otherwise reads it as stdio and skips the server.
 
 **Other per-server fields** (any transport): `headersHelper` (script to generate dynamic auth headers), `alwaysLoad` (skip lazy tool-search deferral for this server), `oauth: {clientId, callbackPort}` (pre-configured OAuth credentials, via `claude mcp add-json ... --client-secret`).
 
@@ -81,6 +75,7 @@ Stdio servers receive `CLAUDE_PROJECT_DIR` (project root) in their spawned envir
 ## Common MCP servers
 
 ### Filesystem
+
 ```json
 "filesystem": {
   "type": "stdio",
@@ -90,6 +85,7 @@ Stdio servers receive `CLAUDE_PROJECT_DIR` (project root) in their spawned envir
 ```
 
 ### GitHub
+
 ```json
 "github": {
   "type": "stdio",
@@ -100,6 +96,7 @@ Stdio servers receive `CLAUDE_PROJECT_DIR` (project root) in their spawned envir
 ```
 
 ### Memory
+
 ```json
 "memory": {
   "type": "stdio",
@@ -109,15 +106,17 @@ Stdio servers receive `CLAUDE_PROJECT_DIR` (project root) in their spawned envir
 ```
 
 ### PostgreSQL
+
 ```json
 "postgres": {
   "type": "stdio",
   "command": "npx",
-  "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://user:pass@localhost/db"]
+  "args": ["-y", "@modelcontextprotocol/server-postgres", "******localhost/db"]
 }
 ```
 
 ### Brave Search
+
 ```json
 "brave-search": {
   "type": "stdio",
@@ -174,6 +173,7 @@ These control MCP behavior but servers themselves are in `~/.claude.json`:
 Pattern: `mcp__<server-name>__<tool-name>`. Plugin-bundled servers use `mcp__plugin_<plugin-name>_<server-name>__<tool>`.
 
 **Tools that force a prompt regardless of allow rules / permission mode:**
+
 - Server marks a tool `_meta["anthropic/requiresUserInteraction"]: true` — always prompts (even `acceptEdits`/`auto`/`bypassPermissions`); denied outright in `dontAsk`.
 - Org sets a claude.ai connector tool to `ask` (via admin console) — same forced-prompt behavior. Org can also set a tool to `blocked`, which filters it out before Claude ever sees it.
 

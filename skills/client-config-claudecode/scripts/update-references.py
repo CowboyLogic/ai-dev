@@ -61,21 +61,28 @@ def save_fetched(ref_path: str, content: str, url: str) -> Path:
 def main():
     if not SOURCES_FILE.exists():
         print(f"ERROR: assets/sources.json not found at {SOURCES_FILE}")
-        sys.exit(1)
+        return 1
 
     with open(SOURCES_FILE) as f:
         sources = json.load(f)
 
     refs = sources.get("references", {})
 
-    # Filter to specific ref if requested
+    args = sys.argv[1:]
     target = None
-    if "--ref" in sys.argv:
-        idx = sys.argv.index("--ref")
-        if idx + 1 < len(sys.argv):
-            target = sys.argv[idx + 1]
-
-    fetch_all = "--all" in sys.argv or target is None
+    if "--ref" in args:
+        idx = args.index("--ref")
+        if idx + 1 >= len(args):
+            print("ERROR: --ref requires a reference path")
+            return 2
+        target = args[idx + 1]
+        del args[idx:idx + 2]
+    if any(arg != "--all" for arg in args):
+        print("ERROR: usage: python scripts/update-references.py [--ref references/file.md] [--all]")
+        return 2
+    if target and target not in refs:
+        print(f"ERROR: unknown reference: {target}")
+        return 2
 
     results = []
     for ref_path, meta in refs.items():
@@ -96,6 +103,9 @@ def main():
             results.append({"ref": ref_path, "fetched": str(out_path), "url": url, "ok": True})
         except RuntimeError as e:
             print(f"  FAILED: {e}")
+            stale_path = FETCHED_DIR / Path(ref_path).name
+            if stale_path.exists():
+                stale_path.unlink()
             results.append({"ref": ref_path, "url": url, "ok": False, "error": str(e)})
 
     success = sum(1 for r in results if r["ok"])
@@ -105,7 +115,7 @@ def main():
     print(f"Fetched {success}/{len(results)} sources")
     if failed:
         print(f"  {failed} failed — check network/URL changes")
-    if success:
+    if success and not failed:
         print(f"\nNext steps for Claude:")
         print(f"  1. Read each file in _fetched/")
         print(f"  2. Read the corresponding file in references/")
@@ -116,6 +126,7 @@ def main():
         for r in results:
             if r["ok"]:
                 print(f"  {r['fetched']}")
+    return 1 if failed else 0
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

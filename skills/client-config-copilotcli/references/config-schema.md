@@ -246,10 +246,10 @@ Sessions can be named at startup and resumed later.
 
 ```bash
 # Start a named session
-gh copilot --name my-feature-work
+copilot --name my-feature-work
 
 # Resume it later
-gh copilot --resume=my-feature-work
+copilot --resume=my-feature-work
 ```
 
 ### Session slash commands (inside sessions)

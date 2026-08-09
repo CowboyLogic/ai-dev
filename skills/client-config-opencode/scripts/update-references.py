@@ -43,7 +43,7 @@ def sanitize_filename(url: str) -> str:
 def main():
     if not SOURCES_FILE.exists():
         print(f"ERROR: sources.json not found at {SOURCES_FILE}")
-        sys.exit(1)
+        return 1
 
     with open(SOURCES_FILE, encoding="utf-8") as f:
         sources = json.load(f)
@@ -92,10 +92,14 @@ def main():
         except urllib.error.HTTPError as e:
             msg = f"HTTP {e.code}: {url}"
             print(f"    ERROR: {msg}")
+            if out_path.exists():
+                out_path.unlink()
             errors.append(msg)
         except Exception as e:
             msg = f"{e}: {url}"
             print(f"    ERROR: {msg}")
+            if out_path.exists():
+                out_path.unlink()
             errors.append(msg)
         print()
 
@@ -108,12 +112,13 @@ def main():
         print(f"\n{len(errors)} error(s):")
         for e in errors:
             print(f"  - {e}")
-        sys.exit(1)
+        return 1
     else:
         print(f"\nAll {len(urls_to_fetch)} URLs fetched successfully.")
         print("\nNext step: Review diffs between _fetched/ content and references/,")
         print("then rewrite any reference files that contain stale information.")
+        return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
