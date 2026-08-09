@@ -7,15 +7,31 @@ import sys
 from pathlib import Path
 
 # Config locations
-CONFIG_DIR = Path.home() / ".config" / "opencode"
-PROJECT_DIR = Path.cwd() / ".opencode"
+CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "opencode"
+
+
+def find_project_root(start):
+    """Find the nearest OpenCode config or Git repository from the working directory."""
+    current = start.resolve()
+    for directory in (current, *current.parents):
+        if (directory / "opencode.json").exists() or (directory / ".git").exists():
+            return directory
+    return current
+
+
+PROJECT_ROOT = find_project_root(Path.cwd())
+PROJECT_DIR = PROJECT_ROOT / ".opencode"
 OPENCODE_JSON = CONFIG_DIR / "opencode.json"
-PROJECT_OPENCODE_JSON = PROJECT_DIR / "opencode.json"
-TUI_JSON = CONFIG_DIR / "tui.json"
+PROJECT_OPENCODE_JSON = PROJECT_ROOT / "opencode.json"
+TUI_JSON = Path(os.environ.get("OPENCODE_TUI_CONFIG", CONFIG_DIR / "tui.json")).expanduser()
+PROJECT_TUI_JSON = PROJECT_ROOT / "tui.json"
 AGENTS_DIR = CONFIG_DIR / "agents"
 PROJECT_AGENTS_DIR = PROJECT_DIR / "agents"
 COMMANDS_DIR = CONFIG_DIR / "commands"
 PROJECT_COMMANDS_DIR = PROJECT_DIR / "commands"
+CONFIG_OVERRIDE = os.environ.get("OPENCODE_CONFIG")
+CONFIG_CONTENT_OVERRIDE = os.environ.get("OPENCODE_CONFIG_CONTENT")
+CONFIG_DIRECTORY_OVERRIDE = os.environ.get("OPENCODE_CONFIG_DIR")
 
 BOLD = "\033[1m"
 DIM = "\033[2m"
@@ -46,6 +62,15 @@ def show_json_file(path, label):
         print(f"\n{YELLOW}{label}{RESET} ({path}) — parse error: {e}")
         with open(path, encoding="utf-8") as f:
             print(f.read())
+
+def show_json_content(content, label):
+    try:
+        data = json.loads(content)
+    except json.JSONDecodeError as e:
+        print(f"\n{YELLOW}{label}{RESET} — parse error: {e}")
+        return
+    print(f"\n{GREEN}{label}{RESET}")
+    print(json.dumps(data, indent=2))
 
 def show_md_file(path, label):
     if not path.exists():
@@ -100,31 +125,48 @@ def main():
     print(f"Working directory: {Path.cwd()}")
 
     # User-level config
-    header("User Config (~/.config/opencode/opencode.json)")
+    header(f"User Config ({OPENCODE_JSON})")
     show_json_file(OPENCODE_JSON, "opencode.json")
 
     # Project-level config
-    header("Project Config (.opencode/opencode.json)")
+    header(f"Project Config ({PROJECT_OPENCODE_JSON})")
     if PROJECT_OPENCODE_JSON.resolve() == OPENCODE_JSON.resolve():
         note("Same as user config (running from home directory)")
     else:
         show_json_file(PROJECT_OPENCODE_JSON, "opencode.json")
 
+    # Environment-provided config overrides
+    if CONFIG_OVERRIDE or CONFIG_CONTENT_OVERRIDE:
+        header("Configuration Overrides")
+        if CONFIG_OVERRIDE:
+            show_json_file(Path(CONFIG_OVERRIDE).expanduser(), "OPENCODE_CONFIG")
+        if CONFIG_CONTENT_OVERRIDE:
+            show_json_content(CONFIG_CONTENT_OVERRIDE, "OPENCODE_CONFIG_CONTENT")
+
     # TUI config
-    header("TUI Config (~/.config/opencode/tui.json)")
+    header(f"TUI Config ({TUI_JSON})")
     show_json_file(TUI_JSON, "tui.json")
+    if PROJECT_TUI_JSON != TUI_JSON:
+        header(f"Project TUI Config ({PROJECT_TUI_JSON})")
+        show_json_file(PROJECT_TUI_JSON, "tui.json")
 
     # Agents
     header("Custom Agents")
-    show_directory_contents(AGENTS_DIR, "Global agents (~/.config/opencode/agents/)")
+    show_directory_contents(AGENTS_DIR, f"Global agents ({AGENTS_DIR})")
     if PROJECT_AGENTS_DIR.exists():
         show_directory_contents(PROJECT_AGENTS_DIR, "Project agents (.opencode/agents/)")
 
     # Custom commands
     header("Custom Commands")
-    show_directory_contents(COMMANDS_DIR, "Global commands (~/.config/opencode/commands/)")
+    show_directory_contents(COMMANDS_DIR, f"Global commands ({COMMANDS_DIR})")
     if PROJECT_COMMANDS_DIR.exists():
         show_directory_contents(PROJECT_COMMANDS_DIR, "Project commands (.opencode/commands/)")
+
+    if CONFIG_DIRECTORY_OVERRIDE:
+        custom_dir = Path(CONFIG_DIRECTORY_OVERRIDE).expanduser()
+        header(f"Custom Config Directory ({custom_dir})")
+        show_directory_contents(custom_dir / "agents", "Custom agents")
+        show_directory_contents(custom_dir / "commands", "Custom commands")
 
     # Themes
     themes_dir = CONFIG_DIR / "themes"

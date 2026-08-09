@@ -82,17 +82,19 @@ Run with: `python scripts/<script>.py` from the skill directory, or with absolut
 
 When the user asks you to **update**, **refresh**, or **sync** this skill with the latest Claude Code documentation, follow these steps:
 
-1. **Fetch** — run `python scripts/update-references.py --all` (requires network access). This fetches each source URL listed in `assets/sources.json` and saves raw content to `_fetched/`.
+1. **Fetch** — run `python scripts/update-references.py --all` (requires network access). This fetches each configured reference URL in `assets/sources.json` and saves raw content to `_fetched/`.
 
-2. **Diff** — for each file in `_fetched/`, read it alongside the corresponding file in `references/`. Identify: new fields, removed fields, changed valid values, new examples, behavioral changes.
+2. **Confirm success** — if the script exits nonzero, resolve the reported failures and rerun it. Do not use a partial `_fetched/` set as source material.
 
-3. **Update** — rewrite each `references/*.md` file to reflect what changed. Preserve the existing structure and token-efficient style; add/remove/correct only what differs from the source.
+3. **Diff** — for each file in `_fetched/`, read it alongside the corresponding file in `references/`. Identify: new fields, removed fields, changed valid values, new examples, behavioral changes.
 
-4. **Validate** — run `python scripts/validate-settings.py` to confirm the schema knowledge is still coherent.
+4. **Update** — rewrite each `references/*.md` file to reflect what changed. Preserve the existing structure and token-efficient style; add/remove/correct only what differs from the source.
 
-5. **Clean up** — delete the `_fetched/` directory.
+5. **Validate** — run `python scripts/validate-settings.py` to confirm the schema knowledge is still coherent.
 
-6. **Report** — tell the user what changed (new keys added, deprecated fields, etc.).
+6. **Clean up** — delete the `_fetched/` directory.
+
+7. **Report** — tell the user what changed (new keys added, deprecated fields, etc.).
 
 ### Source URLs (for manual lookup)
 

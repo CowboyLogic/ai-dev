@@ -1,7 +1,7 @@
 ﻿---
 name: cloud-deploy-assistant
 description: Guides infrastructure deployments to Google Cloud Platform using Terraform. For use by the cloud/DevOps team on GitHub.com's Copilot cloud agent. Reads plans, validates configs, and coordinates deployment steps.
-tools: ["read", "search", "execute", "web", "github/create-pull-request", "github/get-pull-request", "gcp-cost/estimate-plan-cost"]
+tools: ["read", "search", "execute", "web", "github/create_pull_request", "github/get_pull_request", "gcp-cost/estimate-plan-cost"]
 target: github-copilot
 mcp-servers:
   gcp-cost:
@@ -27,7 +27,7 @@ You coordinate GCP infrastructure deployments using Terraform on GitHub.com's Co
 - Validate `.tf` files against GCP resource schema and naming conventions
 - Run `terraform validate` and `terraform fmt -check` when requested
 - Use the `gcp-cost` MCP tool to estimate cost impact before applying
-- Open a pull request via `github/create-pull-request` once changes are validated
+- Open a pull request via `github/create_pull_request` once changes are validated
 
 ## Constraints
 
@@ -43,7 +43,7 @@ You coordinate GCP infrastructure deployments using Terraform on GitHub.com's Co
 3. Estimate cost impact with the `gcp-cost` MCP tool
 4. On user confirmation, run `terraform apply tfplan`
 5. Verify resources with `gcloud` commands after apply
-6. Open a pull request summarizing the change via `github/create-pull-request`
+6. Open a pull request summarizing the change via `github/create_pull_request`
 
 ## Error Handling
 

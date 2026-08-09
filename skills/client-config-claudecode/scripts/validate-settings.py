@@ -37,7 +37,9 @@ KNOWN_TOP_LEVEL_KEYS = {
     "allowedChannelPlugins", "httpHookAllowedEnvVars", "$schema",
     "autoConnectIde", "autoScrollEnabled", "editorMode", "externalEditorContext",
     "showTurnDuration", "terminalProgressBarEnabled", "teammateMode",
-    "autoInstallIdeExtension",
+    "autoInstallIdeExtension", "voice", "extraKnownMarketplaces",
+    "skipWebFetchPreflight", "sshConfigs", "prUrlTemplate",
+    "wslInheritsWindowsSettings",
     # Added 2026-08-01 update-references.py refresh:
     "advisorModel", "fallbackModel", "switchModelsOnFlag", "theme", "verbose",
     "syntaxHighlightingDisabled", "wheelScrollAccelerationEnabled",
@@ -61,15 +63,13 @@ KNOWN_TOP_LEVEL_KEYS = {
 }
 
 GLOBAL_CONFIG_ONLY_KEYS = {
-    "autoConnectIde", "autoInstallIdeExtension", "autoScrollEnabled",
-    "editorMode", "externalEditorContext", "showTurnDuration",
-    "terminalProgressBarEnabled", "teammateMode",
+    "autoConnectIde", "autoInstallIdeExtension", "externalEditorContext",
     "diffTool", "permissionExplainerEnabled", "teammateDefaultModel",
 }
 
 PERMISSION_RULE_TOOLS = {
     "Bash", "Read", "Edit", "Write", "Glob", "Grep", "WebFetch", "WebSearch",
-    "Agent", "AskUserQuestion", "ExitPlanMode", "mcp__",
+    "Agent", "AskUserQuestion", "ExitPlanMode", "PowerShell", "Cd", "mcp__",
 }
 
 errors = []
@@ -120,14 +120,19 @@ def validate_hook_handler(handler, path):
     if not htype:
         err(f"{path}: missing required 'type' field")
         return
-    if htype not in {"command", "http", "prompt", "agent"}:
-        err(f"{path}.type: invalid value '{htype}'. Valid: command | http | prompt | agent")
+    if htype not in {"command", "http", "prompt", "agent", "mcp_tool"}:
+        err(f"{path}.type: invalid value '{htype}'. Valid: command | http | prompt | agent | mcp_tool")
     if htype == "command" and "command" not in handler:
         err(f"{path}: command type requires 'command' field")
     if htype == "http" and "url" not in handler:
         err(f"{path}: http type requires 'url' field")
     if htype in {"prompt", "agent"} and "prompt" not in handler:
         err(f"{path}: {htype} type requires 'prompt' field")
+    if htype == "mcp_tool":
+        if "server" not in handler:
+            err(f"{path}: mcp_tool type requires 'server' field")
+        if "tool" not in handler:
+            err(f"{path}: mcp_tool type requires 'tool' field")
 
 def validate_hooks(hooks, path):
     if not isinstance(hooks, dict):

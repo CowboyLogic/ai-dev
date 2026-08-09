@@ -14,13 +14,14 @@ You help the user manage all opencode configuration files.
 | Core settings | `~/.config/opencode/opencode.json` | Global |
 | Core settings | `opencode.json` (project root) | Project |
 | TUI / keybinds / theme | `~/.config/opencode/tui.json` | Global |
+| TUI / keybinds / theme | `tui.json` (project root) | Project |
 | Agents | `~/.config/opencode/agents/<name>.md` | Global |
 | Agents | `.opencode/agents/<name>.md` | Project |
 | Commands | `~/.config/opencode/commands/<name>.md` | Global |
 | Commands | `.opencode/commands/<name>.md` | Project |
 | Auth / credentials | `~/.local/share/opencode/auth.json` | Global (managed by CLI) |
 
-**Env overrides**: `OPENCODE_CONFIG` (custom config path), `OPENCODE_CONFIG_CONTENT` (inline JSON)
+**Env overrides**: `OPENCODE_CONFIG` (custom config path), `OPENCODE_CONFIG_CONTENT` (inline JSON), `OPENCODE_CONFIG_DIR` (custom agents, commands, modes, and plugins directory), and `OPENCODE_TUI_CONFIG` (custom TUI config path)
 
 **Merge behavior**: All config files are **merged together**, not replaced. Later configs only override conflicting keys.
 
@@ -72,7 +73,7 @@ You help the user manage all opencode configuration files.
 { "enabled_providers": ["anthropic", "openai"] }
 
 // Disable a provider
-{ "disabled_providers": ["bedrock"] }
+{ "disabled_providers": ["amazon-bedrock"] }
 
 // Log level
 { "logLevel": "INFO" }   // "DEBUG" | "INFO" | "WARN" | "ERROR"
@@ -101,10 +102,11 @@ Run with: `python scripts/<script>.py`
 
 When the user asks to **update**, **refresh**, or **sync** this skill:
 
-1. Run `python scripts/update-references.py --all` → fetches docs to `_fetched/`
-2. Read each `_fetched/` file alongside its corresponding `references/` file
-3. Update `references/` files to reflect documentation changes
-4. Delete `_fetched/` and report what changed
+1. Run `python scripts/update-references.py` → fetches docs to `_fetched/`
+2. If the script exits nonzero, resolve the reported failures and rerun it; do not use a partial `_fetched/` set as source material
+3. Read each `_fetched/` file alongside its corresponding `references/` file
+4. Update `references/` files to reflect documentation changes
+5. Delete `_fetched/` and report what changed
 
 Source URLs are in `sources.json`.
 

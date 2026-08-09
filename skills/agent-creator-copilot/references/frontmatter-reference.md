@@ -78,7 +78,7 @@ metadata:                             # Cloud agent only — arbitrary annotatio
 **Type:** string  
 **Platforms:** All
 
-Description of the agent's purpose and capabilities. Shown as placeholder text in the VS Code chat input when the agent is selected. Used by the cloud agent to understand when to invoke this agent.
+Description of the agent's purpose and capabilities. Used to identify the agent in the UI and to help the cloud agent determine when to invoke it. Use `argument-hint` for placeholder text in the VS Code chat input.
 
 ```yaml
 description: Reviews REST API designs for correctness, security, and consistency
@@ -325,7 +325,7 @@ mcp-servers:
 
 | Server namespace | Access |
 |---|---|
-| `github/*` | All read-only GitHub tools, scoped to source repository |
+| `github/*` | GitHub tools available to the coding agent, subject to task, repository, and configured tool permissions |
 | `playwright/*` | Browser automation tools, restricted to localhost |
 
 **MCP processing order (cloud agent):** out-of-box MCP (e.g., `github/*`) → custom agent profile MCP → repository settings MCP. Each level can override the previous.
@@ -334,7 +334,7 @@ mcp-servers:
 
 ```yaml
 # In the agent's top-level tools property, reference MCP tools by namespace:
-tools: ["read", "edit", "custom-mcp/tool-1", "github/create-pull-request"]
+tools: ["read", "edit", "custom-mcp/tool-1", "github/create_pull_request"]
 
 # In mcp-servers, tools: controls what the server exposes to the agent:
 mcp-servers:

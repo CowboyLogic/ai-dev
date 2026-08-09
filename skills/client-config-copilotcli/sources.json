@@ -8,7 +8,7 @@
         "https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/authenticate-copilot-cli",
         "https://docs.github.com/en/copilot/concepts/agents/about-copilot-cli"
       ],
-      "covers": "config.json (trusted_folders), CLI permission flags (tools/paths/URLs), authentication, BYOK models, environment variables, interactive slash commands"
+      "covers": "config.json (trustedFolders), CLI permission flags (tools/paths/URLs), authentication, BYOK models, environment variables, interactive slash commands"
     },
     "references/mcp.md": {
       "urls": [
