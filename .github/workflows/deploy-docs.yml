@@ -33,7 +33,7 @@ jobs:
           pip install mkdocs-callouts
 
       - name: Build MkDocs site
-        run: mkdocs build
+        run: mkdocs build --clean --strict
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
