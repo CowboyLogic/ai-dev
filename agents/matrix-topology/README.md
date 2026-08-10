@@ -591,6 +591,7 @@ agents/matrix-topology/
     smith.agent.md            ← Security — GPT (reviews Claude-family artifacts)
     smith-claude.agent.md     ← Security — Claude (reviews GPT-family artifacts)
     ghost.agent.md            ← Review (cross-cutting)
+  claude/                     ← Claude Code variants (parallel set)
   copilot/                    ← GitHub Copilot variants (parallel set)
 
 harness/opencode/             ← OpenCode harness configuration
@@ -621,18 +622,21 @@ git clone https://github.com/CowboyLogic/ai-dev ~/src/ai-dev
 **Link the harness config and the agents into OpenCode (Unix/WSL):**
 
 ```bash
-# Harness config: default agent, commands (/handoff, /change), guardrails, MCP
-ln -sfn ~/src/ai-dev/harness/opencode ~/.config/opencode
-# Agent definitions into OpenCode's global agent directory
-ln -sfn ~/src/ai-dev/agents/matrix-topology/opencode ~/.config/opencode/agent
+mkdir -p ~/.config/opencode
+ln -sfn ~/src/ai-dev/harness/opencode/opencode.jsonc ~/.config/opencode/opencode.jsonc
+ln -sfn ~/src/ai-dev/harness/opencode/guardrails.md  ~/.config/opencode/guardrails.md
+ln -sfn ~/src/ai-dev/agents/matrix-topology/opencode ~/.config/opencode/agents
 ```
 
 **Link into OpenCode (Windows — directory junction):**
 
 ```powershell
-New-Item -ItemType Junction -Path "$env:USERPROFILE\.config\opencode" `
-  -Target "$env:USERPROFILE\src\ai-dev\harness\opencode"
-New-Item -ItemType Junction -Path "$env:USERPROFILE\.config\opencode\agent" `
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.config\opencode"
+New-Item -ItemType SymbolicLink -Force -Path "$env:USERPROFILE\.config\opencode\opencode.jsonc" `
+  -Target "$env:USERPROFILE\src\ai-dev\harness\opencode\opencode.jsonc"
+New-Item -ItemType SymbolicLink -Force -Path "$env:USERPROFILE\.config\opencode\guardrails.md" `
+  -Target "$env:USERPROFILE\src\ai-dev\harness\opencode\guardrails.md"
+New-Item -ItemType Junction -Path "$env:USERPROFILE\.config\opencode\agents" `
   -Target "$env:USERPROFILE\src\ai-dev\agents\matrix-topology\opencode"
 ```
 
@@ -641,8 +645,9 @@ is loaded on every session via the `instructions` field in `opencode.jsonc`, and
 `/change` command gives you the express lane.
 
 Adding a new agent: drop the `.agent.md` file into
-`agents/matrix-topology/opencode/`. The link propagates it automatically — no other
-changes required.
+`agents/matrix-topology/opencode/`, follow the synchronization checklist in
+`agents/matrix-topology/AGENTS.md`, and refresh both the manifest and generated
+documentation before committing.
 
 ### Updating Model Assignments
 

@@ -8,27 +8,81 @@ artifacts:
     type: skill
     source: skills/about-me-skill-creator
     tags: [skills, context, personalization]
-  - id: skill-creator
-    name: Skill Creator
-    description: Provides utilities for creating and improving AI agent skills
+  - id: high-fidelity-context-scaffolder
+    name: High-Fidelity Context Scaffolder
+    description: Generate machine-optimized XML context files for AI agent orchestration
     type: skill
-    source: docs/skills/skill-creator
-    tags: [skills, claude-code]
+    source: skills/high-fidelity-context-scaffolder
+    tags: [skills, context, orchestration]
+  - id: google-style-docs
+    name: Google Style Docs
+    description: Write technical documentation following the Google Developer Documentation Style Guide
+    type: skill
+    source: skills/google-style-docs
+    tags: [skills, documentation, style]
+  - id: git-commit-messages
+    name: Git Commit Messages
+    description: Write descriptive Conventional Commit messages
+    type: skill
+    source: skills/git-commit-messages
+    tags: [skills, git, conventional-commits]
+  - id: docker-image-management
+    name: Docker Image Management
+    description: Create, build, and manage Docker images and containers
+    type: skill
+    source: skills/docker-image-management
+    tags: [skills, docker, containers]
+  - id: mkdocs-site-management
+    name: MkDocs Site Management
+    description: Create and maintain MkDocs documentation sites
+    type: skill
+    source: skills/mkdocs-site-management
+    tags: [skills, documentation, mkdocs]
+  - id: markdownlint-validator
+    name: Markdownlint Validator
+    description: Identify and fix markdownlint violations in Markdown files
+    type: skill
+    source: skills/markdownlint-validator
+    tags: [skills, documentation, linting]
+  - id: agent-creator-copilot
+    name: Copilot Agent Creator
+    description: Create custom agents for GitHub Copilot and VS Code
+    type: skill
+    source: skills/agent-creator-copilot
+    tags: [skills, copilot, agents]
+  - id: copilot-instruction-creator
+    name: Copilot Instruction Creator
+    description: Create custom instructions that tailor GitHub Copilot responses
+    type: skill
+    source: skills/copilot-instruction-creator
+    tags: [skills, copilot, instructions]
+  - id: copilot-prompt-creator
+    name: Copilot Prompt Creator
+    description: Create reusable prompt files for GitHub Copilot
+    type: skill
+    source: skills/copilot-prompt-creator
+    tags: [skills, copilot, prompts]
+  - id: agent-creator-opencode
+    name: OpenCode Agent Creator
+    description: Create custom agent definitions for the OpenCode CLI
+    type: skill
+    source: skills/agent-creator-opencode
+    tags: [skills, opencode, agents]
   - id: client-config-claudecode
     name: Claude Code Settings Manager
     description: Manage and maintain ~/.claude/settings.json and Claude Code configuration files
     type: skill
-    source: docs/skills/client-config-claudecode
+    source: skills/client-config-claudecode
     tags: [skills, claude-code, configuration]
   - id: client-config-copilotcli
     name: Copilot CLI Configuration Manager
     description: Manage GitHub Copilot CLI configuration files including config.json, MCP servers, hooks, and custom instructions
     type: skill
-    source: docs/skills/client-config-copilotcli
+    source: skills/client-config-copilotcli
     tags: [skills, copilot, configuration]
   - id: client-config-opencode
     name: OpenCode Configuration Manager
     description: Manage opencode configuration files including opencode.json, providers, agents, MCP servers, and permissions
     type: skill
-    source: docs/skills/client-config-opencode
+    source: skills/client-config-opencode
     tags: [skills, opencode, configuration]

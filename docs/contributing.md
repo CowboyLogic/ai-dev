@@ -9,7 +9,7 @@ Contributions of all kinds are welcome — agent configurations, MCP integration
 1. Fork the repository and clone your fork
 2. Create a descriptive branch (`add-postgres-mcp-config`, `fix-opencode-docs`)
 3. Make your changes following the guidelines below
-4. Run `mkdocs build` to verify everything renders correctly
+4. Run the validation commands below
 5. Open a Pull Request with a clear description
 
 ## What to Contribute
@@ -63,6 +63,28 @@ When you change a configuration or behavior, update the related documentation in
 - `mkdocs.yml` nav (required when adding or removing pages)
 - `AGENTS.md` if agent behavior changes
 
+Topology inventory and roster tables are generated from canonical agent
+frontmatter. After changing a topology roster, model, description, client mirror,
+or harness mapping, refresh those tables:
+
+```bash
+python scripts/validate_artifact_sync.py --write
+```
+
+The validator also requires every `skills/*/SKILL.md` definition to appear in
+`docs/skills/index.md`, `skills/README.md`, and `cerebro-catalog.yaml`. It checks
+topology mirror rosters and bodies, harness defaults, and the generated documentation
+blocks.
+
+Run the same checks used by pull requests before submitting:
+
+```bash
+python agents/lane-topology/validate.py
+bash agents/matrix-topology/verify-deployment.sh
+python scripts/validate_artifact_sync.py
+mkdocs build --clean --strict
+```
+
 ## Pre-Submission Checklist
 
 Before opening a PR:
@@ -71,7 +93,8 @@ Before opening a PR:
 - [ ] All links resolve correctly
 - [ ] Code blocks have language specifiers
 - [ ] No hardcoded secrets or tokens
-- [ ] `mkdocs build` passes without warnings
+- [ ] Artifact synchronization validators pass
+- [ ] `mkdocs build --clean --strict` passes
 - [ ] `mkdocs.yml` updated if pages were added or removed
 - [ ] Related documentation updated in the same PR
 

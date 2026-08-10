@@ -16,6 +16,7 @@ Agent Skills are structured collections of instructions, templates, examples, an
 
 ### Core Skills
 
+- **[About-Me Skill Creator](about-me-skill-creator/README.md)** - Create a private personal-context skill through a conversational wizard
 - **[High-Fidelity Context Scaffolder](high-fidelity-context-scaffolder/README.md)** - Generate machine-optimized XML context files for AI agent orchestration
 - **[Google Style Docs](google-style-docs/README.md)** - Write technical documentation following Google's Developer Documentation Style Guide
 - **[Copilot Agent Creator](agent-creator-copilot/README.md)** - Create custom agents and extensions for VS Code and GitHub Copilot
@@ -27,6 +28,7 @@ Agent Skills are structured collections of instructions, templates, examples, an
 - **[Git Commit Messages](git-commit-messages/README.md)** - Write descriptive yet succinct git commit messages
 - **[Docker Image Management](docker-image-management/README.md)** - Build, manage, and publish Docker images
 - **[MkDocs Site Management](mkdocs-site-management/README.md)** - Build and maintain MkDocs documentation sites
+- **[Markdownlint Validator](markdownlint-validator/SKILL.md)** - Identify and fix Markdown formatting violations
 
 ### AI Platform Skills
 
@@ -61,8 +63,9 @@ To add new skills to this repository:
 
 1. Follow the [Agent Skills standard](https://agentskills.io)
 2. Use the [Skill Creator skill](https://github.com/anthropics/skills/tree/main/skills/skill-creator) to generate it
-3. Add the skill to this `docs/skills/` directory
-4. Update the MkDocs navigation in `mkdocs.yml`
+3. Add the definition under `skills/<skill-name>/`
+4. Add the skill to `docs/skills/index.md` and `cerebro-catalog.yaml`
+5. Run `python scripts/validate_artifact_sync.py`
 
 > [!TIP]
 > **Want to create a new skill?** Anthropic publishes their own [Skill Creator skill](https://github.com/anthropics/skills/tree/main/skills/skill-creator) on GitHub — you can use it directly to generate new skills. It's also a great example of how well-crafted skills are structured.
@@ -76,18 +79,16 @@ To add new skills to this repository:
 
 ## Repository Structure
 
-```
-docs/skills/             # Skill definitions and documentation
-├── high-fidelity-context-scaffolder/ # Generate XML context files
-├── google-style-docs/   # Google Developer Documentation style
-├── agent-creator-copilot/  # Copilot agent development
-├── agent-creator-opencode/ # OpenCode CLI agent development
-├── copilot-instruction-creator/ # Copilot customization
-├── copilot-prompt-creator/  # Copilot prompt creation
-├── git-commit-messages/     # Git commit message conventions
-├── docker-image-management/ # Docker image workflows
-├── mkdocs-site-management/  # MkDocs documentation sites
-├── client-config-claudecode/ # Claude Code settings management
-├── client-config-copilotcli/ # GitHub Copilot CLI configuration
-└── client-config-opencode/   # OpenCode configuration management
+```text
+skills/                    # Authoritative, installable skill definitions
+├── <skill-name>/
+│   ├── SKILL.md           # Required instruction and frontmatter
+│   ├── README.md          # Human-readable overview, when provided
+│   ├── references/        # Supporting reference material, when provided
+│   └── scripts/           # Skill-specific utilities, when provided
+└── README.md              # This catalog
+
+docs/skills/               # Published catalog and selected overview pages
+├── index.md
+└── client-config-*.md
 ```

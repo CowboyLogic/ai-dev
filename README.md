@@ -45,11 +45,11 @@ Practical configurations and working examples for AI-powered development tools. 
 
 ## Repository Structure
 
-```
+```text
 ai-dev/
 ├── agents/                     # Installable agent definitions (GitHub CLI discoverable)
 │   ├── matrix-topology/        # Matrix Topology multi-agent system
-│   ├── lane-topology/          # Lane Topology multi-agent system (OpenCode)
+│   ├── lane-topology/          # Lane Topology (OpenCode + Copilot)
 │   └── *.agent.md              # Domain specialist agents
 ├── harness/                    # Client harness configs (OpenCode symlink targets)
 ├── skills/                     # Installable skill definitions (GitHub CLI discoverable)
@@ -59,7 +59,7 @@ ai-dev/
 │   ├── skills/                 # Skills catalog page
 │   ├── tools/                  # Claude Code, OpenCode, & VS Code guides
 │   └── mcp/                    # MCP server documentation
-├── agent-output/               # Temporary agent output (gitignored)
+├── .agent-output/              # Temporary agent output (gitignored)
 ├── AGENTS.md                   # Human-readable directive overview
 ├── README.md                   # This file
 └── mkdocs.yml                  # Documentation site configuration
@@ -69,7 +69,7 @@ ai-dev/
 
 **High-Fidelity XML Context System** — Structured directives optimized for LLM parsing with `.agents/` XML modules
 
-**Agent Skills Framework** — Reusable instruction sets for domain-specific tasks ([Skills Overview](docs/skills/README.md))
+**Agent Skills Framework** — Reusable instruction sets for domain-specific tasks ([Skills Overview](docs/skills/index.md))
 
 **Multi-Tool Configurations** — Claude Code, OpenCode CLI, VS Code/Copilot, and MCP server integrations
 
