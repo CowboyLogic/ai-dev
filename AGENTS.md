@@ -74,13 +74,13 @@ ai-dev/
 ├── .agent-output/          # Temporary agent output — gitignored, never committed
 ├── .github/
 │   ├── agents/              # Runtime agent scratch space — gitignored
-│   ├── workflows/           # GitHub Actions CI/CD (deploy-docs.yml)
+│   ├── workflows/           # Documentation deployment and artifact validation
 │   ├── ISSUE_TEMPLATE/      # Bug report & feature request templates
 │   └── PULL_REQUEST_TEMPLATE.md
 ├── .vscode/
 │   └── settings.json        # VS Code workspace settings
 ├── agents/                  # Installable agent definitions (GitHub CLI discoverable)
-│   ├── matrix-topology/     # Matrix Topology multi-agent system (OpenCode canonical, Copilot mirror)
+│   ├── matrix-topology/     # Matrix Topology (OpenCode canonical, Claude + Copilot mirrors)
 │   ├── lane-topology/       # Lane Topology multi-agent system (OpenCode canonical, Copilot mirror)
 │   └── *.agent.md           # Domain specialist agents
 ├── harness/                 # Client harness configs (symlink targets, not published)
@@ -109,18 +109,43 @@ topologies are independent patterns and changes do not propagate between them.
 
 ---
 
+## Documentation Synchronization
+
+The artifact directories `agents/`, `skills/`, and `harness/` are covered by the
+documentation site. Whenever an item in one of these directories is added,
+removed, renamed, or updated, update the corresponding content page or pages
+under `docs/` in the same change. Keep catalog entries, descriptions, links,
+examples, and configuration or topology details synchronized with the current
+artifact contents. If a new item has no existing documentation page, create the
+appropriate page and add it to the MkDocs navigation when required.
+
+Topology inventory and roster tables are generated from canonical agent
+frontmatter. After changing a topology roster, model, description, client mirror,
+or harness mapping, refresh those blocks:
+
+```bash
+python scripts/validate_artifact_sync.py --write
+```
+
+Do not hand-edit content between `artifact-sync` markers. CI runs the same script
+without `--write` and fails when generated topology content, skill catalog coverage,
+client mirrors, or harness mappings drift.
+
+---
+
 ## Skill Definitions
 
 Authoritative skill definitions live in `skills/<skill-name>/` at the repository root.
-This location makes them discoverable and installable via the GitHub CLI. Each follows
-this structure:
+This location makes them discoverable and installable via the GitHub CLI. Each skill
+requires `SKILL.md`; supporting files vary by skill:
 
 ```text
 skill-name/
-├── SKILL.md       # Main instruction (YAML frontmatter + Markdown body)
-├── README.md      # Human-readable overview
-├── QUICKREF.md    # Quick reference card
-└── Examples/      # Templates and code samples
+├── SKILL.md       # Required instruction (YAML frontmatter + Markdown body)
+├── README.md      # Human-readable overview, when provided
+├── references/    # Supporting reference material, when provided
+├── scripts/       # Skill-specific utilities, when provided
+└── assets/        # Templates and other bundled resources, when provided
 ```
 
 `docs/skills/` contains only a lightweight catalog page that describes each skill
@@ -172,7 +197,10 @@ embed skill content.
 
 1. Create `skills/<name>/` at the repo root with at minimum `SKILL.md` (YAML frontmatter required).
 2. Update the `docs/skills/index.md` catalog with a description and GitHub link for the new skill.
-3. No `mkdocs.yml` nav changes are needed — the catalog page is already in the nav.
+3. Add the skill to `skills/README.md` and `cerebro-catalog.yaml`.
+4. Run `python scripts/validate_artifact_sync.py`.
+
+No `mkdocs.yml` nav changes are needed — the catalog page is already in the nav.
 
 ### Adding a new agent
 
@@ -180,9 +208,9 @@ embed skill content.
   `agents/`, then add it to the roster table in `docs/agents/index.md`.
 - **Topology agent** (`agents/matrix-topology/` or `agents/lane-topology/`): follow
   that topology's own `AGENTS.md` first — it defines the roster invariants, and for
-  multi-format topologies, which formats a body must be kept identical across. Then
-  update the corresponding `docs/agents/<topology>.md` page and, if the roster table
-  in `docs/agents/index.md` lists that topology's agents, update it too.
+  multi-format topologies, which formats a body must be kept identical across. Then run
+  `python scripts/validate_artifact_sync.py --write` and update any affected narrative
+  in `docs/agents/<topology>.md` or `docs/agents/index.md`.
 
 ---
 
@@ -207,19 +235,23 @@ embed skill content.
 
 ```bash
 # Install dependencies
-uv pip install mkdocs mkdocs-material mkdocs-callouts
+uv pip install pyyaml mkdocs mkdocs-material mkdocs-callouts
+
+# Validate topology invariants and documentation synchronization
+python agents/lane-topology/validate.py
+bash agents/matrix-topology/verify-deployment.sh
+python scripts/validate_artifact_sync.py
 
 # Build the documentation site (outputs to site/)
-mkdocs build
+mkdocs build --clean --strict
 
 # Serve locally for development
 mkdocs serve
 ```
 
-When a change affects `mkdocs.yml` or changes the structure of `docs/` (including
-adding, removing, or renaming pages or directories), run `mkdocs build --strict`
-before committing. Resolve every error and warning reported by the strict build
-before committing.
+Run the relevant topology validators, the artifact synchronization validator, and
+the strict documentation build before committing changes to `agents/`, `harness/`,
+`skills/`, or `docs/`. Resolve every failure before committing.
 
 ---
 
