@@ -58,11 +58,11 @@ harness/opencode/                 ← OpenCode harness configuration
 ~/.config/opencode/               → harness/opencode/
   opencode.jsonc                     (default_agent: neo; /handoff, /change commands)
   guardrails.md                      (loaded via instructions on every session)
-~/.config/opencode/agent/         → agents/matrix-topology/opencode/
+~/.config/opencode/agents/        → agents/matrix-topology/opencode/
 ```
 
 - The harness config folder (`harness/opencode/`) is linked to `~/.config/opencode/`.
-- The agent definitions are linked into `~/.config/opencode/agent/`, OpenCode's
+- The agent definitions are linked into `~/.config/opencode/agents/`, OpenCode's
   global agent directory, where they are auto-discovered.
 - `default_agent` is `neo` — all sessions begin with the Conductor.
 - Commands (`/handoff`, `/change`) live in `opencode.jsonc`. `/change` is the

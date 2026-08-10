@@ -299,7 +299,7 @@ def validate_discovery() -> None:
     check(
         discovered_topologies == set(TOPOLOGIES),
         "topology validator configuration drift",
-        f"expected {sorted(discovered_topologies)}, configured {sorted(TOPOLOGIES)}",
+        f"expected {sorted(TOPOLOGIES)}, found {sorted(discovered_topologies)}",
     )
     discovered_harnesses = {
         path.name for path in (ROOT / "harness").glob("opencode*") if path.is_dir()
@@ -308,7 +308,7 @@ def validate_discovery() -> None:
     check(
         discovered_harnesses == configured_harnesses,
         "harness validator configuration drift",
-        f"expected {sorted(discovered_harnesses)}, configured {sorted(configured_harnesses)}",
+        f"expected {sorted(configured_harnesses)}, found {sorted(discovered_harnesses)}",
     )
 
 

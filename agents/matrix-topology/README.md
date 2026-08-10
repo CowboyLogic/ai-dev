@@ -628,7 +628,7 @@ ln -sfn ~/src/ai-dev/harness/opencode/guardrails.md  ~/.config/opencode/guardrai
 ln -sfn ~/src/ai-dev/agents/matrix-topology/opencode ~/.config/opencode/agents
 ```
 
-**Link into OpenCode (Windows — directory junction):**
+**Link into OpenCode (Windows — symbolic links and directory junction):**
 
 ```powershell
 New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.config\opencode"
