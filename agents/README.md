@@ -18,7 +18,7 @@ between them.
 
 | Topology | Clients | Organizing idea |
 |---|---|---|
-| [Lane Topology](lane-topology/README.md) | OpenCode | 9 agents. A mechanical lane classifier sizes process to the task before work starts — mechanical, investigate, direct, plan (Socratic), or full build. Reviewers execute the tests themselves. |
+| [Lane Topology](lane-topology/README.md) | OpenCode | 10 agents. A mechanical lane classifier sizes process to the task before work starts — ask, revert, review, mechanical, investigate, direct, plan (Socratic), or full build. Reviewers execute the tests themselves; PRs from outside the topology get their own read-only review lane. |
 | [Matrix Topology](matrix-topology/README.md) | OpenCode, Claude Code, Copilot | 14 agents. A staged lifecycle (design → architecture → spec → tests → code → validation → docs) with an express lane for small changes. |
 
 The Lane Topology is the newer of the two and was built from what the Matrix Topology taught.

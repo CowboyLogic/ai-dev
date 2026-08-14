@@ -6,7 +6,7 @@
 
 ## Purpose
 
-This directory contains the Lane Topology — a nine-agent system whose defining
+This directory contains the Lane Topology — a ten-agent system whose defining
 property is that **process is assigned mechanically, before work starts.**
 
 It ships in two client formats: `opencode/` (canonical) and `copilot/` (derived).
@@ -54,6 +54,7 @@ a bug.
 | `mechanic.md` | `mechanic` | `gpt-5.6-terra` | GPT | read, edit, bash | Trivial mechanical edits |
 | `verifier.md` | `verifier` | `gemini-3.6-flash` | Gemini | read, grep, bash | Cross-family review + independent execution |
 | `adversary.md` | `adversary` | `claude-opus-5` | Claude | read, grep, bash | Security review |
+| `reviewer.md` | `reviewer` | `claude-opus-5` | Claude | read, grep, bash (scoped: gh/git read-only), edit→`.agent-output/**` | Reviews PRs from outside this topology; drafts comments, never approves |
 | `scribe.md` | `scribe` | `gpt-5.6-luna` | GPT | read, edit, grep | Documentation |
 | `researcher.md` | `researcher` | `gpt-5.6-luna` | GPT | read, grep, webfetch, websearch, edit→`.agent-output/**` | External research |
 
@@ -67,7 +68,7 @@ a bug.
 > the equivalent `tools:` list *is* a strict allowlist, so the same table is
 > load-bearing there by construction.
 
-The eight subagents ship `hidden: false` so they can be `@`-mentioned directly — the
+The nine subagents ship `hidden: false` so they can be `@`-mentioned directly — the
 fastest way to prove the roster is loading. `conductor` omits `hidden` entirely; it is
 the primary agent and there is nothing for it to be hidden from.
 
@@ -206,18 +207,24 @@ and `--all` were denied, so `git add ./` and `git add -u` both staged everything
 denylist over an allow base is best-effort by construction; `validate.py` now asserts
 every one of these resolves to `deny` so the list cannot silently regress again.
 
-The Conductor is the only agent whose bash grant is genuinely enforced, because it is
-the only one based on `"*": deny`. **State this honestly in any documentation of this
-topology**: the git boundary for the producing agents is prompt discipline plus a
-speed bump, and the real control is that only the Conductor is *asked* to ship.
+The Conductor and the Reviewer are the only agents whose bash grant is genuinely
+enforced through an explicit allowlist, because they are the only two based on
+`"*": deny` with specific commands carved back in. `planner`, `scribe`, and
+`researcher` deny bash outright — nothing runs, so there is no allowlist to reason
+about, which is enforced too, just by a blunter route. **State this honestly in any
+documentation of this topology**: the git boundary for the five build-and-test
+agents (`builder`, `mechanic`, `verifier`, `adversary`, `investigator`) is prompt
+discipline plus a speed bump, and the real control for the rest of the roster is
+that only the Conductor is ever *asked* to ship and only the Reviewer is ever
+handed a PR to read.
 
 > [!IMPORTANT]
 > **A `general` dispatch is a roster problem, not a config problem.** That was the
 > original misdiagnosis and it cost several rounds. The roster loads fine; `general`
-> gets chosen when the eight leave a request with no legal move.
+> gets chosen when the nine leave a request with no legal move.
 >
 > When a dispatch problem appears, ask the Conductor to list its available subagents
-> by identifier. If it names the eight, the configuration is sound and the cause is
+> by identifier. If it names the nine, the configuration is sound and the cause is
 > in the roster or the prompt — do not go looking at file names, `hidden`, or
 > symlinks.
 
@@ -225,7 +232,7 @@ speed bump, and the real control is that only the Conductor is *asked* to ship.
 
 ## Copilot Format & Synchronization
 
-`opencode/` is canonical. `copilot/` is derived from it: same nine bodies, character
+`opencode/` is canonical. `copilot/` is derived from it: same ten bodies, character
 for character, with frontmatter translated per the tables below. This is the same
 rule `agents/matrix-topology/` uses for its three formats — see that directory's
 `AGENTS.md` for the fuller version of this discipline if a `claude/` mirror is ever
@@ -240,9 +247,9 @@ added here.
 | `model` | `model` | See Model Name Mapping below. |
 | `permission` | `tools` | See Tool Mapping below. |
 | `mode: primary` | *(omit `user-invocable`, defaults to shown)* | Only `conductor` is primary. |
-| `mode: subagent` | `user-invocable: false` | All eight subagents. |
+| `mode: subagent` | `user-invocable: false` | All nine subagents. |
 | `hidden` | *(no equivalent — omit)* | OpenCode's `hidden` only affects `@`-mention autocomplete; Copilot's nearest concept, `user-invocable`, is already carrying the primary/subagent distinction above. |
-| — | `agents:` | `conductor` only — the list of the eight subagent identifiers it may dispatch. Requires `"agent"` in `conductor`'s `tools`. |
+| — | `agents:` | `conductor` only — the list of the nine subagent identifiers it may dispatch. Requires `"agent"` in `conductor`'s `tools`. |
 
 ### Tool mapping
 
@@ -359,7 +366,7 @@ change and say what replaced it.
 
 1. **Only the Conductor has `task`.** Nested subagent delegation does not run
    reliably in OpenCode. Every dispatch is one level deep. A subagent that needs
-   another agent returns an up-ramp or escalation notice instead. All eight subagents
+   another agent returns an up-ramp or escalation notice instead. All nine subagents
    carry an explicit `task: deny` — omitting the key grants it (see Default-Allow Is
    The Trap).
 
@@ -417,13 +424,17 @@ change and say what replaced it.
    `reset`, `cherry-pick`, `gh pr merge`, force-push, and `git checkout` other than
    `-b` are all denied outright.
 
-   For the other eight it is **enforced in layers, and the layers are not equal.**
+   For the other nine it is **enforced in layers, and the layers are not equal.**
    `planner`, `scribe`, and `researcher` carry `bash: deny` — nothing runs, full stop.
-   The five that need shell to build and test (`builder`, `mechanic`, `verifier`,
-   `adversary`, `investigator`) are based on `"*": allow` with git and `gh` denied
-   both bare and wrapped; that stops the ordinary case and does not stop a determined
-   one (see Bash patterns match the whole command string). Do not describe those five
-   as permission-enforced. The real control is that nothing ever *asks* them to ship.
+   `reviewer` is based on `"*": deny` like the Conductor, with only a handful of
+   read-only `gh`/`git` commands allowed back in — none of the shipping or mutation
+   verbs are reachable at all, so this one is genuinely enforced too, just against a
+   different allowlist. The five that need shell to build and test (`builder`,
+   `mechanic`, `verifier`, `adversary`, `investigator`) are based on `"*": allow` with
+   git and `gh` denied both bare and wrapped; that stops the ordinary case and does
+   not stop a determined one (see Bash patterns match the whole command string). Do
+   not describe those five as permission-enforced. The real control is that nothing
+   ever *asks* them to ship, and nothing ever hands them a PR to post to.
 
 10. **Facts propagate; reasoning does not flow sideways.** Agents return a `FACTS:`
     block; the Conductor is the single writer that collects it and carries it into

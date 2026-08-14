@@ -43,7 +43,7 @@ FORBIDDEN_CMDS = [
 ]
 
 # Agents whose `edit` must not reach the working tree, and the path that proves it.
-SANDBOXED_EDIT = {"planner", "investigator", "researcher"}
+SANDBOXED_EDIT = {"planner", "investigator", "researcher", "reviewer"}
 
 # OpenCode permission -> Copilot tool alias, per AGENTS.md.
 TOOL_MAP = {
@@ -197,6 +197,10 @@ def main() -> int:
         ("git push origin fix/x", "allow"),
         ("git revert --no-edit abc123", "allow"),
         ("gh pr create --title x", "allow"),
+        ("gh pr comment 5 --body hi", "allow"),
+        ("gh pr review 5 --comment", "allow"),
+        ("gh pr review 5 --request-changes", "allow"),
+        ("gh pr review 5 --approve", "deny"),    # approval stays a human action
         ("npm test", "deny"),                   # the Conductor does not run tests
     ]:
         check(resolve(cond_bash, cmd) == want, f"conductor: {cmd!r} should be {want}")

@@ -6,11 +6,12 @@ These are persistent system-level guardrails. They apply to every session and **
 
 ## Git Safety
 
-The Conductor ships verified work. The other eight agents never mutate git state —
-five of them (builder, mechanic, verifier, adversary, investigator) may run
-read-only git commands (`status`, `diff`, `log`, `show`, `rev-parse`) for their own
-work, but nothing that commits, pushes, or changes the index or the working branch.
-The remaining three (planner, scribe, researcher) run no shell at all.
+The Conductor ships verified work. The other nine agents never mutate git state —
+six of them (builder, mechanic, verifier, adversary, investigator, reviewer) may run
+read-only git or `gh` commands (`status`, `diff`, `log`, `show`, `rev-parse`, `gh pr
+view`/`diff`/`checks`) for their own work, but nothing that commits, pushes, or
+changes the index or the working branch. The remaining three (planner, scribe,
+researcher) run no shell at all.
 
 - **Only the Conductor commits, pushes, or opens a PR** — and only once every gating
   verdict for the lane (Verifier, and Adversary when dispatched) is `PASS`. See
@@ -40,6 +41,23 @@ The remaining three (planner, scribe, researcher) run no shell at all.
   Verifier — a clean revert can break the build if later work depended on what it
   removed. A conflicting revert is aborted and handed back, never resolved by hand.
   See `conductor.md` -> REVERT.
+
+---
+
+## PR Review
+
+- **The Reviewer never checks out, installs, or runs a PR's code.** It reads the
+  diff and the PR's own description only. Independent test execution against a PR
+  branch is opt-in, never automatic — see `conductor.md` → REVIEW.
+- **`gh pr review --approve` is never posted by any agent.** `COMMENT` and
+  `REQUEST_CHANGES` may be posted autonomously once the Verdict lands, the same
+  autonomy MECHANICAL and DIRECT already have over your own branch — but
+  `APPROVE_RECOMMENDED` is a recommendation surfaced to you, never an action taken
+  on your behalf. Approving someone else's contribution stays a human judgment, the
+  same way merging stays a human action everywhere else in this topology.
+- **A Reviewer escalation (bad faith, unclear intent, a critical security surface)
+  is surfaced directly to you.** Nothing gets drafted or posted for that PR until
+  you've seen it.
 
 ---
 

@@ -12,7 +12,7 @@
 
 ## What This Is
 
-A nine-agent development topology for OpenCode, built around one idea: **the amount
+A ten-agent development topology for OpenCode, built around one idea: **the amount
 of process a task gets should be determined mechanically, before any work starts.**
 
 It is a successor to the [Matrix Topology](../matrix-topology/README.md) in the same
@@ -34,14 +34,16 @@ use:
 
 ## The Core Idea: Lanes
 
-Every request is classified into one of six lanes by a **table lookup, not a
+Every request is classified into one of eight lanes by a **table lookup, not a
 judgment call.** First match wins. This is what lets the system know the difference
 between a task you want done and a task you want thought about — without you having
 to say which.
 
 | Lane | Trigger | Agents | Feels like |
 |---|---|---|---|
+| **ASK** | A question or task with no dependency on this repo's code, files, or tools | Conductor answers directly | Instant — no dispatch |
 | **REVERT** | Undo something already committed or shipped | Conductor + Verifier | Seconds — a revert commit on a branch |
+| **REVIEW** | Review a PR you didn't author or brief | Reviewer (+ Adversary if critical) | A drafted comment, posted or held for your approval |
 | **MECHANICAL** | Textual/config change, no logic, no new dependency | Mechanic → Verifier | Seconds |
 | **INVESTIGATE** | A question, or a bug with unknown cause | Investigator | Read-only, ends in an answer |
 | **DIRECT** | Scope understood, approach obvious, bounded blast radius | Builder → Verifier | Minutes |
@@ -127,7 +129,7 @@ fifteen questions isn't thorough — it's the Planner offloading its job onto yo
 
 ## The Crew
 
-Nine agents, six model tiers. Every role earns its slot on either a distinct
+Ten agents, six model tiers. Every role earns its slot on either a distinct
 cognitive job or a distinct cost tier.
 
 | Agent | Model | Job |
@@ -139,6 +141,7 @@ cognitive job or a distinct cost tier.
 | **Mechanic** | `claude-haiku-4.5` | Trivial mechanical edits |
 | **Verifier** | `gemini-3.6-flash` | Cross-family review **+ runs the tests itself** |
 | **Adversary** | `claude-opus-5` | Security review, dispatched by risk band |
+| **Reviewer** | `claude-opus-5` | Reviews PRs you didn't author or brief; drafts the comment, never posts an approval |
 | **Scribe** | `claude-sonnet-5` | Documentation |
 | **Researcher** | `claude-haiku-4.5` | External research |
 
@@ -236,15 +239,19 @@ specific git/gh verbs shipping requires allowed back in, and `merge`, `rebase`,
 `reset`, `cherry-pick`, `gh pr merge`, force-push, and path-form `git checkout`
 denied outright. That one is genuinely enforced.
 
-Of the other eight, three (`planner`, `scribe`, `researcher`) carry `bash: deny` and
-run no shell at all — also genuinely enforced. The remaining five need open-ended
-shell to run builds and test suites, so their grant is default-*allow* with git and
-`gh` denied bare and wrapped. That stops the obvious case. It does not stop a shell
-indirection, and no pattern list would.
+Of the other nine, three (`planner`, `scribe`, `researcher`) carry `bash: deny` and
+run no shell at all — also genuinely enforced. A fourth, `reviewer`, is shaped like
+the Conductor itself: default-deny with only a handful of read-only `gh`/`git`
+commands allowed back in, so none of the shipping or mutation verbs are reachable
+there either. The remaining five need open-ended shell to run builds and test
+suites, so their grant is default-*allow* with git and `gh` denied bare and wrapped.
+That stops the obvious case. It does not stop a shell indirection, and no pattern
+list would.
 
-So: the git boundary is a hard wall for four of the nine agents and a speed bump for
+So: the git boundary is a hard wall for five of the ten agents and a speed bump for
 five. The load-bearing control is not the permission layer — it is that only the
-Conductor is ever *asked* to ship, and only after a `PASS`.
+Conductor is ever *asked* to ship, and only the Reviewer is ever handed a PR to
+read, and only after a `PASS`.
 
 **Two traps worth knowing if you adapt this.** OpenCode defaults *unlisted*
 permission keys to allow, so a capability you never mentioned is a capability you
@@ -338,7 +345,7 @@ Six tiers, assigned by consequence and frequency — not by seniority.
 
 | Tier | Model | Who | Why |
 |---|---|---|---|
-| Heavy reasoning | `claude-opus-5` | Planner, Adversary | Expensive to be wrong, infrequent to run |
+| Heavy reasoning | `claude-opus-5` | Planner, Adversary, Reviewer | Expensive to be wrong, infrequent to run |
 | Balanced reasoning | `claude-sonnet-5` | Conductor, Scribe | Constant use, moderate cognitive load |
 | Agentic coding | `gpt-5.6-terra` | Builder | Long tool loops, iterate to green |
 | Cross-family review | `gemini-3.6-flash` | Verifier | Runs on every lane — the tier is chosen for frequency, the family for independence |
@@ -455,7 +462,7 @@ question. Not a status dump — a decision request.
 
 This section covers the OpenCode deployment — the canonical format and the one the
 rest of this document describes. A GitHub Copilot mirror also ships in
-`agents/lane-topology/copilot/`, with the same nine bodies and translated
+`agents/lane-topology/copilot/`, with the same ten bodies and translated
 frontmatter; see [`AGENTS.md`](AGENTS.md#copilot-format--synchronization) in this
 directory for the frontmatter mapping and how to install it as Copilot custom
 agents.
@@ -515,7 +522,7 @@ Two checks, both under a minute, and worth doing every time you re-point the sym
 1. **`@builder` in a session.** If it autocompletes and resolves, the roster is
    loading. If it doesn't, nothing below matters. (All agents ship with
    `hidden: false` so they're `@`-mentionable for exactly this check.)
-2. **Ask the Conductor to name its roster.** It should list the eight lowercase
+2. **Ask the Conductor to name its roster.** It should list the nine lowercase
    identifiers. If it describes generic capabilities instead, you are talking to the
    built-in agent, not the Conductor.
 
@@ -547,6 +554,7 @@ already know the lane:
 | `/find <question>` | INVESTIGATE — read-only |
 | `/build <request>` | BUILD — full lifecycle |
 | `/revert <target>` | REVERT — undo a commit, verified, on a branch |
+| `/review <pr>` | REVIEW — draft a maintainer review for a PR you didn't author |
 | `/handoff` | Write a session handoff document |
 
 Just talking to it works too. The commands exist for when you want to skip
