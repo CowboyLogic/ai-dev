@@ -200,7 +200,9 @@ def main() -> int:
         ("gh pr comment 5 --body hi", "allow"),
         ("gh pr review 5 --comment", "allow"),
         ("gh pr review 5 --request-changes", "allow"),
-        ("gh pr review 5 --approve", "deny"),    # approval stays a human action
+        ("gh pr review 5 --approve", "allow"),   # permission-allowed; gated behaviorally
+                                                  # to an explicit in-session ask, not
+                                                  # autonomous — see conductor.md -> REVIEW
         ("npm test", "deny"),                   # the Conductor does not run tests
     ]:
         check(resolve(cond_bash, cmd) == want, f"conductor: {cmd!r} should be {want}")

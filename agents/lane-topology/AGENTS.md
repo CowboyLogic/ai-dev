@@ -47,14 +47,14 @@ a bug.
 
 | File | Identifier | Model | Family | Tools | Role |
 |---|---|---|---|---|---|
-| `conductor.md` | `conductor` | `claude-sonnet-4.6` | Claude | read, task, skill, edit→ledger + `AGENTS.md`/`CLAUDE.md`, bash (scoped: git/gh) | Classify, dispatch, ledger, human interface, shipping |
+| `conductor.md` | `conductor` | `claude-sonnet-5` | Claude | read, task, skill, edit→ledger + `AGENTS.md`/`CLAUDE.md`, bash (scoped: git/gh) | Classify, dispatch, ledger, human interface, shipping |
 | `planner.md` | `planner` | `gpt-5.6-sol` | GPT | read, grep, edit→`.agent-output/**` | Socratic planning, design, ADs, requirements |
 | `investigator.md` | `investigator` | `gpt-5.6-terra` | GPT | read, grep, bash, edit→`.agent-output/**` | Read-only comprehension and root cause |
 | `builder.md` | `builder` | `gpt-5.6-terra` | GPT | read, edit, bash, grep | Implementation |
 | `mechanic.md` | `mechanic` | `gpt-5.6-terra` | GPT | read, edit, bash | Trivial mechanical edits |
 | `verifier.md` | `verifier` | `gemini-3.6-flash` | Gemini | read, grep, bash | Cross-family review + independent execution |
 | `adversary.md` | `adversary` | `claude-opus-5` | Claude | read, grep, bash | Security review |
-| `reviewer.md` | `reviewer` | `claude-opus-5` | Claude | read, grep, bash (scoped: gh/git read-only), edit→`.agent-output/**` | Reviews PRs from outside this topology; drafts comments, never approves |
+| `reviewer.md` | `reviewer` | `claude-sonnet-5` | Claude | read, grep, bash (scoped: gh/git read-only), edit→`.agent-output/**` | Reviews PRs from outside this topology; drafts comments, never approves |
 | `scribe.md` | `scribe` | `gpt-5.6-luna` | GPT | read, edit, grep | Documentation |
 | `researcher.md` | `researcher` | `gpt-5.6-luna` | GPT | read, grep, webfetch, websearch, edit→`.agent-output/**` | External research |
 

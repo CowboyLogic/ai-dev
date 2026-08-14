@@ -7,7 +7,7 @@ description: >
   Conductor wrote; the Reviewer checks a stranger's work against nothing but the
   repo itself and the PR's own stated purpose. Never approves, merges, or executes
   the PR's code.
-model: github-copilot/claude-opus-5
+model: github-copilot/claude-sonnet-5
 permission:
   read: allow
   grep: allow
@@ -146,9 +146,10 @@ FACTS:            [durable facts about the repo discovered in the process —
   actionable, same discipline as the rest of this topology's verdicts.
 - **`APPROVE_RECOMMENDED`** — no blocking finding, tests are adequate,
   conventions match. **This is a recommendation, not an action.** The Reviewer
-  does not hold `gh pr review --approve` in its permission grant, and neither
-  does the Conductor — approving a contributor's work is the maintainer's
-  judgment to exercise personally, not plumbing. See `conductor.md` → REVIEW
+  does not hold `gh pr review --approve` in its permission grant — it never
+  posts anything, to any PR, ever. The Conductor holds the grant but only acts
+  on it when you explicitly ask in that session; a verdict of
+  `APPROVE_RECOMMENDED` alone never causes a post. See `conductor.md` → REVIEW
   lane for exactly what the Conductor is and is not allowed to post on its own
   authority.
 
@@ -172,20 +173,27 @@ Return an escalation instead of a draft comment when:
 
 ## Model Selection Rationale
 
-**Current model:** Claude Opus 5 · **Family:** Anthropic / Claude
+**Current model:** Claude Sonnet 5 · **Family:** Anthropic / Claude
 
 This is not a cross-family-pinned role — invariant 3 governs review of this
 topology's own producers, and a PR author is not one of them, so there is no
-producer family to be independent from. The pin is chosen for consequence
-instead: a wrong or badly-toned review is public, attached to your name, and
-shapes whether a contributor comes back. That argues for the heaviest
-reasoning tier available, on a role that runs only as often as PRs actually
-land — infrequent enough that the cost is not the constraint.
+producer family to be independent from. Balanced reasoning tier, matched to
+the Conductor's own pin rather than the heaviest one in the roster. Reviewing
+a PR takes real comprehension — reconstructing intent from a thin description,
+checking scope and conventions, judging tone — but it is closer to the
+Conductor's classify-and-brief job than to the open-ended architectural
+judgment Planner and Adversary exercise, and it runs often enough (as often
+as PRs actually land) that the balanced tier's cost profile fits better than
+the heaviest one would.
 
-If review volume on a given repository is high enough that this pin becomes
-expensive, the fix is a triage step ahead of it (route drive-by contributions
-through a lighter first pass, reserve this tier for anything the triage flags),
-not lowering the tier for everyone.
+**The trade, stated honestly.** A heavier tier would catch more on a genuinely
+hard PR — a subtle convention violation, a security-adjacent pattern that
+isn't quite `CRITICAL`, tone that reads as generic rather than specific to
+this repo. Watch for those signs: `FIX` findings that are vague or generic,
+`APPROVE_RECOMMENDED` on a PR that turns out to have a real problem, or a
+draft comment that reads like it could have been written about any repository.
+If that recurs, the fix is reconsidering the pin for that repository
+specifically — not lowering the bar for what counts as a finding.
 
 ## Constraints
 

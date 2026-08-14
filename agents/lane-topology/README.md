@@ -141,7 +141,7 @@ cognitive job or a distinct cost tier.
 | **Mechanic** | `claude-haiku-4.5` | Trivial mechanical edits |
 | **Verifier** | `gemini-3.6-flash` | Cross-family review **+ runs the tests itself** |
 | **Adversary** | `claude-opus-5` | Security review, dispatched by risk band |
-| **Reviewer** | `claude-opus-5` | Reviews PRs you didn't author or brief; drafts the comment, never posts an approval |
+| **Reviewer** | `claude-sonnet-5` | Reviews PRs you didn't author or brief; drafts the comment, never posts an approval |
 | **Scribe** | `claude-sonnet-5` | Documentation |
 | **Researcher** | `claude-haiku-4.5` | External research |
 
@@ -345,8 +345,8 @@ Six tiers, assigned by consequence and frequency — not by seniority.
 
 | Tier | Model | Who | Why |
 |---|---|---|---|
-| Heavy reasoning | `claude-opus-5` | Planner, Adversary, Reviewer | Expensive to be wrong, infrequent to run |
-| Balanced reasoning | `claude-sonnet-5` | Conductor, Scribe | Constant use, moderate cognitive load |
+| Heavy reasoning | `claude-opus-5` | Planner, Adversary | Expensive to be wrong, infrequent to run |
+| Balanced reasoning | `claude-sonnet-5` | Conductor, Scribe, Reviewer | Constant use, moderate cognitive load |
 | Agentic coding | `gpt-5.6-terra` | Builder | Long tool loops, iterate to green |
 | Cross-family review | `gemini-3.6-flash` | Verifier | Runs on every lane — the tier is chosen for frequency, the family for independence |
 | Long-context tracing | `gpt-5.6-sol` | Investigator | Same context demand, pinned off the Verifier's family |

@@ -49,12 +49,15 @@ researcher) run no shell at all.
 - **The Reviewer never checks out, installs, or runs a PR's code.** It reads the
   diff and the PR's own description only. Independent test execution against a PR
   branch is opt-in, never automatic — see `conductor.md` → REVIEW.
-- **`gh pr review --approve` is never posted by any agent.** `COMMENT` and
-  `REQUEST_CHANGES` may be posted autonomously once the Verdict lands, the same
-  autonomy MECHANICAL and DIRECT already have over your own branch — but
-  `APPROVE_RECOMMENDED` is a recommendation surfaced to you, never an action taken
-  on your behalf. Approving someone else's contribution stays a human judgment, the
-  same way merging stays a human action everywhere else in this topology.
+- **`gh pr review --approve` and `--request-changes` are never posted on the
+  Reviewer's verdict alone.** Only `COMMENT` may be posted autonomously once the
+  verdict lands, the same autonomy MECHANICAL and DIRECT already have over your
+  own branch — comments carry no gating weight over the PR. `REQUEST_CHANGES` and
+  `APPROVE_RECOMMENDED` are both surfaced to you as recommendations; the Conductor
+  holds the grant to post either, but only acts on an explicit instruction from you
+  in that session. Blocking or approving someone else's contribution stays a human
+  judgment first, the same way merging stays a human action everywhere else in this
+  topology.
 - **A Reviewer escalation (bad faith, unclear intent, a critical security surface)
   is surfaced directly to you.** Nothing gets drafted or posted for that PR until
   you've seen it.
