@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "ai-dev",
+  "owner": {
+    "name": "Micheal Schexnayder",
+    "email": "micheal.schexnayder@gmail.com"
+  },
+  "description": "Personal AI-agent tooling maintained in CowboyLogic/ai-dev: client-config, agent-creator, and workflow skills for Claude Code, Copilot CLI, Gemini CLI, and OpenCode.",
+  "plugins": [
+    {
+      "name": "ai-dev",
+      "description": "Client-config, agent-creator, and workflow skills maintained in this repo's skills/ directory.",
+      "source": "./skills",
+      "skills": ["./"],
+      "strict": false
+    }
+  ]
+}
