@@ -33,6 +33,7 @@ Agent Skills are structured collections of instructions, templates, examples, an
 ### AI Platform Skills
 
 - **[OpenCode Agent Creator](agent-creator-opencode/README.md)** - Create custom agents for the OpenCode CLI
+- **[Federated Agent Broker](federated-agent-broker/README.md)** - Delegate bounded research, review, and implementation work between AI coding clients
 
 ### AI Client Configuration Skills
 

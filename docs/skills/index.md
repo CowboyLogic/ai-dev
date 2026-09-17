@@ -155,6 +155,17 @@ model selection, tool permissions, MCP server integration, and subagent patterns
 
 ---
 
+### Federated Agent Broker
+
+Delegate bounded coding tasks from Claude Code to GitHub Copilot CLI through a local
+MCP server. The broker provides read-only research and review, then scoped
+implementation with exact writable files, an optional verification-command allowlist,
+per-run Copilot credit limits, and a structured receipt for the parent agent.
+
+[Skill Overview](federated-agent-broker.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/federated-agent-broker)
+
+---
+
 ## AI Client Configuration Skills
 
 ### Claude Code Settings Manager
