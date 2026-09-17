@@ -13,6 +13,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shlex
 import subprocess
 import sys
@@ -21,7 +22,6 @@ import time
 import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
-import re
 from typing import Any, Iterator
 
 
@@ -33,6 +33,7 @@ MAX_TASK_CHARS = 12_000
 MAX_CAPTURED_OUTPUT_CHARS = 60_000
 MAX_DIFF_CHARS = 40_000
 SUPPORTED_EFFORTS = {"none", "minimal", "low", "medium", "high", "xhigh", "max"}
+SUPPORTED_CONTEXTS = {"default", "long_context"}
 MODEL_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
 SAFE_COMMANDS = {
     "cargo test",
@@ -61,11 +62,33 @@ class DelegationRequest:
     paths: tuple[str, ...]
     writable_paths: tuple[str, ...]
     allowed_commands: tuple[str, ...]
+    profile: str
     model: str
     effort: str
+    context: str
     max_ai_credits: int
     timeout_seconds: int
     include_working_diff: bool
+
+
+@dataclass(frozen=True)
+class Profile:
+    """A named, user-controlled Copilot execution policy."""
+
+    name: str
+    model: str
+    effort: str
+    context: str
+    max_ai_credits: int
+    timeout_seconds: int
+
+
+@dataclass(frozen=True)
+class BrokerPolicy:
+    source: str
+    default_profile: str
+    mode_profiles: dict[str, str]
+    profiles: dict[str, Profile]
 
 
 def _tool_schema(
@@ -109,6 +132,11 @@ COMMON_PROPERTIES: dict[str, Any] = {
         "enum": sorted(SUPPORTED_EFFORTS),
         "description": "Copilot reasoning effort. Defaults to low for research/review and medium for implementation.",
     },
+    "context": {
+        "type": "string",
+        "enum": sorted(SUPPORTED_CONTEXTS),
+        "description": "Copilot context tier. Defaults to the selected delegation profile.",
+    },
     "max_ai_credits": {
         "type": "integer",
         "minimum": 1,
@@ -124,16 +152,137 @@ COMMON_PROPERTIES: dict[str, Any] = {
 }
 
 
+def _validated_model(value: Any, field: str) -> str:
+    if not isinstance(value, str):
+        raise BrokerError(f"{field} must be a string")
+    model = value.strip()
+    if not model or model.startswith("-") or len(model) > 120 or not MODEL_PATTERN.fullmatch(model):
+        raise BrokerError(f"{field} must contain only letters, numbers, periods, underscores, or hyphens")
+    return model
+
+
+def _validated_int(value: Any, field: str, minimum: int, maximum: int) -> int:
+    if not isinstance(value, int) or isinstance(value, bool) or not minimum <= value <= maximum:
+        raise BrokerError(f"{field} must be an integer from {minimum} through {maximum}")
+    return value
+
+
+def _profile_from_mapping(name: str, value: Any) -> Profile:
+    if not isinstance(name, str) or not MODEL_PATTERN.fullmatch(name) or name.startswith("-"):
+        raise BrokerError("profile names must contain only letters, numbers, periods, underscores, or hyphens")
+    if not isinstance(value, dict):
+        raise BrokerError(f"profiles.{name} must be an object")
+    expected = {"model", "effort", "context", "maxAiCredits", "timeoutSeconds"}
+    unexpected = set(value) - expected
+    missing = expected - set(value)
+    if unexpected or missing:
+        details = []
+        if missing:
+            details.append(f"missing {', '.join(sorted(missing))}")
+        if unexpected:
+            details.append(f"unknown {', '.join(sorted(unexpected))}")
+        raise BrokerError(f"profiles.{name} has {'; '.join(details)} field(s)")
+    effort = value["effort"]
+    if effort not in SUPPORTED_EFFORTS:
+        raise BrokerError(f"profiles.{name}.effort must be one of: {', '.join(sorted(SUPPORTED_EFFORTS))}")
+    context = value["context"]
+    if context not in SUPPORTED_CONTEXTS:
+        raise BrokerError(f"profiles.{name}.context must be one of: {', '.join(sorted(SUPPORTED_CONTEXTS))}")
+    return Profile(
+        name=name,
+        model=_validated_model(value["model"], f"profiles.{name}.model"),
+        effort=effort,
+        context=context,
+        max_ai_credits=_validated_int(value["maxAiCredits"], f"profiles.{name}.maxAiCredits", 1, 100),
+        timeout_seconds=_validated_int(value["timeoutSeconds"], f"profiles.{name}.timeoutSeconds", 15, 900),
+    )
+
+
+def _built_in_policy() -> BrokerPolicy:
+    model = _validated_model(os.environ.get("FEDERATED_BROKER_COPILOT_MODEL", "auto"), "FEDERATED_BROKER_COPILOT_MODEL")
+    profiles = {
+        "research": Profile("research", model, "low", "default", 1, DEFAULT_TIMEOUT_SECONDS),
+        "review": Profile("review", model, "low", "default", 1, DEFAULT_TIMEOUT_SECONDS),
+        "implementation": Profile("implementation", model, "medium", "default", 1, DEFAULT_TIMEOUT_SECONDS),
+    }
+    return BrokerPolicy(
+        source="built-in defaults",
+        default_profile="research",
+        mode_profiles={"research": "research", "review": "review", "implement": "implementation"},
+        profiles=profiles,
+    )
+
+
+def load_policy() -> BrokerPolicy:
+    """Load an optional user policy without persisting credentials or task data."""
+    configured_path = os.environ.get("FEDERATED_BROKER_POLICY", "").strip()
+    if not configured_path:
+        return _built_in_policy()
+    path = Path(configured_path).expanduser().resolve()
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except OSError as error:
+        raise BrokerError(f"could not read FEDERATED_BROKER_POLICY at {path}: {error}") from error
+    except json.JSONDecodeError as error:
+        raise BrokerError(f"FEDERATED_BROKER_POLICY is not valid JSON: {error.msg}") from error
+    if not isinstance(data, dict):
+        raise BrokerError("FEDERATED_BROKER_POLICY must contain a JSON object")
+    expected = {"defaultProfile", "modeProfiles", "profiles"}
+    unexpected = set(data) - expected
+    missing = expected - set(data)
+    if unexpected or missing:
+        details = []
+        if missing:
+            details.append(f"missing {', '.join(sorted(missing))}")
+        if unexpected:
+            details.append(f"unknown {', '.join(sorted(unexpected))}")
+        raise BrokerError(f"FEDERATED_BROKER_POLICY has {'; '.join(details)} field(s)")
+    profiles_data = data["profiles"]
+    if not isinstance(profiles_data, dict) or not profiles_data:
+        raise BrokerError("FEDERATED_BROKER_POLICY.profiles must be a non-empty object")
+    profiles = {name: _profile_from_mapping(name, value) for name, value in profiles_data.items()}
+    default_profile = data["defaultProfile"]
+    if not isinstance(default_profile, str) or default_profile not in profiles:
+        raise BrokerError("FEDERATED_BROKER_POLICY.defaultProfile must name a configured profile")
+    mode_profiles = data["modeProfiles"]
+    if not isinstance(mode_profiles, dict) or set(mode_profiles) != {"research", "review", "implement"}:
+        raise BrokerError("FEDERATED_BROKER_POLICY.modeProfiles must define research, review, and implement")
+    if not all(isinstance(profile, str) and profile in profiles for profile in mode_profiles.values()):
+        raise BrokerError("FEDERATED_BROKER_POLICY.modeProfiles must reference configured profiles")
+    return BrokerPolicy(
+        source=str(path),
+        default_profile=default_profile,
+        mode_profiles=dict(mode_profiles),
+        profiles=profiles,
+    )
+
+
+def _common_properties(policy: BrokerPolicy | None) -> dict[str, Any]:
+    profile_names = sorted(policy.profiles) if policy else []
+    profile_description = "Named Copilot execution profile. Defaults to the configured mode profile."
+    if profile_names:
+        profile_description += f" Available profiles: {', '.join(profile_names)}."
+    profile = {"type": "string", "description": profile_description}
+    if profile_names:
+        profile["enum"] = profile_names
+    return {**COMMON_PROPERTIES, "profile": profile}
+
+
 def tool_definitions() -> list[dict[str, Any]]:
+    try:
+        policy = load_policy()
+    except BrokerError:
+        policy = None
+    common_properties = _common_properties(policy)
     research = _tool_schema(
         "Ask Copilot for read-only codebase research, diagnosis, or an independent opinion.",
-        COMMON_PROPERTIES,
+        common_properties,
         ["task"],
     )
     research["name"] = "copilot_research"
 
     review_properties = {
-        **COMMON_PROPERTIES,
+        **common_properties,
         "include_working_diff": {
             "type": "boolean",
             "default": True,
@@ -148,7 +297,7 @@ def tool_definitions() -> list[dict[str, Any]]:
     review["name"] = "copilot_review"
 
     implementation_properties = {
-        **COMMON_PROPERTIES,
+        **common_properties,
         "writable_paths": {
             "type": "array",
             "description": "Exact relative files Copilot may create or modify. Directories and globs are rejected.",
@@ -233,17 +382,22 @@ def parse_request(mode: str, arguments: Any) -> DelegationRequest:
     if len(task) > MAX_TASK_CHARS:
         raise BrokerError(f"task exceeds {MAX_TASK_CHARS} characters")
 
-    effort_default = "medium" if mode == "implement" else "low"
-    effort = _as_string(arguments, "effort", effort_default)
+    policy = load_policy()
+    requested_profile = _as_string(arguments, "profile", policy.mode_profiles.get(mode, policy.default_profile))
+    if requested_profile not in policy.profiles:
+        raise BrokerError(f"profile must be one of: {', '.join(sorted(policy.profiles))}")
+    profile = policy.profiles[requested_profile]
+
+    effort = _as_string(arguments, "effort", profile.effort)
     if effort not in SUPPORTED_EFFORTS:
         raise BrokerError(f"effort must be one of: {', '.join(sorted(SUPPORTED_EFFORTS))}")
 
-    credits = arguments.get("max_ai_credits", DEFAULT_MAX_AI_CREDITS)
-    if not isinstance(credits, int) or isinstance(credits, bool) or not 1 <= credits <= 100:
-        raise BrokerError("max_ai_credits must be an integer from 1 through 100")
-    timeout = arguments.get("timeout_seconds", DEFAULT_TIMEOUT_SECONDS)
-    if not isinstance(timeout, int) or isinstance(timeout, bool) or not 15 <= timeout <= 900:
-        raise BrokerError("timeout_seconds must be an integer from 15 through 900")
+    context = _as_string(arguments, "context", profile.context)
+    if context not in SUPPORTED_CONTEXTS:
+        raise BrokerError(f"context must be one of: {', '.join(sorted(SUPPORTED_CONTEXTS))}")
+
+    credits = _validated_int(arguments.get("max_ai_credits", profile.max_ai_credits), "max_ai_credits", 1, 100)
+    timeout = _validated_int(arguments.get("timeout_seconds", profile.timeout_seconds), "timeout_seconds", 15, 900)
 
     commands = arguments.get("allowed_commands", [])
     if not isinstance(commands, list) or not all(isinstance(item, str) for item in commands):
@@ -257,9 +411,7 @@ def parse_request(mode: str, arguments: Any) -> DelegationRequest:
     if not isinstance(include_diff, bool):
         raise BrokerError("include_working_diff must be a boolean")
 
-    model = _as_string(arguments, "model", os.environ.get("FEDERATED_BROKER_COPILOT_MODEL", "auto")).strip()
-    if not model or model.startswith("-") or len(model) > 120 or not MODEL_PATTERN.fullmatch(model):
-        raise BrokerError("model must contain only letters, numbers, periods, underscores, or hyphens")
+    model = _validated_model(arguments.get("model", profile.model), "model")
 
     workspace = _workspace(arguments)
     writable_paths = _relative_paths(
@@ -282,8 +434,10 @@ def parse_request(mode: str, arguments: Any) -> DelegationRequest:
         paths=_relative_paths(arguments.get("paths"), "paths"),
         writable_paths=writable_paths,
         allowed_commands=tuple(dict.fromkeys(commands)),
+        profile=profile.name,
         model=model,
         effort=effort,
+        context=context,
         max_ai_credits=credits,
         timeout_seconds=timeout,
         include_working_diff=include_diff,
@@ -357,6 +511,8 @@ def _copilot_base_command(request: DelegationRequest, prompt: str) -> list[str]:
         request.model,
         "--effort",
         request.effort,
+        "--context",
+        request.context,
         "--max-ai-credits",
         str(request.max_ai_credits),
     ]
@@ -451,8 +607,10 @@ def run_delegation(request: DelegationRequest) -> dict[str, Any]:
         "mode": request.mode,
         "authority": "read-only" if request.mode in {"research", "review"} else "scoped-write",
         "workspace": str(request.workspace),
+        "profile": request.profile,
         "model": request.model,
         "effort": request.effort,
+        "context": request.context,
         "maxAiCredits": request.max_ai_credits,
         "status": status,
         "exitCode": None if completed is None else completed.returncode,
@@ -487,6 +645,25 @@ def broker_status() -> dict[str, Any]:
         version = completed.stdout.strip() or completed.stderr.strip() or f"exit {completed.returncode}"
     except (OSError, subprocess.TimeoutExpired) as status_error:
         error = str(status_error)
+    try:
+        policy = load_policy()
+        policy_summary: dict[str, Any] = {
+            "source": policy.source,
+            "defaultProfile": policy.default_profile,
+            "modeProfiles": policy.mode_profiles,
+            "profiles": {
+                name: {
+                    "model": profile.model,
+                    "effort": profile.effort,
+                    "context": profile.context,
+                    "maxAiCredits": profile.max_ai_credits,
+                    "timeoutSeconds": profile.timeout_seconds,
+                }
+                for name, profile in policy.profiles.items()
+            },
+        }
+    except BrokerError as policy_error:
+        policy_summary = {"error": str(policy_error)}
     return {
         "server": SERVER_NAME,
         "version": SERVER_VERSION,
@@ -499,6 +676,7 @@ def broker_status() -> dict[str, Any]:
             "implementationRequiresExactWritablePaths": True,
             "implementationWorkspaceLock": True,
             "safeCommands": sorted(SAFE_COMMANDS),
+            "profiles": policy_summary,
         },
     }
 

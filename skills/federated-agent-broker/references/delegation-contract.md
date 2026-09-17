@@ -13,10 +13,12 @@ criteria, relevant evidence, and the precise question that Copilot should answer
 |---|---|---|
 | `workspace` | All tools | Existing directory to give Copilot as its working directory. It defaults to `CLAUDE_PROJECT_DIR`. |
 | `paths` | All tools | Optional relative files or directories that frame the task. The broker rejects absolute paths, parent traversal, and globs. |
-| `model` | All tools | Copilot model identifier containing letters, numbers, periods, underscores, or hyphens. The broker uses `auto` unless you set a model or `FEDERATED_BROKER_COPILOT_MODEL`. |
-| `effort` | All tools | Reasoning effort. Research and review default to `low`; implementation defaults to `medium`. |
-| `max_ai_credits` | All tools | Per-delegation Copilot credit ceiling. It defaults to `1`. Raise it only when the task warrants the additional cost. |
-| `timeout_seconds` | All tools | Time limit from 15 through 900 seconds. It defaults to 300 seconds. |
+| `profile` | All tools | Named execution policy. It defaults to the configured profile for the delegation mode. |
+| `model` | All tools | Optional Copilot model override containing letters, numbers, periods, underscores, or hyphens. |
+| `effort` | All tools | Optional reasoning-effort override: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, or `max`. |
+| `context` | All tools | Optional context-tier override: `default` or `long_context`. |
+| `max_ai_credits` | All tools | Optional per-delegation Copilot credit override from 1 through 100. |
+| `timeout_seconds` | All tools | Optional time-limit override from 15 through 900 seconds. |
 | `writable_paths` | Implementation | Required exact relative files Copilot may create or modify. Directories and globs are not accepted. |
 | `allowed_commands` | Implementation | Optional verification commands from the finite broker allowlist. |
 
@@ -49,3 +51,21 @@ Each delegation returns a JSON receipt in the MCP tool result.
 | `limitations` | The parent agent's required follow-up. |
 
 Do not treat a receipt as an approval to commit, publish, deploy, or accept a change.
+
+## Profile policy
+
+Set `FEDERATED_BROKER_POLICY` in the environment that starts Claude Code to the
+absolute path of a JSON policy file. The broker never writes this file, so keep it
+in a user configuration directory rather than a repository. Copy
+[policy.example.json](policy.example.json) as a starting point, then replace `auto`
+with model identifiers that the locally authenticated Copilot CLI exposes at work.
+
+Each profile must define `model`, `effort`, `context`, `maxAiCredits`, and
+`timeoutSeconds`. `modeProfiles` maps research, review, and implementation to a
+profile. A tool call can override any resolved execution value, but a profile is the
+normal interface for routing work by cost and capability.
+
+The broker resolves settings in this order: explicit tool argument, requested
+profile, mode profile, then the policy's default profile. `broker_status` returns the
+active policy source and resolved profile definitions so the parent agent can choose
+from values it actually knows are configured.

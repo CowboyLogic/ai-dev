@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 import stat
@@ -85,6 +86,51 @@ class CopilotBrokerTests(unittest.TestCase):
                         "model": "--allow-all",
                     },
                 )
+
+    def test_profile_resolves_model_effort_context_and_budget(self) -> None:
+        policy = {
+            "defaultProfile": "work-review",
+            "modeProfiles": {
+                "research": "work-review",
+                "review": "work-review",
+                "implement": "work-review",
+            },
+            "profiles": {
+                "work-review": {
+                    "model": "gpt-5.4",
+                    "effort": "high",
+                    "context": "long_context",
+                    "maxAiCredits": 3,
+                    "timeoutSeconds": 420,
+                }
+            },
+        }
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            policy_path = Path(temporary_directory, "policy.json")
+            policy_path.write_text(json.dumps(policy))
+            old_policy = os.environ.get("FEDERATED_BROKER_POLICY")
+            os.environ["FEDERATED_BROKER_POLICY"] = str(policy_path)
+            try:
+                request = broker.parse_request(
+                    "review", {"task": "Review the proposed change", "workspace": temporary_directory}
+                )
+                tools = broker.tool_definitions()
+            finally:
+                if old_policy is None:
+                    del os.environ["FEDERATED_BROKER_POLICY"]
+                else:
+                    os.environ["FEDERATED_BROKER_POLICY"] = old_policy
+            self.assertEqual(request.profile, "work-review")
+            self.assertEqual(request.model, "gpt-5.4")
+            self.assertEqual(request.effort, "high")
+            self.assertEqual(request.context, "long_context")
+            self.assertEqual(request.max_ai_credits, 3)
+            self.assertEqual(request.timeout_seconds, 420)
+            self.assertEqual(
+                tools[0]["inputSchema"]["properties"]["profile"]["enum"], ["work-review"]
+            )
+            command = broker._copilot_base_command(request, broker.build_prompt(request))
+            self.assertEqual(command[command.index("--context") + 1], "long_context")
 
     def test_research_uses_read_only_copilot_permissions(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

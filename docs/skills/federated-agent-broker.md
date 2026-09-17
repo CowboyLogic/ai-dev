@@ -56,9 +56,43 @@ src/parser.ts and tests/parser.test.ts, and may run npm test. Use max_ai_credits
 Do not commit or change dependencies.
 ```
 
-Every tool returns a structured delegation receipt with the model, effort, credit
-ceiling, scoped authority, process status, captured Copilot output, and limitations.
+Every tool returns a structured delegation receipt with the selected profile, model,
+effort, context tier, credit ceiling, scoped authority, process status, captured
+Copilot output, and limitations.
 Inspect the diff and run final verification before accepting a result.
+
+## Configure model profiles
+
+Configure profiles before evaluating the broker at work. A profile gives Claude a
+name for a cost-and-capability policy instead of expecting it to invent raw Copilot
+settings. Each profile selects a model, thinking effort, context tier, Copilot credit
+ceiling, and timeout.
+
+Copy the included example to a private configuration directory, edit it with the
+models available to your work subscription, and set its path before starting Claude
+Code:
+
+```bash
+BROKER_ROOT="/absolute/path/to/federated-agent-broker"
+BROKER_CONFIG_DIR="/absolute/path/to/your/config/federated-agent-broker"
+mkdir -p "$BROKER_CONFIG_DIR"
+cp "$BROKER_ROOT/references/policy.example.json" \
+  "$BROKER_CONFIG_DIR/policy.json"
+export FEDERATED_BROKER_POLICY="$BROKER_CONFIG_DIR/policy.json"
+```
+
+The example defines `economy`, `review`, and `implementation` profiles. The broker
+maps research, review, and implementation delegation modes to those profiles by
+default. Call `broker_status` in a new Claude session to confirm the active policy,
+then tell Claude to use a profile by name:
+
+```text
+Use copilot_review with the review profile to examine the current diff.
+```
+
+Per-call `model`, `effort`, `context`, `max_ai_credits`, and `timeout_seconds` values
+override the selected profile. Use these only for an intentional exception; named
+profiles keep routine routing auditable and consistent.
 
 ## Boundaries
 

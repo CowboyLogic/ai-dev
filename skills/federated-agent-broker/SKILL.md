@@ -32,8 +32,9 @@ obtain a second opinion.
 - Treat the returned receipt as evidence, not a success guarantee. Inspect the
   changed files and run the relevant verification before committing or creating a
   pull request.
-- Select a model and `max_ai_credits` deliberately. The broker defaults to one
-  credit to make accidental expensive delegation unlikely.
+- Select a named profile rather than individual model settings. Profiles bind a
+  model, thinking effort, context tier, credit ceiling, and timeout to a purpose.
+  The broker defaults to one credit to make accidental expensive delegation unlikely.
 
 ## Install and invoke
 

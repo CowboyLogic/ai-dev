@@ -61,11 +61,36 @@ Afterward, inspect the receipt and verify the diff yourself.
 The broker does not commit, push, create pull requests, install dependencies, or
 allow arbitrary shell commands. Use an isolated Git worktree for substantial changes.
 
-## Configure defaults
+## Configure delegation profiles
 
-Set `FEDERATED_BROKER_COPILOT_MODEL` in the environment that starts Claude Code to
-choose a default Copilot model. Per-tool `model` values override it. The broker
-defaults to `auto` and one Copilot AI credit per delegation.
+Profiles tell Claude which Copilot model, thinking effort, context tier, credit
+ceiling, and timeout to use for each kind of delegation. Copy the included example
+to a private user configuration directory, then replace `auto` with models available
+to your Copilot subscription when you want deterministic routing.
+
+```bash
+BROKER_CONFIG_DIR="/absolute/path/to/your/config/federated-agent-broker"
+mkdir -p "$BROKER_CONFIG_DIR"
+cp "$BROKER_ROOT/references/policy.example.json" \
+  "$BROKER_CONFIG_DIR/policy.json"
+```
+
+Set the policy path in the environment that launches Claude Code:
+
+```bash
+export FEDERATED_BROKER_POLICY="$BROKER_CONFIG_DIR/policy.json"
+```
+
+Restart Claude Code, call `broker_status`, and verify the reported profile names and
+values. Claude then selects semantic profiles such as `economy`, `review`, or
+`implementation` instead of inventing model settings. A tool call can still override
+`model`, `effort`, `context`, `max_ai_credits`, or `timeout_seconds` for an exceptional
+task.
+
+Without a policy file, the broker uses built-in profiles: `research`, `review`, and
+`implementation`. They retain the original conservative defaults: model `auto`, one
+credit, default context, and low effort for read-only work or medium effort for writes.
+`FEDERATED_BROKER_COPILOT_MODEL` changes the built-in profiles' model only.
 
 For development tests only, set `FEDERATED_BROKER_COPILOT_BIN` to an alternate
 Copilot executable. Do not use it to bypass Copilot authentication or subscription
