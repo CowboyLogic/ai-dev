@@ -159,6 +159,40 @@ class CopilotBrokerTests(unittest.TestCase):
             command = broker._copilot_base_command(request, broker.build_prompt(request))
             self.assertEqual(command[command.index("--context") + 1], "long_context")
 
+    def test_invalid_profile_value_returns_a_broker_error(self) -> None:
+        policy = {
+            "defaultProfile": "invalid",
+            "modeProfiles": {
+                "research": "invalid",
+                "review": "invalid",
+                "implement": "invalid",
+            },
+            "profiles": {
+                "invalid": {
+                    "model": "auto",
+                    "effort": ["high"],
+                    "context": {"tier": "default"},
+                    "maxAiCredits": 1,
+                    "timeoutSeconds": 180,
+                }
+            },
+        }
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            policy_path = Path(temporary_directory, "policy.json")
+            policy_path.write_text(json.dumps(policy))
+            old_policy = os.environ.get("FEDERATED_BROKER_POLICY")
+            os.environ["FEDERATED_BROKER_POLICY"] = str(policy_path)
+            try:
+                with self.assertRaisesRegex(broker.BrokerError, "invalid.effort"):
+                    broker.parse_request(
+                        "research", {"task": "Inspect this code", "workspace": temporary_directory}
+                    )
+            finally:
+                if old_policy is None:
+                    del os.environ["FEDERATED_BROKER_POLICY"]
+                else:
+                    os.environ["FEDERATED_BROKER_POLICY"] = old_policy
+
     def test_research_uses_read_only_copilot_permissions(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             request = broker.parse_request(

@@ -189,10 +189,10 @@ def _profile_from_mapping(name: str, value: Any) -> Profile:
             details.append(f"unknown {', '.join(sorted(unexpected))}")
         raise BrokerError(f"profiles.{name} has {'; '.join(details)} field(s)")
     effort = value["effort"]
-    if effort not in SUPPORTED_EFFORTS:
+    if not isinstance(effort, str) or effort not in SUPPORTED_EFFORTS:
         raise BrokerError(f"profiles.{name}.effort must be one of: {', '.join(sorted(SUPPORTED_EFFORTS))}")
     context = value["context"]
-    if context not in SUPPORTED_CONTEXTS:
+    if not isinstance(context, str) or context not in SUPPORTED_CONTEXTS:
         raise BrokerError(f"profiles.{name}.context must be one of: {', '.join(sorted(SUPPORTED_CONTEXTS))}")
     return Profile(
         name=name,
