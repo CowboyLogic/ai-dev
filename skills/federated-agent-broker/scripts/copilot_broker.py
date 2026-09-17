@@ -8,21 +8,28 @@ All diagnostic output goes to stderr; stdout is reserved for protocol messages.
 
 from __future__ import annotations
 
-import fcntl
 import hashlib
 import json
 import os
 from pathlib import Path
 import re
 import shlex
+import signal
+import stat
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any, Iterator
+
+try:
+    import fcntl
+except ImportError:  # Windows does not provide POSIX advisory file locks.
+    fcntl = None
 
 
 SERVER_NAME = "federated-agent-broker"
@@ -34,20 +41,8 @@ MAX_CAPTURED_OUTPUT_CHARS = 60_000
 MAX_DIFF_CHARS = 40_000
 SUPPORTED_EFFORTS = {"none", "minimal", "low", "medium", "high", "xhigh", "max"}
 SUPPORTED_CONTEXTS = {"default", "long_context"}
+SUPPORTED_PROTOCOL_VERSIONS = {"2025-03-26", "2025-06-18", "2025-11-25"}
 MODEL_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
-SAFE_COMMANDS = {
-    "cargo test",
-    "git diff --check",
-    "git status --short",
-    "go test ./...",
-    "npm run test",
-    "npm test",
-    "pnpm test",
-    "pytest",
-    "python -m pytest",
-    "uv run pytest",
-    "yarn test",
-}
 
 
 class BrokerError(ValueError):
@@ -61,7 +56,6 @@ class DelegationRequest:
     workspace: Path
     paths: tuple[str, ...]
     writable_paths: tuple[str, ...]
-    allowed_commands: tuple[str, ...]
     profile: str
     model: str
     effort: str
@@ -89,6 +83,18 @@ class BrokerPolicy:
     default_profile: str
     mode_profiles: dict[str, str]
     profiles: dict[str, Profile]
+
+
+@dataclass(frozen=True)
+class ProcessResult:
+    """Bounded output captured from a child process and its process group."""
+
+    exit_code: int | None
+    stdout: str
+    stderr: str
+    timed_out: bool
+    stdout_truncated: bool
+    stderr_truncated: bool
 
 
 def _tool_schema(
@@ -305,12 +311,6 @@ def tool_definitions() -> list[dict[str, Any]]:
             "minItems": 1,
             "maxItems": 25,
         },
-        "allowed_commands": {
-            "type": "array",
-            "description": "Optional verification commands from the broker's allowlist.",
-            "items": {"type": "string", "enum": sorted(SAFE_COMMANDS)},
-            "uniqueItems": True,
-        },
     }
     implementation = _tool_schema(
         "Delegate a bounded implementation to Copilot. Requires exact writable files and locks the workspace for the run.",
@@ -335,7 +335,9 @@ def _as_string(arguments: dict[str, Any], key: str, default: str = "") -> str:
     return value
 
 
-def _relative_paths(value: Any, key: str, *, required: bool = False) -> tuple[str, ...]:
+def _relative_paths(
+    value: Any, key: str, *, required: bool = False, files_only: bool = False
+) -> tuple[str, ...]:
     if value is None:
         values: list[Any] = []
     elif isinstance(value, list):
@@ -351,6 +353,8 @@ def _relative_paths(value: Any, key: str, *, required: bool = False) -> tuple[st
     for raw in values:
         if not isinstance(raw, str) or not raw.strip():
             raise BrokerError(f"{key} entries must be non-empty strings")
+        if files_only and raw.endswith(("/", "\\")):
+            raise BrokerError(f"{key} entries must name files, not directories")
         path = Path(raw)
         if path.is_absolute() or ".." in path.parts or raw.startswith("~"):
             raise BrokerError(f"{key} entries must be relative paths within the workspace")
@@ -399,14 +403,6 @@ def parse_request(mode: str, arguments: Any) -> DelegationRequest:
     credits = _validated_int(arguments.get("max_ai_credits", profile.max_ai_credits), "max_ai_credits", 1, 100)
     timeout = _validated_int(arguments.get("timeout_seconds", profile.timeout_seconds), "timeout_seconds", 15, 900)
 
-    commands = arguments.get("allowed_commands", [])
-    if not isinstance(commands, list) or not all(isinstance(item, str) for item in commands):
-        raise BrokerError("allowed_commands must be an array of command strings")
-    if any(command not in SAFE_COMMANDS for command in commands):
-        raise BrokerError("allowed_commands contains a command outside the broker allowlist")
-    if mode != "implement" and commands:
-        raise BrokerError("allowed_commands is available only for implementation")
-
     include_diff = arguments.get("include_working_diff", True)
     if not isinstance(include_diff, bool):
         raise BrokerError("include_working_diff must be a boolean")
@@ -415,14 +411,22 @@ def parse_request(mode: str, arguments: Any) -> DelegationRequest:
 
     workspace = _workspace(arguments)
     writable_paths = _relative_paths(
-        arguments.get("writable_paths"), "writable_paths", required=mode == "implement"
+        arguments.get("writable_paths"),
+        "writable_paths",
+        required=mode == "implement",
+        files_only=mode == "implement",
     )
     if mode != "implement" and writable_paths:
         raise BrokerError("writable_paths is available only for implementation")
     if len(writable_paths) > 25:
         raise BrokerError("writable_paths may include at most 25 files")
     for relative_path in writable_paths:
-        if (workspace / relative_path).is_dir():
+        candidate = (workspace / relative_path).resolve(strict=False)
+        try:
+            candidate.relative_to(workspace)
+        except ValueError as error:
+            raise BrokerError("writable_paths entries must resolve within the workspace") from error
+        if candidate.is_dir():
             raise BrokerError("writable_paths entries must name files, not existing directories")
         if any(character in relative_path for character in ",()\r\n"):
             raise BrokerError("writable_paths entries cannot contain permission-syntax characters")
@@ -433,7 +437,6 @@ def parse_request(mode: str, arguments: Any) -> DelegationRequest:
         workspace=workspace,
         paths=_relative_paths(arguments.get("paths"), "paths"),
         writable_paths=writable_paths,
-        allowed_commands=tuple(dict.fromkeys(commands)),
         profile=profile.name,
         model=model,
         effort=effort,
@@ -445,25 +448,20 @@ def parse_request(mode: str, arguments: Any) -> DelegationRequest:
 
 
 def _read_working_diff(request: DelegationRequest) -> str:
-    command = ["git", "-C", str(request.workspace), "diff", "--no-ext-diff", "--"]
+    command = ["git", "-C", str(request.workspace), "diff", "--no-ext-diff", "HEAD", "--"]
     command.extend(request.paths)
     try:
-        completed = subprocess.run(
-            command,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            timeout=15,
-            check=False,
-        )
-    except (OSError, subprocess.TimeoutExpired) as error:
+        result = _run_bounded_process(command, request.workspace, 15, MAX_DIFF_CHARS)
+    except BrokerError as error:
         return f"[Broker could not collect the working diff: {error}]"
-    if completed.returncode != 0:
-        return f"[Broker could not collect the working diff: {completed.stderr.strip()}]"
-    output = completed.stdout
-    if len(output) > MAX_DIFF_CHARS:
-        output = output[:MAX_DIFF_CHARS] + "\n[Diff truncated by broker.]"
-    return output or "[No uncommitted diff matched the requested scope.]"
+    if result.timed_out:
+        return "[Broker could not collect the working diff before its timeout.]"
+    if result.exit_code != 0:
+        return f"[Broker could not collect the working diff: {result.stderr.strip()}]"
+    output = _display_output(result.stdout, result.stdout_truncated, "Diff")
+    if not output:
+        output = "[No staged or unstaged tracked diff matched the requested scope.]"
+    return f"{output}\n[Untracked files are not included in this diff.]"
 
 
 def build_prompt(request: DelegationRequest) -> str:
@@ -473,7 +471,7 @@ def build_prompt(request: DelegationRequest) -> str:
         f"Workspace: {request.workspace}",
         f"Mode: {request.mode}",
         f"Authority: {authority}.",
-        "Follow repository instructions. Do not commit, push, create pull requests, change dependencies, or modify files outside the granted scope.",
+        "Follow repository instructions. Do not commit, push, create pull requests, change dependencies, run shell commands, or modify files outside the granted scope.",
         "The parent agent owns final decisions. Report evidence, changed files, tests run, limitations, and any follow-up it must perform.",
         "",
         "Task:",
@@ -483,17 +481,23 @@ def build_prompt(request: DelegationRequest) -> str:
         sections.extend(["", "Relevant paths:", *[f"- {path}" for path in request.paths]])
     if request.writable_paths:
         sections.extend(["", "Writable files:", *[f"- {path}" for path in request.writable_paths]])
-    if request.allowed_commands:
-        sections.extend(["", "Allowed verification commands:", *[f"- {command}" for command in request.allowed_commands]])
     if request.mode == "review" and request.include_working_diff:
         sections.extend(["", "Working-tree diff supplied by the broker:", "```diff", _read_working_diff(request), "```"])
     return "\n".join(sections)
 
 
-def _copilot_base_command(request: DelegationRequest, prompt: str) -> list[str]:
-    binary = shlex.split(os.environ.get("FEDERATED_BROKER_COPILOT_BIN", "copilot"))
+def _copilot_binary() -> list[str]:
+    try:
+        binary = shlex.split(os.environ.get("FEDERATED_BROKER_COPILOT_BIN", "copilot"))
+    except ValueError as error:
+        raise BrokerError(f"FEDERATED_BROKER_COPILOT_BIN is not valid shell syntax: {error}") from error
     if not binary:
         raise BrokerError("FEDERATED_BROKER_COPILOT_BIN cannot be empty")
+    return binary
+
+
+def _copilot_base_command(request: DelegationRequest, prompt: str) -> list[str]:
+    binary = _copilot_binary()
     command = [
         *binary,
         "-C",
@@ -519,10 +523,9 @@ def _copilot_base_command(request: DelegationRequest, prompt: str) -> list[str]:
     if request.mode in {"research", "review"}:
         command.extend(["--available-tools", "read", "--allow-tool", "read"])
     else:
-        allowed_tools = ["read"]
-        allowed_tools.extend(f"write({path})" for path in request.writable_paths)
-        allowed_tools.extend(f"shell({command})" for command in request.allowed_commands)
-        command.extend(["--available-tools", "read,write,shell", "--allow-tool", ",".join(allowed_tools)])
+        command.extend(["--available-tools", "read,write"])
+        for allowed_tool in ["read", *(f"write({path})" for path in request.writable_paths)]:
+            command.extend(["--allow-tool", allowed_tool])
     return command
 
 
@@ -537,9 +540,27 @@ def _redacted_command(command: list[str]) -> list[str]:
 
 @contextmanager
 def workspace_lock(workspace: Path) -> Iterator[None]:
+    """Acquire a POSIX advisory lock without following or truncating a symlink."""
+    if fcntl is None:
+        raise BrokerError("implementation delegation requires a POSIX host with fcntl support")
+    if not hasattr(os, "O_NOFOLLOW"):
+        raise BrokerError("implementation delegation requires O_NOFOLLOW support for secure workspace locks")
     identifier = hashlib.sha256(str(workspace).encode()).hexdigest()[:20]
     path = Path(tempfile.gettempdir()) / f"federated-agent-broker-{identifier}.lock"
-    with path.open("w", encoding="utf-8") as lock_file:
+    flags = os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW
+    try:
+        descriptor = os.open(path, flags, 0o600)
+    except OSError as error:
+        raise BrokerError(f"could not open the workspace lock safely: {error}") from error
+    try:
+        lock_status = os.fstat(descriptor)
+        if not stat.S_ISREG(lock_status.st_mode) or lock_status.st_uid != os.geteuid():
+            raise BrokerError("workspace lock is not a regular file owned by the current user")
+        lock_file = os.fdopen(descriptor, "r+", encoding="utf-8")
+    except Exception:
+        os.close(descriptor)
+        raise
+    with lock_file:
         try:
             fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as error:
@@ -548,6 +569,98 @@ def workspace_lock(workspace: Path) -> Iterator[None]:
             yield
         finally:
             fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+
+
+def _drain_stream(stream: Any, capture: dict[str, Any], limit: int) -> None:
+    """Drain a pipe continuously while retaining at most ``limit`` bytes."""
+    try:
+        while chunk := stream.read(8_192):
+            remaining = limit - len(capture["buffer"])
+            if remaining > 0:
+                capture["buffer"].extend(chunk[:remaining])
+            if len(chunk) > remaining:
+                capture["truncated"] = True
+    finally:
+        stream.close()
+
+
+def _terminate_process_group(process: subprocess.Popen[bytes]) -> None:
+    """Terminate the worker and all same-session descendants before releasing a lock."""
+    if not hasattr(os, "killpg"):
+        if process.poll() is not None:
+            return
+        process.terminate()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=5)
+        return
+    try:
+        os.killpg(process.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        return
+    if process.poll() is None:
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                return
+            process.wait(timeout=5)
+
+
+def _display_output(output: str, truncated: bool, label: str) -> str:
+    if truncated:
+        return f"{output}\n[{label} truncated by broker.]"
+    return output
+
+
+def _run_bounded_process(
+    command: list[str], workspace: Path, timeout_seconds: int, output_limit: int
+) -> ProcessResult:
+    """Run one process group while draining stdout and stderr into bounded buffers."""
+    try:
+        process: subprocess.Popen[bytes] = subprocess.Popen(
+            command,
+            cwd=workspace,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            start_new_session=True,
+        )
+    except OSError as error:
+        raise BrokerError(f"could not start process: {error}") from error
+    assert process.stdout is not None
+    assert process.stderr is not None
+    stdout_capture: dict[str, Any] = {"buffer": bytearray(), "truncated": False}
+    stderr_capture: dict[str, Any] = {"buffer": bytearray(), "truncated": False}
+    readers = [
+        threading.Thread(target=_drain_stream, args=(process.stdout, stdout_capture, output_limit)),
+        threading.Thread(target=_drain_stream, args=(process.stderr, stderr_capture, output_limit)),
+    ]
+    for reader in readers:
+        reader.start()
+    timed_out = False
+    try:
+        process.wait(timeout=timeout_seconds)
+    except subprocess.TimeoutExpired:
+        timed_out = True
+        _terminate_process_group(process)
+    for reader in readers:
+        reader.join(timeout=5)
+    if any(reader.is_alive() for reader in readers):
+        _terminate_process_group(process)
+        for reader in readers:
+            reader.join(timeout=1)
+    return ProcessResult(
+        exit_code=process.poll(),
+        stdout=bytes(stdout_capture["buffer"]).decode(errors="replace"),
+        stderr=bytes(stderr_capture["buffer"]).decode(errors="replace"),
+        timed_out=timed_out,
+        stdout_truncated=bool(stdout_capture["truncated"]),
+        stderr_truncated=bool(stderr_capture["truncated"]),
+    )
 
 
 def _parse_output(output: str) -> tuple[list[Any], str]:
@@ -571,36 +684,13 @@ def run_delegation(request: DelegationRequest) -> dict[str, Any]:
     command = _copilot_base_command(request, prompt)
     started = time.monotonic()
     request_id = f"del_{uuid.uuid4().hex[:16]}"
-    try:
-        completed = subprocess.run(
-            command,
-            cwd=request.workspace,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            timeout=request.timeout_seconds,
-            check=False,
-        )
-        timed_out = False
-    except subprocess.TimeoutExpired as error:
-        completed = None
-        timed_out = True
-        stdout = error.stdout or ""
-        stderr = error.stderr or ""
-    except OSError as error:
-        raise BrokerError(f"could not start Copilot CLI: {error}") from error
-
-    if completed is not None:
-        stdout = completed.stdout
-        stderr = completed.stderr
-    if isinstance(stdout, bytes):
-        stdout = stdout.decode(errors="replace")
-    if isinstance(stderr, bytes):
-        stderr = stderr.decode(errors="replace")
-    stdout = stdout[:MAX_CAPTURED_OUTPUT_CHARS]
-    stderr = stderr[:MAX_CAPTURED_OUTPUT_CHARS]
+    result = _run_bounded_process(
+        command, request.workspace, request.timeout_seconds, MAX_CAPTURED_OUTPUT_CHARS
+    )
+    stdout = _display_output(result.stdout, result.stdout_truncated, "Copilot stdout")
+    stderr = _display_output(result.stderr, result.stderr_truncated, "Copilot stderr")
     events, text_output = _parse_output(stdout)
-    status = "timed_out" if timed_out else "completed" if completed and completed.returncode == 0 else "failed"
+    status = "timed_out" if result.timed_out else "completed" if result.exit_code == 0 else "failed"
     return {
         "requestId": request_id,
         "provider": "github-copilot-cli",
@@ -613,11 +703,10 @@ def run_delegation(request: DelegationRequest) -> dict[str, Any]:
         "context": request.context,
         "maxAiCredits": request.max_ai_credits,
         "status": status,
-        "exitCode": None if completed is None else completed.returncode,
+        "exitCode": result.exit_code,
         "durationSeconds": round(time.monotonic() - started, 3),
         "paths": list(request.paths),
         "writablePaths": list(request.writable_paths),
-        "allowedCommands": list(request.allowed_commands),
         "command": _redacted_command(command),
         "events": events,
         "textOutput": text_output,
@@ -630,10 +719,10 @@ def run_delegation(request: DelegationRequest) -> dict[str, Any]:
 
 
 def broker_status() -> dict[str, Any]:
-    binary = shlex.split(os.environ.get("FEDERATED_BROKER_COPILOT_BIN", "copilot"))
     version = "unavailable"
     error = ""
     try:
+        binary = _copilot_binary()
         completed = subprocess.run(
             [*binary, "--version"],
             text=True,
@@ -643,7 +732,8 @@ def broker_status() -> dict[str, Any]:
             check=False,
         )
         version = completed.stdout.strip() or completed.stderr.strip() or f"exit {completed.returncode}"
-    except (OSError, subprocess.TimeoutExpired) as status_error:
+    except (BrokerError, OSError, subprocess.TimeoutExpired) as status_error:
+        binary = []
         error = str(status_error)
     try:
         policy = load_policy()
@@ -675,7 +765,8 @@ def broker_status() -> dict[str, Any]:
             "readOnlyTools": ["copilot_research", "copilot_review"],
             "implementationRequiresExactWritablePaths": True,
             "implementationWorkspaceLock": True,
-            "safeCommands": sorted(SAFE_COMMANDS),
+            "implementationRequiresPosix": True,
+            "implementationAllowsShell": False,
             "profiles": policy_summary,
         },
     }
@@ -701,11 +792,16 @@ class McpServer:
         if method == "initialize":
             params = request.get("params", {})
             requested_version = params.get("protocolVersion") if isinstance(params, dict) else None
-            protocol_version = requested_version if isinstance(requested_version, str) else "2025-06-18"
+            if requested_version not in SUPPORTED_PROTOCOL_VERSIONS:
+                return self._error(
+                    request_id,
+                    -32602,
+                    f"unsupported MCP protocol version: {requested_version}",
+                )
             return self._result(
                 request_id,
                 {
-                    "protocolVersion": protocol_version,
+                    "protocolVersion": requested_version,
                     "capabilities": {"tools": {"listChanged": False}},
                     "serverInfo": {"name": SERVER_NAME, "version": SERVER_VERSION},
                 },

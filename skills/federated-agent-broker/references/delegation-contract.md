@@ -20,16 +20,17 @@ criteria, relevant evidence, and the precise question that Copilot should answer
 | `max_ai_credits` | All tools | Optional per-delegation Copilot credit override from 1 through 100. |
 | `timeout_seconds` | All tools | Optional time-limit override from 15 through 900 seconds. |
 | `writable_paths` | Implementation | Required exact relative files Copilot may create or modify. Directories and globs are not accepted. |
-| `allowed_commands` | Implementation | Optional verification commands from the finite broker allowlist. |
 
 ## Authority model
 
 `copilot_research` and `copilot_review` receive only Copilot's `read` tool.
-`copilot_implement` receives `read`, an exact `write(PATH)` permission for each
-declared writable file, and an optional exact `shell(COMMAND)` permission for each
-allowlisted verification command. Writable paths cannot contain the punctuation used
-by Copilot's permission syntax. Copilot does not receive blanket shell, write,
-URL, temporary-directory, remote-control, commit, push, or pull-request authority.
+`copilot_implement` receives `read` and an exact `write(PATH)` permission for each
+declared writable file. Writable paths cannot contain the punctuation used by
+Copilot's permission syntax. It cannot run shell commands, including test commands,
+because repository-controlled test hooks could write beyond its file scope. The parent
+agent runs verification after inspecting the delegated diff. Copilot does not receive
+blanket shell, write, URL, temporary-directory, remote-control, commit, push, or
+pull-request authority.
 
 The implementation tool holds an advisory lock for its workspace while Copilot runs.
 Use a separate Git worktree for larger work or when another agent needs to modify the
@@ -45,12 +46,16 @@ Each delegation returns a JSON receipt in the MCP tool result.
 | `status` | `completed`, `failed`, or `timed_out`. A completed process can still produce an incorrect result. |
 | `authority` | `read-only` or `scoped-write`. |
 | `model`, `effort`, `maxAiCredits` | The selected Copilot execution settings. |
-| `paths`, `writablePaths`, `allowedCommands` | The actual bounded authority given to the worker. |
+| `paths`, `writablePaths` | The actual bounded authority given to the worker. |
 | `events`, `textOutput`, `stderr` | Copilot's captured output. JSONL events are retained as structured data when available. |
 | `command` | The CLI invocation with the task prompt removed. |
 | `limitations` | The parent agent's required follow-up. |
 
 Do not treat a receipt as an approval to commit, publish, deploy, or accept a change.
+
+`copilot_review` attaches `git diff HEAD`, so it includes both staged and unstaged
+tracked changes. Git does not include untracked files in that diff; name those files
+in `paths` when their contents matter to the review.
 
 ## Profile policy
 

@@ -10,6 +10,7 @@ import stat
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parent))
 import copilot_broker as broker  # noqa: E402
@@ -50,6 +51,32 @@ class CopilotBrokerTests(unittest.TestCase):
                         "writable_paths": ["src"],
                     },
                 )
+
+    def test_implementation_rejects_a_trailing_directory_separator(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            with self.assertRaisesRegex(broker.BrokerError, "name files"):
+                broker.parse_request(
+                    "implement",
+                    {
+                        "task": "Change one file",
+                        "workspace": temporary_directory,
+                        "writable_paths": ["new-directory/"],
+                    },
+                )
+
+    def test_implementation_rejects_a_symlinked_parent_outside_workspace(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            with tempfile.TemporaryDirectory() as outside_directory:
+                Path(temporary_directory, "out").symlink_to(outside_directory, target_is_directory=True)
+                with self.assertRaisesRegex(broker.BrokerError, "resolve within the workspace"):
+                    broker.parse_request(
+                        "implement",
+                        {
+                            "task": "Change one file",
+                            "workspace": temporary_directory,
+                            "writable_paths": ["out/result.py"],
+                        },
+                    )
 
     def test_read_only_modes_reject_write_fields(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -143,7 +170,7 @@ class CopilotBrokerTests(unittest.TestCase):
             self.assertNotIn("write", command)
             self.assertNotIn("shell", command)
 
-    def test_implementation_passes_exact_write_and_shell_permissions(self) -> None:
+    def test_implementation_passes_one_exact_permission_per_file(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             request = broker.parse_request(
                 "implement",
@@ -151,15 +178,20 @@ class CopilotBrokerTests(unittest.TestCase):
                     "task": "Update the focused test",
                     "workspace": temporary_directory,
                     "writable_paths": ["tests/test_broker.py"],
-                    "allowed_commands": ["python -m pytest"],
                 },
             )
             command = broker._copilot_base_command(request, broker.build_prompt(request))
-            permissions = command[command.index("--allow-tool") + 1]
+            permissions = [
+                command[index + 1]
+                for index, value in enumerate(command)
+                if value == "--allow-tool"
+            ]
             self.assertEqual(
                 permissions,
-                "read,write(tests/test_broker.py),shell(python -m pytest)",
+                ["read", "write(tests/test_broker.py)"],
             )
+            self.assertIn("read,write", command)
+            self.assertNotIn("shell", command)
 
     def test_delegation_returns_a_structured_receipt_from_jsonl(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -186,6 +218,52 @@ class CopilotBrokerTests(unittest.TestCase):
             self.assertEqual(receipt["status"], "completed")
             self.assertEqual(receipt["events"][0]["content"], "review complete")
             self.assertEqual(receipt["command"][receipt["command"].index("-p") + 1], "[delegation prompt omitted]")
+
+    def test_review_diff_includes_staged_and_unstaged_tracked_changes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            request = broker.parse_request(
+                "review", {"task": "Review this diff", "workspace": temporary_directory}
+            )
+            result = broker.ProcessResult(0, "diff --git a/a b/a\n", "", False, False, False)
+            with patch.object(broker, "_run_bounded_process", return_value=result) as run_process:
+                broker._read_working_diff(request)
+            self.assertIn("HEAD", run_process.call_args.args[0])
+
+    def test_bounded_process_output_does_not_exceed_its_receipt_limit(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            producer = Path(temporary_directory, "producer.py")
+            producer.write_text("import sys\nsys.stdout.write('x' * 10000)\n")
+            result = broker._run_bounded_process(
+                [sys.executable, str(producer)], Path(temporary_directory), 15, 100
+            )
+            self.assertEqual(result.exit_code, 0)
+            self.assertTrue(result.stdout_truncated)
+            self.assertLessEqual(len(result.stdout.encode()), 100)
+
+    def test_status_reports_malformed_copilot_command_without_crashing(self) -> None:
+        old_binary = os.environ.get("FEDERATED_BROKER_COPILOT_BIN")
+        os.environ["FEDERATED_BROKER_COPILOT_BIN"] = "'"
+        try:
+            status = broker.broker_status()
+        finally:
+            if old_binary is None:
+                del os.environ["FEDERATED_BROKER_COPILOT_BIN"]
+            else:
+                os.environ["FEDERATED_BROKER_COPILOT_BIN"] = old_binary
+        self.assertEqual(status["copilotCommand"], [])
+        self.assertIn("not valid shell syntax", status["error"])
+
+    def test_initialize_rejects_an_unsupported_protocol_version(self) -> None:
+        response = broker.McpServer().handle_request(
+            {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {"protocolVersion": "2099-01-01"},
+            }
+        )
+        assert response is not None
+        self.assertEqual(response["error"]["code"], -32602)
 
 
 if __name__ == "__main__":

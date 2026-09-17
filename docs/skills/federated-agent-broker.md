@@ -48,12 +48,12 @@ would validate it. Use the low-cost model and max_ai_credits 1.
 ```
 
 Use implementation mode only after deciding the desired change. Name every writable
-file and only allow verification commands you expect Copilot to need.
+file and run verification from the parent agent after inspecting Copilot's diff.
 
 ```text
 Use copilot_implement to add the missing parser validation. It may modify only
-src/parser.ts and tests/parser.test.ts, and may run npm test. Use max_ai_credits 2.
-Do not commit or change dependencies.
+src/parser.ts and tests/parser.test.ts. Use max_ai_credits 2. Do not commit or change
+dependencies. Inspect the diff and run npm test after Copilot returns.
 ```
 
 Every tool returns a structured delegation receipt with the selected profile, model,
@@ -100,8 +100,12 @@ profiles keep routine routing auditable and consistent.
   Copilot's entitlement, premium-request accounting, and rate limits still apply.
 - Read-only tools deny Copilot write and shell tools.
 - Implementation mode rejects directories, globs, absolute paths, and parent-path
-  traversal. It does not grant commit, push, pull-request, dependency-install, URL,
+  traversal. It permits only `read` and exact-file `write` tools; tests run under the
+  parent agent because repository test hooks cannot be safely treated as file-scoped.
+  It does not grant commit, push, pull-request, dependency-install, URL,
   temporary-directory, or remote-control authority.
+- Implementation mode requires macOS or Linux because it uses POSIX advisory locks
+  and process groups to prevent overlapping writes and timeout descendants.
 - The broker does not persist prompts, receipts, or transcripts. Copilot CLI's own
   configuration and retention behavior continue to apply.
 

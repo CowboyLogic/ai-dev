@@ -10,7 +10,8 @@ transcripts. Copilot subscription limits and premium-request rules still apply.
 
 ## Prerequisites
 
-- Python 3.10 or later.
+- Python 3.10 or later on macOS or Linux. Implementation mode requires POSIX file
+  locks and process groups; read-only modes have the same tested platform support.
 - GitHub Copilot CLI installed and authenticated. Confirm it with `copilot --version`.
 - Claude Code installed.
 - A local checkout containing this skill.
@@ -54,12 +55,11 @@ For implementation, provide exact files rather than a directory:
 ```text
 Use copilot_implement to add the missing validation described in the task.
 It may modify only src/validation.ts and tests/validation.test.ts.
-It may run npm test. Use max_ai_credits 2.
-Afterward, inspect the receipt and verify the diff yourself.
+Use max_ai_credits 2. Afterward, inspect the receipt, then run npm test yourself.
 ```
 
 The broker does not commit, push, create pull requests, install dependencies, or
-allow arbitrary shell commands. Use an isolated Git worktree for substantial changes.
+allow shell commands. Use an isolated Git worktree for substantial changes.
 
 ## Configure delegation profiles
 
