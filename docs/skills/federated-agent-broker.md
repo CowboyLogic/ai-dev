@@ -14,7 +14,7 @@ broker starts Copilot CLI only when Claude invokes a tool.
 |---|---|---|
 | `copilot_research` | Read-only | Codebase reconnaissance, diagnosis, and an independent opinion. |
 | `copilot_review` | Read-only | A Git diff, proposed plan, or named-file review. |
-| `copilot_implement` | Exact named files and optional test commands | A bounded change with explicit acceptance criteria. |
+| `copilot_implement` | Exact named files | A bounded change with explicit acceptance criteria. |
 | `broker_status` | No model invocation | Checking the installed Copilot CLI and active broker policy. |
 
 Implementation runs hold a workspace lock so two broker write delegations cannot
@@ -93,6 +93,74 @@ Use copilot_review with the review profile to examine the current diff.
 Per-call `model`, `effort`, `context`, `max_ai_credits`, and `timeout_seconds` values
 override the selected profile. Use these only for an intentional exception; named
 profiles keep routine routing auditable and consistent.
+
+### Select model identifiers
+
+Set `model` to the Copilot CLI identifier, not the display name shown in a model
+picker. The broker forwards the value unchanged to `copilot --model`. For example,
+use `gpt-5.6-luna` for the model displayed as **GPT-5.6 Luna**.
+
+Open an interactive Copilot CLI session and run `/model` to view the identifiers
+available to your authenticated account. Copy the identifier shown there. Availability
+depends on your Copilot plan, organization policy, and CLI version. `broker_status`
+confirms that the policy parses, but a delegated request confirms access to a pinned
+model.
+
+If your account exposes the GPT-5.6 family, this is a cost-aware policy starting
+point. The included example retains `auto` so it remains portable across
+subscriptions.
+
+```json
+{
+  "defaultProfile": "economy",
+  "modeProfiles": {
+    "research": "economy",
+    "review": "review",
+    "implement": "implementation"
+  },
+  "profiles": {
+    "economy": {
+      "model": "gpt-5.6-luna",
+      "effort": "low",
+      "context": "default",
+      "maxAiCredits": 1,
+      "timeoutSeconds": 180
+    },
+    "review": {
+      "model": "gpt-5.6-sol",
+      "effort": "medium",
+      "context": "default",
+      "maxAiCredits": 2,
+      "timeoutSeconds": 300
+    },
+    "implementation": {
+      "model": "gpt-5.6-terra",
+      "effort": "medium",
+      "context": "default",
+      "maxAiCredits": 2,
+      "timeoutSeconds": 300
+    }
+  }
+}
+```
+
+This assigns Luna to inexpensive, quick work; Terra to balanced, bounded coding; and
+Sol to complex reviews or diagnosis. Use the identifiers shown by `/model` when your
+subscription offers a different model set.
+
+### Select thinking effort and context
+
+The broker accepts `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, and `max` for
+`effort`, forwarding the choice as Copilot's `--effort` value. Start with `low` for
+reconnaissance, `medium` for routine reviews and small changes, and reserve `high` or
+above for deliberate complex analysis. Copilot makes the final decision about which
+effort levels a selected model supports.
+
+The permitted `context` values are `default` and `long_context`. Use `default` for
+routine work. Use `long_context` only for a large repository or long-running task
+when the selected model supports Copilot CLI's extended context tier. Higher effort
+and extended context can consume more Copilot AI credits; raise one setting at a time
+and keep a suitable `maxAiCredits` ceiling.
 
 ## Boundaries
 

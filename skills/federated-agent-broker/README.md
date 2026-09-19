@@ -87,6 +87,75 @@ values. Claude then selects semantic profiles such as `economy`, `review`, or
 `model`, `effort`, `context`, `max_ai_credits`, or `timeout_seconds` for an exceptional
 task.
 
+### Select Copilot models
+
+Set `model` to a Copilot CLI model identifier, not the display name shown in a model
+picker. The broker passes the value unchanged to `copilot --model`. For example, the
+display name **GPT-5.6 Luna** uses the identifier `gpt-5.6-luna`.
+
+Open an interactive Copilot CLI session and run `/model` to see the identifiers
+available to your authenticated account. Copy the identifier shown there: available
+models vary by Copilot plan, organization policy, and CLI version. `broker_status`
+confirms that the policy parses, but an actual delegation is the only confirmation
+that Copilot will grant access to a pinned model.
+
+The following is a cost-aware starting point when your Copilot account exposes the
+GPT-5.6 family. Keep the shipped policy example on `auto` if you want Copilot to
+route dynamically instead.
+
+```json
+{
+  "defaultProfile": "economy",
+  "modeProfiles": {
+    "research": "economy",
+    "review": "review",
+    "implement": "implementation"
+  },
+  "profiles": {
+    "economy": {
+      "model": "gpt-5.6-luna",
+      "effort": "low",
+      "context": "default",
+      "maxAiCredits": 1,
+      "timeoutSeconds": 180
+    },
+    "review": {
+      "model": "gpt-5.6-sol",
+      "effort": "medium",
+      "context": "default",
+      "maxAiCredits": 2,
+      "timeoutSeconds": 300
+    },
+    "implementation": {
+      "model": "gpt-5.6-terra",
+      "effort": "medium",
+      "context": "default",
+      "maxAiCredits": 2,
+      "timeoutSeconds": 300
+    }
+  }
+}
+```
+
+This routes small, repetitive work to Luna; routine coding and bounded changes to
+Terra; and complex review or diagnosis to Sol. Use the exact identifiers from `/model`
+if your subscription presents a different set.
+
+### Select thinking effort and context
+
+The broker accepts these `effort` values: `none`, `minimal`, `low`, `medium`, `high`,
+`xhigh`, and `max`. It passes the selected value to Copilot as `--effort`. Start with
+`low` for reconnaissance, `medium` for routine reviews and small changes, and reserve
+`high` or above for a deliberate complex analysis. Copilot determines which effort
+levels the selected model actually supports.
+
+The broker accepts two `context` values: `default` and `long_context`. `default` is
+the normal context window and should be the routine choice. `long_context` requests
+Copilot CLI's extended context tier for large-repository or long-running work when
+the selected model supports it. Higher effort and extended context can consume more
+Copilot AI credits, so raise one setting at a time and retain an appropriate
+`maxAiCredits` ceiling.
+
 Without a policy file, the broker uses built-in profiles: `research`, `review`, and
 `implementation`. They retain the original conservative defaults: model `auto`, one
 credit, default context, and low effort for read-only work or medium effort for writes.
