@@ -23,8 +23,21 @@ or concurrent work.
 
 ## Install it
 
-Install the skill, then run the following commands from a shell. Replace
-`BROKER_ROOT` with the path where the skill was installed.
+Install the skill, then run its setup script. Replace `BROKER_ROOT` with the path
+where the skill was installed.
+
+```bash
+BROKER_ROOT="/absolute/path/to/federated-agent-broker"
+"$BROKER_ROOT/scripts/setup.sh"
+```
+
+The script creates `~/.config/federated-agent-broker/policy.json` by default and
+registers a user-scoped Claude Code MCP server with that policy path in its
+environment. It preserves an existing policy and MCP entry. Use `--config-dir PATH`
+to select another location, `--replace` to replace an existing broker MCP entry, or
+`--skip-mcp` to create only the policy file.
+
+To install manually instead, run the following commands:
 
 ```bash
 BROKER_ROOT="/absolute/path/to/federated-agent-broker"
@@ -70,7 +83,7 @@ ceiling, and timeout.
 
 Copy the included example to a private configuration directory, edit it with the
 models available to your work subscription, and set its path before starting Claude
-Code:
+Code when you use the manual installation method:
 
 ```bash
 BROKER_ROOT="/absolute/path/to/federated-agent-broker"

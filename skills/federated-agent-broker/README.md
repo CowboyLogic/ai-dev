@@ -16,7 +16,30 @@ transcripts. Copilot subscription limits and premium-request rules still apply.
 - Claude Code installed.
 - A local checkout containing this skill.
 
+## Run the setup script
+
+Run the included script to create a private policy and register the local MCP server
+with Claude Code at user scope:
+
+```bash
+BROKER_ROOT="/absolute/path/to/ai-dev/skills/federated-agent-broker"
+"$BROKER_ROOT/scripts/setup.sh"
+```
+
+By default, the script creates `~/.config/federated-agent-broker/policy.json` from
+the included template. It registers the broker with that exact policy path in its MCP
+environment, so you do not need to export `FEDERATED_BROKER_POLICY` from every shell
+that starts Claude Code. It never overwrites an existing policy file or an existing
+MCP entry named `federated-agent-broker`.
+
+Use `--config-dir PATH` to store the policy elsewhere. If the MCP entry already
+exists and you want the script to replace it, pass `--replace`. Use `--skip-mcp` to
+create only the policy file. Run `"$BROKER_ROOT/scripts/setup.sh" --help` for all
+options.
+
 ## Add the broker to Claude Code
+
+Use these manual instructions if you do not use the setup script.
 
 1. Set `BROKER_ROOT` to the directory that contains this skill.
 
@@ -75,7 +98,8 @@ cp "$BROKER_ROOT/references/policy.example.json" \
   "$BROKER_CONFIG_DIR/policy.json"
 ```
 
-Set the policy path in the environment that launches Claude Code:
+Set the policy path in the environment that launches Claude Code when you use the
+manual installation method:
 
 ```bash
 export FEDERATED_BROKER_POLICY="$BROKER_CONFIG_DIR/policy.json"
