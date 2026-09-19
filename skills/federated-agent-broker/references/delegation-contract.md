@@ -43,13 +43,14 @@ Each delegation returns a JSON receipt in the MCP tool result.
 | Field | Meaning |
 |---|---|
 | `requestId` | Unique identifier for this broker invocation. |
-| `status` | `completed`, `failed`, or `timed_out`. A completed process can still produce an incorrect result. |
+| `status` | `completed`, `completed_no_response`, `failed`, or `timed_out`. `completed_no_response` means Copilot exited successfully but the broker could not extract a final assistant message. |
 | `authority` | `read-only` or `scoped-write`. |
 | `model`, `effort`, `maxAiCredits` | The selected Copilot execution settings. |
 | `paths`, `writablePaths` | The actual bounded authority given to the worker. |
-| `events`, `textOutput`, `stderr` | Copilot's captured output. JSONL events are retained as structured data when available; large file-content fields in tool events are omitted to preserve the final response. |
-| `outputCompacted` | `true` when the broker omitted or bounded captured output. Inspect `finalResponseAvailable` before relying on a completed receipt. |
+| `events`, `textOutput`, `stderr` | Copilot's captured output. JSONL events are retained as structured data when available; ephemeral deltas, opaque assistant fields, and large file-content fields are omitted to preserve the final response. |
+| `outputCompacted` | `true` when the broker omitted or bounded captured output. Inspect `finalResponseAvailable` before relying on a successful provider exit. |
 | `finalResponseAvailable`, `finalResponse` | Whether the receipt contains a non-empty final Copilot assistant message, and that message when available. |
+| `sessionId`, `sessionLogPath` | Copilot session recovery metadata when a retained event exposes a session identifier. The broker does not read the session log. |
 | `command` | The CLI invocation with the task prompt removed. |
 | `limitations` | The parent agent's required follow-up. |
 

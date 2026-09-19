@@ -33,7 +33,7 @@ except ImportError:  # Windows does not provide POSIX advisory file locks.
 
 
 SERVER_NAME = "federated-agent-broker"
-SERVER_VERSION = "0.1.2"
+SERVER_VERSION = "0.1.3"
 DEFAULT_TIMEOUT_SECONDS = 300
 MIN_MAX_AI_CREDITS = 30
 DEFAULT_MAX_AI_CREDITS = MIN_MAX_AI_CREDITS
@@ -44,6 +44,14 @@ MAX_JSONL_LINE_BYTES = 256_000
 MAX_TOOL_EVENT_CHARS = 2_000
 MAX_ASSISTANT_MESSAGE_CHARS = 16_000
 MAX_DIFF_CHARS = 40_000
+ASSISTANT_BULKY_FIELDS = {
+    "encryptedContent",
+    "reasoningBlocks",
+    "reasoningOpaque",
+    "reasoningText",
+    "toolRequests",
+}
+EPHEMERAL_EVENT_TYPES = {"assistant.message_delta", "assistant.reasoning"}
 SUPPORTED_EFFORTS = {"none", "minimal", "low", "medium", "high", "xhigh", "max"}
 SUPPORTED_CONTEXTS = {"default", "long_context"}
 SUPPORTED_PROTOCOL_VERSIONS = {"2025-03-26", "2025-06-18", "2025-11-25"}
@@ -633,6 +641,46 @@ def _compact_tool_payload(value: Any) -> tuple[Any, bool]:
     return value, False
 
 
+def _message_text(event: Any) -> str:
+    """Return a Copilot assistant message from the current or legacy event shape."""
+    if not isinstance(event, dict):
+        return ""
+    data = event.get("data")
+    if isinstance(data, dict) and isinstance(data.get("content"), str):
+        return data["content"]
+    content = event.get("content")
+    return content if isinstance(content, str) else ""
+
+
+def _compact_assistant_message(event: dict[str, Any]) -> tuple[dict[str, Any], bool]:
+    """Keep answer text while dropping opaque Copilot assistant-message payloads."""
+    compacted = False
+    result: dict[str, Any] = {}
+    for key, value in event.items():
+        if key in ASSISTANT_BULKY_FIELDS:
+            compacted = True
+            continue
+        if key == "data" and isinstance(value, dict):
+            data: dict[str, Any] = {}
+            for data_key, data_value in value.items():
+                if data_key in ASSISTANT_BULKY_FIELDS:
+                    compacted = True
+                    continue
+                data[data_key] = data_value
+            result[key] = data
+        else:
+            result[key] = value
+    content = _message_text(event)
+    if len(content) > MAX_ASSISTANT_MESSAGE_CHARS:
+        content = content[:MAX_ASSISTANT_MESSAGE_CHARS] + "\n[assistant message truncated by broker]"
+        compacted = True
+    if isinstance(result.get("data"), dict) and "content" in event.get("data", {}):
+        result["data"]["content"] = content
+    elif "content" in event:
+        result["content"] = content
+    return result, compacted
+
+
 def _compact_event(event: Any) -> tuple[Any, bool, bool]:
     """Bound a JSONL event and identify whether it is an assistant response."""
     if not isinstance(event, dict):
@@ -641,16 +689,12 @@ def _compact_event(event: Any) -> tuple[Any, bool, bool]:
     is_assistant = event_type == "assistant.message"
     compacted = False
     result = event
-    if isinstance(event_type, str) and event_type.startswith("tool.execution"):
+    if is_assistant:
+        result, compacted = _compact_assistant_message(event)
+    elif isinstance(event_type, str) and event_type.startswith("tool.execution"):
         result, compacted = _compact_tool_payload(event)
         if _serialized_size(result) > MAX_TOOL_EVENT_CHARS:
             result = {"type": event_type, "outputCompacted": True}
-            compacted = True
-    elif is_assistant and isinstance(event.get("content"), str):
-        content = event["content"]
-        if len(content) > MAX_ASSISTANT_MESSAGE_CHARS:
-            result = dict(event)
-            result["content"] = content[:MAX_ASSISTANT_MESSAGE_CHARS] + "\n[assistant message truncated by broker]"
             compacted = True
     elif _serialized_size(event) > MAX_TOOL_EVENT_CHARS:
         result = {"type": event_type if isinstance(event_type, str) else "unrecognized", "outputCompacted": True}
@@ -688,6 +732,11 @@ def _drain_copilot_jsonl(stream: Any, capture: dict[str, Any], limit: int) -> No
                 parsed = json.loads(decoded)
             except json.JSONDecodeError:
                 _append_bounded_bytes(capture, line, limit)
+                continue
+            if isinstance(parsed, dict) and (
+                parsed.get("ephemeral") is True or parsed.get("type") in EPHEMERAL_EVENT_TYPES
+            ):
+                capture["truncated"] = True
                 continue
             event, compacted, is_assistant = _compact_event(parsed)
             capture["truncated"] = capture["truncated"] or compacted
@@ -800,10 +849,23 @@ def _parse_output(output: str) -> tuple[list[Any], str]:
 def _final_assistant_response(events: list[Any]) -> str:
     for event in reversed(events):
         if isinstance(event, dict) and event.get("type") == "assistant.message":
-            content = event.get("content")
-            if isinstance(content, str) and content.strip():
+            content = _message_text(event)
+            if content.strip():
                 return content
     return ""
+
+
+def _session_id(events: list[Any]) -> str | None:
+    """Extract the Copilot session identifier from retained structured events."""
+    for event in reversed(events):
+        if not isinstance(event, dict):
+            continue
+        for candidate in (event, event.get("data")):
+            if isinstance(candidate, dict):
+                value = candidate.get("sessionId")
+                if isinstance(value, str) and value:
+                    return value
+    return None
 
 
 def run_delegation(request: DelegationRequest) -> dict[str, Any]:
@@ -822,15 +884,34 @@ def run_delegation(request: DelegationRequest) -> dict[str, Any]:
         stdout = _display_output(result.stdout, result.stdout_truncated, "Copilot stdout")
         events, text_output = _parse_output(stdout)
     final_response = _final_assistant_response(events)
-    status = "timed_out" if result.timed_out else "completed" if result.exit_code == 0 else "failed"
+    saw_assistant_message = any(
+        isinstance(event, dict) and event.get("type") == "assistant.message" for event in events
+    )
+    if result.timed_out:
+        status = "timed_out"
+    elif result.exit_code != 0:
+        status = "failed"
+    elif final_response:
+        status = "completed"
+    else:
+        status = "completed_no_response"
+    session_id = _session_id(events)
     limitations = [
         "The parent agent must inspect any changes and run final verification.",
         "The receipt records Copilot output; it does not prove the task is correct.",
     ]
     if result.stdout_truncated:
         limitations.append("Copilot output was compacted by the broker; inspect outputCompacted before relying on the receipt.")
-    if status == "completed" and not final_response:
-        limitations.append("Copilot exited without a final assistant response; retry the delegation before accepting the result.")
+    if status == "completed_no_response":
+        if saw_assistant_message:
+            limitations.append(
+                "Copilot assistant messages were captured but no final text could be extracted. "
+                "Do not retry automatically; inspect the session log before spending another request."
+            )
+        else:
+            limitations.append(
+                "Copilot exited without an assistant message. Retry only after checking provider and session diagnostics."
+            )
     return {
         "requestId": request_id,
         "provider": "github-copilot-cli",
@@ -854,6 +935,12 @@ def run_delegation(request: DelegationRequest) -> dict[str, Any]:
         "outputCompacted": result.stdout_truncated or result.stderr_truncated,
         "finalResponseAvailable": bool(final_response),
         "finalResponse": final_response,
+        "sessionId": session_id,
+        "sessionLogPath": (
+            str(Path.home() / ".copilot" / "session-state" / session_id / "events.jsonl")
+            if session_id
+            else None
+        ),
         "limitations": limitations,
     }
 

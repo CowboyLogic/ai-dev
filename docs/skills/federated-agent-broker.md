@@ -72,8 +72,11 @@ dependencies. Inspect the diff and run npm test after Copilot returns.
 Every tool returns a structured delegation receipt with the selected profile, model,
 effort, context tier, credit ceiling, scoped authority, process status, captured
 Copilot output, final assistant response when available, and limitations. To preserve
-the final response, the broker omits large file-content fields from Copilot tool
-events and reports this with `outputCompacted`.
+the final response, the broker omits large file-content fields, opaque assistant
+fields, and ephemeral deltas from Copilot events and reports this with
+`outputCompacted`. A `completed_no_response` status means the provider exited
+successfully but the broker could not extract a final response; inspect the receipt's
+`sessionId` and `sessionLogPath` before retrying.
 Inspect the diff and run final verification before accepting a result.
 
 ## Configure model profiles

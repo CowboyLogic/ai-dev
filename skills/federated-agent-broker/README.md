@@ -86,8 +86,10 @@ allow shell commands. Use an isolated Git worktree for substantial changes.
 
 Delegation receipts include `finalResponseAvailable` and `finalResponse` when Copilot
 returns a final assistant message. The broker omits large file-content fields from
-Copilot tool events to preserve that final response and marks the receipt with
-`outputCompacted` when it did so.
+Copilot tool events, opaque assistant fields, and ephemeral deltas to preserve that
+final response and marks the receipt with `outputCompacted` when it did so. A
+`completed_no_response` status means Copilot exited successfully but no final response
+could be extracted; inspect `sessionId` and `sessionLogPath` before retrying.
 
 ## Configure delegation profiles
 

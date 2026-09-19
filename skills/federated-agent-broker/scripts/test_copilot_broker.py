@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+from io import BytesIO
 import os
 from pathlib import Path
 import stat
@@ -322,7 +323,8 @@ class CopilotBrokerTests(unittest.TestCase):
                 "#!/usr/bin/env python3\n"
                 "import json\n"
                 "print(json.dumps({'type': 'tool.execution_complete', 'content': 'x' * 70000, 'detailedContent': 'y' * 70000}))\n"
-                "print(json.dumps({'type': 'assistant.message', 'content': 'Windows review complete'}))\n"
+                "print(json.dumps({'type': 'assistant.message', 'data': {'content': 'Windows review complete', 'encryptedContent': 'z' * 50000, 'reasoningOpaque': 'z' * 50000, 'reasoningBlocks': ['opaque'], 'toolRequests': []}}))\n"
+                "print(json.dumps({'type': 'result', 'data': {'sessionId': 'sanitized-session'}}))\n"
             )
             fake_copilot.chmod(fake_copilot.stat().st_mode | stat.S_IXUSR)
             old_binary = os.environ.get("FEDERATED_BROKER_COPILOT_BIN")
@@ -341,9 +343,57 @@ class CopilotBrokerTests(unittest.TestCase):
             self.assertTrue(receipt["outputCompacted"])
             self.assertTrue(receipt["finalResponseAvailable"])
             self.assertEqual(receipt["finalResponse"], "Windows review complete")
+            self.assertEqual(receipt["events"][1]["data"]["content"], "Windows review complete")
+            self.assertNotIn("encryptedContent", receipt["events"][1]["data"])
+            self.assertEqual(receipt["sessionId"], "sanitized-session")
+            self.assertTrue(receipt["sessionLogPath"].endswith("sanitized-session/events.jsonl"))
             tool_event = receipt["events"][0]
             self.assertEqual(tool_event["content"], "[omitted by broker]")
             self.assertEqual(tool_event["detailedContent"], "[omitted by broker]")
+
+    def test_nested_assistant_fixture_survives_streaming_capture(self) -> None:
+        fixture = Path(__file__).parent / "fixtures" / "copilot-cli-assistant-message.jsonl"
+        capture: dict[str, object] = {
+            "buffer": bytearray(),
+            "truncated": False,
+            "events": [],
+            "event_bytes": 0,
+        }
+        broker._drain_copilot_jsonl(BytesIO(fixture.read_bytes()), capture, broker.MAX_CAPTURED_OUTPUT_CHARS)
+        events = [item[0] for item in capture["events"]]
+        self.assertEqual(broker._final_assistant_response(events), "Nested Copilot review text")
+        message = events[0]
+        self.assertEqual(message["data"]["content"], "Nested Copilot review text")
+        self.assertNotIn("encryptedContent", message["data"])
+        self.assertNotIn("reasoningOpaque", message["data"])
+        self.assertNotIn("reasoningBlocks", message["data"])
+        self.assertNotIn("toolRequests", message["data"])
+
+    def test_missing_final_response_is_not_reported_as_completed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            fake_copilot = root / "fake_copilot.py"
+            fake_copilot.write_text(
+                "#!/usr/bin/env python3\n"
+                "import json\n"
+                "print(json.dumps({'type': 'assistant.message', 'data': {'reasoningOpaque': 'opaque'}}))\n"
+            )
+            fake_copilot.chmod(fake_copilot.stat().st_mode | stat.S_IXUSR)
+            old_binary = os.environ.get("FEDERATED_BROKER_COPILOT_BIN")
+            os.environ["FEDERATED_BROKER_COPILOT_BIN"] = f"{sys.executable} {fake_copilot}"
+            try:
+                request = broker.parse_request(
+                    "review", {"task": "Review this code", "workspace": temporary_directory}
+                )
+                receipt = broker.run_delegation(request)
+            finally:
+                if old_binary is None:
+                    del os.environ["FEDERATED_BROKER_COPILOT_BIN"]
+                else:
+                    os.environ["FEDERATED_BROKER_COPILOT_BIN"] = old_binary
+            self.assertEqual(receipt["status"], "completed_no_response")
+            self.assertFalse(receipt["finalResponseAvailable"])
+            self.assertTrue(any("Do not retry automatically" in item for item in receipt["limitations"]))
 
     def test_review_diff_includes_staged_and_unstaged_tracked_changes(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
