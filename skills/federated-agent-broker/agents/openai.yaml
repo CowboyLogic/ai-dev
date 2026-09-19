@@ -1,0 +1,3 @@
+interface:
+  display_name: "Federated Agent Broker"
+  short_description: "Delegate bounded tasks across coding agents"
