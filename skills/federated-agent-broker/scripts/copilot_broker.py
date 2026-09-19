@@ -33,12 +33,16 @@ except ImportError:  # Windows does not provide POSIX advisory file locks.
 
 
 SERVER_NAME = "federated-agent-broker"
-SERVER_VERSION = "0.1.1"
+SERVER_VERSION = "0.1.2"
 DEFAULT_TIMEOUT_SECONDS = 300
 MIN_MAX_AI_CREDITS = 30
 DEFAULT_MAX_AI_CREDITS = MIN_MAX_AI_CREDITS
 MAX_TASK_CHARS = 12_000
 MAX_CAPTURED_OUTPUT_CHARS = 60_000
+MAX_CAPTURED_EVENTS = 30
+MAX_JSONL_LINE_BYTES = 256_000
+MAX_TOOL_EVENT_CHARS = 2_000
+MAX_ASSISTANT_MESSAGE_CHARS = 16_000
 MAX_DIFF_CHARS = 40_000
 SUPPORTED_EFFORTS = {"none", "minimal", "low", "medium", "high", "xhigh", "max"}
 SUPPORTED_CONTEXTS = {"default", "long_context"}
@@ -96,6 +100,7 @@ class ProcessResult:
     timed_out: bool
     stdout_truncated: bool
     stderr_truncated: bool
+    events: tuple[Any, ...] = ()
 
 
 def _tool_schema(
@@ -582,15 +587,111 @@ def workspace_lock(workspace: Path) -> Iterator[None]:
             fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
 
 
+def _append_bounded_bytes(capture: dict[str, Any], chunk: bytes, limit: int) -> None:
+    """Retain a bounded byte prefix without blocking the child process."""
+    remaining = limit - len(capture["buffer"])
+    if remaining > 0:
+        capture["buffer"].extend(chunk[:remaining])
+    if len(chunk) > remaining:
+        capture["truncated"] = True
+
+
 def _drain_stream(stream: Any, capture: dict[str, Any], limit: int) -> None:
-    """Drain a pipe continuously while retaining at most ``limit`` bytes."""
+    """Drain an arbitrary pipe continuously while retaining a bounded prefix."""
     try:
         while chunk := stream.read(8_192):
-            remaining = limit - len(capture["buffer"])
-            if remaining > 0:
-                capture["buffer"].extend(chunk[:remaining])
-            if len(chunk) > remaining:
+            _append_bounded_bytes(capture, chunk, limit)
+    finally:
+        stream.close()
+
+
+def _serialized_size(value: Any) -> int:
+    return len(json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode())
+
+
+def _compact_tool_payload(value: Any) -> tuple[Any, bool]:
+    """Remove file contents from a tool event while preserving useful metadata."""
+    if isinstance(value, dict):
+        compacted = False
+        result: dict[str, Any] = {}
+        for key, item in value.items():
+            if key in {"content", "detailedContent"}:
+                result[key] = "[omitted by broker]"
+                compacted = True
+            else:
+                result[key], item_compacted = _compact_tool_payload(item)
+                compacted = compacted or item_compacted
+        return result, compacted
+    if isinstance(value, list):
+        result = []
+        compacted = False
+        for item in value:
+            compacted_item, item_compacted = _compact_tool_payload(item)
+            result.append(compacted_item)
+            compacted = compacted or item_compacted
+        return result, compacted
+    return value, False
+
+
+def _compact_event(event: Any) -> tuple[Any, bool, bool]:
+    """Bound a JSONL event and identify whether it is an assistant response."""
+    if not isinstance(event, dict):
+        return {"type": "unrecognized", "value": "[omitted by broker]"}, True, False
+    event_type = event.get("type")
+    is_assistant = event_type == "assistant.message"
+    compacted = False
+    result = event
+    if isinstance(event_type, str) and event_type.startswith("tool.execution"):
+        result, compacted = _compact_tool_payload(event)
+        if _serialized_size(result) > MAX_TOOL_EVENT_CHARS:
+            result = {"type": event_type, "outputCompacted": True}
+            compacted = True
+    elif is_assistant and isinstance(event.get("content"), str):
+        content = event["content"]
+        if len(content) > MAX_ASSISTANT_MESSAGE_CHARS:
+            result = dict(event)
+            result["content"] = content[:MAX_ASSISTANT_MESSAGE_CHARS] + "\n[assistant message truncated by broker]"
+            compacted = True
+    elif _serialized_size(event) > MAX_TOOL_EVENT_CHARS:
+        result = {"type": event_type if isinstance(event_type, str) else "unrecognized", "outputCompacted": True}
+        compacted = True
+    return result, compacted, is_assistant
+
+
+def _append_event(capture: dict[str, Any], event: Any, is_assistant: bool, limit: int) -> None:
+    """Keep bounded JSONL events, preferring recent assistant messages over tool noise."""
+    size = _serialized_size(event)
+    capture["events"].append((event, size, is_assistant))
+    capture["event_bytes"] += size
+    while len(capture["events"]) > MAX_CAPTURED_EVENTS or capture["event_bytes"] > limit:
+        index = next((i for i, item in enumerate(capture["events"]) if not item[2]), 0)
+        _, removed_size, _ = capture["events"].pop(index)
+        capture["event_bytes"] -= removed_size
+        capture["truncated"] = True
+
+
+def _drain_copilot_jsonl(stream: Any, capture: dict[str, Any], limit: int) -> None:
+    """Stream Copilot JSONL without retaining verbose tool file contents."""
+    discarding_line = False
+    try:
+        while line := stream.readline(MAX_JSONL_LINE_BYTES + 1):
+            if discarding_line:
+                if line.endswith(b"\n"):
+                    discarding_line = False
+                continue
+            if len(line) > MAX_JSONL_LINE_BYTES:
                 capture["truncated"] = True
+                discarding_line = not line.endswith(b"\n")
+                continue
+            decoded = line.decode(errors="replace")
+            try:
+                parsed = json.loads(decoded)
+            except json.JSONDecodeError:
+                _append_bounded_bytes(capture, line, limit)
+                continue
+            event, compacted, is_assistant = _compact_event(parsed)
+            capture["truncated"] = capture["truncated"] or compacted
+            _append_event(capture, event, is_assistant, limit)
     finally:
         stream.close()
 
@@ -644,10 +745,15 @@ def _run_bounded_process(
         raise BrokerError(f"could not start process: {error}") from error
     assert process.stdout is not None
     assert process.stderr is not None
-    stdout_capture: dict[str, Any] = {"buffer": bytearray(), "truncated": False}
+    stdout_capture: dict[str, Any] = {
+        "buffer": bytearray(),
+        "truncated": False,
+        "events": [],
+        "event_bytes": 0,
+    }
     stderr_capture: dict[str, Any] = {"buffer": bytearray(), "truncated": False}
     readers = [
-        threading.Thread(target=_drain_stream, args=(process.stdout, stdout_capture, output_limit)),
+        threading.Thread(target=_drain_copilot_jsonl, args=(process.stdout, stdout_capture, output_limit)),
         threading.Thread(target=_drain_stream, args=(process.stderr, stderr_capture, output_limit)),
     ]
     for reader in readers:
@@ -671,6 +777,7 @@ def _run_bounded_process(
         timed_out=timed_out,
         stdout_truncated=bool(stdout_capture["truncated"]),
         stderr_truncated=bool(stderr_capture["truncated"]),
+        events=tuple(item[0] for item in stdout_capture["events"]),
     )
 
 
@@ -690,6 +797,15 @@ def _parse_output(output: str) -> tuple[list[Any], str]:
     return events, text
 
 
+def _final_assistant_response(events: list[Any]) -> str:
+    for event in reversed(events):
+        if isinstance(event, dict) and event.get("type") == "assistant.message":
+            content = event.get("content")
+            if isinstance(content, str) and content.strip():
+                return content
+    return ""
+
+
 def run_delegation(request: DelegationRequest) -> dict[str, Any]:
     prompt = build_prompt(request)
     command = _copilot_base_command(request, prompt)
@@ -698,10 +814,23 @@ def run_delegation(request: DelegationRequest) -> dict[str, Any]:
     result = _run_bounded_process(
         command, request.workspace, request.timeout_seconds, MAX_CAPTURED_OUTPUT_CHARS
     )
-    stdout = _display_output(result.stdout, result.stdout_truncated, "Copilot stdout")
     stderr = _display_output(result.stderr, result.stderr_truncated, "Copilot stderr")
-    events, text_output = _parse_output(stdout)
+    if result.events:
+        events = list(result.events)
+        text_output = _display_output(result.stdout, result.stdout_truncated, "Copilot stdout")
+    else:
+        stdout = _display_output(result.stdout, result.stdout_truncated, "Copilot stdout")
+        events, text_output = _parse_output(stdout)
+    final_response = _final_assistant_response(events)
     status = "timed_out" if result.timed_out else "completed" if result.exit_code == 0 else "failed"
+    limitations = [
+        "The parent agent must inspect any changes and run final verification.",
+        "The receipt records Copilot output; it does not prove the task is correct.",
+    ]
+    if result.stdout_truncated:
+        limitations.append("Copilot output was compacted by the broker; inspect outputCompacted before relying on the receipt.")
+    if status == "completed" and not final_response:
+        limitations.append("Copilot exited without a final assistant response; retry the delegation before accepting the result.")
     return {
         "requestId": request_id,
         "provider": "github-copilot-cli",
@@ -722,10 +851,10 @@ def run_delegation(request: DelegationRequest) -> dict[str, Any]:
         "events": events,
         "textOutput": text_output,
         "stderr": stderr,
-        "limitations": [
-            "The parent agent must inspect any changes and run final verification.",
-            "The receipt records Copilot output; it does not prove the task is correct.",
-        ],
+        "outputCompacted": result.stdout_truncated or result.stderr_truncated,
+        "finalResponseAvailable": bool(final_response),
+        "finalResponse": final_response,
+        "limitations": limitations,
     }
 
 

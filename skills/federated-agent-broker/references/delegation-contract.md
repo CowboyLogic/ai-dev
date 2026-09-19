@@ -47,7 +47,9 @@ Each delegation returns a JSON receipt in the MCP tool result.
 | `authority` | `read-only` or `scoped-write`. |
 | `model`, `effort`, `maxAiCredits` | The selected Copilot execution settings. |
 | `paths`, `writablePaths` | The actual bounded authority given to the worker. |
-| `events`, `textOutput`, `stderr` | Copilot's captured output. JSONL events are retained as structured data when available. |
+| `events`, `textOutput`, `stderr` | Copilot's captured output. JSONL events are retained as structured data when available; large file-content fields in tool events are omitted to preserve the final response. |
+| `outputCompacted` | `true` when the broker omitted or bounded captured output. Inspect `finalResponseAvailable` before relying on a completed receipt. |
+| `finalResponseAvailable`, `finalResponse` | Whether the receipt contains a non-empty final Copilot assistant message, and that message when available. |
 | `command` | The CLI invocation with the task prompt removed. |
 | `limitations` | The parent agent's required follow-up. |
 

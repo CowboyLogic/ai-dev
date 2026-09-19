@@ -84,6 +84,11 @@ Use max_ai_credits 30. Afterward, inspect the receipt, then run npm test yoursel
 The broker does not commit, push, create pull requests, install dependencies, or
 allow shell commands. Use an isolated Git worktree for substantial changes.
 
+Delegation receipts include `finalResponseAvailable` and `finalResponse` when Copilot
+returns a final assistant message. The broker omits large file-content fields from
+Copilot tool events to preserve that final response and marks the receipt with
+`outputCompacted` when it did so.
+
 ## Configure delegation profiles
 
 Profiles tell Claude which Copilot model, thinking effort, context tier, credit

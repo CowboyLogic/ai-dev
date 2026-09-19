@@ -314,6 +314,37 @@ class CopilotBrokerTests(unittest.TestCase):
             self.assertEqual(receipt["events"][0]["content"], "review complete")
             self.assertEqual(receipt["command"][receipt["command"].index("-p") + 1], "[delegation prompt omitted]")
 
+    def test_delegation_preserves_final_message_after_large_tool_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            fake_copilot = root / "fake_copilot.py"
+            fake_copilot.write_text(
+                "#!/usr/bin/env python3\n"
+                "import json\n"
+                "print(json.dumps({'type': 'tool.execution_complete', 'content': 'x' * 70000, 'detailedContent': 'y' * 70000}))\n"
+                "print(json.dumps({'type': 'assistant.message', 'content': 'Windows review complete'}))\n"
+            )
+            fake_copilot.chmod(fake_copilot.stat().st_mode | stat.S_IXUSR)
+            old_binary = os.environ.get("FEDERATED_BROKER_COPILOT_BIN")
+            os.environ["FEDERATED_BROKER_COPILOT_BIN"] = f"{sys.executable} {fake_copilot}"
+            try:
+                request = broker.parse_request(
+                    "review", {"task": "Review Windows compatibility", "workspace": temporary_directory}
+                )
+                receipt = broker.run_delegation(request)
+            finally:
+                if old_binary is None:
+                    del os.environ["FEDERATED_BROKER_COPILOT_BIN"]
+                else:
+                    os.environ["FEDERATED_BROKER_COPILOT_BIN"] = old_binary
+            self.assertEqual(receipt["status"], "completed")
+            self.assertTrue(receipt["outputCompacted"])
+            self.assertTrue(receipt["finalResponseAvailable"])
+            self.assertEqual(receipt["finalResponse"], "Windows review complete")
+            tool_event = receipt["events"][0]
+            self.assertEqual(tool_event["content"], "[omitted by broker]")
+            self.assertEqual(tool_event["detailedContent"], "[omitted by broker]")
+
     def test_review_diff_includes_staged_and_unstaged_tracked_changes(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             request = broker.parse_request(

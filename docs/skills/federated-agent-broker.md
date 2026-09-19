@@ -71,7 +71,9 @@ dependencies. Inspect the diff and run npm test after Copilot returns.
 
 Every tool returns a structured delegation receipt with the selected profile, model,
 effort, context tier, credit ceiling, scoped authority, process status, captured
-Copilot output, and limitations.
+Copilot output, final assistant response when available, and limitations. To preserve
+the final response, the broker omits large file-content fields from Copilot tool
+events and reports this with `outputCompacted`.
 Inspect the diff and run final verification before accepting a result.
 
 ## Configure model profiles
