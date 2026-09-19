@@ -70,10 +70,11 @@ with model identifiers that the locally authenticated Copilot CLI exposes at wor
 
 Each profile must define `model`, `effort`, `context`, `maxAiCredits`, and
 `timeoutSeconds`. `modeProfiles` maps research, review, and implementation to a
-profile. Copilot CLI requires `maxAiCredits` to be at least 30; it is a soft
-per-response cap, not a 30-credit reservation. A tool call can override any resolved
-execution value within the broker's accepted range, but a profile is the normal
-interface for routing work by cost and capability.
+profile. Copilot CLI requires `maxAiCredits` to be at least 30; it is a requested
+per-response credit budget, not a reservation or hard usage limit. Actual usage can
+exceed it. A tool call can override any resolved execution value within the broker's
+accepted range, but a profile is the normal interface for routing work by cost and
+capability.
 
 The broker resolves settings in this order: explicit tool argument, requested
 profile, mode profile, then the policy's default profile. `broker_status` returns the

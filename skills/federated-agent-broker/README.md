@@ -119,8 +119,9 @@ values. Claude then selects semantic profiles such as `economy`, `review`, or
 task.
 
 Copilot CLI requires `maxAiCredits` and `max_ai_credits` to be at least `30`. This is
-a soft cap per response, not a 30-credit reservation. The broker rejects lower values
-before invoking Copilot so a bad policy or per-call override fails clearly.
+a requested per-response credit budget, not a reservation or hard usage limit. Actual
+usage can exceed it. The broker rejects lower values before invoking Copilot so a bad
+policy or per-call override fails clearly.
 
 ### Select Copilot models
 
@@ -189,11 +190,12 @@ the normal context window and should be the routine choice. `long_context` reque
 Copilot CLI's extended context tier for large-repository or long-running work when
 the selected model supports it. Higher effort and extended context can consume more
 Copilot AI credits, so raise one setting at a time and retain an appropriate
-`maxAiCredits` ceiling. Copilot CLI requires a minimum cap of `30`; that value permits
-up to 30 credits rather than reserving or automatically consuming 30 credits.
+`maxAiCredits` budget. Copilot CLI requires a minimum requested value of `30`; it
+does not reserve 30 credits or guarantee that a response uses no more than 30 credits.
+Check Copilot's reported usage when cost control matters.
 
 Without a policy file, the broker uses built-in profiles: `research`, `review`, and
-`implementation`. They use model `auto`, Copilot's minimum 30-credit soft cap,
+`implementation`. They use model `auto`, Copilot's minimum requested 30-credit budget,
 default context, and low effort for read-only work or medium effort for writes.
 `FEDERATED_BROKER_COPILOT_MODEL` changes the built-in profiles' model only.
 

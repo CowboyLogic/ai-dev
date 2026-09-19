@@ -113,8 +113,9 @@ override the selected profile. Use these only for an intentional exception; name
 profiles keep routine routing auditable and consistent.
 
 Copilot CLI requires a `maxAiCredits` or `max_ai_credits` value of at least `30`. The
-value is a soft per-response cap, not a 30-credit reservation. The broker rejects a
-lower configured or per-call value before invoking Copilot.
+value is a requested per-response credit budget, not a reservation or hard usage
+limit. Actual usage can exceed it. The broker rejects a lower configured or per-call
+value before invoking Copilot.
 
 ### Select model identifiers
 
@@ -182,9 +183,9 @@ The permitted `context` values are `default` and `long_context`. Use `default` f
 routine work. Use `long_context` only for a large repository or long-running task
 when the selected model supports Copilot CLI's extended context tier. Higher effort
 and extended context can consume more Copilot AI credits; raise one setting at a time
-and keep a suitable `maxAiCredits` ceiling. Copilot CLI requires a minimum cap of
-`30`; it permits up to 30 credits rather than reserving or automatically consuming
-30 credits.
+and keep a suitable `maxAiCredits` budget. Copilot CLI requires a minimum requested
+value of `30`. It does not reserve 30 credits or guarantee that a response uses no
+more than 30 credits. Check Copilot's reported usage when cost control matters.
 
 ## Boundaries
 

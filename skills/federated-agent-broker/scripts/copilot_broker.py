@@ -162,7 +162,7 @@ COMMON_PROPERTIES: dict[str, Any] = {
         "minimum": MIN_MAX_AI_CREDITS,
         "maximum": 100,
         "description": (
-            "Soft maximum Copilot AI credits for this delegation. "
+            "Requested Copilot AI-credit budget for this delegation; it is not a hard usage limit. "
             f"Copilot CLI requires at least {MIN_MAX_AI_CREDITS}; defaults to {DEFAULT_MAX_AI_CREDITS}."
         ),
     },
