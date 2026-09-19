@@ -127,7 +127,7 @@ class CopilotBrokerTests(unittest.TestCase):
                     "model": "gpt-5.4",
                     "effort": "high",
                     "context": "long_context",
-                    "maxAiCredits": 3,
+                    "maxAiCredits": 30,
                     "timeoutSeconds": 420,
                 }
             },
@@ -151,7 +151,7 @@ class CopilotBrokerTests(unittest.TestCase):
             self.assertEqual(request.model, "gpt-5.4")
             self.assertEqual(request.effort, "high")
             self.assertEqual(request.context, "long_context")
-            self.assertEqual(request.max_ai_credits, 3)
+            self.assertEqual(request.max_ai_credits, 30)
             self.assertEqual(request.timeout_seconds, 420)
             self.assertEqual(
                 tools[0]["inputSchema"]["properties"]["profile"]["enum"], ["work-review"]
@@ -172,7 +172,7 @@ class CopilotBrokerTests(unittest.TestCase):
                     "model": "auto",
                     "effort": ["high"],
                     "context": {"tier": "default"},
-                    "maxAiCredits": 1,
+                    "maxAiCredits": 30,
                     "timeoutSeconds": 180,
                 }
             },
@@ -200,8 +200,11 @@ class CopilotBrokerTests(unittest.TestCase):
             )
             command = broker._copilot_base_command(request, broker.build_prompt(request))
             self.assertIn("--available-tools", command)
+            self.assertIn("view", command)
             self.assertIn("read", command)
-            self.assertNotIn("write", command)
+            self.assertNotIn("create", command)
+            self.assertNotIn("edit", command)
+            self.assertNotIn("apply_patch", command)
             self.assertNotIn("shell", command)
 
     def test_implementation_passes_one_exact_permission_per_file(self) -> None:
@@ -224,8 +227,66 @@ class CopilotBrokerTests(unittest.TestCase):
                 permissions,
                 ["read", "write(tests/test_broker.py)"],
             )
-            self.assertIn("read,write", command)
+            self.assertIn("view,create,edit,apply_patch", command)
             self.assertNotIn("shell", command)
+
+    def test_credit_caps_below_copilot_minimum_are_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            with self.assertRaisesRegex(broker.BrokerError, "from 30 through 100"):
+                broker.parse_request(
+                    "research",
+                    {
+                        "task": "Inspect this code",
+                        "workspace": temporary_directory,
+                        "max_ai_credits": 29,
+                    },
+                )
+
+    def test_credit_cap_at_copilot_minimum_is_accepted(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            request = broker.parse_request(
+                "research",
+                {
+                    "task": "Inspect this code",
+                    "workspace": temporary_directory,
+                    "max_ai_credits": 30,
+                },
+            )
+            self.assertEqual(request.max_ai_credits, 30)
+
+    def test_profile_credit_below_copilot_minimum_is_rejected(self) -> None:
+        policy = {
+            "defaultProfile": "invalid-credit",
+            "modeProfiles": {
+                "research": "invalid-credit",
+                "review": "invalid-credit",
+                "implement": "invalid-credit",
+            },
+            "profiles": {
+                "invalid-credit": {
+                    "model": "auto",
+                    "effort": "low",
+                    "context": "default",
+                    "maxAiCredits": 29,
+                    "timeoutSeconds": 180,
+                }
+            },
+        }
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            policy_path = Path(temporary_directory, "policy.json")
+            policy_path.write_text(json.dumps(policy))
+            old_policy = os.environ.get("FEDERATED_BROKER_POLICY")
+            os.environ["FEDERATED_BROKER_POLICY"] = str(policy_path)
+            try:
+                with self.assertRaisesRegex(broker.BrokerError, "invalid-credit.maxAiCredits"):
+                    broker.parse_request(
+                        "research", {"task": "Inspect this code", "workspace": temporary_directory}
+                    )
+            finally:
+                if old_policy is None:
+                    del os.environ["FEDERATED_BROKER_POLICY"]
+                else:
+                    os.environ["FEDERATED_BROKER_POLICY"] = old_policy
 
     def test_delegation_returns_a_structured_receipt_from_jsonl(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

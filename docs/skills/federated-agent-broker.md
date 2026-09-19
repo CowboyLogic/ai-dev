@@ -57,7 +57,7 @@ files, expected response shape, desired model, and Copilot credit ceiling.
 ```text
 Use copilot_research to diagnose the failing payment tests. Do not modify files.
 Return the most likely cause, the evidence, the smallest safe fix, and tests that
-would validate it. Use the low-cost model and max_ai_credits 1.
+would validate it. Use the low-cost model and max_ai_credits 30.
 ```
 
 Use implementation mode only after deciding the desired change. Name every writable
@@ -65,7 +65,7 @@ file and run verification from the parent agent after inspecting Copilot's diff.
 
 ```text
 Use copilot_implement to add the missing parser validation. It may modify only
-src/parser.ts and tests/parser.test.ts. Use max_ai_credits 2. Do not commit or change
+src/parser.ts and tests/parser.test.ts. Use max_ai_credits 30. Do not commit or change
 dependencies. Inspect the diff and run npm test after Copilot returns.
 ```
 
@@ -107,6 +107,10 @@ Per-call `model`, `effort`, `context`, `max_ai_credits`, and `timeout_seconds` v
 override the selected profile. Use these only for an intentional exception; named
 profiles keep routine routing auditable and consistent.
 
+Copilot CLI requires a `maxAiCredits` or `max_ai_credits` value of at least `30`. The
+value is a soft per-response cap, not a 30-credit reservation. The broker rejects a
+lower configured or per-call value before invoking Copilot.
+
 ### Select model identifiers
 
 Set `model` to the Copilot CLI identifier, not the display name shown in a model
@@ -136,21 +140,21 @@ subscriptions.
       "model": "gpt-5.6-luna",
       "effort": "low",
       "context": "default",
-      "maxAiCredits": 1,
+      "maxAiCredits": 30,
       "timeoutSeconds": 180
     },
     "review": {
       "model": "gpt-5.6-sol",
       "effort": "medium",
       "context": "default",
-      "maxAiCredits": 2,
+      "maxAiCredits": 30,
       "timeoutSeconds": 300
     },
     "implementation": {
       "model": "gpt-5.6-terra",
       "effort": "medium",
       "context": "default",
-      "maxAiCredits": 2,
+      "maxAiCredits": 30,
       "timeoutSeconds": 300
     }
   }
@@ -173,7 +177,9 @@ The permitted `context` values are `default` and `long_context`. Use `default` f
 routine work. Use `long_context` only for a large repository or long-running task
 when the selected model supports Copilot CLI's extended context tier. Higher effort
 and extended context can consume more Copilot AI credits; raise one setting at a time
-and keep a suitable `maxAiCredits` ceiling.
+and keep a suitable `maxAiCredits` ceiling. Copilot CLI requires a minimum cap of
+`30`; it permits up to 30 credits rather than reserving or automatically consuming
+30 credits.
 
 ## Boundaries
 

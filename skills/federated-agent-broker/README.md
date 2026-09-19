@@ -67,7 +67,7 @@ Ask Claude to use a named broker tool and include a bounded objective. For examp
 ```text
 Use copilot_research to inspect the failing tests in packages/api. Do not change files.
 Report the likely root cause, relevant paths, smallest safe fix, and tests to run.
-Use max_ai_credits 1.
+Use max_ai_credits 30.
 ```
 
 For a review, ask Claude to call `copilot_review`. It can attach the current working
@@ -78,7 +78,7 @@ For implementation, provide exact files rather than a directory:
 ```text
 Use copilot_implement to add the missing validation described in the task.
 It may modify only src/validation.ts and tests/validation.test.ts.
-Use max_ai_credits 2. Afterward, inspect the receipt, then run npm test yourself.
+Use max_ai_credits 30. Afterward, inspect the receipt, then run npm test yourself.
 ```
 
 The broker does not commit, push, create pull requests, install dependencies, or
@@ -111,6 +111,10 @@ values. Claude then selects semantic profiles such as `economy`, `review`, or
 `model`, `effort`, `context`, `max_ai_credits`, or `timeout_seconds` for an exceptional
 task.
 
+Copilot CLI requires `maxAiCredits` and `max_ai_credits` to be at least `30`. This is
+a soft cap per response, not a 30-credit reservation. The broker rejects lower values
+before invoking Copilot so a bad policy or per-call override fails clearly.
+
 ### Select Copilot models
 
 Set `model` to a Copilot CLI model identifier, not the display name shown in a model
@@ -140,21 +144,21 @@ route dynamically instead.
       "model": "gpt-5.6-luna",
       "effort": "low",
       "context": "default",
-      "maxAiCredits": 1,
+      "maxAiCredits": 30,
       "timeoutSeconds": 180
     },
     "review": {
       "model": "gpt-5.6-sol",
       "effort": "medium",
       "context": "default",
-      "maxAiCredits": 2,
+      "maxAiCredits": 30,
       "timeoutSeconds": 300
     },
     "implementation": {
       "model": "gpt-5.6-terra",
       "effort": "medium",
       "context": "default",
-      "maxAiCredits": 2,
+      "maxAiCredits": 30,
       "timeoutSeconds": 300
     }
   }
@@ -178,11 +182,12 @@ the normal context window and should be the routine choice. `long_context` reque
 Copilot CLI's extended context tier for large-repository or long-running work when
 the selected model supports it. Higher effort and extended context can consume more
 Copilot AI credits, so raise one setting at a time and retain an appropriate
-`maxAiCredits` ceiling.
+`maxAiCredits` ceiling. Copilot CLI requires a minimum cap of `30`; that value permits
+up to 30 credits rather than reserving or automatically consuming 30 credits.
 
 Without a policy file, the broker uses built-in profiles: `research`, `review`, and
-`implementation`. They retain the original conservative defaults: model `auto`, one
-credit, default context, and low effort for read-only work or medium effort for writes.
+`implementation`. They use model `auto`, Copilot's minimum 30-credit soft cap,
+default context, and low effort for read-only work or medium effort for writes.
 `FEDERATED_BROKER_COPILOT_MODEL` changes the built-in profiles' model only.
 
 For development tests only, set `FEDERATED_BROKER_COPILOT_BIN` to an alternate

@@ -17,7 +17,7 @@ criteria, relevant evidence, and the precise question that Copilot should answer
 | `model` | All tools | Optional Copilot model override containing letters, numbers, periods, underscores, or hyphens. |
 | `effort` | All tools | Optional reasoning-effort override: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, or `max`. |
 | `context` | All tools | Optional context-tier override: `default` or `long_context`. |
-| `max_ai_credits` | All tools | Optional per-delegation Copilot credit override from 1 through 100. |
+| `max_ai_credits` | All tools | Optional per-delegation Copilot soft credit cap from 30 through 100. Copilot CLI rejects lower values. |
 | `timeout_seconds` | All tools | Optional time-limit override from 15 through 900 seconds. |
 | `writable_paths` | Implementation | Required exact relative files Copilot may create or modify. Directories and globs are not accepted. |
 
@@ -67,8 +67,10 @@ with model identifiers that the locally authenticated Copilot CLI exposes at wor
 
 Each profile must define `model`, `effort`, `context`, `maxAiCredits`, and
 `timeoutSeconds`. `modeProfiles` maps research, review, and implementation to a
-profile. A tool call can override any resolved execution value, but a profile is the
-normal interface for routing work by cost and capability.
+profile. Copilot CLI requires `maxAiCredits` to be at least 30; it is a soft
+per-response cap, not a 30-credit reservation. A tool call can override any resolved
+execution value within the broker's accepted range, but a profile is the normal
+interface for routing work by cost and capability.
 
 The broker resolves settings in this order: explicit tool argument, requested
 profile, mode profile, then the policy's default profile. `broker_status` returns the

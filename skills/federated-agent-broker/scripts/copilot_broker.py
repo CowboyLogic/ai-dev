@@ -33,9 +33,10 @@ except ImportError:  # Windows does not provide POSIX advisory file locks.
 
 
 SERVER_NAME = "federated-agent-broker"
-SERVER_VERSION = "0.1.0"
+SERVER_VERSION = "0.1.1"
 DEFAULT_TIMEOUT_SECONDS = 300
-DEFAULT_MAX_AI_CREDITS = 1
+MIN_MAX_AI_CREDITS = 30
+DEFAULT_MAX_AI_CREDITS = MIN_MAX_AI_CREDITS
 MAX_TASK_CHARS = 12_000
 MAX_CAPTURED_OUTPUT_CHARS = 60_000
 MAX_DIFF_CHARS = 40_000
@@ -145,9 +146,12 @@ COMMON_PROPERTIES: dict[str, Any] = {
     },
     "max_ai_credits": {
         "type": "integer",
-        "minimum": 1,
+        "minimum": MIN_MAX_AI_CREDITS,
         "maximum": 100,
-        "description": "Maximum Copilot AI credits for this delegation. Defaults to 1.",
+        "description": (
+            "Soft maximum Copilot AI credits for this delegation. "
+            f"Copilot CLI requires at least {MIN_MAX_AI_CREDITS}; defaults to {DEFAULT_MAX_AI_CREDITS}."
+        ),
     },
     "timeout_seconds": {
         "type": "integer",
@@ -199,7 +203,9 @@ def _profile_from_mapping(name: str, value: Any) -> Profile:
         model=_validated_model(value["model"], f"profiles.{name}.model"),
         effort=effort,
         context=context,
-        max_ai_credits=_validated_int(value["maxAiCredits"], f"profiles.{name}.maxAiCredits", 1, 100),
+        max_ai_credits=_validated_int(
+            value["maxAiCredits"], f"profiles.{name}.maxAiCredits", MIN_MAX_AI_CREDITS, 100
+        ),
         timeout_seconds=_validated_int(value["timeoutSeconds"], f"profiles.{name}.timeoutSeconds", 15, 900),
     )
 
@@ -207,9 +213,9 @@ def _profile_from_mapping(name: str, value: Any) -> Profile:
 def _built_in_policy() -> BrokerPolicy:
     model = _validated_model(os.environ.get("FEDERATED_BROKER_COPILOT_MODEL", "auto"), "FEDERATED_BROKER_COPILOT_MODEL")
     profiles = {
-        "research": Profile("research", model, "low", "default", 1, DEFAULT_TIMEOUT_SECONDS),
-        "review": Profile("review", model, "low", "default", 1, DEFAULT_TIMEOUT_SECONDS),
-        "implementation": Profile("implementation", model, "medium", "default", 1, DEFAULT_TIMEOUT_SECONDS),
+        "research": Profile("research", model, "low", "default", DEFAULT_MAX_AI_CREDITS, DEFAULT_TIMEOUT_SECONDS),
+        "review": Profile("review", model, "low", "default", DEFAULT_MAX_AI_CREDITS, DEFAULT_TIMEOUT_SECONDS),
+        "implementation": Profile("implementation", model, "medium", "default", DEFAULT_MAX_AI_CREDITS, DEFAULT_TIMEOUT_SECONDS),
     }
     return BrokerPolicy(
         source="built-in defaults",
@@ -400,7 +406,12 @@ def parse_request(mode: str, arguments: Any) -> DelegationRequest:
     if context not in SUPPORTED_CONTEXTS:
         raise BrokerError(f"context must be one of: {', '.join(sorted(SUPPORTED_CONTEXTS))}")
 
-    credits = _validated_int(arguments.get("max_ai_credits", profile.max_ai_credits), "max_ai_credits", 1, 100)
+    credits = _validated_int(
+        arguments.get("max_ai_credits", profile.max_ai_credits),
+        "max_ai_credits",
+        MIN_MAX_AI_CREDITS,
+        100,
+    )
     timeout = _validated_int(arguments.get("timeout_seconds", profile.timeout_seconds), "timeout_seconds", 15, 900)
 
     include_diff = arguments.get("include_working_diff", True)
@@ -521,9 +532,9 @@ def _copilot_base_command(request: DelegationRequest, prompt: str) -> list[str]:
         str(request.max_ai_credits),
     ]
     if request.mode in {"research", "review"}:
-        command.extend(["--available-tools", "read", "--allow-tool", "read"])
+        command.extend(["--available-tools", "view", "--allow-tool", "read"])
     else:
-        command.extend(["--available-tools", "read,write"])
+        command.extend(["--available-tools", "view,create,edit,apply_patch"])
         for allowed_tool in ["read", *(f"write({path})" for path in request.writable_paths)]:
             command.extend(["--allow-tool", allowed_tool])
     return command
@@ -762,6 +773,7 @@ def broker_status() -> dict[str, Any]:
         "error": error,
         "policy": {
             "defaultMaxAiCredits": DEFAULT_MAX_AI_CREDITS,
+            "minimumMaxAiCredits": MIN_MAX_AI_CREDITS,
             "readOnlyTools": ["copilot_research", "copilot_review"],
             "implementationRequiresExactWritablePaths": True,
             "implementationWorkspaceLock": True,

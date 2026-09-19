@@ -10,21 +10,21 @@
       "model": "auto",
       "effort": "minimal",
       "context": "default",
-      "maxAiCredits": 1,
+      "maxAiCredits": 30,
       "timeoutSeconds": 180
     },
     "review": {
       "model": "auto",
       "effort": "medium",
       "context": "default",
-      "maxAiCredits": 2,
+      "maxAiCredits": 30,
       "timeoutSeconds": 300
     },
     "implementation": {
       "model": "auto",
       "effort": "high",
       "context": "long_context",
-      "maxAiCredits": 4,
+      "maxAiCredits": 30,
       "timeoutSeconds": 600
     }
   }

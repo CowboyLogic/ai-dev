@@ -34,7 +34,8 @@ obtain a second opinion.
   pull request.
 - Select a named profile rather than individual model settings. Profiles bind a
   model, thinking effort, context tier, credit ceiling, and timeout to a purpose.
-  The broker defaults to one credit to make accidental expensive delegation unlikely.
+  Copilot CLI requires a minimum 30-credit soft cap. Use profiles to keep the cap
+  explicit and select an appropriate model, effort, and context tier.
 
 ## Install and invoke
 
