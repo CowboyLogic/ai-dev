@@ -68,6 +68,12 @@ artifacts:
     type: skill
     source: skills/agent-creator-opencode
     tags: [skills, opencode, agents]
+  - id: federated-agent-broker
+    name: Federated Agent Broker
+    description: Delegate bounded coding tasks from Claude Code to GitHub Copilot CLI through a local MCP broker
+    type: skill
+    source: skills/federated-agent-broker
+    tags: [skills, orchestration, mcp, copilot, claude-code]
   - id: client-config-claudecode
     name: Claude Code Settings Manager
     description: Manage and maintain ~/.claude/settings.json and Claude Code configuration files

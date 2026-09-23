@@ -90,6 +90,7 @@ nav:
       - Matrix Topology: agents/matrix-topology.md
   - Skills:
       - Overview: skills/index.md
+      - Federated Agent Broker: skills/federated-agent-broker.md
       - Claude Code Settings Manager: skills/client-config-claudecode.md
       - Copilot CLI Configuration Manager: skills/client-config-copilotcli.md
       - OpenCode Configuration Manager: skills/client-config-opencode.md
