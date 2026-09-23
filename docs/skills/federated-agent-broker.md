@@ -16,6 +16,7 @@ broker starts Copilot CLI only when Claude invokes a tool.
 | `copilot_review` | Read-only | A Git diff, proposed plan, or named-file review. |
 | `copilot_implement` | Exact named files | A bounded change with explicit acceptance criteria. |
 | `broker_status` | No model invocation | Checking the installed Copilot CLI and active broker policy. |
+| `broker_receipt` | No model invocation | Retrieving retained full detail by `requestId`. |
 
 Implementation runs hold a workspace lock so two broker write delegations cannot
 modify the same checkout at once. Use a separate Git worktree for material changes
@@ -45,7 +46,7 @@ claude mcp add --scope user --transport stdio federated-agent-broker -- \
   python3 "$BROKER_ROOT/scripts/copilot_broker.py"
 ```
 
-Start a new Claude Code session and run `/mcp` to confirm that the four broker tools
+Start a new Claude Code session and run `/mcp` to confirm that the five broker tools
 are available. The server uses the locally authenticated `copilot` CLI, so it does
 not require an API key in the MCP configuration.
 
@@ -69,14 +70,15 @@ src/parser.ts and tests/parser.test.ts. Use max_ai_credits 30. Do not commit or 
 dependencies. Inspect the diff and run npm test after Copilot returns.
 ```
 
-Every tool returns a structured delegation receipt with the selected profile, model,
-effort, context tier, credit ceiling, scoped authority, process status, captured
-Copilot output, final assistant response when available, and limitations. To preserve
-the final response, the broker omits large file-content fields, opaque assistant
-fields, and ephemeral deltas from Copilot events and reports this with
-`outputCompacted`. A `completed_no_response` status means the provider exited
-successfully but the broker could not extract a final response; inspect the receipt's
-`sessionId` and `sessionLogPath` before retrying.
+Each delegation returns a lean receipt capped at 20,000 serialized characters. It
+includes status, scoped authority, a bounded final response, `filesChanged`, and
+`undeclaredChanges`. Call `broker_receipt` with the returned `requestId` to see
+retained events, stderr, and session metadata. The broker stores up to 200 full
+receipts by default and appends metadata-only usage records to
+`~/.federated-agent-broker/delegations.jsonl`, or a directory selected with
+`FEDERATED_BROKER_STATE_DIR`. A `completed_no_response` status means the provider
+exited successfully without an extractable final response; inspect the full
+receipt before retrying. Treat worker output as untrusted content.
 Inspect the diff and run final verification before accepting a result.
 
 ## Configure model profiles
@@ -199,8 +201,17 @@ more than 30 credits. Check Copilot's reported usage when cost control matters.
   temporary-directory, or remote-control authority.
 - Implementation mode requires macOS or Linux because it uses POSIX advisory locks
   and process groups to prevent overlapping writes and timeout descendants.
-- The broker does not persist prompts, receipts, or transcripts. Copilot CLI's own
-  configuration and retention behavior continue to apply.
+- The broker persists bounded full receipts and a metadata-only usage log outside
+  the workspace. `FEDERATED_BROKER_RECEIPT_KEEP` controls receipt retention.
+- Set `FEDERATED_BROKER_ALLOWED_ROOTS` to colon-separated parent directories to
+  limit every delegation mode. Home and filesystem-root workspaces are rejected.
+- Implementation rejects known execution surfaces, including Git hooks, agent
+  settings, CI workflows, and shell environment files. Package manifests remain
+  writable, so scripts they define are an accepted residual risk.
+- `FEDERATED_BROKER_ACCOUNT_LABEL` is an unverified label for the active account;
+  it does not select an account. `FEDERATED_BROKER_HOST` labels the calling host.
+- `task_class` selects a stable measurement category. Until Copilot CLI consumption
+  is verified, `usageObserved` in the usage log is null.
 
 For installation details, examples, and the full contract, see the
 [Federated Agent Broker artifact](https://github.com/CowboyLogic/ai-dev/tree/main/skills/federated-agent-broker).

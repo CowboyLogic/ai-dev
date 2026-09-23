@@ -5,8 +5,9 @@ offers read-only research and review first, then a narrowly scoped implementatio
 mode when you explicitly name the only files Copilot can change.
 
 The broker uses the Copilot CLI session already authenticated on your machine. It
-does not send an API key to Claude Code, start a background service, or store task
-transcripts. Copilot subscription limits and premium-request rules still apply.
+does not send an API key to Claude Code or start a background service. It stores
+bounded full receipts and a metadata-only usage log outside the workspace.
+Copilot subscription limits and premium-request rules still apply.
 
 ## Prerequisites
 
@@ -55,7 +56,8 @@ Use these manual instructions if you do not use the setup script.
    ```
 
 3. Start a new Claude Code session and run `/mcp`. The server should expose
-   `copilot_research`, `copilot_review`, `copilot_implement`, and `broker_status`.
+   `copilot_research`, `copilot_review`, `copilot_implement`, `broker_status`, and
+   `broker_receipt`.
 
 The command stores the resolved script path in Claude Code's user configuration. To
 remove it later, run `claude mcp remove federated-agent-broker`.
@@ -84,12 +86,35 @@ Use max_ai_credits 30. Afterward, inspect the receipt, then run npm test yoursel
 The broker does not commit, push, create pull requests, install dependencies, or
 allow shell commands. Use an isolated Git worktree for substantial changes.
 
-Delegation receipts include `finalResponseAvailable` and `finalResponse` when Copilot
-returns a final assistant message. The broker omits large file-content fields from
-Copilot tool events, opaque assistant fields, and ephemeral deltas to preserve that
-final response and marks the receipt with `outputCompacted` when it did so. A
-`completed_no_response` status means Copilot exited successfully but no final response
-could be extracted; inspect `sessionId` and `sessionLogPath` before retrying.
+The tool returns a lean receipt capped at 20,000 serialized characters. It includes
+`finalResponseAvailable`, a bounded `finalResponse`, `filesChanged`, and
+`undeclaredChanges`. Use `broker_receipt` with its `requestId` for retained events,
+stderr, command metadata, and full captured response. Full receipts live under
+`FEDERATED_BROKER_STATE_DIR` (default `~/.federated-agent-broker`) in a private
+`receipts/` directory; the newest 200 are retained by default. Set
+`FEDERATED_BROKER_RECEIPT_KEEP` to change that limit. The same state directory holds
+`delegations.jsonl`, with one metadata record per terminal worker run. A
+`completed_no_response` status means Copilot exited successfully without an
+extractable final response; inspect the full receipt before retrying.
+
+Set `task_class` to one of `codebase-research`, `failure-diagnosis`, `diff-review`,
+`plan-review`, `mechanical-refactor`, `test-generation`, or `other` for measurement.
+Omitted values log as `unclassified`. Set `FEDERATED_BROKER_HOST` and
+`FEDERATED_BROKER_ACCOUNT_LABEL` to label usage records. The account label is
+declarative and unverified; the broker does not select or validate the active
+Copilot account. `usageObserved` stays null until a verified CLI usage signal is
+available.
+
+Implementation rejects home or filesystem-root workspaces and known execution
+surfaces such as Git hooks, host settings, CI workflows, and shell environment
+files. Set colon-separated `FEDERATED_BROKER_ALLOWED_ROOTS` to limit all modes to
+specific parent directories. Package manifests remain writable because ordinary
+implementation tasks edit them; their install or test scripts remain a residual
+execution risk. A Git workspace lets the broker report status changes outside
+declared paths as `undeclaredChanges`; a non-Git workspace reports that check as
+unavailable. Worker text is untrusted content, including any instructions it contains.
+`SIGKILL` of the broker may orphan a worker on macOS; normal cancellation, EOF,
+SIGINT, and SIGTERM terminate the worker process group.
 
 ## Configure delegation profiles
 
