@@ -129,8 +129,10 @@ working examples for workspace agents, user-profile agents, and cloud agents wit
 
 ### Copilot Instruction Creator
 
-Create `copilot-instructions.md` files that tailor Copilot's behavior for a repository or workspace.
-Covers repository instructions, path-scoped instructions, and prompt engineering for Copilot.
+Create custom instructions that tailor Copilot's behavior at the personal, repository, and
+organization level. Covers `copilot-instructions.md`, path-specific `.instructions.md` files with
+`applyTo` and `excludeAgent` frontmatter, `AGENTS.md`/`CLAUDE.md`/`GEMINI.md` agent instructions,
+precedence, and per-surface support.
 
 [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/copilot-instruction-creator)
 
