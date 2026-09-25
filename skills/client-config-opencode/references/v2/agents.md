@@ -79,7 +79,7 @@ Review the current changes. List findings in severity order with file and line r
 | `hidden` | Hide from listings and the subagent catalog (visibility only, not security) |
 | `color` | Six-digit hex, e.g. `"#ff6b6b"` |
 | `disabled` | Remove a built-in or custom agent |
-| `request` | `headers` and JSON `body` overlays (temperature, top_p, and provider options go in `body`) |
+| `request` | `headers` and JSON `body` overlays (temperature, top_p, provider options). **Preserved but not yet sent** with model requests in V2 — set active request settings on the provider, model, or a model variant instead |
 
 > [!WARNING]
 > Do not use V1 agent fields in new V2 agents: `prompt`, `permission`, `tools`, `disable`, `maxSteps`,

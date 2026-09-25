@@ -14,6 +14,7 @@ Key lists mirror https://code.claude.com/docs/en/settings-reference.md and
 https://code.claude.com/docs/en/hooks.md. Refresh them during self-update.
 """
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -181,13 +182,19 @@ def warn(msg):
     warnings.append(f"WARNING: {msg}")
 
 
+def user_settings_path() -> Path:
+    """$CLAUDE_CONFIG_DIR/settings.json when CLAUDE_CONFIG_DIR is set, else ~/.claude/settings.json."""
+    home = os.environ.get("CLAUDE_CONFIG_DIR")
+    return (Path(home).expanduser() if home else Path.home() / ".claude") / "settings.json"
+
+
 def infer_scope(path: Path) -> str:
     resolved = path.expanduser().resolve()
     if resolved.name == "managed-settings.json" or resolved.parent.name == "managed-settings.d":
         return "managed"
     if resolved.name == "settings.local.json":
         return "local"
-    if resolved == (Path.home() / ".claude" / "settings.json").resolve():
+    if resolved in {user_settings_path().resolve(), (Path.home() / ".claude" / "settings.json").resolve()}:
         return "user"
     if resolved.name == "settings.json" and resolved.parent.name == ".claude":
         return "project"
@@ -555,7 +562,7 @@ def main():
             return 2
         scope = args[idx + 1]
         del args[idx:idx + 2]
-    path = Path(args[0]).expanduser() if args else Path.home() / ".claude" / "settings.json"
+    path = Path(args[0]).expanduser() if args else user_settings_path()
     scope = scope or infer_scope(path)
 
     print(f"Validating: {path} (scope: {scope})")

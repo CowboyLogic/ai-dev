@@ -292,6 +292,22 @@ def main():
         if CONFIG_CONTENT_OVERRIDE:
             show_json_text(CONFIG_CONTENT_OVERRIDE, "OPENCODE_CONFIG_CONTENT")
 
+    if CONFIG_DIRECTORY_OVERRIDE:
+        # An additional layer, not a replacement root: it is searched like a
+        # .opencode/ directory and loads after global and .opencode/ configs, so
+        # its settings override theirs. cli.json/tui.json stay global.
+        custom_dir = Path(CONFIG_DIRECTORY_OVERRIDE).expanduser()
+        header(f"Custom Config Directory ({custom_dir})")
+        note("OPENCODE_CONFIG_DIR (V1-documented) loads after global and .opencode/ configs.")
+        show_config_variants(custom_dir, "OPENCODE_CONFIG_DIR")
+        show_directory_contents(custom_dir / "agents", "Custom agents")
+        show_directory_contents(custom_dir / "commands", "Custom commands")
+        show_directory_contents(custom_dir / "modes", "Custom modes")
+        for plugin_dir in (custom_dir / "plugins", custom_dir / "plugin"):
+            if plugin_dir.exists():
+                names = sorted(f.name for f in plugin_dir.iterdir() if f.is_file())
+                print(f"\n{GREEN}Custom plugins{RESET} ({plugin_dir}): {', '.join(names) or 'empty'}")
+
     header(f"V2 CLI Config ({CLI_JSON})")
     show_json_file(CLI_JSON, "cli.json", with_summary=False)
     if CLI_CONTENT_OVERRIDE:
@@ -313,12 +329,6 @@ def main():
     show_directory_contents(COMMANDS_DIR, f"Global commands ({COMMANDS_DIR})")
     if PROJECT_COMMANDS_DIR.exists():
         show_directory_contents(PROJECT_COMMANDS_DIR, "Project commands (.opencode/commands/)")
-
-    if CONFIG_DIRECTORY_OVERRIDE:
-        custom_dir = Path(CONFIG_DIRECTORY_OVERRIDE).expanduser()
-        header(f"Custom Config Directory ({custom_dir})")
-        show_directory_contents(custom_dir / "agents", "Custom agents")
-        show_directory_contents(custom_dir / "commands", "Custom commands")
 
     themes_dir = CONFIG_DIR / "themes"
     project_themes_dir = PROJECT_DIR / "themes"

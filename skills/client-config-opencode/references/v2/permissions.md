@@ -144,10 +144,10 @@ A path outside the active Location and its project worktree needs `external_dire
 // Deny all tools from one MCP server
 { "permissions": [{ "action": "context7_*", "resource": "*", "effect": "deny" }] }
 
-// Allow one skill only
+// Allow one skill only — replace "git-release" with the skill ID to allow
 { "permissions": [
   { "action": "skill", "resource": "*", "effect": "deny" },
-  { "action": "skill", "resource": "effect", "effect": "allow" },
+  { "action": "skill", "resource": "git-release", "effect": "allow" },
 ] }
 
 // Ask before web searches

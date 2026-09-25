@@ -3,7 +3,8 @@
 show-settings.py — Pretty-print Claude Code settings across scopes (read-only).
 Usage: python show-settings.py [--json] [--settings PATH]
 
-Shows managed settings (if present), user settings (or PATH), MCP servers from
+Shows managed settings (if present), user settings ($CLAUDE_CONFIG_DIR/settings.json
+when set, else ~/.claude/settings.json, or PATH), MCP servers from
 ~/.claude.json (user scope and local scope for the current directory), and the
 current directory's .claude/settings.json and .claude/settings.local.json.
 """
@@ -12,8 +13,15 @@ import os
 import sys
 from pathlib import Path
 
-SETTINGS_PATH = Path.home() / ".claude" / "settings.json"
+# CLAUDE_CONFIG_DIR relocates the user configuration home (settings.json, history,
+# plugins). The docs do not say where .claude.json goes when it is set, so prefer a
+# copy inside CLAUDE_CONFIG_DIR only when one exists.
+_CONFIG_DIR = os.environ.get("CLAUDE_CONFIG_DIR")
+CONFIG_HOME = Path(_CONFIG_DIR).expanduser() if _CONFIG_DIR else Path.home() / ".claude"
+SETTINGS_PATH = CONFIG_HOME / "settings.json"
 CLAUDE_JSON_PATH = Path.home() / ".claude.json"
+if _CONFIG_DIR and (CONFIG_HOME / ".claude.json").exists():
+    CLAUDE_JSON_PATH = CONFIG_HOME / ".claude.json"
 MANAGED_DIRS = {
     "darwin": Path("/Library/Application Support/ClaudeCode"),
     "linux": Path("/etc/claude-code"),
@@ -138,7 +146,7 @@ def main():
                 print_settings(load_json(dropin), dropin, "MANAGED DROP-IN")
 
     settings = load_json(settings_path)
-    print_settings(settings, settings_path, "USER SETTINGS (~/.claude/settings.json)")
+    print_settings(settings, settings_path, f"USER SETTINGS ({settings_path})")
 
     # Show MCP hint from ~/.claude.json
     claude_json = load_json(CLAUDE_JSON_PATH) or {}
@@ -148,7 +156,7 @@ def main():
         if not servers:
             continue
         print(f"\n{'='*60}")
-        print(f"  MCP SERVERS (~/.claude.json, {label})")
+        print(f"  MCP SERVERS ({CLAUDE_JSON_PATH}, {label})")
         print(f"{'='*60}")
         for name, config in servers.items():
             transport = config.get("type", "stdio")

@@ -33,7 +33,7 @@ Create interactively with `/agent` → **Create new agent** (Project or User), t
 name: security-auditor
 description: Reviews code for security issues. Use for security reviews or "seccheck".
 tools: ["view", "grep", "glob", "bash"]
-model: claude-sonnet-4.6
+model: claude-sonnet-5
 include-custom-instructions: true
 ---
 
