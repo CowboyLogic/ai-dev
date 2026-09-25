@@ -67,7 +67,7 @@ Primary agents, defined in `opencode.json`:
 
 | Agent | Model | Access |
 | --- | --- | --- |
-| `plan` | `github-copilot/claude-sonnet-5` | Edits files (to write plans), denies `shell`; prompt from `prompts/plan.txt` |
+| `plan` | `github-copilot/claude-sonnet-5` | Edits only `plans/**` (to write plans), denies `shell`; prompt from `prompts/plan.txt` |
 | `build` | `github-copilot/gpt-6-sol` | Full |
 
 Subagents, one file each in `.opencode/agents/`:

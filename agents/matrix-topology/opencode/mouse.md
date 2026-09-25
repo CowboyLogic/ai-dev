@@ -10,6 +10,11 @@ permissions:
   - { action: read, resource: "*", effect: allow }
   - { action: edit, resource: "*", effect: allow }
   - { action: shell, resource: "*", effect: allow }
+  # Deny by name what this role must not have: V2 allows any action no rule mentions.
+  - { action: subagent, resource: "*", effect: deny }
+  - { action: webfetch, resource: "*", effect: deny }
+  - { action: websearch, resource: "*", effect: deny }
+  - { action: skill, resource: "*", effect: deny }
 mode: subagent
 hidden: false
 ---

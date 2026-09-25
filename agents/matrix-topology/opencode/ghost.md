@@ -7,6 +7,13 @@ description: >
 model: github-copilot/gemini-3.8-flash
 permissions:
   - { action: read, resource: "*", effect: allow }
+  # Deny by name what this role must not have: V2 allows any action no rule mentions.
+  - { action: edit, resource: "*", effect: deny }
+  - { action: shell, resource: "*", effect: deny }
+  - { action: subagent, resource: "*", effect: deny }
+  - { action: webfetch, resource: "*", effect: deny }
+  - { action: websearch, resource: "*", effect: deny }
+  - { action: skill, resource: "*", effect: deny }
 mode: subagent
 hidden: false
 ---

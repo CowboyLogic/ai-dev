@@ -8,6 +8,14 @@ permissions:
   - { action: read, resource: "*", effect: allow }
   - { action: edit, resource: "*", effect: allow }
   - { action: subagent, resource: "*", effect: allow }
+  - { action: skill, resource: "*", effect: allow }
+  # Enforce the roster ban on built-in all-purpose subagents.
+  - { action: subagent, resource: "general", effect: deny }
+  - { action: subagent, resource: "explore", effect: deny }
+  # Neo routes; it does not run commands or research the web itself.
+  - { action: shell, resource: "*", effect: deny }
+  - { action: webfetch, resource: "*", effect: deny }
+  - { action: websearch, resource: "*", effect: deny }
 mode: primary
 ---
 

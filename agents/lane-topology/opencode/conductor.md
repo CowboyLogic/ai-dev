@@ -14,6 +14,8 @@ permissions:
   - { action: edit, resource: "CLAUDE.md", effect: allow }
   - { action: grep, resource: "*", effect: deny }
   - { action: subagent, resource: "*", effect: allow }
+  - { action: subagent, resource: "general", effect: deny }
+  - { action: subagent, resource: "explore", effect: deny }
   - { action: skill, resource: "*", effect: allow }
   - { action: webfetch, resource: "*", effect: deny }
   - { action: websearch, resource: "*", effect: deny }

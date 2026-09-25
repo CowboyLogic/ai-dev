@@ -231,7 +231,8 @@ and defines each subagent as a Markdown file in `.opencode/agents/`.
       "system": "{file:./prompts/plan.txt}",
       "model": "github-copilot/claude-sonnet-5",
       "permissions": [
-        { "action": "edit", "resource": "*", "effect": "allow" },
+        { "action": "edit", "resource": "*", "effect": "deny" },
+        { "action": "edit", "resource": "plans/**", "effect": "allow" },
         { "action": "shell", "resource": "*", "effect": "deny" }
       ]
     },
