@@ -48,7 +48,7 @@ a bug.
 | File | Identifier | Model | Family | Tools | Role |
 |---|---|---|---|---|---|
 | `conductor.md` | `conductor` | `claude-sonnet-5` | Claude | read, subagent, skill, edit→ledger + `AGENTS.md`/`CLAUDE.md`, shell (scoped: git/gh) | Classify, dispatch, ledger, human interface, shipping |
-| `planner.md` | `planner` | `gpt-6-sol` | GPT | read, grep, edit→`.agent-output/**` | Socratic planning, design, ADs, requirements |
+| `planner.md` | `planner` | `claude-opus-5.5` | Claude | read, grep, edit→`.agent-output/**` | Socratic planning, design, ADs, requirements |
 | `investigator.md` | `investigator` | `gpt-6-sol` | GPT | read, grep, shell, edit→`.agent-output/**` | Read-only comprehension and root cause |
 | `builder.md` | `builder` | `gpt-6-sol` | GPT | read, edit, shell, grep | Implementation |
 | `mechanic.md` | `mechanic` | `gpt-6-luna` | GPT | read, edit, shell | Trivial mechanical edits |
@@ -401,6 +401,11 @@ change and say what replaced it.
 4. **The Builder is GPT-pinned.** This is structural, not a preference: it makes code
    — the highest-risk artifact — cross-family from both the Verifier (Gemini) and the
    Adversary (Claude) with no routing logic.
+
+   Plans get no such guarantee. The Planner is pinned to Claude Opus 5.5, the same
+   model as the Adversary, so the Adversary's review of a Plan or Design Brief is
+   same-model. This is a known, accepted gap: the Verifier's cross-family review
+   (invariant 3) is the independent control on plans.
 
 5. **The Verifier executes.** It runs the build and test suite itself. No lane
    advances on a working agent's self-reported green. Removing `shell` from the
