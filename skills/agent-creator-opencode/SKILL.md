@@ -1,13 +1,39 @@
 ---
 name: agent-creator-opencode
-description: Guide for creating custom agents for the OpenCode CLI. Use this skill whenever a user wants to build, configure, or modify an OpenCode agent — including writing agent Markdown files, configuring agents in opencode.json, setting up permissions, designing primary/subagent workflows, or structuring multi-agent orchestration patterns. ALWAYS load this skill before working on OpenCode agent files.
+description: Guide for creating custom agents for the OpenCode CLI, V2 (default) and V1. Use this skill whenever a user wants to build, configure, convert, or modify an OpenCode agent — including writing agent Markdown files, configuring agents in opencode.json, setting up permissions, migrating V1 agents to V2, designing primary/subagent workflows, or structuring multi-agent orchestration patterns. ALWAYS load this skill before working on OpenCode agent files.
 ---
 
 # OpenCode Agent Creator
 
-Custom agents for the OpenCode CLI let you build focused AI assistants with specific prompts, models, tool permissions, and delegation patterns. Agents are defined either as Markdown files or as entries in `opencode.json`.
+Custom OpenCode agents combine a system prompt, model, permissions, and display
+details into a named assistant profile. They are defined as Markdown files or as
+entries in `opencode.json(c)`.
 
-> **Official docs:** https://opencode.ai/docs/agents/
+Official docs: V2 <https://opencode.ai/v2/docs/agents/> · V1 <https://opencode.ai/docs/agents/>
+
+---
+
+## Step 0 — Pick the format version
+
+**Native V2 is the default output.** Produce V1 only when:
+
+- The user says they are on OpenCode V1, or
+- The existing config or agent files the new agent sits beside are V1-shaped.
+
+Detect the shape from what is already there:
+
+| V1 signals | V2 signals |
+|---|---|
+| `agent` map, `prompt`, `permission` map, `disable`, `variant`, `temperature`, `top_p`, `maxSteps`, `tools`, `bash` / `task` keys | `agents` map, `system`, `permissions` array of `{action, resource, effect}`, `disabled`, `model: ...#variant`, `request`, `shell` / `subagent` actions |
+
+> [!IMPORTANT]
+> Each agent must be **entirely one format**. V2 tolerates V1 and V2 fields side
+> by side at the top level of a config file, but it does not infer formats inside
+> an individual agent. Never mix `permission` with `permissions`, or `prompt` with
+> `system`, in one agent. V1 cannot read native V2 files, so do not convert files
+> a V1 install still uses.
+
+If the user asks to convert V1 agents, load `references/v2/migration.md`.
 
 ---
 
@@ -15,217 +41,117 @@ Custom agents for the OpenCode CLI let you build focused AI assistants with spec
 
 | Goal | Approach |
 |---|---|
-| User-selectable, always-available agent | **Primary agent** (`mode: primary`) |
-| Specialist invoked via delegation or `@mention` | **Subagent** (`mode: subagent`) |
-| Works as both primary and subagent | `mode: all` (default when `mode` is omitted) |
-| Internal helper hidden from `@` autocomplete | Subagent + `hidden: true` |
-| Shared across all projects | Markdown in `~/.config/opencode/agents/` |
-| Scoped to one project | Markdown in `.opencode/agents/` |
-| Customizing a built-in agent | JSON in `opencode.json` under `agent.<name>` |
-| Just want a quick scaffold | Run `opencode agent create` in the terminal |
+| User-selectable main agent | `mode: primary` (V2 default for a new custom agent) |
+| Specialist launched by another agent | `mode: subagent` |
+| Works both ways | `mode: all` (V1 default when `mode` is omitted) |
+| Shared across all projects | `~/.config/opencode/agents/<name>.md` |
+| Scoped to one project | `.opencode/agents/<name>.md` |
+| Customizing a built-in agent | Config entry with the built-in's ID |
+
+**Always set `mode` explicitly** — the default differs between V1 (`all`) and
+V2 (`primary`).
 
 ---
 
-## Format Choice
+## V2 format (default)
 
-### Markdown (preferred for new agents)
-
-Place in `.opencode/agents/<name>.md` (project) or `~/.config/opencode/agents/<name>.md` (global). The file name becomes the agent name.
+Markdown — frontmatter holds the fields, the body is the system prompt:
 
 ```markdown
 ---
-description: Reviews code for quality and best practices
+description: Reviews code for quality and best practices. Does not modify files.
 mode: subagent
-model: anthropic/claude-sonnet-4-20250514
-temperature: 0.1
-permission:
-  edit: deny
-  bash: deny
-  webfetch: deny
+model: github-copilot/claude-sonnet-5
+permissions:
+  - action: edit
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "*"
+    effect: ask
+  - action: shell
+    resource: "git diff *"
+    effect: allow
+  - action: webfetch
+    resource: "*"
+    effect: deny
 ---
 
-You are a code reviewer. Focus on:
-
-- Security vulnerabilities
-- Performance issues
-- Code clarity and maintainability
-
+You are a code reviewer. Focus on security, performance, and maintainability.
 Provide specific, actionable feedback. Do not make changes.
 ```
 
-### JSON (for built-in customization or shared configs)
+JSON/JSONC — under `agents`, with the prompt in `system`:
 
-```json
+```jsonc
 {
   "$schema": "https://opencode.ai/config.json",
-  "agent": {
+  "agents": {
     "code-reviewer": {
-      "description": "Reviews code for best practices and potential issues",
+      "description": "Reviews code for quality and best practices",
       "mode": "subagent",
-      "model": "anthropic/claude-sonnet-4-20250514",
-      "prompt": "You are a code reviewer. Focus on security, performance, and maintainability.",
-      "permission": {
-        "edit": "deny",
-        "bash": "deny"
-      }
+      "model": "github-copilot/claude-sonnet-5",
+      "system": "You are a code reviewer. Do not make changes.",
+      "permissions": [
+        { "action": "edit", "resource": "*", "effect": "deny" }
+      ]
     }
   }
 }
 ```
 
----
+V2 essentials (details in `references/v2/`):
 
-## File Locations
+- Fields: `description`, `mode`, `model` (`provider/model#variant`), `system`
+  (JSON only), `permissions`, `steps`, `hidden`, `color` (six-digit hex),
+  `disabled`, `request`.
+- `permissions` is an ordered list; **last match wins**; put broad rules first.
+  Actions include `read`, `edit` (covers write and patch), `glob`, `grep`,
+  `shell`, `subagent`, `skill`, `question`, `webfetch`, `websearch`,
+  `external_directory`, and `<server>_<tool>` for MCP tools.
+- Per-agent `temperature` / `top_p` / provider options go in `request.body`, but
+  V2 **does not send `request` yet**. Use a model variant instead.
+- `hidden: true` also removes the agent from the subagent catalog. Do not hide a
+  subagent an orchestrator must discover.
+- Built-ins: `build`, `plan` (primary); `general`, `explore` (subagent). No
+  `scout` in V2.
 
-| Scope | Location |
-|---|---|
-| Project (Markdown) | `.opencode/agents/<name>.md` |
-| Global (Markdown) | `~/.config/opencode/agents/<name>.md` |
-| Project (JSON) | `opencode.json` → `agent.<name>` |
-| Global (JSON) | `~/.config/opencode/opencode.json` → `agent.<name>` |
-
-Project-level agents override global agents with the same name. Markdown file names must be lowercase with hyphens (e.g., `code-reviewer.md` → `@code-reviewer`).
-
----
-
-## Minimal Working Examples
-
-### Read-only analyst (subagent)
+## V1 format (when required)
 
 ```markdown
 ---
-description: Analyzes code architecture and explains design patterns without making changes
+description: Reviews code for quality and best practices. Does not modify files.
 mode: subagent
+model: anthropic/claude-sonnet-5
+temperature: 0.1
 permission:
   edit: deny
-  bash: deny
-  webfetch: allow
----
-
-You are an architecture analyst. Explain what the code does, why it is structured this way, and what trade-offs it makes. Never modify files.
-```
-
-### Orchestrator (primary agent)
-
-```markdown
----
-description: Coordinates multi-step workflows by delegating to specialized subagents
-mode: primary
-model: anthropic/claude-sonnet-4-20250514
-temperature: 0.2
-permission:
   bash:
     "*": ask
-    "git status": allow
-    "git log*": allow
+    "git diff*": allow
+  webfetch: deny
 ---
 
-You are a project coordinator. Break complex tasks into subtasks and delegate them to appropriate subagents using the Task tool. Always review subagent output before proceeding to the next step.
+You are a code reviewer. Provide specific, actionable feedback. Do not make changes.
 ```
 
-### Hidden internal helper
-
-```markdown
----
-description: Validates test coverage. Internal use only — invoked by orchestrator agents.
-mode: subagent
-hidden: true
-permission:
-  edit: deny
-  bash:
-    "pytest*": allow
-    "*": deny
----
-
-You are a test coverage validator. Run the test suite and report which files lack adequate coverage. Do not modify code.
-```
-
----
-
-## Permission Model
-
-Permissions control what each agent can do. Use `permission` (the `tools` boolean map is deprecated as of v1.1.1).
-
-```yaml
-permission:
-  edit: deny           # file editing: allow | ask | deny
-  bash: ask            # shell commands: allow | ask | deny | per-command map
-  webfetch: allow      # web requests: allow | ask | deny
-```
-
-**Per-command bash control** — rules are evaluated in order; last match wins:
-
-```yaml
-permission:
-  bash:
-    "*": ask             # default: ask for everything
-    "git status": allow  # exact match
-    "git log*": allow    # glob pattern
-    "git push*": deny    # always block
-    "rm -rf*": deny
-```
-
-Put the catch-all `"*"` first, then specific overrides after.
-
-**Task permissions** — control which subagents this agent can invoke:
-
-```yaml
-permission:
-  task:
-    "*": deny
-    "reviewer": allow
-    "security-*": ask
-```
-
-**All available permission keys:**
-
-| Key | What it controls |
-|---|---|
-| `read` | File reads (matches file path) |
-| `edit` | All file writes/edits/patches |
-| `glob` | File globbing (matches glob pattern) |
-| `grep` | Content search (matches regex) |
-| `list` | Directory listing |
-| `bash` | Shell commands (matches command string) |
-| `task` | Subagent invocation (matches subagent name) |
-| `external_directory` | Access to paths outside project root |
-| `skill` | Skill loading (matches skill name) |
-| `todowrite` | Todo list writes (`todowrite`/`todoread`) |
-| `webfetch` | URL fetching |
-| `websearch` | Web search |
-| `lsp` | LSP queries (non-granular) |
-| `question` | Asking the user questions mid-execution |
-| `doom_loop` | Repeated identical tool calls (3x) |
-
-Only `read`, `edit`, `glob`, `grep`, `list`, `bash`, `task`, `external_directory`, `lsp`, and `skill` accept a per-pattern object — the rest (`todowrite`, `webfetch`, `websearch`, `question`, `doom_loop`) take a single `allow`/`ask`/`deny` value only.
-
-Default behavior: most permissions are `allow`. `doom_loop` and `external_directory` default to `ask`. `.env`/`.env.*` reads are denied by default (`.env.example` allowed).
-
----
-
-## Built-in Agents (Do Not Recreate)
-
-These ship with OpenCode. Override them in `opencode.json` if you need different behavior — do not recreate them from scratch.
-
-| Agent | Mode | Purpose |
-|---|---|---|
-| `build` | primary | Default — all tools enabled |
-| `plan` | primary | Read-only analysis — edit/bash default to `ask` |
-| `general` | subagent | Full tool access (except todo) — multi-step/parallel research and tasks |
-| `explore` | subagent | Read-only, fast codebase exploration |
-| `scout` | subagent | Read-only, external docs and dependency research |
-
-Hidden system agents (do not override): `compaction`, `title`, `summary`.
+V1 JSON uses `agent.<name>` with `prompt` (supports `{file:./path}` relative to
+the config file). V1 permission keys are `bash`, `task`, `edit`, and so on, in a
+map; `tools` is deprecated. Built-ins: `build`, `plan`, `general`, `explore`,
+`scout`. Details in `references/v1/`.
 
 ---
 
 ## Creating an Agent: Step-by-Step
 
-### Step 1 — Decide mode and scope
+### Step 1 — Decide version, mode, and scope
 
-- **Primary**: user selects it with Tab or switches to it explicitly
-- **Subagent**: invoked by primary agents via Task tool or by user via `@mention`
-- Scope: project (`.opencode/agents/`) for repo-specific, global (`~/.config/opencode/agents/`) for personal tools
+- Version: Step 0 above.
+- Primary: the main agent for a session. Subagent: runs in a child session,
+  launched by another agent (V2 `subagent` tool, V1 Task tool or `@mention`).
+- Scope: project `.opencode/agents/` for repo-specific, global
+  `~/.config/opencode/agents/` for personal tools. The file name (V2: path
+  relative to `agents/`) becomes the agent ID; use lowercase kebab-case.
 
 ### Step 2 — Write the prompt
 
@@ -233,42 +159,39 @@ Hidden system agents (do not override): `compaction`, `title`, `summary`.
 - List what the agent does and what it does NOT do
 - Be specific about output format and behavior constraints
 - Aim for under 2000 tokens
+- Write a precise `description`; the model uses it to choose subagents
 
 ### Step 3 — Configure permissions
 
-- Start restrictive: `edit: deny`, `bash: deny`
-- Grant only what the role requires
-- Use per-command bash rules for surgical control (pattern-match the command + args)
+- Start restrictive: deny `edit` and `shell` (V1: `bash`), then grant what the
+  role needs
+- Use per-command shell rules for surgical control; a V2 pattern ending in
+  `" *"` also matches the bare command
+- For orchestrators, deny `subagent` (V1: `task`) with `"*"` first, then allow
+  specific agent IDs
+- Subagents cannot launch subagents at the default nesting depth of one
 
 ### Step 4 — Choose the model (required unless told otherwise)
 
-- **Always set an explicit `model`** when creating a new agent unless the user
-  tells you to omit it and inherit
-- Be intentional: pick the model for the agent's role (see role guidance in
-  `references/models.md`) — do not leave model selection to chance inheritance
-- Format: `provider/model-id` (e.g., `github-copilot/claude-sonnet-5`,
-  `anthropic/claude-sonnet-4-20250514`)
-- Only omit `model` when the user explicitly wants inheritance (subagents inherit
-  from the invoking primary; primaries use the global config)
-- Prefer lighter models for cheap/fast subagents; stronger models for coding,
-  orchestration, and deep reasoning — never auto-select extreme-cost models
-  (Opus fast-mode, Fable) without explicit user cost acceptance
+- **Always set an explicit `model`** unless the user asks to omit it and inherit
+- Match the model to the role (see `references/models.md`); lighter models for
+  cheap subagents, stronger ones for coding, orchestration, and deep reasoning
+- **Never auto-select extreme-cost models** (Opus fast mode, Fable, and others
+  listed in `references/models.md`) without explicit user cost acceptance
+- V2: only add `#variant` if that variant exists for the model; an unknown
+  variant is an error
 
 ### Step 5 — Create the file
 
 - Markdown: `.opencode/agents/<kebab-case-name>.md`
-- Invoke manually: `@agent-name` in the chat
-- Let primary agents discover and invoke subagents automatically based on their `description`
+- Do not add a `system` (V2) or `prompt` (V1) field to Markdown frontmatter; the
+  body is the prompt
 
 ### Step 6 — Test it
 
-```bash
-# Scaffold with interactive prompts
-opencode agent create
-
-# Then test manually in the TUI
-@my-agent-name do something specific
-```
+- V2: start OpenCode in the project, confirm the agent is listed and its model
+  resolves (`/models`), then ask the primary agent to use the subagent
+- V1: `opencode agent create` scaffolds interactively; invoke with `@agent-name`
 
 ---
 
@@ -277,46 +200,21 @@ opencode agent create
 - **Role first**: "You are a database migration specialist."
 - **Explicit negatives**: "Do not create files. Do not run migrations automatically."
 - **Output format**: Describe what a good response looks like
-- **Context injection**: Use `{file:./path/to/prompt.txt}` to load an external prompt file
-- **Scope creep prevention**: State the agent's boundaries — what is out-of-scope
-
----
-
-## Model ID Format
-
-```
-provider/model-id
-```
-
-Examples:
-- `anthropic/claude-sonnet-4-20250514`
-- `anthropic/claude-haiku-4-20250514`
-- `openai/gpt-4o`
-- `openai/gpt-5`
-- `opencode/gpt-5.1-codex` (OpenCode Zen)
-
-Run `opencode models` to list all available model IDs for your configured providers.
-
----
-
-## Temperature Guide
-
-| Range | Behavior | Good for |
-|---|---|---|
-| `0.0–0.2` | Focused, deterministic | Code analysis, security review, planning |
-| `0.3–0.5` | Balanced | General development tasks |
-| `0.6–1.0` | Creative, varied | Brainstorming, documentation, exploration |
+- **Scope creep prevention**: State what is out of scope
+- In V2, project instructions (`AGENTS.md`), skills, and references are still
+  added when an agent sets its own prompt, so do not repeat repo rules in the
+  agent. V2 reads `AGENTS.md` only, not `CLAUDE.md`
 
 ---
 
 ## Reference Map (load only what's needed)
 
-Do **not** load every reference file up front. Use this map after the core guide
-above when the task needs deeper detail:
+Do **not** load every reference up front. Pick by version and task:
 
-| Task | Reference file |
-|---|---|
-| Property keys, types, defaults, annotated full config | `references/properties.md` |
-| Permission syntax, patterns, keys, external dirs, task rules | `references/permissions.md` |
-| Model IDs and provider formats | `references/models.md` |
-| Full working agent templates (reviewer, migrator, orchestrator, auditor) | `references/examples.md` |
+| Task | V2 (default) | V1 |
+|---|---|---|
+| Fields, types, defaults, locations, built-ins | `references/v2/agents.md` | `references/v1/properties.md` |
+| Permission rules, actions, defaults, external dirs | `references/v2/permissions.md` | `references/v1/permissions.md` |
+| Full working agent templates | `references/v2/examples.md` | `references/v1/examples.md` |
+| Converting V1 agents to V2 | `references/v2/migration.md` | — |
+| Model IDs, variants, cost gating (both versions) | `references/models.md` | `references/models.md` |

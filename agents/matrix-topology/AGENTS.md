@@ -235,7 +235,7 @@ still looks correct at a glance, and OpenCode raises no error. `tank` and `dozer
 both shipped this inversion once; check the order whenever you touch a scoped grant.
 
 > [!NOTE]
-> Authoritative source: `skills/agent-creator-opencode/references/agent-reference.md`
+> Authoritative source: `skills/agent-creator-opencode/references/v1/permissions.md`
 > → *Pattern matching rules*. Load that skill before editing any OpenCode frontmatter.
 
 ### Scoped `edit` does not port
@@ -349,6 +349,6 @@ any stale or missing file.
 ## Authoritative References
 
 - **Topology rules and lifecycle:** `CONDUCTOR.md` in this directory
-- **OpenCode frontmatter schema:** `skills/agent-creator-opencode/references/agent-reference.md`
+- **OpenCode frontmatter schema:** `skills/agent-creator-opencode/references/v1/properties.md` (V1) and `references/v2/agents.md` (V2)
 - **Copilot frontmatter schema:** `skills/agent-creator-copilot/references/frontmatter-reference.md`
 - **Claude Code frontmatter schema:** See the `claude/` section above (no separate reference file)

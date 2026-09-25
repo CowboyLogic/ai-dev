@@ -495,7 +495,7 @@ on every turn.
 > This is the same lesson one layer down. The block *reads* correct, OpenCode raises
 > no error, and nothing surfaces until an agent quietly fails to produce its artifact.
 > Authoritative source:
-> `skills/agent-creator-opencode/references/agent-reference.md` → *Pattern matching
+> `skills/agent-creator-opencode/references/v1/permissions.md` → *Pattern matching
 > rules*. Load that skill before editing any OpenCode frontmatter.
 
 Both failures above share one root, and it generalises past agent selection.

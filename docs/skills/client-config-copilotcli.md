@@ -6,8 +6,7 @@ hooks, skills, custom agents, custom instructions, BYOK models, authentication,
 and session management.
 
 - **Skill name:** `client-config-copilotcli`
-- **Last updated:** 2026-04-26
-- **Copilot CLI version tested:** v1.0.35 / v1.0.36
+- **Last updated:** 2026-09-24
 - **Source:** [skills/client-config-copilotcli](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-copilotcli)
 
 ---
@@ -24,19 +23,22 @@ everything at once.
 
 | What | File | Scope |
 |------|------|-------|
-| Trusted folders | `~/.copilot/config.json` | Global |
 | User settings | `~/.copilot/settings.json` | Global |
-| MCP servers | `~/.copilot/mcp-config.json` | Global |
-| Hooks | `.github/hooks/hooks.json` | Project |
-| Skills | `~/.copilot/skills/<name>/SKILL.md` | Global personal |
-| Skills | `.github/skills/<name>/SKILL.md` | Project |
-| Custom agents | `~/.copilot/agents/<name>.agent.md` | Global personal |
-| Custom instructions | `~/.copilot/copilot-instructions.md` | Global personal |
-| Path-scoped instructions | `.github/instructions/*.instructions.md` | Project |
+| Repository / local settings | `.github/copilot/settings.json`, `.github/copilot/settings.local.json` | Project |
+| Trusted folders | `~/.copilot/config.json` | Global |
+| Saved approvals | `~/.copilot/permissions-config.json` | Global |
+| MCP servers | `~/.copilot/mcp-config.json`, `.mcp.json`, `.github/mcp.json` | Global / Project |
+| LSP servers | `~/.copilot/lsp-config.json`, `.github/lsp.json` | Global / Project |
+| BYOK providers | `~/.copilot/providers.json` | Global |
+| Hooks | `~/.copilot/hooks/*.json`, `.github/hooks/*.json`, or `hooks` in settings | Global / Project |
+| Skills | `~/.copilot/skills/`, `.github/skills/`, `.agents/skills/`, `.claude/skills/` | Global / Project |
+| Custom agents | `~/.copilot/agents/`, `.github/agents/`, `.claude/agents/` | Global / Project |
+| Plugins | `~/.copilot/installed-plugins/` (via `copilot plugin`) | Global |
+| Custom instructions | `~/.copilot/copilot-instructions.md`, `.github/copilot-instructions.md`, `AGENTS.md` | Global / Project |
+| Path-scoped instructions | `.github/instructions/**/*.instructions.md` | Project |
 
-Set `COPILOT_HOME` to redirect the global personal locations from `~/.copilot`.
-Copilot CLI v1.0.36 and later no longer load global customizations from
-`~/.claude/`, but project-scoped `.claude/skills/` remains supported.
+Set `COPILOT_HOME` to redirect the global personal locations from `~/.copilot`
+(`--config-dir` is deprecated).
 
 ---
 
@@ -103,6 +105,25 @@ skill closes that gap entirely.
 ---
 
 ## Changelog
+
+### 2026-09-24 — v2.0 (upstream refresh)
+
+- Sources: docs are fetched as Markdown through the docs.github.com article API;
+  `sources.json` adds the CLI command reference, configuration-directory reference,
+  hooks reference, plugin reference, custom agents, BYOK, LSP, and permissions pages.
+- `SKILL.md`: config file map expanded to repository/local settings,
+  `permissions-config.json`, `lsp-config.json`, `providers.json`, plugins, and
+  `.claude/` / `.agents/` project locations.
+- `references/hooks.md`: rewritten — hook input arrives as JSON on stdin (not `$INPUT`),
+  `preToolUse` returns `permissionDecision`, 14 events, `command`/`exec`/`http`/`prompt`
+  entry types.
+- `references/config-schema.md`: full `settings.json` key table and precedence,
+  managed settings, environment variables, BYOK.
+- New `references/permissions.md`, `references/cli-commands.md`, and
+  `references/agents-plugins.md`.
+- Removed unverifiable version-specific claims (v1.0.35/v1.0.36).
+- `scripts/show-config.py`: covers the new config files and no longer prints
+  `config.json` values, which can contain auth tokens.
 
 ### 2026-04-26 — v1.1 (iteration 1 feedback)
 

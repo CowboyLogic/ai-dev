@@ -1,33 +1,57 @@
-﻿# Frontmatter Reference — Custom Agent Profiles
+# Frontmatter Reference — Custom Agent Profiles
 
-Comprehensive reference for all YAML frontmatter properties in custom agent profiles (`.agent.md`). Load this file when writing or modifying agent frontmatter.
+Reference for the YAML frontmatter properties in custom agent profiles (`.agent.md`). Load this file when writing or modifying agent frontmatter.
 
-**Sources (last verified July 2026):**
-- VS Code: https://code.visualstudio.com/docs/copilot/customization/custom-agents
-- GitHub: https://docs.github.com/en/copilot/reference/custom-agents-configuration
+**Sources (last verified September 2026):**
+
+- GitHub configuration reference: <https://docs.github.com/en/copilot/reference/custom-agents-configuration>
+- VS Code: <https://code.visualstudio.com/docs/agent-customization/custom-agents>
+- VS Code subagents: <https://code.visualstudio.com/docs/agents/run/subagents>
+- VS Code hooks: <https://code.visualstudio.com/docs/agent-customization/hooks>
+- Copilot CLI: <https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference#custom-agents-reference>
+- Models: <https://docs.github.com/en/copilot/reference/ai-models/supported-models>
+
+---
+
+## Surfaces
+
+Custom agents are used by several products that each read the profile differently:
+
+- **Copilot cloud agent on GitHub.com**: agents tab/panel, issue assignment, pull requests
+- **GitHub Copilot CLI**: `/agent`, `--agent`, or inferred delegation to a subagent
+- **VS Code** (and JetBrains IDEs, Eclipse, Xcode, which are in public preview for custom agents): the agents dropdown in chat. VS Code has several harnesses (**Local**, **Copilot**, Claude, Codex, Cloud); some properties only work with **Local**.
+
+Every surface ignores tool names it does not recognize, and GitHub.com explicitly ignores the IDE-only `argument-hint` and `handoffs` properties.
 
 ---
 
 ## Platform Compatibility Overview
 
-Not all frontmatter properties are supported in all environments. Refer to this table before using any property.
+| Property | VS Code / IDEs | GitHub.com cloud agent | Copilot CLI |
+|---|---|---|---|
+| `name` | ✅ | ✅ | ✅ |
+| `description` | ✅ (header optional) | ✅ **Required** | ✅ **Required** |
+| `target` | ✅ | ✅ | Not listed in CLI reference |
+| `tools` | ✅ (aliases, tool sets, tool names) | ✅ (aliases, MCP tools) | ✅ |
+| `model` | ✅ string or array | ⚠️ See [`model`](#model) | ✅ string |
+| `user-invocable` | ✅ | ✅ | Not listed in CLI reference |
+| `disable-model-invocation` | ✅ (blocks subagent use) | ✅ (blocks auto-selection) | Not listed in CLI reference |
+| `infer` | Deprecated | Retired | ✅ Listed as active (see [`infer`](#infer-retired--deprecated)) |
+| `argument-hint` | ✅ | ❌ Ignored | Not listed |
+| `handoffs` | ✅ | ❌ Ignored | Not listed |
+| `agents` | ✅ | Not listed | Not listed |
+| `hooks` | ✅ Preview, Local harness only | Not listed | Not listed |
+| `mcp-servers` | ❌ Not used (only passed through for `target: github-copilot`) | ✅ | ✅ |
+| `metadata` | ❌ Not used | ✅ | Not listed |
+| `include-custom-instructions` | Not listed | Not listed | ✅ |
+| `models` | Not listed | Not listed | ✅ |
+| `modelPolicy` | Not listed | Not listed | ✅ |
+| `reasoningEffort` | Not listed | Not listed | ✅ |
 
-| Property | VS Code / JetBrains / IDEs | GitHub.com Cloud Agent |
-|---|---|---|
-| `name` | ✅ | ✅ |
-| `description` | ✅ | ✅ |
-| `target` | ✅ | ✅ |
-| `tools` | ✅ | ✅ |
-| `model` | ✅ (string or array) | ✅ (string only) |
-| `user-invocable` | ✅ | ✅ |
-| `disable-model-invocation` | ✅ | ✅ |
-| `argument-hint` | ✅ | ❌ Ignored |
-| `handoffs` | ✅ | ❌ Ignored |
-| `agents` | ✅ | ❌ |
-| `hooks` | ✅ Preview | ❌ |
-| `mcp-servers` | ❌ Ignored | ✅ |
-| `metadata` | ❌ | ✅ |
-| `infer` | Retired | Retired |
+"Not listed" means the surface's docs do not mention the property. It will most likely be ignored, but that is not documented.
+
+> [!NOTE]
+> The GitHub configuration reference states its property table applies to "GitHub.com, the Copilot CLI, and supported IDEs (unless otherwise noted)", yet the CLI's own frontmatter table omits `target`, `user-invocable`, `disable-model-invocation`, and `metadata`. Treat those as unverified in the CLI.
 
 ---
 
@@ -35,39 +59,39 @@ Not all frontmatter properties are supported in all environments. Refer to this 
 
 ```yaml
 ---
-name: my-agent                        # display name (optional)
-description: What this agent does     # required
+name: my-agent                        # display name; defaults to filename
+description: What this agent does     # required on GitHub.com and CLI
 target: vscode                        # vscode | github-copilot | omit for both
-tools: ["read", "search"]             # list of tools; omit = all tools
-model: claude-sonnet-4-5              # single model or priority array (VS Code)
-user-invocable: true                  # show in agents dropdown (default: true)
-disable-model-invocation: false       # prevent auto-selection by cloud agent (default: false)
-argument-hint: Paste your spec here   # VS Code only — hint text in chat input
-agents:                               # VS Code only — available subagents
-  - planner
-  - "*"
-handoffs:                             # VS Code only — post-response transition buttons
+tools: ["read", "search"]             # omit = all tools
+model: Claude Sonnet 5                # string, or array in VS Code
+user-invocable: true                  # show in agent picker (default true)
+disable-model-invocation: false       # block auto-selection / subagent use (default false)
+argument-hint: Paste your spec here   # VS Code / IDEs only
+agents: ["Researcher", "Reviewer"]    # VS Code only: allowed subagents
+handoffs:                             # VS Code / IDEs only
   - label: Implement
     agent: implementation
     prompt: Implement the plan above.
     send: false
-    model: GPT-5.2 (copilot)
-hooks:                                # VS Code Preview — agent-scoped hooks
-  onChatRequest:
-    - command: some-command
-mcp-servers:                          # Cloud agent only
+    model: GPT-5.5 (copilot)
+hooks:                                # VS Code Local harness only (Preview)
+  PostToolUse:
+    - type: command
+      command: "./scripts/format-changed-files.sh"
+mcp-servers:                          # GitHub.com cloud agent and Copilot CLI
   my-server:
     type: local
     command: npx
     args: ["-y", "my-mcp-server"]
     tools: ["*"]
     env:
-      API_KEY: ${{ secrets.MY_API_KEY }}
-metadata:                             # Cloud agent only — arbitrary annotation
+      API_KEY: ${{ secrets.COPILOT_MCP_API_KEY }}
+metadata:                             # GitHub.com only
   team: platform
-  version: "2.0"
 ---
 ```
+
+This block shows syntax only. A real profile should set only the properties its target surfaces use.
 
 ---
 
@@ -75,10 +99,10 @@ metadata:                             # Cloud agent only — arbitrary annotatio
 
 ### `description` *(Required)*
 
-**Type:** string  
+**Type:** string
 **Platforms:** All
 
-Description of the agent's purpose and capabilities. Used to identify the agent in the UI and to help the cloud agent determine when to invoke it. Use `argument-hint` for placeholder text in the VS Code chat input.
+Describes the agent's purpose and capabilities. GitHub.com and the CLI use it to decide when to infer/auto-select the agent, and the CLI shows it in the agent list and `task` tool. VS Code shows it as placeholder text in the chat input field.
 
 ```yaml
 description: Reviews REST API designs for correctness, security, and consistency
@@ -88,13 +112,11 @@ description: Reviews REST API designs for correctness, security, and consistency
 
 ### `name`
 
-**Type:** string  
-**Default:** filename (without `.md` / `.agent.md`)  
+**Type:** string
+**Default:** filename without `.md` / `.agent.md`
 **Platforms:** All
 
-Display name for the agent in the agents dropdown. If omitted, the filename (minus extension) is used.
-
-**Naming conflict resolution:** When agents exist at multiple levels (workspace, user, org, enterprise), the lowest-level configuration wins. A workspace agent overrides an org-level agent of the same name.
+Display name. The filename, not `name`, is the agent's ID for deduplication across levels and for `copilot --agent <id>`. In VS Code, `agents` lists and handoff `agent` values reference agents by name, and subagent names are case-sensitive.
 
 ```yaml
 name: API Reviewer
@@ -104,11 +126,11 @@ name: API Reviewer
 
 ### `target`
 
-**Type:** string  
-**Values:** `vscode` | `github-copilot` | *(omit for both)*  
-**Platforms:** All
+**Type:** string
+**Values:** `vscode` | `github-copilot` | *(omit for both)*
+**Platforms:** GitHub.com, VS Code / IDEs
 
-Restricts which environment loads this agent profile. Omit to allow the profile to be loaded in both VS Code and GitHub.com.
+Restricts which environment uses the profile. Omit it to make the agent available in both.
 
 ```yaml
 target: vscode           # VS Code and IDEs only
@@ -119,86 +141,133 @@ target: github-copilot   # GitHub.com cloud agent only
 
 ### `tools`
 
-**Type:** list of strings, or comma-separated string  
-**Default:** all tools  
+**Type:** list of strings, or comma-separated string
+**Default:** all tools
 **Platforms:** All
 
-Controls which tools are available to the agent. See `tools-reference.md` for the full alias table and MCP namespacing syntax.
+Filters the tools available to the agent, whether built-in or from MCP servers. See `tools-reference.md` for aliases, VS Code tool sets, and MCP namespacing.
 
 ```yaml
 tools: ["read", "search"]           # specific aliases (least privilege)
 tools: ["*"]                        # all tools explicitly
 tools: []                           # no tools
-tools: ["read", "github/*"]         # built-in + all tools from an MCP server
-tools: ["read", "my-server/tool-a"] # built-in + specific MCP tool
+tools: ["read", "github/*"]         # alias + all tools from an MCP server
+tools: ["read", "my-server/tool-a"] # alias + one MCP tool
 ```
 
-**Tool list priority:** When a prompt file and a custom agent are both active, the prompt file's `tools` property takes precedence over the agent's.
+In the CLI, including `*` anywhere grants every tool (`["view", "*"]` means all tools).
+
+**Tool list priority (VS Code Local):** when a prompt file and a custom agent both set `tools`, the prompt file's list wins. Agent Host sessions (such as the Copilot harness) don't load prompt files.
 
 ---
 
 ### `model`
 
-**Type:** string or array (VS Code); string only (cloud agent)  
-**Default:** inherits user's selected model  
-**Platforms:** All (array form VS Code only)
-
-Specifies the AI model for the agent. In VS Code, provide an array for a prioritized fallback list — the system tries each model in order until an available one is found.
+**Type:** string (all surfaces); string or array (VS Code)
+**Default:** inherits the currently selected / session / parent-agent model
 
 ```yaml
-# Single model (works everywhere):
-model: claude-sonnet-4-5
+# VS Code / IDEs: model display name
+model: Claude Sonnet 5
 
-# Priority fallback list (VS Code only):
-model:
-  - GPT-5.2 (copilot)
-  - Claude Sonnet 4.5 (copilot)
+# VS Code: prioritized fallback list, tried in order
+model: ["Claude Opus 5", "GPT-5.5"]
+
+# Copilot CLI: model ID
+model: gpt-5.6-luna
 ```
 
-Use the qualified model name format for Copilot-served models: `Model Name (copilot)`.
+**Surface notes:**
+
+- **VS Code:** accepts a model name or a prioritized array. For subagents, the order is: explicit model from the `runSubagent` call, then the agent's `model`, then the main conversation's model. A subagent model above the main model's cost tier does not run.
+- **Copilot CLI:** uses lowercase IDs (the CLI docs show `claude-sonnet-4.6`, `claude-haiku-4.5`, `gpt-5.4-mini`, `gpt-5.6-luna`, `gpt-6-astra`, `gemini-3.7-flash`). When the session model is `Auto`, subagents always use the resolved session model and ignore this field. See also `models`, `modelPolicy`, and `reasoningEffort` below.
+- **GitHub.com cloud agent:** ambiguous. The configuration reference lists `model` without restriction ("Model to use when this custom agent executes"), but the create how-to says `model` applies "if you are creating and using the agent profile in VS Code, JetBrains IDEs, Eclipse, or Xcode". Don't rely on `model` to select the cloud agent's model.
+- **Handoff `model`** uses the qualified format `Model Name (vendor)`, for example `GPT-5.5 (copilot)`.
+
+**Current model names (from the supported-models page, September 2026):** GPT-5 mini, GPT-5.3-Codex, GPT-5.4, GPT-5.4 mini, GPT-5.5, GPT-5.6 Luna, GPT-5.6 Sol, GPT-5.6 Terra, GPT-6 Astra, GPT-6 Luna, GPT-6 Sol, Claude Fable 5, Claude Fable 5.1, Claude Haiku 4.5, Claude Opus 4.7, Claude Opus 4.8, Claude Opus 5, Claude Opus 5.5, Claude Sonnet 4.6, Claude Sonnet 5, Gemini 3.5–3.8 Flash, MAI-Code-1.1-Flash, Kimi K2.7 Code, Kimi K3, Grok 4.5–4.7. Availability differs by client. For example, Gemini and Grok models are not available on GitHub.com.
+
+> [!WARNING]
+> Retired models no longer resolve. Retired as of 2026-09-01: Claude Sonnet 4.5, Claude Opus 4.5, Claude Opus 4.6, Claude Sonnet 4.6 (still available to individual subscribers on annual plans), and Gemini 3.1 Pro. GPT-5.2 and GPT-5.2-Codex were retired 2026-06-05, and GPT-4.1 on 2026-06-01. Claude Opus 4.7, Gemini 3.5/3.6 Flash, and Kimi K2.7 Code are scheduled for 2026-10-02. Many community examples (including awesome-copilot and VS Code's own doc samples) still pin retired models such as `GPT-4.1`, `GPT-5.2`, or `Claude Sonnet 4.5`. Check the retirement table before copying one.
+
+---
+
+### `models`, `modelPolicy`, `reasoningEffort` *(Copilot CLI only)*
+
+| Property | Type | Description |
+|---|---|---|
+| `models` | string[] | Models in priority order. The first one the user's plan can access is used; if none resolve, falls back to the session's model. Overrides `model` when both are set. |
+| `modelPolicy` | string | `"preferred"` (default) lets `model`/`models` be overridden by a `subagents` override in `~/.copilot/settings.json` or the `/subagents` picker. `"required"` locks dispatch to one of the authored models. |
+| `reasoningEffort` | string | Default reasoning effort, for example `"low"`, `"medium"`, `"high"`. Inherits the outer agent's effort when unset. |
+
+Precedence, highest first: explicit per-call value, then the `subagents` override in `~/.copilot/settings.json`, then the agent's `model`/`models`/`reasoningEffort`, then the parent session's value.
+
+---
+
+### `include-custom-instructions` *(Copilot CLI only)*
+
+**Type:** boolean
+**Default:** `false`
+
+When the agent runs as a **subagent**, include repository instruction files (`copilot-instructions.md`, `AGENTS.md`, `CLAUDE.md`). Has no effect when the agent is selected directly (`--agent`, `/agent`, inference), because the session agent already receives them. `--no-custom-instructions` always wins.
+
+```yaml
+include-custom-instructions: true
+```
 
 ---
 
 ### `user-invocable`
 
-**Type:** boolean  
-**Default:** `true`  
-**Platforms:** All
+**Type:** boolean
+**Default:** `true`
+**Platforms:** GitHub.com, VS Code / IDEs
 
-When `false`, the agent is hidden from the agents dropdown and can only be accessed as a subagent invoked by another agent, or programmatically. Use this for orchestration-only or utility agents that users should never call directly.
+When `false`, users can't select the agent manually. It can only be used as a subagent or programmatically. In VS Code this controls picker visibility for both the Local and Copilot harnesses.
 
 ```yaml
-user-invocable: false   # subagent/programmatic use only
+user-invocable: false
 ```
 
 ---
 
 ### `disable-model-invocation`
 
-**Type:** boolean  
-**Default:** `false`  
-**Platforms:** All
+**Type:** boolean
+**Default:** `false`
+**Platforms:** GitHub.com, VS Code / IDEs
 
-When `true`, prevents the Copilot cloud agent from automatically selecting this agent based on task context. The agent must be manually selected or invoked via handoff. Has no effect in VS Code (manual selection is always required there).
+The meaning differs by surface:
+
+- **GitHub.com:** when `true`, the cloud agent will not automatically use this agent based on task context. It must be selected manually. Equivalent to `infer: false`. If both are set, `disable-model-invocation` wins.
+- **VS Code:** when `true`, other agents can't invoke this agent as a subagent. An explicit entry in a coordinator's `agents` list overrides it.
 
 ```yaml
-disable-model-invocation: true   # must be manually selected
+disable-model-invocation: true
 ```
 
-> **Relationship to `user-invocable`:**  
-> These two properties give independent control:
-> - `user-invocable: false` → hidden from dropdown, still auto-invokable as subagent
-> - `disable-model-invocation: true` → visible in dropdown, but never auto-selected
-> - Both `false`/`true` together → fully private utility agent
+| Combination | Effect |
+|---|---|
+| `user-invocable: false` | Hidden from the picker, still usable as a subagent |
+| `disable-model-invocation: true` | Visible in the picker, not auto-selected / not used as a subagent (unless explicitly listed in `agents` in VS Code) |
+| Both | Not user-selectable and not auto-invoked. Only reachable via an explicit `agents` entry (VS Code) or programmatically |
+
+---
+
+### `infer` *(Retired / Deprecated)*
+
+**Do not use in new profiles.** GitHub.com marks it retired and VS Code deprecated, replaced by `user-invocable` and `disable-model-invocation`. On GitHub.com, `infer: false` is equivalent to `disable-model-invocation: true` (it does **not** imply `user-invocable: false`).
+
+> [!NOTE]
+> The Copilot CLI command reference still lists `infer` (boolean, default `true`, "Allow auto-delegation by the main agent") as an active field and does not list `disable-model-invocation`. If you need to stop CLI auto-delegation, `infer: false` is the only CLI-documented option.
 
 ---
 
 ### `argument-hint`
 
-**Type:** string  
+**Type:** string
 **Platforms:** VS Code / IDEs only. Ignored on GitHub.com.
 
-Optional hint text shown in the chat input field when this agent is selected. Guides users on what to type or paste.
+Hint text shown in the chat input field when the agent is selected.
 
 ```yaml
 argument-hint: Paste the OpenAPI spec or describe the endpoint to review
@@ -208,40 +277,38 @@ argument-hint: Paste the OpenAPI spec or describe the endpoint to review
 
 ### `agents`
 
-**Type:** list of strings  
+**Type:** list of strings
 **Platforms:** VS Code only
 
-Declares which agents this agent is permitted to invoke as subagents. The `agent` tool alias must also be included in `tools` for subagent invocation to work.
+Names of agents this agent may invoke as subagents. The `agent` tool must be in `tools`.
 
 ```yaml
-agents:
-  - planner          # specific agent by filename (without extension)
-  - code-reviewer
-  - "*"              # allow all available agents
+tools: ["agent", "read", "search"]
+agents: ["Codebase Researcher", "Reviewer"]
 ```
 
-Use `agents: []` to explicitly prevent this agent from using any subagents.
+- Omitted or `["*"]`: all available agents (except those with `disable-model-invocation: true`)
+- `[]`: no subagents
+- Names are case-sensitive
 
-**Self-referential agents:** To allow an agent to list itself in `agents` (recursive orchestration), enable `chat.subagents.allowInvocationsFromSubagents` in VS Code settings.
+**Nested subagents:** Local subagents can't invoke further subagents unless `chat.subagents.allowInvocationsFromSubagents` is enabled (default `false`, maximum depth five). A self-referential agent lists itself in `agents`.
 
 ---
 
 ### `handoffs`
 
-**Type:** list of objects  
+**Type:** list of objects
 **Platforms:** VS Code / IDEs only. Ignored on GitHub.com.
 
-Defines guided transitions to other agents that appear as buttons after a chat response completes. Each handoff can pre-fill a prompt and optionally auto-submit it.
-
-**Full property reference for each handoff entry:**
+Buttons shown after a response completes that switch to another agent with the conversation context and a pre-filled prompt.
 
 | Property | Type | Required | Description |
 |---|---|---|---|
-| `label` | string | **Yes** | Button text shown to the user |
-| `agent` | string | **Yes** | Target agent filename without extension |
-| `prompt` | string | No | Pre-filled prompt sent to the target agent |
-| `send` | boolean | No | `true` = auto-submit the prompt; `false` (default) = user must confirm |
-| `model` | string | No | Model override for the handoff step. Use qualified name: `Model Name (vendor)` |
+| `label` | string | Yes | Button text |
+| `agent` | string | Yes | Target agent identifier (built-in agents such as `agent` also work) |
+| `prompt` | string | No | Prompt text sent to the target agent |
+| `send` | boolean | No | `true` auto-submits the prompt; default `false` |
+| `model` | string | No | Model for the handoff, in `Model Name (vendor)` format, for example `Claude Sonnet 5 (copilot)` |
 
 ```yaml
 handoffs:
@@ -249,15 +316,15 @@ handoffs:
     agent: implementation
     prompt: Implement the plan outlined above, starting with the database layer.
     send: false
-    model: GPT-5.2 (copilot)
-
+    model: GPT-5.5 (copilot)
   - label: Security Review
     agent: security-analyst
     prompt: Review the implementation above for security vulnerabilities.
     send: true
 ```
 
-**Common handoff workflows:**
+Common workflows:
+
 - Planning → Implementation
 - Implementation → Code Review
 - Write Failing Tests → Write Passing Implementation
@@ -266,126 +333,80 @@ handoffs:
 
 ### `hooks` *(Preview)*
 
-**Type:** object  
-**Platforms:** VS Code only (Preview)  
-**Requires:** `chat.useCustomAgentHooks` VS Code setting enabled
+**Type:** object (map of event name → list of hook commands)
+**Platforms:** VS Code **Local** harness only
+**Requires:** `chat.useHooks` (on by default) and a trusted workspace
 
-Hook commands scoped to this agent. Hooks defined here run only when this agent is active (user-invoked or as a subagent). Uses the same format as VS Code hook configuration files.
+Hook commands that run only while this agent is active (user-selected or as a subagent), in addition to user, workspace, and plugin hooks. Use PascalCase event names: `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `SubagentStart`, `SubagentStop`, `Stop`. When the agent runs as a subagent, its `Stop` hook is treated as `SubagentStop`.
 
 ```yaml
 hooks:
-  onChatRequest:
-    - command: my-hook-command
-      args: ["--flag"]
+  PostToolUse:
+    - type: command
+      command: "./scripts/format-changed-files.sh"
 ```
+
+Agent-scoped hooks don't apply to the Copilot, Claude, or Codex harnesses, which use their own hook implementations. The event list may have more entries than shown here, so check the [VS Code hooks reference](https://code.visualstudio.com/docs/agents/reference/hooks-reference) for the complete list.
 
 ---
 
-### `mcp-servers` *(Cloud Agent Only)*
+### `mcp-servers`
 
-**Type:** object  
-**Platforms:** GitHub.com cloud agent only. Ignored in VS Code and other IDEs.
+**Type:** object
+**Platforms:** GitHub.com cloud agent and Copilot CLI. Not used by VS Code or other IDE custom agents.
 
-Embeds MCP server configuration directly in the agent profile. For VS Code, configure MCP servers through VS Code settings instead.
-
-**Full MCP server entry format:**
+MCP servers available only to this agent. On GitHub.com it is a YAML form of the repository MCP JSON configuration. In the CLI it uses the same schema as `~/.copilot/mcp-config.json`.
 
 ```yaml
 mcp-servers:
-  server-name:             # arbitrary key — used as the server namespace
-    type: local            # local (also accepts stdio for Claude Code compat)
-    command: npx           # executable to run
-    args:                  # arguments array
-      - "-y"
-      - "my-mcp-package"
-    tools: ["*"]           # tools from this server to expose; ["*"] = all
-    env:                   # environment variables / secrets
-      API_KEY: ${{ secrets.MY_SECRET }}
-      BASE_URL: https://api.example.com
-```
-
-**`type` values:**
-
-| Value | Meaning |
-|---|---|
-| `local` | Standard cloud agent type |
-| `stdio` | Claude Code / VS Code compatibility alias — mapped to `local` |
-
-**Secret/variable reference syntax:**
-
-| Syntax | Source |
-|---|---|
-| `${{ secrets.NAME }}` | Repository secret (Copilot environment) |
-| `${{ vars.NAME }}` | Repository variable (Copilot environment) |
-| `$VARIABLE_NAME` | Environment variable |
-| `${VARIABLE_NAME}` | Environment variable (Claude Code syntax) |
-| `${VARIABLE_NAME:-default}` | Environment variable with fallback default |
-
-**Built-in out-of-box MCP servers (GitHub.com cloud agent):**
-
-| Server namespace | Access |
-|---|---|
-| `github/*` | GitHub tools available to the coding agent, subject to task, repository, and configured tool permissions |
-| `playwright/*` | Browser automation tools, restricted to localhost |
-
-**MCP processing order (cloud agent):** out-of-box MCP (e.g., `github/*`) → custom agent profile MCP → repository settings MCP. Each level can override the previous.
-
-**Enabling specific MCP tools only:**
-
-```yaml
-# In the agent's top-level tools property, reference MCP tools by namespace:
-tools: ["read", "edit", "custom-mcp/tool-1", "github/create_pull_request"]
-
-# In mcp-servers, tools: controls what the server exposes to the agent:
-mcp-servers:
-  custom-mcp:
-    type: local
+  custom-mcp:              # key becomes the tool namespace (custom-mcp/<tool>)
+    type: local            # "stdio" is accepted and mapped to "local"
     command: some-command
-    args: ["--arg1"]
-    tools: ["*"]          # expose all tools from this server
+    args: ["--arg1", "--arg2"]
+    tools: ["*"]           # tools the server exposes; ["*"] = all
+    env:
+      ENV_VAR_NAME: ${{ secrets.COPILOT_MCP_ENV_VAR_VALUE }}
 ```
+
+**Secret and variable syntax (GitHub.com):**
+
+| Syntax | Where supported |
+|---|---|
+| `$COPILOT_MCP_ENV_VAR_VALUE` | Repository MCP JSON and agent YAML |
+| `${COPILOT_MCP_ENV_VAR_VALUE}` | Repository MCP JSON and agent YAML (Claude Code syntax) |
+| `${COPILOT_MCP_ENV_VAR_VALUE:-default}` | Repository MCP JSON and agent YAML, with default |
+| `${{ secrets.COPILOT_MCP_ENV_VAR_VALUE }}` | Agent YAML only |
+| `${{ vars.COPILOT_MCP_ENV_VAR_VALUE }}` | Agent YAML only |
+
+Secrets and variables must be configured as **Agents** secrets/variables at the organization or repository level, and their names **must start with `COPILOT_MCP_`**. Only prefixed secrets and variables are passed to MCP configuration, and they are exposed only to MCP servers, not to the agent's environment.
+
+**Processing order (GitHub.com):** out-of-the-box MCP (for example `github`) → custom agent `mcp-servers` → repository-settings MCP. Each level can override the previous one. Out-of-the-box servers are covered in `tools-reference.md`.
 
 ---
 
-### `metadata` *(Cloud Agent Only)*
+### `metadata`
 
-**Type:** object (key-value pairs, both strings)  
-**Platforms:** GitHub.com cloud agent only. Not used in VS Code or other IDEs.
-
-Allows annotation of the agent with arbitrary metadata. Useful for tracking team ownership, versions, or other organizational attributes.
+**Type:** object of string name/value pairs
+**Platforms:** GitHub.com only. Not used by VS Code or other IDEs.
 
 ```yaml
 metadata:
   team: platform-engineering
-  version: "2.1"
   owner: dev-productivity
 ```
 
 ---
 
-### `infer` *(Retired)*
-
-**Do not use.** Replaced by `user-invocable` and `disable-model-invocation`.
-
-| Old behavior | New equivalent |
-|---|---|
-| `infer: true` (default) | `user-invocable: true` + `disable-model-invocation: false` |
-| `infer: false` | `user-invocable: false` + `disable-model-invocation: true` |
-
----
-
 ## Claude Agent Format (`.claude/agents/`)
 
-VS Code natively reads `.md` files from `.claude/agents/` using Claude's sub-agent format. This enables sharing agent definitions across VS Code and Claude Code.
-
-**Frontmatter differences from `.agent.md`:**
+VS Code and Copilot CLI both load agents from `.claude/agents/` (plain `.md` files in the [Claude sub-agents format](https://code.claude.com/docs/en/sub-agents)). VS Code also reads `~/.claude/agents/` at user level.
 
 | Property | `.agent.md` format | Claude format |
 |---|---|---|
 | File extension | `.agent.md` | `.md` |
-| `tools` | YAML array `["Read", "Grep"]` | Comma-separated string `"Read, Grep, Glob"` |
-| `disallowedTools` | Not supported | Comma-separated string of blocked tools |
 | `name` | Optional | Required |
+| `tools` | YAML array | Comma-separated string, for example `"Read, Grep, Glob, Bash"` |
+| `disallowedTools` | Not supported | Comma-separated string of blocked tools |
 
 ```markdown
 ---
@@ -398,37 +419,43 @@ disallowedTools: Bash, Edit, Write
 You are a security specialist...
 ```
 
-VS Code maps Claude tool names to the corresponding VS Code tools automatically.
+VS Code maps Claude tool names to the corresponding VS Code tools. In the CLI, `.github/agents/` takes precedence over `.claude/agents/` at the same directory level.
 
 ---
 
 ## Processing Rules
 
-### Naming Conflicts
+### Naming conflicts
 
-When agents exist at multiple scope levels with the same name (based on filename minus extension), the **lowest level wins**:
+The filename (minus `.md` / `.agent.md`) identifies the agent. The lowest-level configuration wins: repository over organization, organization over enterprise.
 
-`Workspace > User profile > Organization > Enterprise`
+**Copilot CLI specifics:** the CLI walks up from the current directory to the Git root and loads every `.github/agents/` and `.claude/agents/` on the way. The deepest directory wins, and `.github/agents/` beats `.claude/agents/` at the same level. Plugin agents have the lowest priority.
 
-A workspace `.github/agents/reviewer.agent.md` overrides an org-level `reviewer.agent.md`.
+> [!WARNING]
+> The CLI docs contradict each other on user vs. project priority. The CLI how-to says "the one in your home directory will be used", while the CLI command reference says "User-level agents have lower priority than project-level agents". Avoid reusing a name across the two scopes.
 
-### Versioning (Cloud Agent)
+### Versioning (GitHub.com)
 
-Agent profile versioning is based on Git commit SHAs for the profile file. When assigned to a task, the cloud agent uses the latest version on the current branch. When a pull request is created, the same agent version is used for consistency throughout that PR's lifecycle.
+Versioning follows Git commit SHAs of the profile file. An assigned task uses the latest profile version on the repository and branch, and follow-up interactions in the resulting pull request keep using that same version.
+
+### File detection (VS Code)
+
+VS Code treats **any** `.md` file in `.github/agents/` as a custom agent. The settings `chat.agentFilesLocations` and `chat.modeFilesLocations` are deprecated (Local agent only). Legacy `.chatmode.md` files should be renamed to `.agent.md`.
 
 ---
 
 ## Complete Working Examples
 
-### Read-Only Analyst (VS Code)
+### Read-only analyst (VS Code)
 
 ```yaml
 ---
 name: API Analyst
 description: Reviews REST API specifications for design quality and security. Does not modify code.
 tools: ["read", "search", "web"]
-model: claude-sonnet-4-5
+model: Claude Sonnet 5
 argument-hint: Paste the OpenAPI spec or describe the endpoint
+target: vscode
 handoffs:
   - label: Implement Changes
     agent: api-dotnet
@@ -437,23 +464,32 @@ handoffs:
 ---
 ```
 
-### Orchestrator with Subagents (VS Code)
+### Orchestrator with subagents (VS Code)
 
 ```yaml
 ---
 name: Project Lead
 description: Coordinates planning, implementation, and review across specialized agents.
-tools: ["read", "search", "agent"]
-agents:
-  - implementation-planner
-  - code-reviewer
-  - security-analyst
-user-invocable: true
-disable-model-invocation: false
+tools: ["agent", "read", "search"]
+agents: ["Implementation Planner", "Code Reviewer", "Security Analyst"]
+target: vscode
 ---
 ```
 
-### Cloud Agent with MCP (GitHub.com)
+### Hidden utility subagent (VS Code)
+
+```yaml
+---
+name: Terraform Validator
+description: Validates Terraform plans. Invoked only as a subagent, not shown in the picker.
+tools: ["read", "execute"]
+user-invocable: false
+---
+```
+
+Leave `disable-model-invocation` unset here. Setting it to `true` would stop coordinators from delegating to this agent unless they list it explicitly in `agents`.
+
+### Cloud agent with MCP (GitHub.com)
 
 ```yaml
 ---
@@ -468,22 +504,22 @@ mcp-servers:
     args: ["-y", "@company/data-platform-mcp"]
     tools: ["*"]
     env:
-      API_TOKEN: ${{ secrets.DATA_PLATFORM_TOKEN }}
-      ENVIRONMENT: ${{ vars.DEPLOY_ENV }}
+      API_TOKEN: ${{ secrets.COPILOT_MCP_DATA_PLATFORM_TOKEN }}
+      ENVIRONMENT: ${{ vars.COPILOT_MCP_DEPLOY_ENV }}
 metadata:
   team: data-engineering
-  owner: pipeline-team
 ---
 ```
 
-### Hidden Utility Subagent (VS Code)
+### CLI subagent with model policy (Copilot CLI)
 
 ```yaml
 ---
-name: terraform-validator
-description: Validates Terraform plans. Invoked only as a subagent — not shown in dropdown.
-tools: ["read", "execute"]
-user-invocable: false
-disable-model-invocation: true
+name: test-runner
+description: Runs the test suite and summarizes failures. Use when tests need to be run or diagnosed.
+tools: ["execute", "read", "search"]
+models: ["gpt-5.6-luna", "gpt-5.4-mini"]
+reasoningEffort: low
+include-custom-instructions: true
 ---
 ```

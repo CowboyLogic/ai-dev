@@ -1,100 +1,104 @@
 # Skills Reference
 
-Skills are Markdown files that give Copilot specialized instructions and resources for specific tasks.
+Skills are folders of instructions, scripts, and resources. Copilot injects a skill's `SKILL.md`
+when the prompt matches its `description`, or when invoked as `/SKILL-NAME`. All files in the
+skill's directory are available to the agent.
 
-## Storage locations
+## Locations (priority order — first found wins for a duplicate name)
 
-### Personal (global across projects)
+| Location | Scope |
+|----------|-------|
+| `.github/skills/<name>/SKILL.md` | Project |
+| `.agents/skills/<name>/SKILL.md` | Project |
+| `.claude/skills/<name>/SKILL.md` | Project (Claude-compatible) |
+| Parent directories' `.github/skills/` | Inherited (monorepos) |
+| `~/.copilot/skills/<name>/SKILL.md` | Personal |
+| `~/.agents/skills/<name>/SKILL.md` | Personal |
+| Plugin `skills/` directories | Plugin |
+| `COPILOT_SKILLS_DIRS` (comma-separated) and the `skillDirectories` setting | Custom |
+| `.github/skills/` under `--add-dir` / `/add-dir` directories | Added root (trusted like project skills) |
+| Bundled with the CLI | Built-in (lowest) |
+| Org/enterprise remote skills | Remote (fetched on invocation) |
 
-```
-~/.copilot/skills/<skill-name>/SKILL.md
-~/.agents/skills/<skill-name>/SKILL.md
-```
+`~/.claude/skills/` is not a documented location — only the project-level `.claude/skills/` is.
+Skill directory names should be lowercase with hyphens. Two plugins with the same skill name
+coexist as `/plugin-a/search` and `/plugin-b/search`.
 
-### Project-specific
-
-```
-.github/skills/<skill-name>/SKILL.md
-.claude/skills/<skill-name>/SKILL.md
-.agents/skills/<skill-name>/SKILL.md
-```
-
-> [!NOTE]
-> (v1.0.36+) Custom agents, skills, and commands from the **global** `~/.claude/` are **no longer loaded** by Copilot CLI. Move any files previously in `~/.claude/skills/` or `~/.claude/agents/` to `~/.copilot/skills/` or `~/.copilot/agents/` respectively. Project-scoped `.claude/skills/` (inside a repo) is still read.
-
-Each skill lives in its own subdirectory. Directory names must be **lowercase with hyphens** (e.g., `frontend-design`, `api-reviewer`).
+**Commands** (alternative format): individual `.md` files in `.claude/commands/`; the filename is
+the command name; they support `argument-hint`, `description`, `allowed-tools`, and
+`disable-model-invocation`. Skills beat commands with the same name.
 
 ---
 
-## SKILL.md structure
+## SKILL.md
 
 ```markdown
 ---
-name: my-skill-name
-description: What this skill does and when Copilot should use it automatically.
-license: MIT
-allowed-tools:
-  - shell
+name: image-convert
+description: Converts SVG images to PNG. Use when asked to convert SVG files.
+allowed-tools: shell
 ---
 
-# Skill Title
-
-Instructions, guidelines, context, and examples that Copilot follows when this skill is active.
-
-## Usage examples
-
-Describe when and how to use this skill.
-
-## Steps
-
-1. Step one
-2. Step two
+When asked to convert an SVG to PNG, run `convert-svg-to-png.sh` from this skill's base
+directory, passing the input SVG path as the first argument.
 ```
 
 ### Frontmatter fields
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `name` | Yes | Unique identifier — lowercase, hyphens for spaces |
-| `description` | Yes | What the skill does; used for automatic activation matching |
-| `license` | No | License info (useful for shared/published skills) |
-| `allowed-tools` | No | Pre-approves tools (e.g., `shell`) without confirmation prompts — use only for reviewed, trusted skills |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Letters, numbers, hyphens; max 64 chars; usually matches the directory |
+| `description` | string | Yes | What it does and when to use it; max 1024 chars; drives auto-activation |
+| `license` | string | No | License text or identifier |
+| `argument-hint` | string | No | Hint shown in the skill picker, e.g. `"[target] [mode]"` |
+| `allowed-tools` | string or string[] | No | Tools auto-allowed while the skill is active (comma list or YAML array; `"*"` for all) |
+| `user-invocable` | boolean | No | Allow `/SKILL-NAME` (default `true`) |
+| `disable-model-invocation` | boolean | No | Prevent automatic invocation (default `false`) |
+
+> [!WARNING]
+> Only pre-approve `shell` or `bash` in `allowed-tools` for skills (and scripts) you have reviewed
+> and trust. It removes the confirmation step for terminal commands.
 
 ---
 
-## Skill activation
+## Using skills
 
-**Automatic**: Copilot loads relevant skills based on your prompt context, matching against the `description` field.
+- Automatic: Copilot matches the prompt against `description`.
+- Explicit: `Use the /frontend-design skill to ...` or just `/frontend-design`.
+- Disable without deleting: `disabledSkills` setting (user or repo), `/skills` toggle, or
+  `copilot skill disable NAME`.
+- `dynamicRetrieval: { "skills": false }` turns off embeddings-based retrieval for skills.
 
-**Manual / forced**: Reference a skill explicitly inside a session:
-```
-/frontend-design skill    ← force-activates the frontend-design skill
-```
+## Management
 
----
-
-## CLI management commands (inside sessions)
+### In a session
 
 | Command | Purpose |
 |---------|---------|
-| `/skills list` | Display all available skills |
-| `/skills` | Interactively enable/disable specific skills |
-| `/skills info [SKILL-NAME]` | View skill details and file location |
-| `/skills add` | Add an alternative storage location |
-| `/skills reload` | Refresh newly added or modified skills (no restart needed) |
-| `/skills remove SKILL-DIR` | Delete a custom skill (not plugin-provided ones — manage those via the plugin) |
+| `/skills` | Plugins dashboard on the Skills tab (enable/disable) |
+| `/skills list` | List available skills |
+| `/skills info NAME` | Details, including file location and source plugin |
+| `/skills add [--project] <FILE\|URL\|DIRECTORY>` | Add a skill; `--project` scopes a file/URL install to this repo |
+| `/skills remove <NAME\|DIRECTORY>` | Remove a skill, or unregister a custom directory |
+| `/skills reload` | Reload without restarting |
 
-## CLI management commands (terminal, no session needed)
-
-Same `list`/`add`/`remove` operations, useful for scripting or pre-session setup:
+### In the terminal
 
 ```bash
-copilot skill list
-copilot skill add <FILE | URL | DIRECTORY>
-copilot skill remove SKILL-DIR
+copilot skill list [--json]                  # rows: { name, description, source, path, enabled }
+copilot skill add ./my-skill/SKILL.md        # personal (default)
+copilot skill add --project ./my-skill/SKILL.md   # into .github/skills (file or URL only)
+copilot skill enable my-skill
+copilot skill disable my-skill
+copilot skill remove my-skill
 ```
 
-You can also use `gh skill` (GitHub CLI) to search for, install, update, and publish agent skills.
+- Adding a **directory** registers it as a custom skill source (no copy). Adding a **file or URL**
+  copies it into the personal or project skills directory.
+- Only personal/project skills you added can be removed; plugin and built-in skills can only be
+  disabled.
+- `gh skill` (GitHub CLI) can also search, install, update, and publish skills.
+- The retired `copilot plugins install --skill` / `--skill` flags are replaced by `copilot skill`.
 
 ---
 
@@ -102,36 +106,6 @@ You can also use `gh skill` (GitHub CLI) to search for, install, update, and pub
 
 | | Skills | Custom instructions |
 |---|--------|---------------------|
-| Best for | Specialized, context-dependent tasks | Broad project guidelines |
-| Activation | Automatic or explicit `/skill-name` | Always active |
-| Scope | Task-specific detailed guidance | Repository-wide rules |
-| Can include scripts | Yes (with `allowed-tools`) | No |
-
----
-
-## Example: code-review skill
-
-**File**: `~/.copilot/skills/code-review/SKILL.md`
-
-```markdown
----
-name: code-review
-description: Perform thorough code reviews focusing on security, performance, and readability. Use when the user asks to review, audit, or check code.
----
-
-# Code Review Skill
-
-When reviewing code:
-
-1. Check for security vulnerabilities (injection, auth flaws, exposed secrets)
-2. Identify performance bottlenecks
-3. Flag readability and maintainability issues
-4. Suggest specific improvements with code examples
-5. Note what's done well
-
-Format output as:
-- **Security**: ...
-- **Performance**: ...
-- **Readability**: ...
-- **Suggestions**: ...
-```
+| Best for | Detailed, task-specific guidance | Rules relevant to almost every task |
+| Loaded | When relevant, or `/skill-name` | Always |
+| Can bundle scripts | Yes | No |

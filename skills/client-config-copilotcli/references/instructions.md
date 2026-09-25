@@ -1,60 +1,74 @@
 # Custom Instructions Reference
 
-Custom instructions give Copilot persistent context about your project, coding standards, and preferences. All matching instruction files are **combined** — they don't replace each other.
+Custom instructions give Copilot persistent context. All applicable files are **combined**; none
+replaces another.
 
-## Instruction file locations (all combined when applicable)
+## Locations
+
+"Standard locations" = the repository root, the cwd, intermediate directories between them, and
+directories nested in the path of a file being worked on.
 
 | File | Scope | Notes |
 |------|-------|-------|
-| `$HOME/.copilot/copilot-instructions.md` | Global personal | Applies across repositories |
-| `$HOME/.copilot/instructions/**/*.instructions.md` | Global personal, path-specific | Modular; matched by `applyTo` |
-| `.github/copilot-instructions.md` | Project-wide | Discovered in standard locations (repo root, cwd, intermediate dirs, dirs nested in a file's path) |
-| `.github/instructions/*.instructions.md` | Path-specific | Matched by `applyTo` glob |
-| `.github/instructions/**/*.instructions.md` | Path-specific | Nested subdirs; standard locations only, not intermediate dirs |
-| `AGENTS.md` | Project-wide | Discovered in standard locations |
-| `CLAUDE.md` | Project-wide | Discovered in standard locations; Copilot CLI also reads `.claude/CLAUDE.md` |
-| `GEMINI.md` | Project-wide | Discovered in standard locations |
-| Dirs in `COPILOT_CUSTOM_INSTRUCTIONS_DIRS` | Additional | Comma-separated list of extra dirs to scan for `AGENTS.md` and `*.instructions.md` |
+| `$HOME/.copilot/copilot-instructions.md` | Personal, all repos | `$COPILOT_HOME` replaces `$HOME/.copilot` |
+| `$HOME/.copilot/instructions/**/*.instructions.md` | Personal, modular | Matched by `applyTo` |
+| `.github/copilot-instructions.md` | Repository-wide | Standard locations |
+| `.github/instructions/**/*.instructions.md` | Path-specific | Standard locations, **not** intermediate dirs |
+| `AGENTS.md` | Repository-wide | Standard locations |
+| `CLAUDE.md` | Repository-wide | Standard locations; `.claude/CLAUDE.md` also read |
+| `GEMINI.md` | Repository-wide | Standard locations |
+| Dirs in `COPILOT_CUSTOM_INSTRUCTIONS_DIRS` | Additional | Comma-separated; scanned for `AGENTS.md` and `*.instructions.md` |
 
-Setting `COPILOT_HOME` redirects both global-personal locations (instead of `$HOME/.copilot`).
+- `/instructions` shows discovered files and toggles individual ones; `copilot instruction list
+  [--json]` lists them from the terminal.
+- `--no-custom-instructions` disables loading `AGENTS.md` and related files.
+- `copilot init` or `/init` generates or improves `.github/copilot-instructions.md`
+  (`/init suppress` hides the "No copilot instructions found" hint for the repo).
 
-Use `/instructions` in-session to view which instruction files were discovered and to enable/disable individual ones.
+### How files combine
 
-**Priority note (no fixed precedence)**: Copilot CLI **combines** all applicable user-level and repository instruction files rather than picking one. It dedupes identical copies of user-level `copilot-instructions.md`, repo-wide, and agent instruction content, but does **not** define a general precedence order between `copilot-instructions.md`, `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md` — avoid writing conflicting instructions across these files, since resolution isn't deterministic. Path-specific (`*.instructions.md`) files are included only when their `applyTo` matches a file in context; files disabled via `/instructions` are excluded.
+No general precedence between `copilot-instructions.md`, `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md`.
+Identical copies are deduplicated; conflicting instructions resolve non-deterministically — avoid
+them. Path-specific files are included only when `applyTo` matches a file in context; files
+disabled via `/instructions` are excluded.
+
+### Subagents
+
+Custom agents running as subagents don't receive repository instructions unless their frontmatter
+sets `include-custom-instructions: true` (see `agents-plugins.md`). The `general-purpose` subagent
+does receive them.
 
 ### Referencing other files
 
-Inside `.github/copilot-instructions.md`, `AGENTS.md`, or `CLAUDE.md`, use `@relative/path` to inline another file's content (read immediately; references within referenced files are also resolved). Referenced files must stay inside the repo (or inside the custom-instructions directory for personal instructions) — absolute paths and `~/`-prefixed paths are not loaded. `@`-references are **not** expanded in `GEMINI.md` or `*.instructions.md` files.
+In `.github/copilot-instructions.md`, `AGENTS.md`, or `CLAUDE.md`, a line starting with `@` followed
+by a relative path inlines that file (recursively, with depth, cycle, and size guards). The how-to
+guide says referenced files must stay inside the repo (or the personal instructions directory) and
+that absolute and `~/` paths are not loaded. `@` references are **not** expanded in `GEMINI.md` or
+`*.instructions.md`.
+
+> [!NOTE]
+> The command reference says import paths "can be relative to the instruction file's directory or
+> absolute", which contradicts the how-to guide. Prefer relative paths inside the repository.
 
 ### Live reload
 
-Edits to instruction files don't apply to an already-running session. Exit and resume (`copilot --continue`) or start fresh (`/new`) to pick up changes.
+Edits don't reach a running session. Exit and resume (`copilot --continue`) or start fresh (`/new`).
 
 ---
 
 ## Format
 
-### Repository-wide (plain markdown, no frontmatter needed)
+### Repository-wide (plain Markdown, no frontmatter)
 
 ```markdown
 # Project Guidelines
 
-## Coding standards
 - Use TypeScript strict mode
-- All functions must have JSDoc comments
-- Prefer functional patterns over class-based
-
-## Testing
-- Jest for unit tests
-- Playwright for e2e tests
-- 80% minimum coverage required
-
-## Git
-- Conventional commits format
-- No force-pushes to main
+- Jest for unit tests, Playwright for e2e
+- Conventional commits
 ```
 
-### Path-specific instructions (requires YAML frontmatter)
+### Path-specific (YAML frontmatter required)
 
 ```markdown
 ---
@@ -65,81 +79,22 @@ excludeAgent: "code-review"
 # Rails Model Guidelines
 
 - Use Active Record scopes for reusable queries
-- Validate all user-facing attributes
-- Use `belongs_to required: true` by default
 ```
-
-### Frontmatter fields for path-specific files
 
 | Field | Description |
 |-------|-------------|
-| `applyTo` | Glob pattern(s), comma-separated for multiple — instructions apply when matched file is in context |
-| `excludeAgent` | Optionally exclude from: `"code-review"` or `"cloud-agent"` (default: used by both if omitted) |
+| `applyTo` | Glob(s), comma-separated, e.g. `"**/*.ts,**/*.tsx"` |
+| `excludeAgent` | `"code-review"` or `"cloud-agent"` — excludes that GitHub.com agent; omitted = used by both |
 
-Glob quick reference: `*` (files in current dir), `**`/`**/*` (all files, all dirs), `*.py` (current dir only), `**/*.py` (recursive), `src/*.py` (non-recursive in `src/`), `src/**/*.py` (recursive under `src/`), `**/subdir/**/*.py` (matches `subdir` at any depth).
-
----
-
-## What to put in instructions
-
-### Good candidates
-- Project architecture and folder structure
-- Coding conventions and style rules
-- Preferred libraries and frameworks
-- Test frameworks and coverage requirements
-- Git workflow and commit message format
-- Security requirements ("never log tokens")
-- Domain-specific terminology
-
-### Avoid
-- Duplicate content across files (can cause conflicting advice)
-- Instructions that contradict each other
-- Anything better suited as a skill (task-specific detailed guidance)
+Glob quick reference: `*` (files in current dir), `**` or `**/*` (everything), `*.py` (current dir
+only), `**/*.py` (recursive), `src/*.py` (non-recursive in `src/`), `src/**/*.py` (recursive under
+`src/`), `**/subdir/**/*.py` (`subdir` at any depth).
 
 ---
 
-## Examples
+## What to put where
 
-### Global personal instructions (`~/.copilot/copilot-instructions.md`)
-```markdown
-# My Personal Preferences
-
-- I prefer concise responses without excessive explanation
-- Always use TypeScript over JavaScript when given a choice
-- I work primarily on macOS — shell examples should use bash
-- When suggesting refactors, explain the trade-offs
-```
-
-### Project instructions (`.github/copilot-instructions.md`)
-```markdown
-# Acme Corp API Project
-
-## Stack
-- Node.js 20 + TypeScript 5
-- Express 4 for HTTP, Zod for validation
-- PostgreSQL 16 via Prisma
-
-## Conventions
-- All endpoints return `{ data, error, meta }` envelope
-- Use kebab-case for URL paths
-- Environment variables documented in `.env.example`
-
-## Testing
-- Vitest for unit tests
-- Supertest for integration tests
-- Run: `npm test`
-```
-
-### Path-specific (`.github/instructions/api-routes.instructions.md`)
-```markdown
----
-applyTo: "src/routes/**/*.ts"
----
-
-# Route Handler Guidelines
-
-- Always validate request body with Zod schema before processing
-- Return 422 with field errors for validation failures
-- Use `asyncHandler` wrapper for all async route handlers
-- Log request/response with correlation ID
-```
+- Instructions: architecture, conventions, preferred libraries, test commands, git workflow,
+  security rules — short guidance relevant to nearly every task.
+- Skills: detailed task-specific procedures (see `skills.md`).
+- Avoid duplicating or contradicting content across instruction files.

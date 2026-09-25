@@ -118,8 +118,9 @@ options, integration with VS Code and CI, and automated fix workflows.
 
 ### Copilot Agent Creator {#copilot-agent-creator}
 
-Create custom `.agent.md` files for GitHub Copilot in VS Code. Covers frontmatter schema,
-tool aliases, model selection, skill references, and platform compatibility. Includes
+Create custom `.agent.md` files for GitHub Copilot across VS Code, the Copilot CLI, and the
+GitHub.com cloud agent. Covers frontmatter schema and per-surface compatibility, tool aliases
+and VS Code tool sets, current model selection, handoffs, hooks, and MCP servers. Includes
 working examples for workspace agents, user-profile agents, and cloud agents with MCP.
 
 [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-copilot)
@@ -148,8 +149,9 @@ into effective prompt structures.
 
 ### OpenCode Agent Creator
 
-Create custom agent definitions for the OpenCode CLI. Covers the agent configuration schema,
-model selection, tool permissions, MCP server integration, and subagent patterns.
+Create custom agent definitions for the OpenCode CLI, in native V2 format by default with V1
+still supported. Covers the agent configuration schema, V1 → V2 migration, model and variant
+selection, ordered permission rules, and subagent patterns.
 
 [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-opencode)
 
@@ -172,9 +174,10 @@ sandbox configuration, and auto mode.
 
 ### Copilot CLI Configuration Manager
 
-Manage GitHub Copilot CLI configuration files — `config.json`, `mcp-config.json`, hooks,
-skills, and custom instructions. Covers trusted folders, tool permissions, MCP servers,
-BYOK models, and authentication.
+Manage GitHub Copilot CLI configuration files — `settings.json`, `config.json`,
+`permissions-config.json`, `mcp-config.json`, `lsp-config.json`, hooks, skills, custom agents,
+plugins, and custom instructions. Covers trusted folders, tool permissions and sandboxing,
+MCP and LSP servers, BYOK models, and authentication.
 
 [Skill Overview](client-config-copilotcli.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-copilotcli)
 
@@ -187,8 +190,9 @@ BYOK models, and authentication.
 
 ### OpenCode Configuration Manager
 
-Manage opencode configuration files — `opencode.json`, providers, agents, MCP servers,
-permissions, keybinds, themes, formatters, and custom commands.
+Manage opencode configuration files for OpenCode V2 and V1 — `opencode.json`, `cli.json`
+(V2) or `tui.json` (V1), providers, agents, MCP servers, permissions, plugins, keybinds,
+themes, formatters, and custom commands, plus V1 → V2 migration.
 
 [Skill Overview](client-config-opencode.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-opencode)
 

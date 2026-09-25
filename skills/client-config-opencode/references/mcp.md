@@ -1,4 +1,9 @@
-# MCP Servers Reference
+# V1 MCP Servers Reference
+
+> [!NOTE]
+> This file covers the **V1** shape (servers directly under `mcp`, `enabled`, numeric `timeout`, camelCase OAuth
+> fields). Native V2 nests servers under `mcp.servers`, uses `disabled`, a `{startup, catalog, execution}` timeout
+> object, and snake_case OAuth fields. See [v2/mcp.md](v2/mcp.md).
 
 ## Structure in opencode.json
 
@@ -74,11 +79,13 @@ Starts a local process, communicates over stdin/stdout.
 ## OAuth configuration (remote servers)
 
 **Automatic** (omit `oauth` field — opencode handles it):
+
 ```json
 { "type": "remote", "url": "https://mcp.example.com/mcp" }
 ```
 
 **Pre-registered credentials**:
+
 ```json
 {
   "oauth": {
@@ -90,6 +97,7 @@ Starts a local process, communicates over stdin/stdout.
 ```
 
 **Disabled** (API-key auth instead):
+
 ```json
 {
   "oauth": false,
@@ -97,13 +105,24 @@ Starts a local process, communicates over stdin/stdout.
 }
 ```
 
+| OAuth field | Description |
+|-------------|-------------|
+| `clientId` | Client ID; omit to attempt dynamic client registration (RFC 7591) |
+| `clientSecret` | Client secret, if required |
+| `scope` | Scopes to request |
+| `callbackPort` | Local callback port (default `19876`); ignored if `redirectUri` is set (schema field) |
+| `redirectUri` | Redirect URI (default `http://127.0.0.1:19876/mcp/oauth/callback`) (schema field) |
+
 Tokens from a successful OAuth flow are stored in `~/.local/share/opencode/mcp-auth.json`.
 
 ---
 
 ## Enabling / disabling MCP tools
 
-MCP tools are registered as `<server-name>_<tool-name>` and managed like any other tool via the top-level `tools` config (glob patterns supported):
+MCP tools are registered as `<server-name>_<tool-name>`. The docs manage them through the (deprecated but still
+honored) `tools` map, glob patterns supported. The V1 schema also accepts arbitrary `permission` keys, so
+`"permission": { "my-mcp_*": "deny" }` is the likely non-deprecated equivalent, but the V1 docs do not show it —
+verify before relying on it.
 
 ```json
 {
@@ -117,6 +136,7 @@ MCP tools are registered as `<server-name>_<tool-name>` and managed like any oth
 Disable every tool from a server with a glob: `"tools": { "my-mcp*": false }`.
 
 **Per-agent**: disable globally, then re-enable for one agent:
+
 ```json
 {
   "tools": { "my-mcp*": false },
@@ -126,11 +146,17 @@ Disable every tool from a server with a glob: `"tools": { "my-mcp*": false }`.
 
 Glob syntax: `*` matches zero-or-more chars, `?` matches exactly one, all other chars are literal.
 
+A global default for MCP request timeouts can be set with `experimental.mcp_timeout` (ms).
+
+Organizations can ship MCP servers disabled via remote `.well-known/opencode` config; enable one locally by
+redeclaring it with `"enabled": true`.
+
 ---
 
 ## Documented example servers
 
 ### Sentry (remote, OAuth)
+
 ```json
 "sentry": {
   "type": "remote",
@@ -138,9 +164,11 @@ Glob syntax: `*` matches zero-or-more chars, `?` matches exactly one, all other 
   "oauth": {}
 }
 ```
+
 Then `opencode mcp auth sentry` to complete the OAuth flow.
 
 ### Context7 (remote, optional API key)
+
 ```json
 "context7": {
   "type": "remote",
@@ -148,9 +176,11 @@ Then `opencode mcp auth sentry` to complete the OAuth flow.
   "headers": { "CONTEXT7_API_KEY": "{env:CONTEXT7_API_KEY}" }
 }
 ```
+
 `headers` is optional — omit for the free tier, add for higher rate limits.
 
 ### Grep by Vercel (remote — search code on GitHub)
+
 ```json
 "gh_grep": {
   "type": "remote",

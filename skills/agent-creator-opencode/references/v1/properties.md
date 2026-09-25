@@ -1,12 +1,20 @@
-# OpenCode Agent Property Reference
+# OpenCode V1 Agent Property Reference
 
-Configuration keys for OpenCode agents (Markdown frontmatter or `opencode.json`).
+Configuration keys for **OpenCode V1** agents (Markdown frontmatter or the
+`agent` block in `opencode.json`).
 
-**Sources:** https://opencode.ai/docs/agents/ · https://opencode.ai/docs/permissions/ · https://opencode.ai/config.json
+**Sources (checked 2026-09-24):** <https://opencode.ai/docs/agents/> ·
+<https://opencode.ai/docs/permissions/> · <https://opencode.ai/docs/config/> ·
+<https://opencode.ai/config.json>
 
-Load this file when you need types, defaults, or edge cases for a specific key.
-For permission syntax and patterns, load `permissions.md`. For model IDs, load
-`models.md`. For full agent templates, load `examples.md`.
+> [!IMPORTANT]
+> This file describes the **V1** format (`agent`, `prompt`, `permission`,
+> `disable`). For native V2 (`agents`, `system`, `permissions`, `disabled`), load
+> `../v2/agents.md`. Keep each agent entirely in one format.
+
+Load this file when you need types, defaults, or edge cases for a specific V1
+key. For permission syntax and patterns, load `permissions.md` (this folder).
+For model IDs, load `../models.md`. For full agent templates, load `examples.md`.
 
 ---
 
@@ -23,10 +31,10 @@ description: Short description of what this agent does and when to invoke it
 mode: subagent          # primary | subagent | all (default: all)
 
 # Model — uses provider/model-id format
-model: anthropic/claude-sonnet-4-20250514
+model: anthropic/claude-sonnet-5
 
-# Optional model variant
-variant: <variant-id>
+# Optional default model variant (e.g. high, max for Anthropic)
+variant: high
 
 # Inline prompt or file reference
 prompt: "You are a specialized assistant."
@@ -77,8 +85,8 @@ System prompt body goes here. This is the agent's instructions.
     "agent-name": {
       "description": "Short description of what this agent does",
       "mode": "subagent",
-      "model": "anthropic/claude-sonnet-4-20250514",
-      "variant": "<variant-id>",
+      "model": "anthropic/claude-sonnet-5",
+      "variant": "high",
       "prompt": "You are a specialized assistant.",
       "temperature": 0.1,
       "top_p": 0.9,
@@ -109,7 +117,7 @@ System prompt body goes here. This is the agent's instructions.
 
 ### description
 
-**Required.** A brief description of what the agent does and when to use it.
+**Required** (per the V1 agents docs). A brief description of what the agent does and when to use it.
 
 - Used by the OpenCode UI and by other agents to decide when to invoke this agent via the Task tool
 - Keep it clear and specific — vague descriptions lead to incorrect auto-invocation
@@ -147,6 +155,7 @@ mode: subagent
 - Use `subagent` for specialists that primary agents delegate to
 - Subagents can be invoked manually: `@agent-name do something`
 - When a primary agent invokes a subagent, it creates a child session
+- Top-level `subagent_depth` (default `1`) lets primary agents launch subagents but blocks subagents from launching more. Set `2` for one extra level, `0` to block all subagent launches.
 
 ---
 
@@ -160,19 +169,19 @@ Override the model used by this agent. Uses `provider/model-id` format.
 - Subagents: inherit the model from the primary agent that invoked them
 
 ```yaml
-model: anthropic/claude-sonnet-4-20250514
+model: anthropic/claude-sonnet-5
 ```
 
 ```yaml
-model: openai/gpt-4o
+model: openai/gpt-5.5
 ```
 
-See `models.md` for valid values. Run `opencode models` to list all available models.
+See `../models.md` for valid values. Run `opencode models` to list all available models.
 
 **Guidance:**
 
 - **Always set `model` on new agents** unless the user explicitly asks to omit it and inherit
-- Be intentional: match the model to the agent's role (see `models.md`)
+- Be intentional: match the model to the agent's role (see `../models.md`)
 - Use faster/cheaper models for lightweight subagents; stronger models for coding, orchestration, and deep reasoning
 - Omit `model` only when inheritance is desired (subagent follows its primary; primary uses global config)
 
@@ -180,11 +189,23 @@ See `models.md` for valid values. Run `opencode models` to list all available mo
 
 ### variant
 
-Optional model variant. Valid values are model- and provider-specific.
+Default model variant for this agent. The config schema notes it **applies only
+when the agent uses its configured model** (not an inherited one). Valid values
+are model- and provider-specific. Built-in examples from the V1 models docs:
+
+- Anthropic: `high` (default), `max`
+- OpenAI: roughly `none`, `minimal`, `low`, `medium`, `high`, `xhigh` (varies by model)
+- Google: `low`, `high`
+
+Custom variants are defined under `provider.<id>.models.<model>.variants`.
 
 ```yaml
-variant: <variant-id>
+variant: high
 ```
+
+> [!NOTE]
+> `variant` is in the published config schema but is not described on the V1
+> agents page. V2 drops this field and uses `model: provider/model#variant`.
 
 ---
 
@@ -209,7 +230,7 @@ prompt: "{file:./prompts/db-specialist.txt}"
 - When using Markdown format, the prompt body (below the frontmatter `---`) is the system prompt — the `prompt` key is not needed in that case
 - `{file:./path}` paths are relative to the config file location
 - External prompt files allow version-controlling complex prompts separately
-- When both the frontmatter `prompt` key and a Markdown body are present, behavior may be undefined — use one or the other
+- The docs do not define what happens when both a frontmatter `prompt` key and a Markdown body are present. Use one or the other.
 
 ---
 
@@ -252,7 +273,7 @@ top_p: 0.9
 
 ### steps
 
-Maximum number of agentic iterations (tool calls) before the agent is forced to respond with text only.
+Maximum number of agentic iterations before the agent is forced to respond with text only.
 
 **Default:** Unlimited (agent iterates until the model stops or the user interrupts)
 
@@ -293,7 +314,7 @@ permission:
 
 ### hidden
 
-Hide the agent from the `@` autocomplete menu. The agent can still be invoked programmatically by other agents via the Task tool.
+Hide the agent from the `@` autocomplete menu. The agent can still be invoked by the model via the Task tool if permissions allow. (V2 changes this: hidden agents are also removed from the subagent catalog.)
 
 **Default:** `false`
 
@@ -347,6 +368,7 @@ Set to `true` to disable the agent without deleting its configuration.
 
 ### tools (deprecated)
 
+> [!WARNING]
 > **Deprecated as of v1.1.1.** Use `permission` instead.
 
 The `tools` boolean map is still supported for backwards compatibility but should not be used in new configs.
@@ -363,9 +385,16 @@ In the legacy system, `true` = `{"*": "allow"}` permission and `false` = `{"*": 
 
 ---
 
+### options
+
+The config schema also lists an `options` object on agents. The V1 agents page
+does not document it; prefer the documented pass-through keys below.
+
+---
+
 ### Additional provider options
 
-Any key not recognized by OpenCode is passed directly to the model provider. This allows provider-specific parameters.
+Any other key in the agent config is passed through directly to the provider as a model option. This allows provider-specific parameters.
 
 ```json
 {
