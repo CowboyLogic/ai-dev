@@ -11,6 +11,7 @@ This skill helps you write clear, descriptive, and succinct git commit messages 
 ## When to Use This Skill
 
 Use this skill when:
+
 - Writing commit messages for code changes
 - Reviewing pull requests and commit quality
 - Establishing commit message conventions for teams
@@ -29,7 +30,7 @@ Use this skill when:
 
 A good commit message follows this format:
 
-```
+```text
 <type>(<scope>): <subject>
 
 <body>
@@ -71,7 +72,7 @@ Use these conventional commit types:
 
 1. **Breaking changes** - Use "BREAKING CHANGE:" followed by description
 2. **Issue references** - Closes #123, Fixes #456, etc.
-3. **Co-authors** - Co-authored-by: Name <email>
+3. **Co-authors** - `Co-authored-by: Name <email>`
 
 ## Instructions
 
@@ -162,7 +163,7 @@ Closes #789"
 
 ### Feature Addition
 
-```
+```text
 feat(dashboard): add real-time metrics display
 
 Implement live updating charts for system performance metrics.
@@ -176,7 +177,7 @@ Resolves #234
 
 ### Bug Fix
 
-```
+```text
 fix(payment): resolve double-charge issue
 
 Prevent duplicate payment processing when users refresh
@@ -188,7 +189,7 @@ Fixes #567
 
 ### Documentation Update
 
-```
+```text
 docs(api): update webhook payload examples
 
 Add comprehensive examples for all webhook event types
@@ -198,7 +199,7 @@ examples and rate limiting information.
 
 ### Refactoring
 
-```
+```text
 refactor(auth): extract user validation logic
 
 Move user input validation to dedicated service class.
@@ -210,7 +211,7 @@ Move user input validation to dedicated service class.
 
 ### Breaking Change
 
-```
+```text
 feat(api): migrate to GraphQL API
 
 Replace REST endpoints with GraphQL schema for improved
@@ -225,6 +226,7 @@ Migration guide: docs.mysite.com/graphql-migration
 ## Best Practices
 
 ### Do's
+
 - ✅ Keep subject lines under 50 characters
 - ✅ Use conventional commit format when possible
 - ✅ Explain the "why" behind changes, not just the "what"
@@ -233,6 +235,7 @@ Migration guide: docs.mysite.com/graphql-migration
 - ✅ Review commit messages before pushing
 
 ### Don'ts
+
 - ❌ Write vague messages like "fix bug" or "update code"
 - ❌ Include irrelevant details about your day or mood
 - ❌ Use swear words or unprofessional language
@@ -290,21 +293,24 @@ git commit -v
 ### For Different Project Types
 
 **Web Applications:**
-```
+
+```text
 feat(ui): add dark mode toggle
 fix(auth): prevent session timeout on mobile
 perf(images): implement lazy loading for gallery
 ```
 
 **APIs:**
-```
+
+```text
 feat(api): add rate limiting middleware
 fix(validation): correct email regex pattern
 docs(api): update OpenAPI specification
 ```
 
 **Infrastructure:**
-```
+
+```text
 chore(deps): update Node.js to v18 LTS
 ci(pipeline): add automated testing for PRs
 build(docker): optimize image size by 40%
@@ -313,13 +319,15 @@ build(docker): optimize image size by 40%
 ### For Different Change Sizes
 
 **Small Changes:**
-```
+
+```text
 fix(typo): correct variable name in user model
 style(lint): fix eslint warnings in component
 ```
 
 **Large Changes:**
-```
+
+```text
 feat(onboarding): implement complete user registration flow
 
 - Add multi-step form with validation
@@ -333,7 +341,7 @@ Part of epic #1234
 
 ## File Structure
 
-```
+```text
 git-commit-messages/
 ├── SKILL.md              # Main skill file with guidelines
 ├── README.md             # Overview and usage guide
