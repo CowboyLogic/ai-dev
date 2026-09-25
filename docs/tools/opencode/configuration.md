@@ -1,1248 +1,575 @@
 # OpenCode Configuration Guide
 
-Practical guide for the OpenCode CLI configurations in this repository.
+Practical guide to configuring the OpenCode CLI with the patterns and sample configurations
+in this repository.
 
-**Official Documentation:** [OpenCode Docs](https://opencode.ai/docs) | [Configuration Schema](https://opencode.ai/config.json)
+**Official documentation:** [OpenCode V2 docs](https://opencode.ai/v2/docs/) ·
+[Migrate from V1](https://opencode.ai/v2/docs/migrate-v1/) ·
+[V1 docs](https://opencode.ai/docs/)
 
-This guide focuses on **repository-specific patterns and examples**.
+> [!IMPORTANT]
+> **Everything in this guide uses the native OpenCode V2 format.** V2 still reads V1
+> configuration, and V1 and V2 fields may coexist at the top level of a file. Each
+> individual agent, provider, command, or model entry must be entirely one format,
+> because V2 does not infer mixed formats inside a single entry. Do not point an
+> OpenCode V1 client at files converted to the native V2 shape.
 
-## Behavioral Foundation for AI Assistants
+One limitation affects editor validation:
 
-**All AI assistants working with OpenCode must first follow the baseline behavioral model defined in the repository `AGENTS.md`.**
+> [!WARNING]
+> There is no published V2 schema for `opencode.json` yet.
+> `https://opencode.ai/config.json` still describes V1 and rejects unknown keys, so an
+> editor using it may flag valid V2 fields such as `agents`, `permissions`, and
+> `mcp.servers`. Keep the `$schema` line for the fields it does cover, and treat
+> those particular warnings as expected.
 
-The guidelines below are OpenCode-specific and should be applied **in addition to** the baseline behaviors. When conflicts arise, the baseline behaviors take precedence unless explicitly overridden by user directives.
+## Where configuration lives
 
-### OpenCode-Specific Behaviors
+| What | Global | Project |
+|---|---|---|
+| Main config | `~/.config/opencode/opencode.json(c)` | `opencode.json(c)` or `.opencode/opencode.json(c)` |
+| Markdown agents | `~/.config/opencode/agents/<id>.md` | `.opencode/agents/<id>.md` |
+| Markdown commands | `~/.config/opencode/commands/<name>.md` | `.opencode/commands/<name>.md` |
+| Skills | `~/.config/opencode/skills/<id>/SKILL.md` | `.opencode/skills/<id>/SKILL.md` |
+| Instructions | `~/.config/opencode/AGENTS.md` | `AGENTS.md` (workspace up to project root) |
+| Terminal client settings | `~/.config/opencode/cli.json` | *(global only)* |
 
-- **Configuration Awareness**: Always reference the appropriate configuration files and understand the current agent setup
-- **Tool Permission Respect**: Never attempt operations that are disabled for the current agent
-- **Model Selection**: Use the most appropriate model for the task complexity and requirements
-- **Documentation Updates**: Update configuration documentation when making changes to agent definitions or settings
+OpenCode searches from the current directory up to the filesystem root. It merges
+direct `opencode.json(c)` files from the farthest directory to the closest, then merges
+files inside `.opencode/` directories in the same order. Every `.opencode/` config
+therefore overrides every direct config. Settings that do not conflict are kept.
 
-## Configuration Approaches
+Both `.json` and `.jsonc` accept comments and trailing commas.
 
-This repository provides two configuration approaches for OpenCode:
+## Configuration approaches
 
-### Standard Configuration
-**Location:** `docs/tools/opencode/standard-config/`
+This repository ships two sample configurations under `docs/tools/opencode/`:
 
-A single-file configuration approach where all agents, commands, and settings are defined in one `opencode.json` file.
+| Approach | Location | Best for |
+|---|---|---|
+| **Standard** | `standard-config/opencode.json` | A few agents, everything in one file |
+| **Modular** | `agent-subagent-config/` | Many specialized agents, one Markdown file each |
 
-**Best for:**
-- Quick setup and getting started
-- Projects with straightforward agent needs (3-5 agents)
-- Centralizing all configuration in one place
-- Simple, easy-to-understand configuration
+For a real multi-agent system, see the topologies in `agents/`. They use the modular
+pattern with a harness configuration, described in
+[Topologies in this repository](#topologies-in-this-repository).
 
-### Agent/SubAgent Configuration  
-**Location:** `docs/tools/opencode/agent-subagent-config/`
+### Install the standard sample
 
-A modular configuration approach where agents are defined in individual markdown files with YAML frontmatter.
+```bash
+cp docs/tools/opencode/standard-config/opencode.json ~/your-project/opencode.json
+```
 
-**Best for:**
-- Complex projects with many specialized agents (5+)
-- Team collaboration where different members manage different agents
-- Modular, maintainable agent definitions
-- Automatic agent discovery from files
-- Sharing/reusing agents across projects
+Or copy it to `~/.config/opencode/opencode.json` to apply it to every project.
+`update` is honored only in the global file.
+
+### Install the modular sample
+
+```bash
+cd ~/your-project
+cp ~/src/ai-dev/docs/tools/opencode/agent-subagent-config/opencode.json .
+cp -r ~/src/ai-dev/docs/tools/opencode/agent-subagent-config/prompts .
+mkdir -p .opencode
+cp -r ~/src/ai-dev/docs/tools/opencode/agent-subagent-config/agents .opencode/agents
+```
+
+The plan agent loads its prompt with `{file:./prompts/plan.txt}`, which resolves
+relative to `opencode.json`. Keep `prompts/` beside it.
 
 ---
 
-## Standard Configuration Structure
+## Standard configuration walkthrough
 
-The `opencode.json` file in `standard-config/` is organized into several key sections:
+The standard sample is a single [`opencode.json`](https://github.com/CowboyLogic/ai-dev/blob/main/docs/tools/opencode/standard-config/opencode.json).
+Its sections are described below.
 
-### 1. Schema and Models
+### Model and title agent
 
-```json
+```jsonc
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "anthropic/claude-sonnet-4-5-20250929",
-  "small_model": "xai/grok-2-mini"
-}
-```
-
-**Purpose:**
-- Schema provides validation and autocomplete in editors
-- Primary model for complex tasks
-- Small model for fast, simple operations
-
-**Customization:**
-- Change models based on your provider and preferences
-- Balance cost vs. capability
-- Test different models for your use cases
-
-### 2. Provider Configuration
-
-```json
-{
-  "provider": {
-    "github": {
-      "name": "GitHub Copilot",
-      "models": {
-        "gpt-4o": { "name": "GPT-4o via Copilot" },
-        "claude-sonnet-4-5": { "name": "Claude Sonnet 4.5 via Copilot" }
-        // ... more models
-      }
-    }
+  "model": "github-copilot/claude-sonnet-5",
+  "default_agent": "build",
+  "agents": {
+    "title": { "model": "github-copilot/gpt-5-mini" }
   }
 }
 ```
 
-**Available Models:**
-- GPT-4o, GPT-4.1, GPT-5, GPT-5 mini, GPT-5 Codex
-- Claude 3.5 Sonnet, Haiku 4.5, Opus 4.1, Sonnet 4, Sonnet 4.5
-- Gemini 2.5 Pro
-- Grok Code Fast 1, Raptor mini
+- `model` is the default in `provider/model` form. The root default does not keep a
+  `#variant`; agent and command model references can.
+- `default_agent` must name a visible, primary-capable agent. Otherwise OpenCode falls
+  back to `build`.
+- V1's `small_model` is replaced by the built-in `title` agent's model.
+- The `github-copilot` provider is built in. Sign in once with `/connect`; no API key
+  or `providers` block is needed.
 
-**Usage:**
-- Access models via GitHub Copilot subscription
-- Switch models using provider prefix: `github/gpt-4o`
-- Choose model based on task complexity
+### Agents
 
-### 3. Specialized Agents
-
-Agents are pre-configured AI assistants optimized for specific tasks.
-
-#### Quick Agent Configuration
-
-```json
+```jsonc
 {
-  "agent": {
+  "agents": {
     "quick": {
-      "description": "Fast agent for basic tasks",
+      "description": "Fast agent for basic tasks like code formatting, simple queries, and quick fixes",
       "mode": "primary",
-      "model": "xai/grok-2-mini",
-      "temperature": 0.1,
-      "tools": {
-        "write": true,
-        "edit": true,
-        "bash": true,
-        "read": true,
-        "list": true,
-        "glob": true,
-        "grep": true
-      }
-    }
-  }
-}
-```
-
-**Properties:**
-- **description** - Human-readable purpose
-- **mode** - `primary` (main agent) or `subagent` (specialized)
-- **model** - Which AI model to use
-- **temperature** - Randomness (0.0 = deterministic, 1.0 = creative)
-- **tools** - Available tool permissions
-
-**Best Practices:**
-- Use fast models (grok-2-mini, gpt-4o-mini) for quick agents
-- Set low temperature (0.1) for deterministic code generation
-- Grant full tool access for implementation agents
-
-#### Reviewer Agent Configuration
-
-```json
-{
-  "agent": {
-    "reviewer": {
-      "description": "Code review agent (read-only)",
-      "mode": "subagent",
-      "model": "anthropic/claude-sonnet-4-5-20250929",
-      "temperature": 0.1,
-      "tools": {
-        "write": false,
-        "edit": false,
-        "bash": false,
-        "read": true,
-        "list": true,
-        "glob": true,
-        "grep": true,
-        "webfetch": true
-      }
-    }
-  }
-}
-```
-
-**Key Features:**
-- **Read-only** - Cannot modify files (write, edit, bash disabled)
-- **Advanced model** - Uses capable model for deep analysis
-- **Web access** - Can fetch documentation for research
-
-**Use Cases:**
-- Security audits
-- Code quality reviews
-- Architecture analysis
-- Best practices checking
-
-#### Documentation Agent Configuration
-
-```json
-{
-  "agent": {
-    "docs": {
-      "description": "Documentation agent",
-      "mode": "subagent",
-      "model": "anthropic/claude-sonnet-4-5-20250929",
-      "temperature": 0.3,
-      "tools": {
-        "write": true,
-        "edit": true,
-        "bash": false,
-        "read": true,
-        "list": true,
-        "glob": true,
-        "grep": true,
-        "webfetch": true
-      }
-    }
-  }
-}
-```
-
-**Key Features:**
-- **Higher temperature** (0.3) - More creative for writing
-- **No bash access** - Can't run system commands
-- **Write/edit enabled** - Can create and modify documentation
-- **Web access** - Can research examples and references
-
-### 4. Custom Commands
-
-Commands are shortcuts that combine templates with specific agents.
-
-#### Command Structure
-
-```json
-{
-  "command": {
-    "quick-fix": {
-      "template": "Make a quick fix for: $ARGUMENTS. Keep it simple and fast.",
-      "description": "Quick fixes using fast model",
-      "agent": "quick"
-    }
-  }
-}
-```
-
-**Properties:**
-- **template** - Instructions with `$ARGUMENTS` placeholder
-- **description** - Shown in help text
-- **agent** - (Optional) Which agent to use
-
-#### Creating Custom Commands
-
-**Example: Testing Command**
-```json
-{
-  "test-api": {
-    "template": "Test the API endpoint: $ARGUMENTS. Check request/response and error handling.",
-    "description": "Test API endpoints",
-    "agent": "quick"
-  }
-}
-```
-
-Usage: `opencode test-api "/users/:id"`
-
-**Example: Database Command**
-```json
-{
-  "migrate": {
-    "template": "Create a database migration for: $ARGUMENTS. Include rollback logic.",
-    "description": "Generate database migration"
-  }
-}
-```
-
-Usage: `opencode migrate "add user preferences table"`
-
-**Example: Review Command**
-```json
-{
-  "security-check": {
-    "template": "Perform security review of: $ARGUMENTS. Focus on authentication, authorization, and data validation.",
-    "description": "Security-focused code review",
-    "agent": "reviewer"
-  }
-}
-```
-
-Usage: `opencode security-check "src/auth/"`
-
-### 5. Tool Configuration
-
-Control which tools are available globally:
-
-```json
-{
-  "tools": {
-    "write": true,
-    "edit": true,
-    "read": true,
-    "list": true,
-    "bash": true,
-    "glob": true,
-    "grep": true,
-    "webfetch": true,
-    "task": true,
-    "todowrite": true,
-    "todoread": true
-  }
-}
-```
-
-**Tool Descriptions:**
-
-| Tool | Purpose |
-|------|---------|
-| `write` | Create new files |
-| `edit` | Modify existing files |
-| `read` | Read file contents |
-| `list` | List directory contents |
-| `bash` | Execute shell commands |
-| `glob` | Search for files by pattern |
-| `grep` | Search file contents |
-| `webfetch` | Fetch web resources |
-| `task` | Manage tasks |
-| `todowrite` | Create/update todos |
-| `todoread` | Read todos |
-
-**Security Considerations:**
-- Disable `bash` for review-only agents
-- Disable `write`/`edit` for analysis-only agents
-- Grant minimal necessary permissions
-
-### 6. Permission Configuration
-
-Control how OpenCode requests permission for operations:
-
-```json
-{
-  "permission": {
-    "bash": "allow",
-    "write": "allow",
-    "edit": "allow"
-  }
-}
-```
-
-**Permission Levels:**
-- **`allow`** - Execute without prompting
-- **`ask`** - Prompt user for confirmation
-- **`deny`** - Never allow
-
-**Recommendations:**
-- Use `ask` for destructive operations in shared environments
-- Use `allow` for personal development workflow
-- Use `deny` for restricted operations in production
-
-### 7. MCP Server Configuration
-
-Model Context Protocol servers extend OpenCode with additional capabilities.
-
-#### Remote MCP Server
-
-```json
-{
-  "mcp": {
-    "github": {
-      "type": "remote",
-      "url": "https://api.githubcopilot.com/mcp/",
-      "enabled": true,
-      "headers": {
-        "Authorization": "Bearer ${GITHUB_TOKEN}"
-      }
-    }
-  }
-}
-```
-
-**Properties:**
-- **type** - `remote` for HTTP servers
-- **url** - Server endpoint
-- **enabled** - Enable/disable server
-- **headers** - HTTP headers (use `${VAR}` for environment variables)
-
-#### Local MCP Server (Docker)
-
-```json
-{
-  "mcp": {
-    "my-docker-server": {
-      "type": "local",
-      "command": ["docker", "run", "--rm", "-i", "my-server:latest"],
-      "enabled": true,
-      "environment": {
-        "API_KEY": "${MY_API_KEY}",
-        "DEBUG": "true"
-      },
-      "timeout": 10000
-    }
-  }
-}
-```
-
-**Properties:**
-- **type** - `local` for local processes
-- **command** - Array of command parts
-- **environment** - Environment variables for the process
-- **timeout** - Milliseconds before timeout
-
-#### Local MCP Server (NPX)
-
-```json
-{
-  "mcp": {
-    "snyk": {
-      "type": "local",
-      "command": ["npx", "-y", "@snyk/mcp-server"],
-      "enabled": true,
-      "environment": {
-        "SNYK_TOKEN": "${SNYK_TOKEN}"
-      },
-      "timeout": 15000
-    }
-  }
-}
-```
-
-**NPX Servers:**
-- Use `npx -y` to auto-install packages
-- Common for Node.js-based MCP servers
-- Examples: Snyk, custom npm packages
-
-**Remember:**
-- Enable the tool in the `tools` section: `"snyk": true`
-- Set required environment variables before running
-- Adjust timeout for slow-starting servers
-
-### 8. Instructions Loading
-
-```json
-{
-  "instructions": [
-    "AGENTS.md",
-    ".cursor/rules/*.md",
-    "README.md"
-  ]
-}
-```
-
-**Purpose:**
-- Automatically load project-specific instructions
-- Provide context to AI assistants
-- Ensure consistent behavior across projects
-
-**File Order:**
-- Files are loaded in the order specified
-- Later files can override earlier ones
-- Glob patterns (`*.md`) are supported
-
-**Best Practices:**
-- Include behavioral baselines (AGENTS.md)
-- Add project-specific rules
-- Reference documentation files
-
-## Modular Agent Configuration
-
-For complex projects with many specialized agents, the modular configuration approach provides a scalable way to manage agent definitions. This pattern uses individual markdown files for each agent with YAML frontmatter containing configuration.
-
-### Architecture Overview
-
-**Main Configuration** (`opencode.json`):
-- Defines only **primary agents** (plan, build)
-- Minimal configuration focused on workflow orchestration
-- Delegates to specialized subagents automatically
-
-**Agent Definitions** (`agent/*.md`):
-- Each agent in a separate markdown file
-- YAML frontmatter contains configuration
-- Automatic discovery via instruction loading
-
-### Key Benefits
-
-- **Modularity**: Each agent is defined in its own file, making them easy to add, remove, or modify
-- **Maintainability**: Agent configurations are self-contained and well-documented
-- **Discoverability**: New agents are automatically available by adding a markdown file
-- **Version Control**: Track changes to individual agents independently
-- **Reusability**: Share specific agent configurations across projects
-- **Team Collaboration**: Different members can own different agents
-
-### How It Works
-
-#### 1. Main Configuration File
-
-The main configuration file is minimal and defines only primary agents:
-
-```json
-{
-  "agent": {
-    "plan": {
-      "mode": "primary",
-      "description": "Planning and analysis without making changes, while leveraging subagents for specialized tasks",
-      "model": "github-copilot/claude-sonnet-4.5",
-      "temperature": 0.1,
-      "tools": {
-        "write": true,
-        "bash": false
-      }
+      "model": "github-copilot/gpt-5-mini"
     },
-    "build": {
-      "mode": "primary",
-      "description": "Full development work with all tools enabled, while leveraging subagents for implementation",
-      "model": "github-copilot/grok-code-fast-1",
-      "temperature": 0.3,
-      "tools": {
-        "write": true,
-        "edit": true,
-        "bash": true
+    "reviewer": {
+      "description": "Code review agent that analyzes code without making changes",
+      "mode": "subagent",
+      "model": "github-copilot/claude-sonnet-5",
+      "permissions": [
+        { "action": "edit", "resource": "*", "effect": "deny" },
+        { "action": "shell", "resource": "*", "effect": "deny" }
+      ]
+    }
+  }
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `description` | Purpose. Required in practice for subagents: the model reads it to choose which agent to launch. |
+| `mode` | `primary`, `subagent`, or `all`. **A new custom agent defaults to `primary`.** |
+| `model` | `provider/model`, optionally `#variant` (for example `anthropic/claude-sonnet-5#high`). A subagent without a model inherits the parent session's model. |
+| `system` | System prompt (JSON only). In a Markdown agent the body is the prompt. Supports `{file:./path}`. |
+| `permissions` | Ordered rule list. See [Permissions](#permissions). |
+| `steps` | Maximum model steps before OpenCode forces a text summary. |
+| `hidden` | Removes the agent from listings, `@` discovery, **and the subagent catalog**. |
+| `disabled` | Removes a built-in or custom agent. |
+| `color` | Six-digit hex UI color, for example `"#ff6b6b"`. |
+
+Built-in agents: `build` and `plan` (primary), `general` and `explore` (subagents), plus
+hidden `compaction`, `title`, and `summary`. Override a built-in by defining an agent
+with the same ID. Agent definitions merge in configuration order: later scalars
+replace earlier ones, and permission rules append.
+
+> [!NOTE]
+> **Temperature is not active per agent in V2.** V1's `temperature`, `top_p`, and
+> provider options move under `request.body`, which V2 preserves but does not yet send
+> with model requests. Configure request settings on a provider, model, or model
+> variant instead, and select the variant with `model: provider/model#variant`. The
+> samples in this repository no longer set a temperature.
+
+### Commands
+
+```jsonc
+{
+  "commands": {
+    "review": {
+      "template": "Review the following code for quality, security, and best practices: $ARGUMENTS",
+      "description": "Code review without modifications",
+      "agent": "reviewer",
+      "subagent": true
+    }
+  }
+}
+```
+
+Run it in the TUI as `/review src/auth.ts`.
+
+| Field | Behavior |
+|---|---|
+| `template` | Prompt template (JSON only; a Markdown command uses its body). `$ARGUMENTS` receives the text after the command. |
+| `description` | Shown in command lists. |
+| `agent` | Agent selected when the command runs. |
+| `model` | Model override, `provider/model` or `provider/model#variant`. |
+| `subagent` | `true` runs the command in a background child session that reports back. Replaces V1 `subtask`. |
+
+Markdown commands work the same way: `.opencode/commands/review.md`, with the fields
+above as frontmatter and the body as the template.
+
+### Global permissions, MCP, and client settings
+
+```jsonc
+{
+  "permissions": [
+    { "action": "shell", "resource": "*", "effect": "allow" },
+    { "action": "shell", "resource": "git push *", "effect": "ask" }
+  ],
+  "mcp": {
+    "servers": {
+      "github": {
+        "type": "remote",
+        "url": "https://api.githubcopilot.com/mcp/",
+        "headers": { "Authorization": "Bearer {env:GITHUB_TOKEN}" }
       }
     }
   },
-  "instructions": [
-    "agent/*.md"
-  ]
-}
-```
-
-#### 2. Agent Definition Files
-
-Each specialized agent is defined in a markdown file with YAML frontmatter:
-
-```markdown
----
-description: Security audits, vulnerability scanning, and best practices
-mode: subagent
-model: github-copilot/claude-sonnet-4.5
-temperature: 0.1
-tools:
-  bash: true
-  write: false
----
-
-# Security Agent
-
-This agent specializes in identifying security vulnerabilities and ensuring best practices for secure coding and infrastructure.
-
-## Core Responsibilities
-
-- Conduct security audits and vulnerability scanning
-- Identify and mitigate security risks
-- Provide recommendations for secure coding practices
-- Review authentication and authorization mechanisms
-```
-
-OpenCode automatically reads these files and configures the agents based on the frontmatter properties.
-
-### Configuration Properties
-
-#### Required Properties
-- **`description`**: Brief description of the agent's purpose and capabilities
-- **`mode`**: Agent mode (`subagent` for specialized agents, `primary` for main agents)
-
-#### Optional Properties
-- **`model`**: AI model to use (defaults to main config model if not specified)
-  - Format: `provider/model-name` (e.g., `github-copilot/grok-code-fast-1`)
-- **`temperature`**: Creativity level (0.0-1.0)
-  - `0.1-0.2`: Deterministic, consistent code generation
-  - `0.3-0.4`: Balanced creativity
-  - `0.5+`: More creative/exploratory
-- **`tools`**: Tool permissions object
-  - `write`: Create new files
-  - `edit`: Modify existing files
-  - `bash`: Execute shell commands
-  - Omit tools that should be disabled (defaults to `false`)
-
-### Available Specialized Agents
-
-| Agent | Description | Model | Temperature | Write Access |
-|-------|-------------|-------|-------------|--------------|
-| **api** | REST/GraphQL API design, OpenAPI specs, integration | Grok Code Fast 1 | 0.2 | ✅ Full |
-| **architect** | System design, architecture decisions | Claude Sonnet 4.5 | 0.2 | ❌ Read-only |
-| **cloud** | AWS/Azure/GCP configurations, Infrastructure as Code | Grok Code Fast 1 | 0.1 | ✅ Full |
-| **data** | Data analysis, ETL pipelines, data validation | GPT-5-mini | 0.2 | ✅ Full |
-| **database** | Schema design, query optimization, migrations | Grok Code Fast 1 | 0.1 | ✅ Full |
-| **devops** | CI/CD pipelines, Docker, Kubernetes, deployment | GPT-5-mini | 0.2 | ✅ Full |
-| **documentation** | Technical docs, API docs, README files | Claude Haiku 4.5 | 0.3 | ✅ Docs only |
-| **performance** | Performance profiling, optimization, analysis | Grok Code Fast 1 | 0.1 | ✅ Full |
-| **research** | Technical discovery, product research, doc analysis | GPT-5-mini | 0.2 | ❌ Read-only |
-| **reviewer** | Code review for best practices and issues | Claude Sonnet 4.5 | 0.1 | ❌ Read-only |
-| **security** | Security audits, vulnerability scanning | Claude Sonnet 4.5 | 0.1 | ❌ Bash only |
-| **testing** | Unit tests, integration tests, test optimization | GPT-5-mini | 0.2 | ✅ Full |
-| **uxui** | UI/UX design evaluation, accessibility, styling | Gemini 2.5 Pro | 0.3 | ✅ No bash |
-
-### Usage Examples
-
-#### Direct Agent Invocation
-
-With this configuration, you can invoke specific agents directly:
-
-```bash
-# API design and documentation
-opencode @api "Design a REST API for user authentication"
-
-# Security review (read-only, no changes)
-opencode @security "Audit the authentication system for vulnerabilities"
-
-# Database optimization
-opencode @database "Optimize the slow query in user_stats table"
-
-# UI/UX improvements
-opencode @uxui "Improve the accessibility of the login form"
-
-# Infrastructure as Code
-opencode @cloud "Create a Terraform module for AWS ECS deployment"
-
-# Code review (read-only analysis)
-opencode @reviewer "Review the payment processing code for best practices"
-
-# Technical research (no code changes)
-opencode @research "Compare Redis vs Memcached for our caching needs"
-
-# Documentation creation
-opencode @documentation "Generate API documentation for the user endpoints"
-```
-
-#### Primary Agent Workflow
-
-The `plan` and `build` agents leverage subagents automatically:
-
-```bash
-# Planning phase - analyzes and delegates to subagents
-opencode @plan "Design a microservices architecture for the e-commerce platform"
-# May delegate to: @architect, @cloud, @database, @security
-
-# Build phase - implements changes with subagent support
-opencode @build "Implement the user authentication API"
-# May delegate to: @api, @security, @database, @testing
-```
-
-### Adding New Agents
-
-To add a new specialized agent:
-
-1. **Create a new markdown file** in the `agent/` directory (e.g., `agent/mobile.md`)
-
-2. **Add YAML frontmatter** with configuration:
-
-```markdown
----
-description: Mobile app development for iOS and Android
-mode: subagent
-model: github-copilot/grok-code-fast-1
-temperature: 0.2
-tools:
-  write: true
-  edit: true
-  bash: true
----
-
-# Mobile Agent
-
-The Mobile agent specializes in mobile app development for iOS and Android platforms.
-
-## Core Responsibilities
-
-- Develop iOS and Android applications using native technologies
-- Optimize mobile UI/UX for different screen sizes
-- Handle platform-specific features and APIs
-
-## Focus Areas
-
-### iOS Development
-- Swift/SwiftUI best practices
-- iOS SDK integration and optimization
-- App Store submission guidelines
-
-### Android Development
-- Kotlin best practices
-- Android SDK integration
-- Google Play Store requirements
-
-## Best Practices
-
-- Test on multiple device sizes and OS versions
-- Optimize for battery usage and performance
-- Follow platform design guidelines and accessibility standards
-```
-
-3. **No configuration changes needed** - OpenCode automatically discovers the new agent
-
-4. **Use the agent**: `opencode @mobile "Create a login screen for iOS"`
-
-### Configuration Patterns
-
-#### Read-Only Agents (Review/Analysis)
-
-For agents that should only analyze without making changes:
-
-```yaml
----
-description: Architecture review and recommendations
-mode: subagent
-model: github-copilot/claude-sonnet-4.5
-temperature: 0.1
-# No tools defined = read-only access
----
-```
-
-#### Documentation-Only Agents
-
-For agents that should only modify documentation:
-
-```yaml
----
-description: Documentation writing and maintenance
-mode: subagent
-model: github-copilot/claude-haiku-4.5
-temperature: 0.3
-tools:
-  write: true
-  edit: true
-  bash: false  # Explicitly disable bash
----
-```
-
-#### Full-Access Development Agents
-
-For agents that need complete control:
-
-```yaml
----
-description: Full-stack web development
-mode: subagent
-model: github-copilot/grok-code-fast-1
-temperature: 0.2
-tools:
-  write: true
-  edit: true
-  bash: true
----
-```
-
-### Model Selection Guide
-
-#### Fast & Cost-Effective
-- **GPT-5-mini**: Quick tasks, testing, data processing
-- **Claude Haiku 4.5**: Fast documentation, simple queries
-
-#### Balanced Performance
-- **Grok Code Fast 1**: General development, APIs, databases
-- **Claude Sonnet 4.5**: Code review, security analysis
-
-#### Advanced Reasoning
-- **Claude Sonnet 4.5**: Complex architecture, planning
-- **Gemini 2.5 Pro**: Creative tasks, UI/UX design
-
-### Temperature Settings
-- **0.1-0.2**: Code generation, security reviews, database queries
-- **0.3**: General development, API design
-- **0.4-0.5**: Documentation, UI/UX, creative tasks
-
-### Tool Permissions
-- **Grant `bash` access carefully**: Only for agents that need to run tests, deployments, or system commands
-- **Restrict review agents**: Keep `@reviewer`, `@security`, and `@research` read-only
-- **Documentation agents**: Enable `write` and `edit`, but disable `bash`
-
-### Agent Naming
-- Use **lowercase** names (e.g., `api`, not `API`)
-- Use **descriptive** names (e.g., `uxui`, not `ui`)
-- Keep names **short** for easy invocation (e.g., `@api` vs `@api-design`)
-
-### File Organization
-- **One agent per file**: Keep each agent definition in its own markdown file
-- **Descriptive filenames**: Match the filename to the agent name (e.g., `api.md` → `@api`)
-- **Clear documentation**: Include purpose, responsibilities, and examples in each file
-
-### Troubleshooting
-
-#### Agent Not Available
-- **Check filename**: Must be in `agent/` directory with `.md` extension
-- **Verify frontmatter**: YAML must be valid and properly formatted
-- **Restart OpenCode**: Configuration changes may require restart
-
-#### Agent Not Behaving as Expected
-- **Check model**: Ensure the specified model is accessible via GitHub Copilot
-- **Verify temperature**: Adjust for desired behavior (lower = more deterministic)
-- **Review tool permissions**: Confirm the agent has necessary access
-
-#### Performance Issues
-- **Use faster models**: Switch to GPT-5-mini or Claude Haiku for simpler tasks
-- **Lower temperature**: Reduces processing time for deterministic tasks
-- **Limit tool access**: Fewer tools = faster initialization
-
-### Migration from Traditional Config
-
-To convert a traditional `opencode.json` configuration to this modular pattern:
-
-1. **Keep primary agents** in `opencode.json` (plan, build, etc.)
-2. **Extract subagents** to individual files in `agent/`:
-   - Copy the agent's `description`, `model`, `temperature`, and `tools`
-   - Create YAML frontmatter with these properties
-   - Add documentation about the agent's purpose and usage
-3. **Remove subagent definitions** from `opencode.json`
-4. **Test each agent** to ensure configuration is correct
-
-### Benefits Summary
-
-✅ **Modularity** - Each agent in its own file  
-✅ **Maintainability** - Easy to add/remove/modify agents  
-✅ **Discoverability** - New agents automatically available  
-✅ **Version Control** - Track individual agent changes  
-✅ **Reusability** - Share specific agents across projects  
-✅ **Team Collaboration** - Different members own different agents  
-✅ **Documentation** - Agent capabilities documented in-file
-
-## Agent Best Practices
-
-### Model Selection Guidelines
-
-#### For Simple Tasks
-- **GPT-5-mini** or **Claude Haiku 4.5**: Quick tasks, testing, data processing
-- **Grok 2**: Alternative for general development tasks
-
-#### For Complex Tasks
-- **Claude Sonnet 4.5**: Code review, security analysis, architecture
-- **Grok Code Fast 1**: API design, database work, full-stack development
-
-#### For Creative Tasks
-- **Gemini 2.5 Pro**: UI/UX design, documentation, creative problem-solving
-
-### Temperature Settings
-
-| Temperature | Use Case | Examples |
-|-------------|----------|----------|
-| 0.0-0.1 | Deterministic code generation | Bug fixes, refactoring, security reviews |
-| 0.2-0.3 | Balanced development | API design, database queries, general coding |
-| 0.4-0.5 | Creative tasks | Documentation, UI/UX design, brainstorming |
-
-### Tool Permission Patterns
-
-#### Read-Only Agents (Analysis/Review)
-```json
-{
-  "tools": {
-    "read": true,
-    "list": true,
-    "glob": true,
-    "grep": true,
-    "webfetch": true
-    // No write, edit, or bash
-  }
-}
-```
-**Use for**: `@reviewer`, `@security`, `@research`, `@architect`
-
-#### Documentation Agents
-```json
-{
-  "tools": {
-    "write": true,
-    "edit": true,
-    "read": true,
-    "list": true,
-    "glob": true,
-    "grep": true,
-    "webfetch": true
-    // No bash for security
-  }
-}
-```
-**Use for**: `@docs`, `@documentation`
-
-#### Full Development Agents
-```json
-{
-  "tools": {
-    "write": true,
-    "edit": true,
-    "bash": true,
-    "read": true,
-    "list": true,
-    "glob": true,
-    "grep": true
-  }
-}
-```
-**Use for**: `@api`, `@database`, `@devops`, `@testing`
-
-### Agent Naming Conventions
-
-- **Use lowercase**: `api`, `database`, `security` (not `API`, `Database`, `Security`)
-- **Be descriptive but concise**: `uxui` (not `ui`), `devops` (not `deployment`)
-- **Match filename**: `api.md` → `@api`, `security.md` → `@security`
-- **Use hyphens for compound names**: `performance-tuning.md` → `@performance-tuning`
-
-### Security Considerations
-
-- **Never hardcode secrets** in configuration files
-- **Use environment variables** for API keys and tokens: `${GITHUB_TOKEN}`
-- **Restrict tool permissions** appropriately for each agent
-- **Regularly audit** agent configurations for security implications
-- **Use read-only agents** for sensitive code reviews
-
-### Performance Optimization
-
-- **Choose appropriate models**: Balance capability with speed/cost
-- **Set optimal temperature**: Lower values are faster and more deterministic
-- **Limit tool access**: Fewer tools = faster agent initialization
-- **Use specialized agents**: Direct invocation is faster than delegation
-
-### 9. Additional Settings
-
-```json
-{
-  "autoupdate": true,
-  "theme": "opencode",
+  "update": "notify",
   "share": "manual"
 }
 ```
 
-**Settings:**
-- **autoupdate** - Automatically update OpenCode CLI
-- **theme** - UI theme preference
-- **share** - Sharing mode (`auto`, `manual`, `never`)
-
-## Environment Variables
-
-### Setting Variables
-
-**Windows PowerShell:**
-```powershell
-$env:GITHUB_TOKEN = "ghp_your_token_here"
-$env:SNYK_TOKEN = "your_snyk_token"
-$env:OPENAI_API_KEY = "sk-your_key"
-```
-
-**Linux/Mac:**
-```bash
-export GITHUB_TOKEN="ghp_your_token_here"
-export SNYK_TOKEN="your_snyk_token"
-export OPENAI_API_KEY="sk-your_key"
-```
-
-### Referencing in Config
-
-Use `${VARIABLE_NAME}` syntax:
-
-```json
-{
-  "environment": {
-    "TOKEN": "${MY_TOKEN}",
-    "API_URL": "${API_ENDPOINT}"
-  },
-  "headers": {
-    "Authorization": "Bearer ${AUTH_TOKEN}"
-  }
-}
-```
-
-### Common Variables
-
-- `GITHUB_TOKEN` - GitHub personal access token
-- `SNYK_TOKEN` - Snyk API token
-- `OPENAI_API_KEY` - OpenAI API key
-- `ANTHROPIC_API_KEY` - Anthropic API key
-
-## Best Practices
-
-### Model Selection
-
-**For Simple Tasks:**
-- Use `xai/grok-2-mini` or `gpt-4o-mini`
-- Fast and cost-effective
-- Good for formatting, quick fixes
-
-**For Complex Tasks:**
-- Use `claude-sonnet-4-5` or `gpt-4o`
-- Better reasoning and understanding
-- Worth the cost for quality
-
-**For Deep Reasoning:**
-- Use `claude-opus-4-1` or `o1`
-- Advanced problem-solving
-- Use sparingly due to cost
-
-### Temperature Settings
-
-| Temperature | Use Case |
-|-------------|----------|
-| 0.0-0.1 | Code generation, bug fixes |
-| 0.2-0.3 | Documentation, refactoring |
-| 0.4-0.5 | Creative writing, brainstorming |
-
-### Agent Design
-
-**Quick Agent:**
-- Fast model + low temperature + full access
-- For routine development tasks
-
-**Review Agent:**
-- Advanced model + low temperature + read-only
-- For quality assurance
-
-**Docs Agent:**
-- Advanced model + medium temperature + no bash
-- For documentation work
-
-### Security
-
-- Never hardcode secrets in configuration
-- Always use environment variables for tokens
-- Use `${VARIABLE}` syntax for references
-- Set appropriate file permissions on config files
-
-## Troubleshooting
-
-### Common Issues
-
-**OpenCode not finding config:**
-- Place `opencode.json` in project root
-- Or use `.opencode.json` (hidden file)
-- Check file permissions
-
-**MCP server failing:**
-- Verify environment variables are set
-- Check Docker/NPX is installed
-- Increase timeout value
-- Enable the tool in `tools` section
-
-**Wrong model being used:**
-- Check `model` and `small_model` settings
-- Verify agent assignments in commands
-- Check provider configuration
-
-**Commands not working:**
-- Validate JSON syntax
-- Restart OpenCode after changes
-- Check command is defined in config
-
-## Advanced Configuration
-
-### Multiple MCP Servers
-
-```json
-{
-  "mcp": {
-    "github": { /* remote server */ },
-    "snyk": { /* local NPX server */ },
-    "docker-tools": { /* local Docker server */ }
-  },
-  "tools": {
-    "github": true,
-    "snyk": true,
-    "docker-tools": true
-  }
-}
-```
-
-### Conditional Commands
-
-```json
-{
-  "command": {
-    "test-backend": {
-      "template": "Test backend code: $ARGUMENTS",
-      "agent": "quick"
-    },
-    "test-frontend": {
-      "template": "Test frontend code: $ARGUMENTS",
-      "agent": "quick"
-    }
-  }
-}
-```
-
-### Project-Specific Overrides
-
-Create `.opencode.json` in project root to override settings:
-
-```json
-{
-  "model": "openai/gpt-4o",
-  "instructions": [
-    "../agents/baseline-behaviors-authoritative.md",
-    "PROJECT_RULES.md"
-  ]
-}
-```
+- Top-level `permissions` apply to every agent. Each agent's own rules are appended after
+  them, so agent rules can refine global ones.
+- `update` is `"disable"`, `"notify"` (default), or `"auto"`, and is honored only in the
+  global config. It replaces V1 `autoupdate`.
+- `share` is accepted, but session sharing is not supported yet in V2.
+- `theme` and keybinds are not `opencode.json` fields in V2. They live in the terminal
+  client config, `~/.config/opencode/cli.json`, which V2 migrates from `tui.json` on
+  first start.
 
 ---
 
-## Agent/SubAgent Configuration Pattern
+## Modular configuration
 
-The modular configuration in `docs/tools/opencode/agent-subagent-config/` uses a different approach where agents are defined in individual markdown files.
+The modular sample keeps only the primary agents in
+[`opencode.json`](https://github.com/CowboyLogic/ai-dev/blob/main/docs/tools/opencode/agent-subagent-config/opencode.json)
+and defines each subagent as a Markdown file in `.opencode/agents/`.
 
-### Structure
-
-```
-agent-subagent-config/
-├── opencode.json          # Minimal primary agent config
-├── agent/                 # Individual agent definitions
-│   ├── api.md
-│   ├── security.md
-│   ├── devops.md
-│   └── ... (13 total)
-├── prompts/               # Reusable prompt templates
-│   └── plan.txt
-└── README.md              # Full documentation
-```
-
-### How It Works
-
-**1. Minimal Main Config** (`opencode.json`):
-
-```json
+```jsonc
 {
-  "agent": {
+  "$schema": "https://opencode.ai/config.json",
+  "model": "github-copilot/gpt-5.6-terra",
+  "agents": {
     "plan": {
       "mode": "primary",
-      "description": "Planning and analysis",
-      "model": "github-copilot/claude-sonnet-4.5",
-      "tools": { "write": false, "bash": false }
-    }
-  },
-  "instructions": [
-    "agent/*.md",  // Auto-loads all agents
-    "prompts/*.txt"
-  ]
+      "system": "{file:./prompts/plan.txt}",
+      "model": "github-copilot/claude-sonnet-5",
+      "permissions": [
+        { "action": "edit", "resource": "*", "effect": "allow" },
+        { "action": "shell", "resource": "*", "effect": "deny" }
+      ]
+    },
+    "build": { "mode": "primary", "model": "github-copilot/gpt-5.6-terra" }
+  }
 }
 ```
 
-**2. Individual Agent Files** (`agent/security.md`):
+### How agents are discovered
+
+OpenCode discovers Markdown agents from `~/.config/opencode/agents/` and from every
+`.opencode/agents/` directory between the current directory and the project root. No
+`opencode.json` entry is needed.
+
+- **The ID is the file path minus `.md`.** `.opencode/agents/security.md` is `security`,
+  and `.opencode/agents/team/reviewer.md` is `team/reviewer`. A file named
+  `security.agent.md` loads as `security.agent`.
+- There is no `name` field. Rename the file to rename the agent.
+- V2 still discovers the V1 directory names `agent/`, `mode/`, and `modes/`, but
+  `agents/` is the preferred location. Files under `mode/` or `modes/` are primary
+  agents.
+
+> [!CAUTION]
+> Agents are **not** loaded through `instructions`. Older versions of this guide
+> listed `"instructions": ["agent/*.md"]` as the discovery mechanism. That never
+> registered agents, and in V2 `instructions` entries are not loaded at all.
+
+### Agent file format
+
+The frontmatter accepts the same fields as a JSON `agents` entry. The Markdown body
+becomes the system prompt.
 
 ```markdown
 ---
 description: Security audits, vulnerability scanning, and best practices
 mode: subagent
-model: github-copilot/claude-sonnet-4
-temperature: 0.1
+model: github-copilot/claude-sonnet-5
+permissions:
+  - { action: edit, resource: "*", effect: deny }
+---
+
+# Agent Purpose
+
+The Security agent focuses on identifying vulnerabilities and ensuring best practices
+for secure coding and infrastructure.
+```
+
+The rule list can be written in flow style (one rule per line, as above) or block
+style. Both are standard YAML.
+
+### Sample subagents
+
+| Agent | Model | Access |
+|---|---|---|
+| `api` | `github-copilot/gpt-5.6-terra` | Full |
+| `architect` | `github-copilot/claude-sonnet-5` | Read-only (edit and shell denied) |
+| `cloud` | `github-copilot/gpt-5.6-terra` | Full |
+| `data` | `github-copilot/gpt-5-mini` | Full |
+| `database` | `github-copilot/gpt-5.6-terra` | Full |
+| `devops` | `github-copilot/gpt-5-mini` | Full |
+| `documentation` | `github-copilot/claude-haiku-4.5` | Edit, no shell |
+| `performance` | `github-copilot/gpt-5.6-terra` | Full |
+| `research` | `github-copilot/gpt-5-mini` | Shell, no edit |
+| `reviewer` | `github-copilot/claude-sonnet-5` | Read-only (edit and shell denied) |
+| `security` | `github-copilot/claude-sonnet-5` | Shell, no edit |
+| `testing` | `github-copilot/gpt-5-mini` | Full |
+| `uxui` | `github-copilot/gemini-3.8-flash` | Edit, no shell |
+
+"Full" means the agent has no permission rules of its own and runs under the base
+policy plus any global rules. The base policy does not deny the `subagent` action
+either; add a `subagent` deny rule if an agent should not delegate.
+
+Invoke a subagent by `@`-mentioning it in the TUI (`@security audit src/auth/`), or let
+a primary agent launch it through the subagent tool.
+
+### Adding an agent
+
+1. Create `.opencode/agents/<id>.md`, using the file name as the ID.
+2. Add `description` and `mode: subagent`, plus `model` and `permissions` as needed.
+3. Write the prompt as the body.
+4. Start a new session, then confirm the agent loaded with `opencode debug agents`.
+
+---
+
+## Permissions
+
+`permissions` is an ordered list of rules. Each rule has three string fields:
+
+| Field | Meaning |
+|---|---|
+| `action` | Tool or permission action. Wildcards allowed. |
+| `resource` | Path, command, URL, query, skill ID, or agent ID. Wildcards allowed. |
+| `effect` | `allow`, `ask`, or `deny`. |
+
+**The last matching rule wins.** Put the broad rule first and the exceptions after it.
+`*` matches zero or more characters, including `/`, and `?` matches exactly one
+character. A shell pattern that ends in a space and `*` also matches the bare command,
+so `git status *` matches `git status`.
+
+| Action | Covers |
+|---|---|
+| `shell` | Shell commands (V1 `bash`) |
+| `edit` | Edit, write, and patch tools (V1 `edit`, `write`, `patch`) |
+| `subagent` | Launching child agents; resource is the agent ID (V1 `task`) |
+| `read`, `glob`, `grep` | Local discovery tools |
+| `webfetch`, `websearch` | Web tools |
+| `skill` | Skill loading; resource is the skill ID |
+| `external_directory` | Paths outside the project |
+| `<server>_<tool>` | An MCP tool |
+
+### The default is allow
+
+Every agent starts from this base policy, and global and agent rules are appended after
+it:
+
+```json
+[
+  { "action": "*", "resource": "*", "effect": "allow" },
+  { "action": "external_directory", "resource": "*", "effect": "ask" },
+  { "action": "read", "resource": "*.env", "effect": "ask" },
+  { "action": "read", "resource": "*.env.*", "effect": "ask" },
+  { "action": "read", "resource": "*.env.example", "effect": "allow" }
+]
+```
+
+**An action you do not mention is allowed.** A read-only agent needs explicit `edit` and
+`shell` deny rules. Leaving them out grants both. The topologies in this repository deny
+every action a role must not have, by name.
+
+### Rule order is the classic bug
+
+```yaml
+# Correct: catch-all first, exception after
+permissions:
+  - { action: edit, resource: "*", effect: deny }
+  - { action: edit, resource: ".agent-output/**", effect: allow }
+```
+
+Reversed, the `"*"` deny is the last match for every path, so the agent cannot edit
+anything, including the directory it was granted. OpenCode raises no error.
+
+### Compound shell commands
+
+V2's shell scanner checks each command in a compound command such as `cd x && git push`
+separately. If any part is denied, the whole command is denied. Directory inference is
+best effort, so prefer a narrow allowlist over a list of dangerous patterns when shell
+access must be restricted.
+
+### Approvals
+
+When a rule resolves to `ask`, the prompt offers **once**, **always**, or **reject**.
+"Always" saves a project-scoped allow rule, such as a command prefix, a skill ID, or an
+agent ID. A saved approval never overrides a configured `deny`.
+
+---
+
+## Model selection
+
+Models in this repository use the built-in `github-copilot` provider. The table covers
+the models the samples and topologies use. Check `/models` for what your subscription
+offers before pinning a model.
+
+| Tier | Model | Used for |
+|---|---|---|
+| Fast and cheap | `github-copilot/gpt-5-mini`, `github-copilot/claude-haiku-4.5` | Title generation, docs, data, simple tasks |
+| Balanced | `github-copilot/claude-sonnet-5` | Review, security, architecture, orchestration |
+| Agentic coding | `github-copilot/gpt-5.6-terra` | Implementation and build loops |
+| Cross-family review | `github-copilot/gemini-3.8-flash` | Independent review from a third model family |
+| Heavy reasoning | `github-copilot/claude-opus-5` | Infrequent, high-stakes planning and design |
+
+> [!WARNING]
+> Copilot retires models regularly. Models that earlier versions of this guide and its
+> samples used, including `claude-sonnet-4.5`, `claude-sonnet-4.6`, `gemini-2.5-pro`,
+> `gemini-3.1-pro-preview`, `gpt-4o`, and `grok-code-fast-1`, have been retired. A pin to
+> a retired model fails at request time, not at load time.
+
+A model variant selects preset request settings, such as reasoning effort:
+`github-copilot/claude-sonnet-5#high`. Available variants depend on the provider and
+model.
+
+---
+
+## MCP servers
+
+V2 nests servers under `mcp.servers`:
+
+```jsonc
+{
+  "mcp": {
+    "servers": {
+      "github": {
+        "type": "remote",
+        "url": "https://api.githubcopilot.com/mcp/",
+        "oauth": false,
+        "headers": { "Authorization": "Bearer {env:GITHUB_TOKEN}" }
+      },
+      "everything": {
+        "type": "local",
+        "command": ["npx", "-y", "@modelcontextprotocol/server-everything"],
+        "environment": { "MCP_API_KEY": "{env:MCP_API_KEY}" },
+        "timeout": { "catalog": 30000, "execution": 30000 }
+      }
+    }
+  }
+}
+```
+
+- Servers connect automatically. Use `"disabled": true` to keep a server configured
+  without connecting it. V1's `enabled` is inverted into `disabled`.
+- Substitute environment variables with `{env:NAME}`. Shell syntax such as `$NAME` or
+  `${NAME}` is not expanded inside JSON strings.
+- Remote servers use OAuth by default. Set `"oauth": false` for servers that only accept
+  a header credential. OAuth fields are snake_case (`client_id`, `client_secret`,
+  `callback_port`, `redirect_uri`).
+- `timeout` is an object with separate `catalog` and `execution` values in milliseconds.
+  Set defaults under `mcp.timeout`.
+- `opencode mcp add <name> --url <url>` writes a server entry for you, and
+  `opencode mcp list` shows the connection state.
+
+MCP tools are permission actions named `<server>_<tool>`. For example, deny one server's
+tools for an agent with `{ "action": "github_*", "resource": "*", "effect": "deny" }`.
+
+---
+
+## Instructions and AGENTS.md
+
+V2 loads project guidance from `AGENTS.md` files only:
+
+- the global `~/.config/opencode/AGENTS.md`, then
+- every `AGENTS.md` from the current workspace up toward the home directory. For a
+  workspace outside the home directory, discovery stops at the project root.
+
+Nested `AGENTS.md` files below the workspace are loaded as the agent reads files in
+that area. V2 does not fall back to `CLAUDE.md`.
+
+> [!CAUTION]
+> **`instructions` is accepted but not loaded in V2.** A V1 config that loaded
+> guardrails or rules through `"instructions": ["guardrails.md"]` silently stops
+> applying them under V2. Move that guidance into an `AGENTS.md` that V2 discovers,
+> for example by linking the file to `~/.config/opencode/AGENTS.md`.
+
+---
+
+## Topologies in this repository
+
+The multi-agent topologies in `agents/` are the fullest examples of this configuration.
+Each ships native V2 agents and a harness config:
+
+| Topology | Agents | Harness |
+|---|---|---|
+| [Matrix](../../agents/matrix-topology.md) | `agents/matrix-topology/opencode/*.md` | `harness/opencode/` |
+| [Lane](../../agents/lane-topology.md) | `agents/lane-topology/opencode/*.md` | `harness/opencode-lane/` |
+
+They show the V2 rules that matter at scale:
+
+- Agent files are named `<id>.md`. The Matrix files were renamed from `.agent.md`,
+  because V2 would otherwise load `tank.agent.md` as `tank.agent` and dispatch to `tank`
+  would fail.
+- Subagents ship `hidden: false`, because `hidden: true` would remove them from the
+  primary agent's subagent catalog.
+- Every capability a role must not have is denied by name. Only the conductor holds
+  `subagent`.
+- `validate.py` (Lane) resolves the rules the way V2 does and fails on any V1 field or
+  action name.
+
+---
+
+## Migrating from V1
+
+V2 translates V1 configuration automatically, so migration is optional. To convert a
+file to native V2:
+
+| V1 | V2 |
+|---|---|
+| `agent`, `mode` (maps) | `agents` |
+| `prompt` | `system` (JSON); Markdown keeps the body |
+| `disable` | `disabled` |
+| `maxSteps` | `steps` |
+| `model` + `variant` | `model: provider/model#variant` |
+| `temperature`, `top_p`, options | `request.body` (preserved, not yet sent) |
+| `tools` + `permission` maps | ordered `permissions` rules |
+| `bash`, `task`, `write`/`patch` actions | `shell`, `subagent`, `edit` |
+| `command`, `subtask` | `commands`, `subagent` |
+| `mcp.<name>`, `enabled` | `mcp.servers.<name>`, `disabled` |
+| `small_model` | `agents.title.model` |
+| `autoupdate` | `update` |
+| `autoshare: true` | `share: "auto"` |
+| `snapshot` | `snapshots` |
+| `plugin` | `plugins` (V1 plugin code does not run in V2) |
+| `tui.json` | `~/.config/opencode/cli.json` (migrated on first start) |
+
+A V1 `tools` map converts to rules like this. `true` becomes `allow`, `false` becomes
+`deny`, and each key is renamed to its V2 action:
+
+```yaml
+# V1
 tools:
-  bash: true
   write: false
----
+  edit: false
+  bash: true
 
-# Security Agent
-
-This agent specializes in identifying security vulnerabilities...
-
-## Capabilities
-- OWASP Top 10 analysis
-- Dependency vulnerability scanning
-- Code injection detection
-- Authentication/authorization review
+# V2
+permissions:
+  - { action: edit, resource: "*", effect: deny }
+  - { action: shell, resource: "*", effect: allow }
 ```
 
-**3. Automatic Discovery:**
+A V1 key you omitted was enabled by default, and the equivalent V2 action is still
+allowed. The V1 idea that "no tools defined means read-only" was never true.
 
-When OpenCode loads, it:
-1. Reads `opencode.json`
-2. Processes `instructions` glob patterns
-3. Discovers all `agent/*.md` files
-4. Parses YAML frontmatter to configure each agent
-5. Makes agents available via `@` syntax
+The `client-config-opencode` and `agent-creator-opencode` skills in this repository
+cover the full V1-to-V2 field mapping.
 
-**4. Usage:**
+---
+
+## Troubleshooting
+
+**Check what actually loaded.** These commands print the resolved result rather than
+what the files say:
 
 ```bash
-opencode @security "Audit authentication in auth.js"
-opencode @api "Design REST endpoints for user management"
-opencode @devops "Create GitHub Actions CI/CD pipeline"
+opencode debug config   # every config source and its parsed content
+opencode debug agents   # every agent with its resolved model, mode, and permission rules
 ```
 
-### Available Specialized Agents
+The first run in a directory that has never been opened can print an empty agent list.
+Run it again.
 
-| Agent | Purpose | Key Tools |
-|-------|---------|-----------|
-| `@api` | API design and integration | write, edit, bash |
-| `@architect` | System architecture | read, write |
-| `@cloud` | Cloud infrastructure (AWS/Azure/GCP) | write, edit, bash |
-| `@data` | Data analysis and ETL | write, bash |
-| `@database` | Database design and optimization | write, edit |
-| `@devops` | CI/CD and deployment | write, edit, bash |
-| `@docs` | Technical documentation | write, edit |
-| `@performance` | Performance optimization | read, edit, bash |
-| `@research` | Technical research | read, webfetch |
-| `@reviewer` | Code review | read only |
-| `@security` | Security audits | read, bash |
-| `@testing` | Test development | write, edit, bash |
-| `@uxui` | UI/UX design | write, edit |
+| Symptom | Likely cause |
+|---|---|
+| Agent missing from `@` and from delegation | File is not under an `agents/` directory, or it has `hidden: true` |
+| Delegation to `x` fails, but `x.agent` exists | File is named `x.agent.md`. Rename it to `x.md` |
+| Read-only agent edited a file | No explicit `edit` deny rule. Omitted actions are allowed |
+| Scoped edit grant denies everything | Catch-all `"*"` rule placed after the specific rule |
+| Rules in `guardrails.md` are ignored | Loaded through `instructions`, which V2 does not load. Use `AGENTS.md` |
+| Editor flags `agents` or `permissions` | The published schema is V1-only. See the warning at the top |
+| Model request fails | Pinned model is retired or not enabled for your Copilot plan |
 
-### Benefits
+## Next steps
 
-✅ **Modularity** - Each agent in its own file  
-✅ **Maintainability** - Easy to add/remove/modify agents  
-✅ **Discoverability** - New agents automatically available  
-✅ **Version Control** - Track individual agent changes  
-✅ **Reusability** - Share specific agents across projects  
-✅ **Team Collaboration** - Different members own different agents  
-✅ **Documentation** - Agent capabilities documented in-file
-
-### Creating Custom Agents
-
-**1. Create a new markdown file** in `agent/` directory:
-
-```markdown
----
-description: Your agent's purpose
-mode: subagent
-model: github-copilot/claude-sonnet-4.5
-temperature: 0.1
-tools:
-  write: true
-  edit: true
-  bash: false
----
-
-# My Custom Agent
-
-Detailed description of what this agent does...
-
-## Capabilities
-- Capability 1
-- Capability 2
-
-## Best Used For
-- Use case 1
-- Use case 2
-```
-
-**2. Save as `agent/myagent.md`**
-
-**3. Restart OpenCode** (if running)
-
-**4. Use the agent:**
-
-```bash
-opencode @myagent "your task here"
-```
-
-### When to Use This Pattern
-
-**Choose Agent/SubAgent Configuration when:**
-- ✅ You need 5+ specialized agents
-- ✅ Different team members manage different agents
-- ✅ You want modular, easy-to-maintain configuration
-- ✅ You need to share/reuse agents across projects
-- ✅ Agents have complex, well-documented capabilities
-
-**Choose Standard Configuration when:**
-- ✅ You need 3-5 agents maximum
-- ✅ You prefer everything in one file
-- ✅ Configuration is relatively simple
-- ✅ Quick setup is priority
-
-### Full Documentation
-
-This guide includes complete agent descriptions, usage examples, and advanced customization patterns. See the sections above for detailed information about each specialized agent and team workflow recommendations.
-
-## Next Steps
-
-- **[Sample Configurations](samples.md)** - Real-world MCP server examples
-- **[OpenCode Overview](index.md)** - Feature overview and use cases
-- **[Agent Frontmatter Reference](https://github.com/CowboyLogic/ai-dev/blob/main/skills/agent-creator-copilot/references/frontmatter-reference.md)** - VS Code custom agent configuration guide
-
----
-
-**Need help?** Check the [OpenCode official documentation](https://opencode.ai) or review the sample configurations.
+- [OpenCode Overview](index.md): feature overview and use cases
+- [Sample Configurations](samples.md): MCP server examples
+- [OpenCode Configuration Manager skill](../../skills/client-config-opencode.md): V1 and V2 configuration reference
+- [OpenCode V2 documentation](https://opencode.ai/v2/docs/)

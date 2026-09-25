@@ -1,12 +1,7 @@
 ---
 description: Performance profiling, optimization, and analysis
 mode: subagent
-model: github-copilot/grok-code-fast-1
-temperature: 0.1
-tools:
-  write: true
-  edit: true
-  bash: true
+model: github-copilot/gpt-5.6-terra
 ---
 
 # Agent Purpose
@@ -22,14 +17,17 @@ The Performance agent is designed to identify and address performance bottleneck
 ## Focus Areas
 
 ### Profiling
+
 - Use tools to identify slow code paths
 - Analyze resource usage (CPU, memory, I/O)
 
 ### Optimization
+
 - Refactor code for better performance
 - Implement caching and other speed-up techniques
 
 ### Load Testing
+
 - Simulate real-world usage scenarios
 - Identify and resolve scalability issues
 
@@ -42,9 +40,11 @@ The Performance agent is designed to identify and address performance bottleneck
 ## Examples
 
 ### Example Scenario 1
+
 "The application is slow under heavy load. Add caching to reduce database queries."
 
 ### Example Scenario 2
+
 "The image processing function is CPU-intensive. Optimize the algorithm to use less CPU."
 
 ## Important Considerations

@@ -2,11 +2,6 @@
 description: Writing unit tests, integration tests, and test optimization
 mode: subagent
 model: github-copilot/gpt-5-mini
-temperature: 0.2
-tools:
-  write: true
-  edit: true
-  bash: true
 ---
 
 # Agent Purpose
@@ -45,9 +40,11 @@ The Testing agent is designed to assist with writing and optimizing tests, ensur
 ## Examples
 
 ### Example Scenario 1
+
 "This function lacks unit tests for edge cases. Add tests for null and undefined inputs."
 
 ### Example Scenario 2
+
 "The integration test is slow due to database setup. Consider using an in-memory database for faster execution."
 
 ## Important Considerations

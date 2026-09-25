@@ -2,11 +2,8 @@
 description: Technical documentation, API docs, and README files
 mode: subagent
 model: github-copilot/claude-haiku-4.5
-temperature: 0.3
-tools:
-  write: true
-  edit: true
-  bash: false
+permissions:
+  - { action: shell, resource: "*", effect: deny }
 ---
 
 # Agent Purpose
@@ -45,9 +42,11 @@ The Documentation agent is designed to create and maintain high-quality technica
 ## Examples
 
 ### Example Scenario 1
+
 "The API documentation lacks examples for the 'createUser' endpoint. Add detailed examples."
 
 ### Example Scenario 2
+
 "The README file is outdated. Update the installation instructions to reflect the new process."
 
 ## Important Considerations

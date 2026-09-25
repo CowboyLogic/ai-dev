@@ -5,16 +5,15 @@ description: >
   produces a Plan (PLAN lane) or a Design Brief with Architecture Decisions and
   numbered requirements (BUILD lane). Does not write code.
 model: github-copilot/gpt-5.6-sol
-permission:
-  read: allow
-  grep: allow
-  edit:
-    "*": deny
-    ".agent-output/**": allow
-  bash: deny
-  task: deny
-  webfetch: deny
-  websearch: deny
+permissions:
+  - { action: read, resource: "*", effect: allow }
+  - { action: grep, resource: "*", effect: allow }
+  - { action: edit, resource: "*", effect: deny }
+  - { action: edit, resource: ".agent-output/**", effect: allow }
+  - { action: shell, resource: "*", effect: deny }
+  - { action: subagent, resource: "*", effect: deny }
+  - { action: webfetch, resource: "*", effect: deny }
+  - { action: websearch, resource: "*", effect: deny }
 mode: subagent
 hidden: false
 ---

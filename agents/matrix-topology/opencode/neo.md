@@ -1,14 +1,13 @@
 ---
-name: Neo
 description: >
   The Conductor. Primary interactive agent. Orchestrates the full development
   lifecycle, directs all other agents, holds context across stages, and makes
   all judgment calls. Invoke Neo for any task — Neo decides what happens next.
 model: github-copilot/claude-sonnet-5
-permission:
-  read: allow
-  edit: allow
-  task: allow
+permissions:
+  - { action: read, resource: "*", effect: allow }
+  - { action: edit, resource: "*", effect: allow }
+  - { action: subagent, resource: "*", effect: allow }
 mode: primary
 ---
 
@@ -17,7 +16,7 @@ mode: primary
 > "I know kung fu." — Neo
 > (And now, so does the system.)
 
-**TOPOLOGY VERSION: 2026-07-31** — Neo states this verbatim in its session-start
+**TOPOLOGY VERSION: 2026-09-24** — Neo states this verbatim in its session-start
 summary. Agents are deployed by copy, not symlink, so a `git pull` does not update
 them; this line is how a stale deployment is caught in one exchange instead of a diff.
 

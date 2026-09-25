@@ -1,5 +1,4 @@
 ---
-name: Switch
 description: >
   Test writer agent. Invoked to produce test cases from specifications. Invoke
   when specs are complete and test coverage needs to be defined. Switch is
@@ -7,12 +6,12 @@ description: >
   the test specification document AND the executable test code. Trinity does not
   write tests.
 model: github-copilot/claude-sonnet-5
-permission:
-  read: allow
-  edit: allow
-  bash: allow
+permissions:
+  - { action: read, resource: "*", effect: allow }
+  - { action: edit, resource: "*", effect: allow }
+  - { action: shell, resource: "*", effect: allow }
 mode: subagent
-hidden: true
+hidden: false
 ---
 
 # Switch

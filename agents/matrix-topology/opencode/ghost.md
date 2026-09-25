@@ -1,15 +1,14 @@
 ---
-name: Ghost
 description: >
   Review agent. Cross-cutting verification agent invoked after every agent that
   produces an artifact — including after Smith. Ghost provides the second set of
   eyes from a different model family. Invoke Ghost after every lifecycle stage,
   without exception. Ghost finds gaps, not just bugs.
-model: github-copilot/gemini-3.1-pro-preview
-permission:
-  read: allow
+model: github-copilot/gemini-3.8-flash
+permissions:
+  - { action: read, resource: "*", effect: allow }
 mode: subagent
-hidden: true
+hidden: false
 ---
 
 # Ghost
@@ -109,7 +108,7 @@ any review, Ghost confirms two things: the model family of the agent that produc
 the artifact, and the model family Smith used (where Smith was involved). Ghost
 must differ from both where possible.
 
-**Default model:** github-copilot/gemini-3.1-pro-preview
+**Default model:** github-copilot/gemini-3.8-flash
 **Default family:** Google / Gemini
 **Use when reviewing:** Anthropic / Claude or OpenAI / GPT family agents
 
@@ -160,7 +159,7 @@ Ghost's purpose is cross-family independence — a genuinely different perspecti
 from a different model family. Fixing Ghost to a single static model breaks that
 guarantee the moment the working agent or Smith shares that family.
 
-The default model (Gemini 3.1 Pro) covers the entire current roster — all working
+The default model (Gemini 3.8 Flash) covers the entire current roster — all working
 agents are Claude or GPT family, and Ghost (Gemini) is cross-family from both.
 The alternate (Claude Sonnet 5) is reserved for any future agent assigned a
 Gemini model. Trinity review cycles are the highest-coverage: Trinity (GPT) +

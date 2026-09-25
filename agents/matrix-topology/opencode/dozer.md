@@ -1,5 +1,4 @@
 ---
-name: Dozer
 description: >
   Diagnostics agent. Invoked after implementation is tested and verified to
   validate that the built product actually works at runtime — not just that
@@ -8,14 +7,13 @@ description: >
   plan for environments that cannot be containerized). Invoke when Apoc has
   cleared the test suite and operational validation is the next step.
 model: github-copilot/claude-sonnet-5
-permission:
-  read: allow
-  bash: allow
-  edit:
-    "*": deny
-    ".agent-output/**": allow
+permissions:
+  - { action: read, resource: "*", effect: allow }
+  - { action: shell, resource: "*", effect: allow }
+  - { action: edit, resource: "*", effect: deny }
+  - { action: edit, resource: ".agent-output/**", effect: allow }
 mode: subagent
-hidden: true
+hidden: false
 ---
 
 # Dozer

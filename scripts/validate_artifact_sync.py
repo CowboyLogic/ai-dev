@@ -46,7 +46,7 @@ TOPOLOGIES = {
         name="matrix-topology",
         canonical="opencode",
         formats={
-            "opencode": "*.agent.md",
+            "opencode": "*.md",
             "claude": "*.agent.md",
             "copilot": "*.agent.md",
         },
@@ -89,8 +89,17 @@ def markdown_cell(value: object) -> str:
     return " ".join(str(value).split()).replace("|", r"\|")
 
 
-def display_name(identifier: str, metadata: dict) -> str:
-    return str(metadata.get("name") or identifier.replace("-", " ").title())
+def display_name(identifier: str, metadata: dict, topology: Topology) -> str:
+    # OpenCode V2 frontmatter has no `name`; fall back to a mirror that carries one.
+    if metadata.get("name"):
+        return str(metadata["name"])
+    for format_name, pattern in topology.formats.items():
+        mirror = ROOT / "agents" / topology.name / format_name / pattern.replace("*", identifier)
+        if format_name != topology.canonical and mirror.is_file():
+            name = frontmatter(mirror)[0].get("name")
+            if name:
+                return str(name)
+    return identifier.replace("-", " ").title()
 
 
 def topology_agents(topology: Topology) -> dict[str, tuple[Path, dict, str]]:
@@ -141,7 +150,7 @@ def render_roster(
         key=lambda item: (item[1][1].get("mode") != "primary", item[0]),
     )
     for identifier, (path, metadata, _) in ordered:
-        name = markdown_cell(display_name(identifier, metadata))
+        name = markdown_cell(display_name(identifier, metadata, topology))
         model = markdown_cell(metadata.get("model", "Not pinned"))
         description = markdown_cell(metadata.get("description", ""))
         relative_path = path.relative_to(ROOT).as_posix()

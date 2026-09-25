@@ -10,7 +10,9 @@
 #   ./verify-deployment.sh <deployed-dir> [format]  # check a deployed copy
 #
 #   format defaults to "opencode"; deployed files are matched by basename, so a
-#   flattened deploy directory works.
+#   flattened deploy directory works. OpenCode files are <id>.md (V2 derives the
+#   agent ID from the filename, so neo.agent.md would load as "neo.agent"); the
+#   Claude Code and Copilot mirrors keep <id>.agent.md.
 #
 # Regenerate after changing any agent:
 #   ./verify-deployment.sh --update
@@ -34,10 +36,11 @@ if [ "${1:-}" = "--update" ]; then
   {
     echo "# Matrix Topology agent manifest"
     echo "# Regenerate with: ./verify-deployment.sh --update"
-    echo "# version: $(grep -m1 -o 'TOPOLOGY VERSION: [0-9-]*' opencode/neo.agent.md | cut -d' ' -f3)"
+    echo "# version: $(grep -m1 -o 'TOPOLOGY VERSION: [0-9-]*' opencode/neo.md | cut -d' ' -f3)"
     echo "# generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
     for d in $FORMATS; do
-      for f in "$d"/*.agent.md; do
+      if [ "$d" = opencode ]; then pattern="*.md"; else pattern="*.agent.md"; fi
+      for f in "$d"/$pattern; do
         echo "$(sha "$f")  $f"
       done
     done
@@ -72,8 +75,8 @@ fail=0 checked=0
 while read -r want file; do
   case "$file" in "$format"/*) ;; *) continue ;; esac
   base=$(basename "$file")
-  # Tolerate the .agent.md -> .md rename some deploys use.
-  for cand in "$target/$base" "$target/${base%.agent.md}.md"; do
+  # Tolerate the .agent.md <-> .md rename some deploys use.
+  for cand in "$target/$base" "$target/${base%.agent.md}.md" "$target/${base%.md}.agent.md"; do
     [ -f "$cand" ] && break
   done
   if [ ! -f "$cand" ]; then echo "MISSING  $base"; fail=1; continue; fi
