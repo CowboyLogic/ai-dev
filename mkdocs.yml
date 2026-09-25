@@ -90,6 +90,16 @@ nav:
       - Matrix Topology: agents/matrix-topology.md
   - Skills:
       - Overview: skills/index.md
+      - About-Me Skill Creator: skills/about-me-skill-creator.md
+      - High-Fidelity Context Scaffolder: skills/high-fidelity-context-scaffolder.md
+      - Google Style Docs: skills/google-style-docs.md
+      - Git Commit Messages: skills/git-commit-messages.md
+      - Docker Image Management: skills/docker-image-management.md
+      - MkDocs Site Management: skills/mkdocs-site-management.md
+      - Markdownlint Validator: skills/markdownlint-validator.md
+      - Copilot Agent Creator: skills/agent-creator-copilot.md
+      - Copilot Instruction Creator: skills/copilot-instruction-creator.md
+      - OpenCode Agent Creator: skills/agent-creator-opencode.md
       - Claude Code Settings Manager: skills/client-config-claudecode.md
       - Copilot CLI Configuration Manager: skills/client-config-copilotcli.md
       - OpenCode Configuration Manager: skills/client-config-opencode.md

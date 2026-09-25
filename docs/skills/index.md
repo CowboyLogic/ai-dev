@@ -52,7 +52,7 @@ The generated `about-me` profile is personal and is not meant to be committed. I
 used by the [Lane Topology](../agents/lane-topology.md) Conductor as step one of every
 session.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/about-me-skill-creator)
+[Skill Overview](about-me-skill-creator.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/about-me-skill-creator)
 
 ---
 
@@ -62,7 +62,7 @@ Generate machine-optimized XML context files (`AGENTS.xml`, `ARCHITECTURE.xml`) 
 Produces structured, information-dense context that agents consume at session start to understand a codebase
 without exploration overhead.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/high-fidelity-context-scaffolder)
+[Skill Overview](high-fidelity-context-scaffolder.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/high-fidelity-context-scaffolder)
 
 ---
 
@@ -72,7 +72,7 @@ Write technical documentation following the Google Developer Documentation Style
 Covers voice and tone, sentence structure, code samples, cross-references, and all
 formatting conventions from Google's published standard.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/google-style-docs)
+[Skill Overview](google-style-docs.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/google-style-docs)
 
 ---
 
@@ -81,7 +81,7 @@ formatting conventions from Google's published standard.
 Write descriptive yet concise git commit messages following the Conventional Commits specification.
 Covers type selection, scope notation, subject line rules, and multi-paragraph body formatting.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/git-commit-messages)
+[Skill Overview](git-commit-messages.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/git-commit-messages)
 
 ---
 
@@ -92,7 +92,7 @@ Covers type selection, scope notation, subject line rules, and multi-paragraph b
 Build, tag, push, and manage Docker images across registries. Covers Dockerfile best practices,
 multi-stage builds, docker-compose patterns, registry authentication, and image lifecycle management.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/docker-image-management)
+[Skill Overview](docker-image-management.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/docker-image-management)
 
 ---
 
@@ -101,7 +101,7 @@ multi-stage builds, docker-compose patterns, registry authentication, and image 
 Build and maintain MkDocs documentation sites. Covers `mkdocs.yml` configuration, nav structure,
 Material theme features, build validation, and resolving common build errors and warnings.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/mkdocs-site-management)
+[Skill Overview](mkdocs-site-management.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/mkdocs-site-management)
 
 ---
 
@@ -110,7 +110,7 @@ Material theme features, build validation, and resolving common build errors and
 Validate and fix Markdown files against markdownlint rules. Covers rule reference, configuration
 options, integration with VS Code and CI, and automated fix workflows.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/markdownlint-validator)
+[Skill Overview](markdownlint-validator.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/markdownlint-validator)
 
 ---
 
@@ -123,7 +123,7 @@ GitHub.com cloud agent. Covers frontmatter schema and per-surface compatibility,
 and VS Code tool sets, current model selection, handoffs, hooks, and MCP servers. Includes
 working examples for workspace agents, user-profile agents, and cloud agents with MCP.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-copilot)
+[Skill Overview](agent-creator-copilot.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-copilot)
 
 ---
 
@@ -134,7 +134,7 @@ organization level. Covers `copilot-instructions.md`, path-specific `.instructio
 `applyTo` and `excludeAgent` frontmatter, `AGENTS.md`/`CLAUDE.md`/`GEMINI.md` agent instructions,
 precedence, and per-surface support.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/copilot-instruction-creator)
+[Skill Overview](copilot-instruction-creator.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/copilot-instruction-creator)
 
 ---
 
@@ -146,7 +146,7 @@ Create custom agent definitions for the OpenCode CLI, in native V2 format by def
 still supported. Covers the agent configuration schema, V1 → V2 migration, model and variant
 selection, ordered permission rules, and subagent patterns.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-opencode)
+[Skill Overview](agent-creator-opencode.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-opencode)
 
 ---
 
