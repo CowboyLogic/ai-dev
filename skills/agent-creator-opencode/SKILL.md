@@ -63,18 +63,23 @@ description: Reviews code for quality and best practices. Does not modify files.
 mode: subagent
 model: github-copilot/claude-sonnet-5
 permissions:
-  - action: edit
+  # Catch-all deny first: V2 starts from allow-all, so unlisted actions
+  # (subagent, skill, web, question, shell) would otherwise stay open.
+  - action: "*"
     resource: "*"
     effect: deny
-  - action: shell
+  - action: read
     resource: "*"
-    effect: ask
+    effect: allow
+  - action: glob
+    resource: "*"
+    effect: allow
+  - action: grep
+    resource: "*"
+    effect: allow
   - action: shell
     resource: "git diff *"
     effect: allow
-  - action: webfetch
-    resource: "*"
-    effect: deny
 ---
 
 You are a code reviewer. Focus on security, performance, and maintainability.
@@ -93,7 +98,10 @@ JSON/JSONC — under `agents`, with the prompt in `system`:
       "model": "github-copilot/claude-sonnet-5",
       "system": "You are a code reviewer. Do not make changes.",
       "permissions": [
-        { "action": "edit", "resource": "*", "effect": "deny" }
+        { "action": "*", "resource": "*", "effect": "deny" },
+        { "action": "read", "resource": "*", "effect": "allow" },
+        { "action": "glob", "resource": "*", "effect": "allow" },
+        { "action": "grep", "resource": "*", "effect": "allow" }
       ]
     }
   }
@@ -125,11 +133,14 @@ mode: subagent
 model: anthropic/claude-sonnet-5
 temperature: 0.1
 permission:
-  edit: deny
+  "*": deny          # default for every tool; specific keys below override it
+  read: allow
+  glob: allow
+  grep: allow
+  list: allow
   bash:
-    "*": ask
+    "*": deny
     "git diff*": allow
-  webfetch: deny
 ---
 
 You are a code reviewer. Provide specific, actionable feedback. Do not make changes.
