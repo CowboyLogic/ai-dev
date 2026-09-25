@@ -21,7 +21,7 @@ this implies.
 
 ## Directory Structure
 
-```
+```text
 agents/lane-topology/
 ├── opencode/          # Agent definitions (canonical)
 ├── copilot/           # GitHub Copilot format (derived from opencode/)
@@ -32,7 +32,7 @@ agents/lane-topology/
 harness/opencode-lane/
 ├── opencode.jsonc     # default_agent, MCP
 ├── commands/          # lane-override slash commands (/change, /plan, ...)
-└── guardrails.md      # persistent session guardrails
+└── guardrails.md      # persistent session guardrails — deployed as ~/.config/opencode/AGENTS.md
 ```
 
 `opencode/conductor.md` is the **authoritative technical reference** for the

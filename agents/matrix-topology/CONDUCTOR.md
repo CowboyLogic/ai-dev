@@ -57,7 +57,7 @@ harness/opencode/                 ← OpenCode harness configuration
 ```
 ~/.config/opencode/               → harness/opencode/
   opencode.jsonc                     (default_agent: neo; /handoff, /change commands)
-  guardrails.md                      (loaded via instructions on every session)
+  AGENTS.md → guardrails.md          (global instructions, loaded on every session)
 ~/.config/opencode/agents/        → agents/matrix-topology/opencode/
 ```
 

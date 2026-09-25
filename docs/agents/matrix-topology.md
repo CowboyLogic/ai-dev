@@ -99,12 +99,13 @@ git clone https://github.com/CowboyLogic/ai-dev ~/src/ai-dev
 
 mkdir -p ~/.config/opencode
 ln -sfn ~/src/ai-dev/harness/opencode/opencode.jsonc ~/.config/opencode/opencode.jsonc
-ln -sfn ~/src/ai-dev/harness/opencode/guardrails.md  ~/.config/opencode/guardrails.md
+ln -sfn ~/src/ai-dev/harness/opencode/guardrails.md  ~/.config/opencode/AGENTS.md
 ln -sfn ~/src/ai-dev/agents/matrix-topology/opencode ~/.config/opencode/agents
 ```
 
-The harness sets `default_agent` to `neo` and loads `guardrails.md` in every
-session.
+The harness sets `default_agent` to `neo`. `guardrails.md` is linked as the global
+`~/.config/opencode/AGENTS.md`, which OpenCode V2 loads in every session; V2 does not
+load the `instructions` field.
 
 > [!IMPORTANT]
 > The `opencode/` agents use native **OpenCode V2** frontmatter (an ordered

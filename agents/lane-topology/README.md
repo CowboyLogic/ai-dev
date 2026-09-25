@@ -485,7 +485,7 @@ directory. Do not replace the directory itself — OpenCode keeps its own state 
 ```bash
 mkdir -p ~/.config/opencode
 ln -sfn ~/src/ai-dev/harness/opencode-lane/opencode.jsonc  ~/.config/opencode/opencode.jsonc
-ln -sfn ~/src/ai-dev/harness/opencode-lane/guardrails.md   ~/.config/opencode/guardrails.md
+ln -sfn ~/src/ai-dev/harness/opencode-lane/guardrails.md   ~/.config/opencode/AGENTS.md
 ln -sfn ~/src/ai-dev/harness/opencode-lane/commands        ~/.config/opencode/commands
 ln -sfn ~/src/ai-dev/agents/lane-topology/opencode         ~/.config/opencode/agents
 ```
@@ -498,7 +498,7 @@ New-Item -ItemType SymbolicLink -Force `
   -Path "$env:USERPROFILE\.config\opencode\opencode.jsonc" `
   -Target "$env:USERPROFILE\src\ai-dev\harness\opencode-lane\opencode.jsonc"
 New-Item -ItemType SymbolicLink -Force `
-  -Path "$env:USERPROFILE\.config\opencode\guardrails.md" `
+  -Path "$env:USERPROFILE\.config\opencode\AGENTS.md" `
   -Target "$env:USERPROFILE\src\ai-dev\harness\opencode-lane\guardrails.md"
 New-Item -ItemType Junction -Force `
   -Path "$env:USERPROFILE\.config\opencode\commands" `
@@ -509,7 +509,9 @@ New-Item -ItemType Junction -Force `
 ```
 
 The agents directory is `agents/` — **plural**. `default_agent` is `conductor`, which
-resolves to `agents/conductor.md`.
+resolves to `agents/conductor.md`. `guardrails.md` is linked as the global
+`~/.config/opencode/AGENTS.md` because OpenCode V2 loads `AGENTS.md` on every session
+but does not load the `instructions` field.
 
 ### Verify before you trust it
 
