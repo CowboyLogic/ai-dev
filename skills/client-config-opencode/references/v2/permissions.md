@@ -30,7 +30,10 @@ All three fields are required strings.
 ## Matching
 
 - **Last matching rule wins.** Put broad rules first, exceptions after.
-- If no rule matches, the result is `ask`.
+- If no rule matches, the evaluator returns `ask`. In practice this never happens for an agent: every agent's
+  rules sit on top of the [base policy](#defaults), whose first rule is `*`/`*` → `allow`. An action none of
+  your rules mention therefore falls through to that baseline and is **allowed**, except for the baseline's own
+  `ask` exceptions (external directories, `.env` reads).
 - Wildcards match the whole value: `*` = zero or more characters **including `/`**, `?` = one character.
 - A shell pattern ending in a space plus `*` also matches the bare command (`git status *` matches `git status`).
 - Paths are normalized to forward slashes; matching is case-insensitive on Windows.

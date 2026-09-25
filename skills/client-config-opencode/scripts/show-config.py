@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Display all opencode configuration files (V1 and V2) with annotations."""
+"""Display all opencode configuration files (V1 and V2) with annotations.
+
+Parsed config is redacted before printing (secret-like keys at any depth, every
+value under `env`/`headers`, token-shaped strings), and a file that fails to
+parse is reported by position only, never echoed raw.
+"""
 
 import json
 import os
@@ -50,6 +55,13 @@ V1_KEYS = {"permission", "agent", "provider", "command", "plugin", "snapshot", "
            "autoupdate", "autoshare", "mode", "tools", "small_model", "enabled_providers",
            "disabled_providers", "logLevel", "server", "subagent_depth", "reference", "layout"}
 
+SECRET_MARKERS = ("KEY", "TOKEN", "SECRET", "PASSWORD", "AUTH", "CREDENTIAL")
+# Maps whose values are credentials regardless of key name (e.g. an "Authorization" header).
+SECRET_MAPS = ("env", "environment", "headers")
+TOKEN_VALUE = re.compile(r"^(gh[opsur]_|github_pat_|sk-|xox[abp]-|Bearer\s)", re.I)
+# {env:NAME} and {file:path} are references, not secrets; show them as written.
+REFERENCE_VALUE = re.compile(r"^\{(env|file):[^}]+\}$")
+
 
 def header(title):
     print(f"\n{BOLD}{CYAN}=== {title} ==={RESET}")
@@ -88,6 +100,23 @@ def strip_jsonc(text):
             out.append(ch)
         i += 1
     return re.sub(r",(\s*[}\]])", r"\1", "".join(out))
+
+
+def redact(value, key="", in_secret_map=False):
+    """Recursively mask secrets in parsed config before it is printed."""
+    if isinstance(value, dict):
+        return {
+            k: redact(v, k, in_secret_map or k.lower() in SECRET_MAPS) for k, v in value.items()
+        }
+    if isinstance(value, list):
+        return [redact(v, key, in_secret_map) for v in value]
+    if isinstance(value, str) and not REFERENCE_VALUE.match(value) and (
+        in_secret_map
+        or any(marker in key.upper() for marker in SECRET_MARKERS)
+        or TOKEN_VALUE.match(value)
+    ):
+        return "***"
+    return value
 
 
 def parse_jsonc(text):
@@ -186,13 +215,14 @@ def show_json_text(text, label, source=None, with_summary=True):
     try:
         data = parse_jsonc(text)
     except json.JSONDecodeError as e:
+        # Report the position only: the raw text may hold credentials.
         print(f"\n{YELLOW}{label}{RESET}{where} — parse error: {e}")
-        print(text)
+        note("Raw contents not shown. Open the file directly to fix it.")
         return
     print(f"\n{GREEN}{label}{RESET}{where}")
     if with_summary:
         summarize(data)
-    print(json.dumps(data, indent=2))
+    print(json.dumps(redact(data), indent=2))
 
 
 def show_json_file(path, label, with_summary=True):

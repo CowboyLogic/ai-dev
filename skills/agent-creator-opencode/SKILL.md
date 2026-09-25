@@ -174,8 +174,11 @@ map; `tools` is deprecated. Built-ins: `build`, `plan`, `general`, `explore`,
 
 ### Step 3 — Configure permissions
 
-- Start restrictive: deny `edit` and `shell` (V1: `bash`), then grant what the
-  role needs
+- Start restrictive with a catch-all deny (V2: `action: "*"`, `resource: "*"`;
+  V1: `"*": deny`), then allow only the actions the role needs. Denying just
+  `edit` and `shell` is not restrictive: both formats still allow any action no
+  rule mentions, including `subagent` (V1: `task`), `skill`, `question`,
+  `webfetch`, and `websearch`
 - Use per-command shell rules for surgical control; a V2 pattern ending in
   `" *"` also matches the bare command
 - For orchestrators, deny `subagent` (V1: `task`) with `"*"` first, then allow
