@@ -91,7 +91,7 @@ V1 equivalents for provider filtering: `"enabled_providers": [...]`, `"disabled_
 ## Variable substitution
 
 - `{env:MY_API_KEY}` — environment variable (V1 and V2)
-- `{file:~/.secrets/key.txt}` — file contents (documented for V1; not shown in V2 docs)
+- `{file:~/.secrets/key.txt}` — file contents (documented for V1; not shown in V2 docs, but verified working in V2 2.0.16 for agent `system`)
 
 V2 runs a shared background server: env vars must reach it (`opencode service set env NAME value`, or run
 `opencode --standalone` from a shell that has them).

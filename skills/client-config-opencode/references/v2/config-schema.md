@@ -352,7 +352,9 @@ opencode --standalone                                   # private server that us
 Useful diagnostics: `opencode debug config` (list configuration sources), `opencode debug paths`,
 `opencode reload` (reload configuration without restarting the server), `opencode service status`.
 
-Variable substitution: V2 docs use `{env:NAME}` throughout. `{file:path}` is not shown in V2 docs.
+Variable substitution: V2 docs use `{env:NAME}` throughout. `{file:path}` is not shown in V2 docs,
+but works: on OpenCode 2.0.16 an agent's `"system": "{file:./prompts/plan.txt}"` resolved to the
+file's contents, relative to the config file. Treat it as undocumented behavior.
 
 ---
 

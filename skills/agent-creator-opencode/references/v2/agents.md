@@ -180,9 +180,12 @@ A non-empty `system` replaces the provider's base prompt for that agent. Project
 instructions (`AGENTS.md`), skills, and references are still added.
 
 > [!NOTE]
-> The V2 docs do not document `{file:...}` substitution for `system`. V1 used
-> `"prompt": "{file:./prompts/x.txt}"`. For a long prompt in V2, prefer a
-> Markdown agent file over an unverified file reference.
+> The V2 docs do not document `{file:...}` substitution for `system`, but it works:
+> verified on OpenCode 2.0.16 with `opencode debug agents`, where
+> `"system": "{file:./prompts/plan.txt}"` resolved to the file's contents, relative to
+> the config file, including when OpenCode was started from a subdirectory. Because
+> the behavior is undocumented, a Markdown agent file (body = prompt) is still the
+> more durable choice for a long prompt.
 
 ### steps
 
