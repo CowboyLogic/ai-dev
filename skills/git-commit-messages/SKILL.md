@@ -55,10 +55,9 @@ Use these conventional commit types:
 ### Subject Line Rules
 
 1. **Limit to 50 characters** - Keep it concise but descriptive
-2. **Start with a capital letter** - Proper capitalization
-3. **Do not end with a period** - No punctuation at the end
-4. **Use imperative mood** - "Add feature" not "Added feature" or "Adding feature"
-5. **Be specific** - Clearly describe what changed
+2. **Do not end with a period** - No punctuation at the end
+3. **Use imperative mood** - "Add feature" not "Added feature" or "Adding feature"
+4. **Be specific** - Clearly describe what changed
 
 ### Body Guidelines
 

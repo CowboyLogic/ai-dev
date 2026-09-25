@@ -24,7 +24,7 @@ The Git Commit Messages skill helps AI agents and developers create commit messa
 ### Commit Message Standards
 - Conventional commit format with types (feat, fix, docs, etc.)
 - Subject line limits (50 characters) and body formatting (72 characters)
-- Proper use of imperative mood and capitalization
+- Proper use of imperative mood
 - Breaking change declarations and issue references
 
 ### Practical Examples
@@ -92,7 +92,6 @@ AI agents can use this skill when:
 
 ### Subject Lines
 - ✅ Under 50 characters
-- ✅ Start with capital letter
 - ✅ No ending punctuation
 - ✅ Imperative mood ("Add" not "Added")
 - ✅ Specific and descriptive
