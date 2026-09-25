@@ -21,7 +21,6 @@ Agent Skills are structured collections of instructions, templates, examples, an
 - **[Google Style Docs](google-style-docs/README.md)** - Write technical documentation following Google's Developer Documentation Style Guide
 - **[Copilot Agent Creator](agent-creator-copilot/README.md)** - Create custom agents for GitHub Copilot in VS Code, the Copilot CLI, and the cloud agent
 - **[Copilot Instruction Creator](copilot-instruction-creator/README.md)** - Create custom instructions to tailor GitHub Copilot responses
-- **[Copilot Prompt Creator](copilot-prompt-creator/README.md)** - Create custom prompts for Copilot with latest GitHub research
 
 ### Development Skills
 

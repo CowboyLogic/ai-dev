@@ -136,15 +136,6 @@ Covers repository instructions, path-scoped instructions, and prompt engineering
 
 ---
 
-### Copilot Prompt Creator
-
-Create reusable `.prompt.md` files for GitHub Copilot based on the latest GitHub research
-into effective prompt structures.
-
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/copilot-prompt-creator)
-
----
-
 ## AI Platform Skills
 
 ### OpenCode Agent Creator

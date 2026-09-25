@@ -56,12 +56,6 @@ artifacts:
     type: skill
     source: skills/copilot-instruction-creator
     tags: [skills, copilot, instructions]
-  - id: copilot-prompt-creator
-    name: Copilot Prompt Creator
-    description: Create reusable prompt files for GitHub Copilot
-    type: skill
-    source: skills/copilot-prompt-creator
-    tags: [skills, copilot, prompts]
   - id: agent-creator-opencode
     name: OpenCode Agent Creator
     description: Create custom agent definitions for the OpenCode CLI (V2 native, V1 supported)
