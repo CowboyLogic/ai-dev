@@ -1,8 +1,12 @@
-# OpenCode Agent Working Examples
+# OpenCode V1 Agent Examples
 
-Complete, copy-ready agent definitions. Load this file when scaffolding a new
-agent from a known pattern. For property details, load `properties.md`. For
-permission patterns, load `permissions.md`.
+Complete, copy-ready **V1** agent definitions. Load this file when scaffolding a
+V1 agent from a known pattern. For property details, load `properties.md`. For
+permission patterns, load `permissions.md`. For native V2 templates, load
+`../v2/examples.md`.
+
+Model IDs use the Anthropic provider IDs listed in the models.dev catalog on
+2026-09-24. Swap them for the user's provider; run `opencode models` to confirm.
 
 ---
 
@@ -14,7 +18,7 @@ permission patterns, load `permissions.md`.
 ---
 description: Reviews code changes for security issues, performance problems, and maintainability. Does not modify files.
 mode: subagent
-model: anthropic/claude-haiku-4-20250514
+model: anthropic/claude-haiku-4-5
 temperature: 0.1
 permission:
   edit: deny
@@ -51,15 +55,14 @@ Do not make any changes to files. Do not run tests.
 ---
 description: Creates and validates database migration files. Runs migrations in dry-run mode only unless explicitly asked.
 mode: subagent
-model: anthropic/claude-sonnet-4-20250514
+model: anthropic/claude-sonnet-5
 temperature: 0.1
 permission:
   edit:
-    "migrations/**": allow
     "*": deny
+    "migrations/**": allow
   bash:
     "*": ask
-    "psql --dry-run*": allow
     "alembic check": allow
     "alembic history": allow
   webfetch: deny
@@ -85,7 +88,7 @@ Always use `--dry-run` or equivalent when testing migrations.
 ---
 description: Coordinates complex development tasks by delegating to specialized subagents. Use for multi-step workflows involving code changes, tests, and review.
 mode: primary
-model: anthropic/claude-sonnet-4-20250514
+model: anthropic/claude-sonnet-5
 temperature: 0.2
 steps: 30
 permission:
@@ -97,9 +100,9 @@ permission:
     "git diff*": allow
   webfetch: allow
   task:
+    "*": deny
     "code-reviewer": allow
     "db-migrator": ask
-    "*": allow
 ---
 
 You are a development lead who coordinates complex tasks. Break down large requests into subtasks and delegate them to specialized subagents.
@@ -125,7 +128,7 @@ Do not write code directly — delegate to the appropriate specialist.
 ---
 description: Performs deep security audits across the codebase. Identifies vulnerabilities without making changes. Invoke with @security-auditor.
 mode: subagent
-model: anthropic/claude-sonnet-4-20250514
+model: anthropic/claude-sonnet-5
 temperature: 0.0
 permission:
   edit: deny

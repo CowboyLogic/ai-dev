@@ -1,16 +1,24 @@
-# Full Config Schema Reference
+# V1 Config Schema Reference
 
-Schema: `https://opencode.ai/config.json`
+> [!NOTE]
+> This file covers the **V1** `opencode.json` shape (singular keys: `permission`, `agent`, `provider`, `command`,
+> `plugin`). For native V2 (`permissions`, `agents`, `providers`, `commands`, `plugins`, `mcp.servers`), use
+> [v2/config-schema.md](v2/config-schema.md). V2 still reads everything below.
+
+Schema: `https://opencode.ai/config.json` (V1 shape, `additionalProperties: false`)
 TUI schema: `https://opencode.ai/tui.json`
 
 ## Table of Contents
+
 - [Core fields](#core-fields)
 - [Server](#server)
 - [Commands](#commands)
 - [Instructions](#instructions)
 - [Formatters](#formatters)
+- [LSP](#lsp)
+- [Tool output](#tool-output)
 - [Compaction](#compaction)
-- [Skills & Plugins](#skills--plugins)
+- [Skills and plugins](#skills-and-plugins)
 - [File watcher](#file-watcher)
 - [Config precedence order](#config-precedence-order)
 - [Managed / enterprise](#managed--enterprise)
@@ -24,76 +32,93 @@ TUI schema: `https://opencode.ai/tui.json`
 |-----|------|-------------|---------|
 | `$schema` | string | Enable editor validation | `"https://opencode.ai/config.json"` |
 | `model` | string | Default model (`provider/model`) | `"anthropic/claude-sonnet-4-5"` |
-| `small_model` | string | Lightweight task model | `"anthropic/claude-haiku-4-5"` |
+| `small_model` | string | Model for lightweight tasks like title generation; defaults to a cheaper model from your provider if available, else the main model | `"anthropic/claude-haiku-4-5"` |
 | `default_agent` | string | Default primary agent (must be `primary` mode; falls back to `build` with a warning if invalid). Applies across TUI, `opencode run`, desktop app, GitHub Action | `"build"` |
 | `subagent_depth` | integer | Max subagent nesting depth (default `1`: primary can launch subagents, they can't launch more; `0` blocks all subagent launches) | `2` |
 | `share` | enum | `"manual"` (default) \| `"auto"` \| `"disabled"` | `"manual"` |
-| `autoupdate` | bool \| `"notify"` | Auto-update behavior (only applies if not installed via a package manager) | `"notify"` |
+| `autoupdate` | bool \| `"notify"` | Auto-update behavior (only works if not installed via a package manager such as Homebrew) | `"notify"` |
 | `snapshot` | boolean | Track filesystem changes for undo/revert (default `true`); disable on large repos to avoid slow indexing | `true` |
 | `logLevel` | enum | `"DEBUG"` \| `"INFO"` \| `"WARN"` \| `"ERROR"` | `"INFO"` |
-| `username` | string | Custom display name | `"alice"` |
-| `shell` | string | Default shell for the interactive terminal and agent bash tool calls; absolute path or short name. Auto-detected per-OS if unset | `"pwsh"` |
-| `tools` | object (string → bool) | Enable/disable tools (built-in, custom, or `<mcp-server>_<tool>`) by name or glob | `{ "write": false, "bash": false }` |
-| `disabled_providers` | array | Provider IDs to disable (even if creds/env vars present); takes priority over `enabled_providers` | `["amazon-bedrock"]` |
-| `enabled_providers` | array | Restrict to only these providers | `["anthropic", "openai"]` |
-| `attachment` | object | `attachment.image` — `auto_resize`, `max_width`/`max_height` (default 2000px), `max_base64_bytes` (default 5242880) | `{ "image": { "auto_resize": true } }` |
-| `references` | object | Named git or local directory references (`{repository, branch?, description?, hidden?}` or `{path, description?, hidden?}`) | — |
-| `experimental` | object | Unstable, may change/be removed. Keys: `policies` (allow/deny provider access, see below), `mcp_timeout`, `batch_tool`, `openTelemetry`, `primary_tools`, `continue_loop_on_deny`, `disable_paste_summary` | `{ "policies": [...] }` |
-| `enterprise` | object | Enterprise config — `{"url": "https://your-enterprise"}` | — |
-| `reference` | object | **Deprecated** — use `references` instead | — |
-| `mode` | object | **Deprecated** — use `agent` instead | — |
-| `autoshare` | boolean | **Deprecated** — use `share` instead | — |
+| `username` | string | Custom display name instead of the system username | `"alice"` |
+| `shell` | string | Shell for the interactive terminal and compatible agent tool calls; absolute path or short name. Auto-detected per OS if unset | `"pwsh"` |
+| `permission` | object \| string | Tool permissions — see [permissions.md](permissions.md) | `{ "edit": "ask" }` |
+| `tools` | object (string → bool) | **Deprecated since v1.1.1** (merged into `permission`, still honored). Enable/disable tools by name or glob | `{ "write": false }` |
+| `disabled_providers` | array | Provider IDs never loaded, even with creds/env vars; wins over `enabled_providers` | `["amazon-bedrock"]` |
+| `enabled_providers` | array | Allowlist — only these providers load | `["anthropic", "openai"]` |
+| `attachment` | object | `attachment.image` — `auto_resize` (default on), `max_width`/`max_height` (default 2000), `max_base64_bytes` (default 5242880) | `{ "image": { "auto_resize": true } }` |
+| `references` | object | Named Git or local directory references (string shorthand, `{repository, branch?, description?, hidden?}`, or `{path, description?, hidden?}`) | — |
+| `experimental` | object | Unstable. Keys: `policies`, `mcp_timeout`, `batch_tool`, `openTelemetry`, `primary_tools`, `continue_loop_on_deny`, `disable_paste_summary` | `{ "policies": [...] }` |
+| `enterprise` | object | `{ "url": "https://your-enterprise" }` | — |
+| `reference` | object | **Deprecated** — use `references` | — |
+| `mode` | object | **Deprecated** — use `agent` | — |
+| `autoshare` | boolean | **Deprecated** — use `share` | — |
 | `layout` | string | **Deprecated** — always stretch layout | — |
+
+Legacy `theme`, `keybinds`, and `tui` keys in `opencode.json` are deprecated and auto-migrated to `tui.json` when
+possible.
 
 ### Policies (experimental)
 
-Allow/deny opencode actions on configured resources; currently scoped to provider access.
+Allow/deny actions on resources. V1 supports one action, `provider.use`. Last matching statement wins; no match =
+allowed; a global-config policy beats a project policy for the same provider. Prefer policies over
+`enabled_providers`/`disabled_providers`.
 
 ```json
-{ "experimental": { "policies": [ { "effect": "deny", "action": "provider.use", "resource": "openai" } ] } }
+{
+  "experimental": {
+    "policies": [
+      { "effect": "deny", "action": "provider.use", "resource": "*" },
+      { "effect": "allow", "action": "provider.use", "resource": "anthropic" }
+    ]
+  }
+}
 ```
+
 ---
 
 ## Server
 
-Controls `opencode serve` / `opencode web`:
+Controls `opencode serve` / `opencode web`. These keys live under a **`server` object**, not at the top level.
 
 ```json
 {
-  "port": 4096,
-  "hostname": "0.0.0.0",
-  "mdns": true,
-  "mdnsDomain": "opencode.local",
-  "cors": ["https://my-app.example.com"]
+  "server": {
+    "port": 4096,
+    "hostname": "0.0.0.0",
+    "mdns": true,
+    "mdnsDomain": "myproject.local",
+    "cors": ["http://localhost:5173"]
+  }
 }
 ```
 
 | Key | Description |
 |-----|-------------|
-| `port` | Listening port (default: 4096) |
-| `hostname` | Listening address (default: `localhost`) |
+| `port` | Port to listen on |
+| `hostname` | Hostname to listen on (defaults to `0.0.0.0` when `mdns` is on and no hostname is set) |
 | `mdns` | Enable mDNS service discovery |
 | `mdnsDomain` | Custom mDNS domain (default: `opencode.local`) |
-| `cors` | Additional allowed CORS origins |
+| `cors` | Additional allowed origins — full origins (scheme + host + optional port) |
 
 ---
 
 ## Commands
 
-Define custom slash commands. Also loadable as markdown files in `~/.config/opencode/commands/` or `.opencode/commands/`.
+Custom slash commands. Also loadable as Markdown in `~/.config/opencode/commands/` or `.opencode/commands/`
+(filename = command name; frontmatter = options; body = template).
 
 ```json
 {
   "command": {
-    "review": {
-      "description": "Review the current diff for issues",
-      "template": "Review this diff for bugs, security issues, and style: {file:.git/COMMIT_EDITMSG}",
+    "test": {
+      "template": "Run the full test suite with coverage report and show any failures.\nFocus on the failing tests and suggest fixes.",
+      "description": "Run tests with coverage",
       "agent": "build",
-      "model": "anthropic/claude-opus-4-5"
+      "model": "anthropic/claude-haiku-4-5"
     },
-    "standup": {
-      "description": "Generate a standup summary",
-      "template": "Summarize my recent git commits into a standup update: {env:GIT_LOG}",
+    "component": {
+      "template": "Create a new React component named $ARGUMENTS with TypeScript support.",
+      "description": "Create a new component",
       "subtask": true
     }
   }
@@ -102,60 +127,61 @@ Define custom slash commands. Also loadable as markdown files in `~/.config/open
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `template` | Yes | Command prompt — supports `{env:VAR}` and `{file:path}` |
-| `description` | No | Shown in command picker |
-| `agent` | No | Agent to use for this command |
+| `template` | Yes | Prompt sent to the LLM |
+| `description` | No | Shown in the TUI command list |
+| `agent` | No | Agent to run it; if that agent is a subagent, the command triggers a subagent invocation by default |
 | `model` | No | Model override |
-| `subtask` | No | Run as a subtask (boolean) |
+| `variant` | No | Model variant (schema field) |
+| `subtask` | No | `true` forces a subagent invocation even for a primary agent; `false` disables the default subagent behavior |
+
+A custom command with the same name as a built-in (`/init`, `/undo`, `/redo`, `/share`, `/help`) overrides it.
 
 ### Prompt template syntax
 
 | Syntax | Description |
 |--------|-------------|
-| `{env:VAR_NAME}` | Inject environment variable value |
-| `{file:path}` | Inject file contents |
 | `$ARGUMENTS` | All arguments passed after the command name |
-| `$1`, `$2`, ... | Positional argument references |
-| `` !`command` `` | Inject shell command output |
-| `@filename` | Include file content by name |
+| `$1`, `$2`, … | Positional arguments |
+| `` !`command` `` | Inject shell command output (runs in the project root) |
+| `@filename` | Include file content |
 
 ---
 
 ## Instructions
 
-Load additional system instructions from files:
+Additional instruction files, globs, or remote URLs (fetched with a 5-second timeout):
 
 ```json
 {
   "instructions": [
-    "~/.config/opencode/base-instructions.md",
-    "{file:./CONVENTIONS.md}",
-    ".opencode/project-rules.md"
+    "CONTRIBUTING.md",
+    "docs/guidelines.md",
+    ".cursor/rules/*.md",
+    "https://raw.githubusercontent.com/my-org/shared-rules/main/style.md"
   ]
 }
 ```
 
-Supports `~` expansion and relative paths. Files are concatenated into the system prompt.
+`AGENTS.md` files are loaded automatically (project files found by traversing up from cwd, plus
+`~/.config/opencode/AGENTS.md`). Claude Code fallbacks: `CLAUDE.md` (if no `AGENTS.md`) and `~/.claude/CLAUDE.md`
+(if no global `AGENTS.md`). Disable with `OPENCODE_DISABLE_CLAUDE_CODE=1`, `OPENCODE_DISABLE_CLAUDE_CODE_PROMPT=1`,
+or `OPENCODE_DISABLE_CLAUDE_CODE_SKILLS=1`.
 
 ---
 
 ## Formatters
 
-Configure code formatters run after file edits:
+**Disabled unless configured.** `true` enables all built-ins; an object enables built-ins plus overrides; `false`
+disables formatters enabled by another config.
 
 ```json
 {
   "formatter": {
-    "prettier": {
-      "command": ["npx", "prettier", "--write"],
-      "extensions": [".ts", ".tsx", ".js", ".json", ".css"]
-    },
-    "black": {
-      "command": ["black"],
-      "extensions": [".py"]
-    },
-    "builtin": {
-      "disabled": true
+    "prettier": { "disabled": true },
+    "custom-prettier": {
+      "command": ["npx", "prettier", "--write", "$FILE"],
+      "environment": { "NODE_ENV": "development" },
+      "extensions": [".js", ".ts", ".jsx", ".tsx"]
     }
   }
 }
@@ -163,31 +189,29 @@ Configure code formatters run after file edits:
 
 | Field | Description |
 |-------|-------------|
-| `command` | Formatter executable + args (file path appended automatically) |
+| `command` | Command array; `$FILE` is replaced with the file path. Required for custom formatters |
 | `extensions` | File extensions to format |
 | `environment` | Additional env vars |
-| `disabled` | Disable a formatter (including `builtin`) |
+| `disabled` | Disable a formatter |
 
-Built-in formatters (auto-detected when installed): `air`, `biome`, `cargofmt`, `clang-format`, `cljfmt`, `dart`, `dfmt`, `gleam`, `gofmt`, `htmlbeautifier`, `ktlint`, `mix`, `nixfmt`, `ocamlformat`, `ormolu`, `oxfmt` (experimental), `pint`, `prettier`, `rubocop`, `ruff`, `rustfmt`, `shfmt`, `standardrb`, `terraform`, `uv`, `zig`.
+Built-ins (run when their requirement is met): `air`, `biome`, `cargofmt`, `clang-format`, `cljfmt`, `dart`, `dfmt`,
+`gleam`, `gofmt`, `htmlbeautifier`, `ktlint`, `mix`, `nixfmt`, `ocamlformat`, `ormolu`, `oxfmt` (experimental),
+`pint`, `prettier`, `rubocop`, `ruff`, `rustfmt`, `shfmt`, `standardrb`, `terraform`, `uv`, `zig`.
 
 ---
 
 ## LSP
 
-Configure Language Server Protocol servers:
+**Disabled unless configured.** `true` enables built-ins; an object enables built-ins plus overrides.
 
 ```json
 {
   "lsp": {
-    "typescript": {
-      "command": ["typescript-language-server", "--stdio"],
-      "extensions": [".ts", ".tsx"],
+    "typescript": { "disabled": true },
+    "custom-lsp": {
+      "command": ["custom-lsp-server", "--stdio"],
+      "extensions": [".custom"],
       "initialization": { "preferences": {} }
-    },
-    "python": {
-      "command": ["pylsp"],
-      "extensions": [".py"],
-      "disabled": false
     }
   }
 }
@@ -195,125 +219,118 @@ Configure Language Server Protocol servers:
 
 | Field | Description |
 |-------|-------------|
-| `command` | LSP server command array |
-| `extensions` | File extensions to activate LSP for |
+| `command` | LSP server command array (required unless the entry only disables a server) |
+| `extensions` | File extensions to activate for |
 | `env` | Environment variables |
-| `initialization` | LSP initialization options object |
-| `disabled` | Disable this LSP server |
+| `initialization` | LSP `initialize` options |
+| `disabled` | Disable this server |
+
+The docs note LSP is not always a net positive; running lint/typecheck commands documented in `AGENTS.md` is often
+better.
 
 ---
 
 ## Tool output
 
-Control truncation of tool output sent to the model:
+Truncation thresholds; overflow is written to the truncation directory and a preview is returned.
 
 ```json
-{
-  "tool_output": {
-    "max_lines": 500,
-    "max_bytes": 51200
-  }
-}
+{ "tool_output": { "max_lines": 2000, "max_bytes": 51200 } }
 ```
 
-| Field | Description |
-|-------|-------------|
-| `max_lines` | Maximum lines per tool output |
-| `max_bytes` | Maximum bytes per tool output |
+Defaults: `max_lines` 2000, `max_bytes` 51200.
 
 ---
 
 ## Compaction
 
-Control how context is managed when it fills up:
-
 ```json
-{
-  "compaction": {
-    "auto": true,
-    "prune": true,
-    "reserved": 8000,
-    "tail_turns": 5,
-    "preserve_recent_tokens": 2000
-  }
-}
+{ "compaction": { "auto": true, "prune": false, "reserved": 10000 } }
 ```
 
 | Field | Description |
 |-------|-------------|
-| `auto` | Automatically compact when context is full (default: `true`) |
-| `prune` | Remove old **tool outputs** to save tokens (default: `false`) |
-| `reserved` | Token buffer reserved during compaction, to avoid overflow |
-| `tail_turns` | Recent user turns (plus their assistant/tool responses) to keep verbatim during compaction (default: `2`) |
-| `preserve_recent_tokens` | Max tokens from recent turns to preserve verbatim after compaction |
+| `auto` | Compact automatically when context is full (default `true`) |
+| `prune` | Remove old tool outputs to save tokens (default `false`) |
+| `reserved` | Token buffer kept free during compaction |
+| `tail_turns` | Max recent user turns (plus their responses) kept verbatim; by default retention is limited only by the token budget (schema-only field) |
+| `preserve_recent_tokens` | Max tokens from recent turns preserved verbatim (schema-only field) |
 
 ---
 
-## Skills & Plugins
+## Skills and plugins
 
 ```json
 {
   "skills": {
-    "paths": ["~/.config/opencode/skills", ".opencode/skills"],
-    "urls": ["https://example.com/my-skills"]
+    "paths": ["./team-skills"],
+    "urls": ["https://example.com/.well-known/skills/"]
   },
   "plugin": [
-    "@opencode/plugin-example",
-    ["@opencode/plugin-with-options", { "option": "value" }]
+    "opencode-helicone-session",
+    ["./plugin/local.ts", { "enabled": true }]
   ]
 }
 ```
 
-Plugins are NPM packages or local paths. Skills are directories with markdown files.
+Skills are auto-discovered from `.opencode/skills/<name>/SKILL.md`, `~/.config/opencode/skills/`, and the
+Claude/agents-compatible `.claude/skills/` and `.agents/skills/` (project and global). V1 `SKILL.md` frontmatter
+requires `name` (1–64 chars, `^[a-z0-9]+(-[a-z0-9]+)*$`, matching the directory) and `description` (1–1024 chars).
+
+Plugins: npm packages (installed with Bun at startup, cached in `~/.cache/opencode/node_modules/`), or local
+`.js`/`.ts` files in `.opencode/plugins/` and `~/.config/opencode/plugins/` (auto-loaded). An entry may be a string
+or a `[name, options]` pair.
 
 ---
 
 ## File watcher
 
 ```json
-{
-  "watcher": {
-    "ignore": ["node_modules/**", "*.log", ".git/**"]
-  }
-}
+{ "watcher": { "ignore": ["node_modules/**", "dist/**", ".git/**"] } }
 ```
-
-Glob patterns for files opencode should not watch for changes.
 
 ---
 
 ## Config precedence order
 
-Configs are **merged**, not replaced — later sources override earlier ones only for conflicting keys. Load order (lowest to highest priority):
+Configs are **merged** — later sources override earlier ones only for conflicting keys. Load order (low → high):
 
-1. Remote config (`.well-known/opencode` — org defaults, fetched on provider auth)
+1. Remote config (`.well-known/opencode` — org defaults, fetched when you authenticate with a supporting provider)
 2. Global config (`~/.config/opencode/opencode.json`)
 3. Custom config (`OPENCODE_CONFIG` env var path)
-4. Project config (`opencode.json` in project root, or nearest parent Git dir)
-5. `.opencode/` directories (agents, commands, plugins — also `OPENCODE_CONFIG_DIR`)
-6. Inline config (`OPENCODE_CONFIG_CONTENT` env var, raw JSON)
-7. Managed config files (system dirs below — admin-controlled)
+4. Project config (`opencode.json` in cwd, else the nearest one up to the Git root)
+5. `.opencode/` directories (agents, commands, plugins); `OPENCODE_CONFIG_DIR` loads after these
+6. Inline config (`OPENCODE_CONFIG_CONTENT` env var)
+7. Managed config files (system dirs below)
 8. macOS managed preferences (`.mobileconfig` via MDM) — highest, not user-overridable
 
-`.opencode`/`~/.config/opencode` subdirectories use plural names (`agents/`, `commands/`, `modes/`, `plugins/`, `skills/`, `tools/`, `themes/`); singular forms still work for backwards compatibility.
+`.opencode` / `~/.config/opencode` subdirectories use plural names (`agents/`, `commands/`, `modes/`, `plugins/`,
+`skills/`, `tools/`, `themes/`); singular forms still work.
 
 ## Managed / enterprise
 
-### System-level config locations (admin-managed, not user-editable)
+### System-level config (admin-managed)
+
+Drop `opencode.json` or `opencode.jsonc` in:
 
 | Platform | Location |
 |----------|----------|
 | macOS | `/Library/Application Support/opencode/` |
 | Linux | `/etc/opencode/` |
-| Windows | `%ProgramData%\opencode\` |
+| Windows | `%ProgramData%\opencode` |
 
 ### macOS MDM
 
-Read from managed preference domain `ai.opencode.managed` via `.mobileconfig` profiles (Jamf, Kandji, FleetDM). Highest priority — user cannot override.
+Preference domain `ai.opencode.managed`, read from `/Library/Managed Preferences/<user>/ai.opencode.managed.plist`
+or `/Library/Managed Preferences/ai.opencode.managed.plist`. Plist keys map directly to `opencode.json` fields.
+Verify with `opencode debug config`.
 
-### Remote config
+---
 
-Deploy organization defaults via `.well-known/opencode` endpoint on your domain — lowest priority, overridden by everything else.
+## Variable substitution
+
+- `{env:VAR}` — environment variable (empty string if unset)
+- `{file:path}` — file contents; path relative to the config file, or absolute (`/`, `~`)
 
 ---
 
@@ -336,15 +353,12 @@ Deploy organization defaults via `.well-known/opencode` endpoint on your domain 
   "autoupdate": "notify",
   "snapshot": true,
   "logLevel": "INFO",
+  "formatter": true,
 
   // Permissions (global defaults)
   "permission": {
-    "read": "allow",
-    "glob": "allow",
-    "grep": "allow",
-    "list": "allow",
     "edit": "ask",
-    "bash": "ask",
+    "bash": { "*": "ask", "git status *": "allow" },
     "webfetch": "ask"
   },
 
@@ -361,15 +375,14 @@ Deploy organization defaults via `.well-known/opencode` endpoint on your domain 
   "command": {
     "review": {
       "description": "Review staged changes",
-      "template": "Review this diff for issues: {file:.git/MERGE_MSG}"
+      "template": "Review this diff for issues:\n!`git diff --cached`"
     }
   },
 
   // Additional instructions
   "instructions": [".opencode/project-rules.md"],
 
-  // Server (for opencode web)
-  "port": 4096,
-  "mdns": false
+  // Server (for opencode serve / web)
+  "server": { "port": 4096, "mdns": false }
 }
 ```

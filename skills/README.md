@@ -19,7 +19,7 @@ Agent Skills are structured collections of instructions, templates, examples, an
 - **[About-Me Skill Creator](about-me-skill-creator/README.md)** - Create a private personal-context skill through a conversational wizard
 - **[High-Fidelity Context Scaffolder](high-fidelity-context-scaffolder/README.md)** - Generate machine-optimized XML context files for AI agent orchestration
 - **[Google Style Docs](google-style-docs/README.md)** - Write technical documentation following Google's Developer Documentation Style Guide
-- **[Copilot Agent Creator](agent-creator-copilot/README.md)** - Create custom agents and extensions for VS Code and GitHub Copilot
+- **[Copilot Agent Creator](agent-creator-copilot/README.md)** - Create custom agents for GitHub Copilot in VS Code, the Copilot CLI, and the cloud agent
 - **[Copilot Instruction Creator](copilot-instruction-creator/README.md)** - Create custom instructions to tailor GitHub Copilot responses
 - **[Copilot Prompt Creator](copilot-prompt-creator/README.md)** - Create custom prompts for Copilot with latest GitHub research
 
@@ -32,13 +32,13 @@ Agent Skills are structured collections of instructions, templates, examples, an
 
 ### AI Platform Skills
 
-- **[OpenCode Agent Creator](agent-creator-opencode/README.md)** - Create custom agents for the OpenCode CLI
+- **[OpenCode Agent Creator](agent-creator-opencode/README.md)** - Create custom agents for the OpenCode CLI (V2 native, V1 supported)
 
 ### AI Client Configuration Skills
 
 - **[Claude Code Settings Manager](client-config-claudecode/SKILL.md)** - Manage and maintain `~/.claude/settings.json` and all Claude Code configuration files
-- **[Copilot CLI Configuration Manager](client-config-copilotcli/SKILL.md)** - Manage GitHub Copilot CLI configuration files including `config.json`, MCP servers, hooks, and custom instructions
-- **[OpenCode Configuration Manager](client-config-opencode/SKILL.md)** - Manage opencode configuration files including `opencode.json`, providers, agents, MCP servers, and permissions
+- **[Copilot CLI Configuration Manager](client-config-copilotcli/SKILL.md)** - Manage GitHub Copilot CLI configuration files including `settings.json`, permissions, MCP and LSP servers, hooks, agents, plugins, and custom instructions
+- **[OpenCode Configuration Manager](client-config-opencode/SKILL.md)** - Manage opencode V2 and V1 configuration files including `opencode.json`, `cli.json`, providers, agents, MCP servers, and permissions
 
 ## Skill Structure
 

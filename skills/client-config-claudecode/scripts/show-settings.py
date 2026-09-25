@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
-show-settings.py — Pretty-print ~/.claude/settings.json with annotations.
-Usage: python show-settings.py [--json]
+show-settings.py — Pretty-print Claude Code settings across scopes (read-only).
+Usage: python show-settings.py [--json] [--settings PATH]
+
+Shows managed settings (if present), user settings (or PATH), MCP servers from
+~/.claude.json (user scope and local scope for the current directory), and the
+current directory's .claude/settings.json and .claude/settings.local.json.
 """
 import json
 import os
@@ -10,19 +14,26 @@ from pathlib import Path
 
 SETTINGS_PATH = Path.home() / ".claude" / "settings.json"
 CLAUDE_JSON_PATH = Path.home() / ".claude.json"
+MANAGED_DIRS = {
+    "darwin": Path("/Library/Application Support/ClaudeCode"),
+    "linux": Path("/etc/claude-code"),
+    "win32": Path("C:/Program Files/ClaudeCode"),
+}
 
 FIELD_NOTES = {
     "permissions": "Tool access rules (allow/deny/ask) and permission mode",
-    "hooks": "Shell commands triggered by lifecycle events",
-    "autoUpdatesChannel": '"latest" (default) or "stable" (1 week behind, safer)',
-    "model": "Default model override",
-    "effortLevel": "Thinking effort: low | medium | high | xhigh",
+    "hooks": "Handlers (command/http/mcp_tool/prompt/agent) run on lifecycle events",
+    "autoUpdatesChannel": '"latest" (default) or "stable" (~1 week old, skips major regressions)',
+    "model": "Model new sessions start with",
+    "effortLevel": "Default effort for models with no saved level: low | medium | high | xhigh",
+    "modelSettings": "Per-model effortLevel / maxEffortLevel (what /effort writes)",
+    "maxEffortLevel": "Effort cap: low | medium | high | xhigh | max (no cap)",
     "language": "Claude response language",
     "env": "Environment variables injected each session",
-    "defaultMode": "Permission mode: default | acceptEdits | plan | auto | dontAsk | bypassPermissions",
+    "defaultMode": "Permission mode: default (manual) | acceptEdits | plan | auto | dontAsk | bypassPermissions",
     "disableAllHooks": "Emergency hook kill switch",
     "autoMode": "Auto mode classifier configuration",
-    "sandbox": "OS-level bash isolation (macOS/Linux/WSL2 only)",
+    "sandbox": "OS-level Bash/PowerShell isolation (macOS/Linux/WSL2 only)",
     "mcpServers": "NOTE: MCP servers live in ~/.claude.json, not settings.json",
     "attribution": "Git commit/PR attribution text",
     "cleanupPeriodDays": "Delete session files older than N days (default: 30)",
@@ -31,6 +42,14 @@ FIELD_NOTES = {
     "showThinkingSummaries": "Show thinking block summaries",
     "tui": "Terminal UI: default | fullscreen",
     "viewMode": "Transcript view: default | verbose | focus",
+    "statusLine": "Custom status line command",
+    "enabledPlugins": "Plugins enabled/disabled by plugin@marketplace",
+    "voice": "Voice dictation: enabled, mode (hold | tap), autoSubmit (hold only)",
+    "voiceEnabled": "DEPRECATED: use voice.enabled",
+    "includeCoAuthoredBy": "DEPRECATED: use attribution",
+    "disableArtifact": "DEPRECATED: use enableArtifact: false",
+    "keybindingFlavor": "DEPRECATED: no effect since v2.1.261",
+    "taskOutputMaxChars": "REMOVED in v2.1.277: no effect",
 }
 
 def load_json(path):
@@ -67,7 +86,7 @@ def print_settings(data, path, label):
         if isinstance(value, dict):
             print(f"\n  [{key}]{note_str}")
             if key == "permissions":
-                for pkey in ["defaultMode", "allow", "deny", "ask", "additionalDirectories"]:
+                for pkey in ["defaultMode", "allow", "deny", "ask", "additionalDirectories", "blockReadsOutsideWorkingDirectories", "disableBypassPermissionsMode", "disableAutoMode"]:
                     if pkey in value:
                         v = value[pkey]
                         if isinstance(v, list):
@@ -100,33 +119,61 @@ def print_settings(data, path, label):
             print(f"\n  {key}: {value}{note_str}")
 
 def main():
-    settings = load_json(SETTINGS_PATH)
-    print_settings(settings, SETTINGS_PATH, "USER SETTINGS (~/.claude/settings.json)")
+    settings_path = SETTINGS_PATH
+    if "--settings" in sys.argv:
+        idx = sys.argv.index("--settings")
+        if idx + 1 >= len(sys.argv):
+            print("ERROR: --settings requires a path", file=sys.stderr)
+            return 2
+        settings_path = Path(sys.argv[idx + 1]).expanduser()
+
+    managed_dir = MANAGED_DIRS.get(sys.platform)
+    if managed_dir:
+        managed_path = managed_dir / "managed-settings.json"
+        if managed_path.exists():
+            print_settings(load_json(managed_path), managed_path, "MANAGED SETTINGS (highest precedence)")
+        dropin_dir = managed_dir / "managed-settings.d"
+        if dropin_dir.is_dir():
+            for dropin in sorted(dropin_dir.glob("*.json")):
+                print_settings(load_json(dropin), dropin, "MANAGED DROP-IN")
+
+    settings = load_json(settings_path)
+    print_settings(settings, settings_path, "USER SETTINGS (~/.claude/settings.json)")
 
     # Show MCP hint from ~/.claude.json
-    claude_json = load_json(CLAUDE_JSON_PATH)
-    if claude_json and "mcpServers" in claude_json:
-        servers = claude_json["mcpServers"]
+    claude_json = load_json(CLAUDE_JSON_PATH) or {}
+    local_servers = (claude_json.get("projects", {}).get(str(Path.cwd()), {}) or {}).get("mcpServers", {})
+    for label, servers in (("user scope", claude_json.get("mcpServers", {})),
+                           (f"local scope, {Path.cwd()}", local_servers)):
+        if not servers:
+            continue
         print(f"\n{'='*60}")
-        print(f"  MCP SERVERS (~/.claude.json)")
+        print(f"  MCP SERVERS (~/.claude.json, {label})")
         print(f"{'='*60}")
         for name, config in servers.items():
             transport = config.get("type", "stdio")
             cmd = config.get("command", config.get("url", "?"))
             print(f"  - {name} ({transport}): {cmd}")
+    project_mcp = load_json(Path.cwd() / ".mcp.json")
+    if project_mcp and project_mcp.get("mcpServers"):
+        print(f"\n{'='*60}")
+        print(f"  MCP SERVERS (.mcp.json, project scope)")
+        print(f"{'='*60}")
+        for name, config in project_mcp["mcpServers"].items():
+            print(f"  - {name} ({config.get('type', 'stdio')}): {config.get('command', config.get('url', '?'))}")
 
     # Check for project settings (only if different from user settings)
     project_settings_path = Path.cwd() / ".claude" / "settings.json"
-    if project_settings_path.exists() and project_settings_path.resolve() != SETTINGS_PATH.resolve():
+    if project_settings_path.exists() and project_settings_path.resolve() != settings_path.resolve():
         project_settings = load_json(project_settings_path)
         print_settings(project_settings, project_settings_path, "PROJECT SETTINGS (.claude/settings.json)")
 
     local_settings_path = Path.cwd() / ".claude" / "settings.local.json"
-    if local_settings_path.exists() and local_settings_path.resolve() != SETTINGS_PATH.resolve():
+    if local_settings_path.exists() and local_settings_path.resolve() != settings_path.resolve():
         local_settings = load_json(local_settings_path)
         print_settings(local_settings, local_settings_path, "LOCAL SETTINGS (.claude/settings.local.json)")
 
     print()
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -46,7 +46,7 @@ artifacts:
     tags: [skills, documentation, linting]
   - id: agent-creator-copilot
     name: Copilot Agent Creator
-    description: Create custom agents for GitHub Copilot and VS Code
+    description: Create custom agents for GitHub Copilot in VS Code, the Copilot CLI, and the cloud agent
     type: skill
     source: skills/agent-creator-copilot
     tags: [skills, copilot, agents]
@@ -64,7 +64,7 @@ artifacts:
     tags: [skills, copilot, prompts]
   - id: agent-creator-opencode
     name: OpenCode Agent Creator
-    description: Create custom agent definitions for the OpenCode CLI
+    description: Create custom agent definitions for the OpenCode CLI (V2 native, V1 supported)
     type: skill
     source: skills/agent-creator-opencode
     tags: [skills, opencode, agents]
@@ -76,13 +76,13 @@ artifacts:
     tags: [skills, claude-code, configuration]
   - id: client-config-copilotcli
     name: Copilot CLI Configuration Manager
-    description: Manage GitHub Copilot CLI configuration files including config.json, MCP servers, hooks, and custom instructions
+    description: Manage GitHub Copilot CLI configuration files including settings.json, permissions, MCP and LSP servers, hooks, agents, plugins, and custom instructions
     type: skill
     source: skills/client-config-copilotcli
     tags: [skills, copilot, configuration]
   - id: client-config-opencode
     name: OpenCode Configuration Manager
-    description: Manage opencode configuration files including opencode.json, providers, agents, MCP servers, and permissions
+    description: Manage opencode V2 and V1 configuration files including opencode.json, cli.json, providers, agents, MCP servers, and permissions
     type: skill
     source: skills/client-config-opencode
     tags: [skills, opencode, configuration]
