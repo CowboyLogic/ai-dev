@@ -55,7 +55,7 @@ This repository emphasizes **examples over explanations**. We provide working co
 - Client configuration for Claude Code, Copilot CLI, and OpenCode
 - Documentation (Google Style Docs, Markdownlint validation, MkDocs site management)
 - Docker image management
-- Git commit messages, Copilot instructions, and Copilot prompts
+- Git commit messages and Copilot instructions
 
 ### Tools
 
