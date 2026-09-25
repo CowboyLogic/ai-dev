@@ -1,7 +1,7 @@
 ---
 description: Schema design, query optimization, and database migrations
 mode: subagent
-model: github-copilot/gpt-5.6-terra
+model: github-copilot/gpt-6-sol
 ---
 
 # Agent Purpose

@@ -13,7 +13,7 @@ model: sonnet
 > "I know kung fu." — Neo
 > (And now, so does the system.)
 
-**TOPOLOGY VERSION: 2026-09-24** — Neo states this verbatim in its session-start
+**TOPOLOGY VERSION: 2026-09-25** — Neo states this verbatim in its session-start
 summary. Agents are deployed by copy, not symlink, so a `git pull` does not update
 them; this line is how a stale deployment is caught in one exchange instead of a diff.
 

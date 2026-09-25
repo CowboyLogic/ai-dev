@@ -621,11 +621,12 @@ session memory, which does not persist across sessions or survive compaction.
 ## Claude Family Concentration — Known Tradeoff
 
 Neo shares model family (Anthropic / Claude) with Oracle, The Architect, Morpheus,
-Switch, Apoc, Dozer, Tank, and Niobe. This means the Conductor and the majority of
+Switch, Apoc, Dozer, and Niobe. This means the Conductor and the majority of
 working agents share model family tendencies. (Oracle and Tank were previously
-Gemini; they moved to Claude so Ghost (Gemini) can satisfy the cross-family review
-requirement across the whole roster without a second Ghost variant.) Mouse and
-Trinity run on GPT — the two GPT-family working agents.
+Gemini; they moved off Gemini so Ghost (Gemini) can satisfy the cross-family review
+requirement across the whole roster without a second Ghost variant. Tank has since
+moved from Claude Haiku to GPT-6 Luna for cost.) Mouse, Trinity, and Tank run on
+GPT — the three GPT-family working agents.
 
 This is a documented, accepted tradeoff with the following compensating controls:
 

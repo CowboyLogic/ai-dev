@@ -53,7 +53,7 @@ folders is a bug — not a variant.
 | `trinity` | Implementation | OpenAI / GPT |
 | `apoc` | Test execution | Anthropic / Claude |
 | `dozer` | Operational diagnostics | Anthropic / Claude |
-| `tank` | Research | Anthropic / Claude |
+| `tank` | Research | OpenAI / GPT |
 | `niobe` | Documentation | Anthropic / Claude |
 | `smith` | Security review (cross-cutting) | OpenAI / GPT |
 | `smith-claude` | Security review of GPT-family artifacts | Anthropic / Claude |
@@ -166,7 +166,7 @@ they will run on the main conversation's model instead.
 | `trinity` | `inherit` | Designated GPT — cannot be honored; falls back to session model |
 | `apoc` | `sonnet` | Methodical but needs solid reasoning for root cause analysis |
 | `dozer` | `sonnet` | Full-stack diagnostic reasoning |
-| `tank` | `haiku` | High-frequency research and retrieval — lightweight is correct here |
+| `tank` | `haiku` | Designated GPT — **deliberate exception** to `inherit`: Tank runs at high frequency, so it stays on the cheapest Claude tier rather than inheriting a pricier session model |
 | `niobe` | `sonnet` | Documentation requires accurate comprehension of full context |
 | `smith` | `inherit` | Designated GPT — cannot be honored; falls back to session model |
 | `smith-claude` | `sonnet` | Claude by design — the pin is honored |
@@ -205,22 +205,24 @@ Copilot tool aliases: `read`, `edit`, `run` (shell), `search` (grep), `web` (fet
 
 ## Model Name Mapping Reference
 
-Only the five model IDs actually in use across the roster appear here. Add a row when
+Only the model IDs actually in use across the roster appear here. Add a row when
 a new pin is introduced — do not leave retired IDs in the table.
 
 | OpenCode model ID | Claude Code `model` | Copilot display name |
 |---|---|---|
-| `github-copilot/claude-opus-4.8` | `opus` | `Claude Opus 4.8 (copilot)` |
+| `github-copilot/claude-opus-5.5` | `opus` | `Claude Opus 5.5 (copilot)` |
 | `github-copilot/claude-sonnet-5` | `sonnet` | `Claude Sonnet 5 (copilot)` |
-| `github-copilot/claude-haiku-4.5` | `haiku` | `Claude Haiku 4.5 (copilot)` |
-| `github-copilot/gpt-5.6-terra` | `inherit` *(GPT — not available)* | `GPT-5.6 Terra (copilot)` |
+| `github-copilot/gpt-6-sol` | `inherit` *(GPT — not available)* | `GPT-6 Sol (copilot)` |
+| `github-copilot/gpt-6-luna` | `inherit` *(GPT — not available)*; `haiku` for `tank` | `GPT-6 Luna (copilot)` |
 | `github-copilot/gemini-3.8-flash` | `inherit` *(Gemini — not available)* | `Gemini 3.8 Flash (copilot)` |
 
 > [!NOTE]
 > Claude Code only serves Claude models. Agents designated for GPT or Gemini families
 > (`mouse`, `trinity`, `smith`, `ghost`) use `model: inherit` — they run on whatever
 > model the main session is using. The cross-family separation those agents depend on
-> is not enforceable in Claude Code.
+> is not enforceable in Claude Code. `tank` (GPT-designated) is the one exception: it
+> uses `haiku`, because inheriting a heavier session model would multiply the cost of
+> the most frequently dispatched agent.
 
 The Copilot column carries a separate caveat.
 

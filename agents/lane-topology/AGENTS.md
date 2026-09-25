@@ -48,14 +48,14 @@ a bug.
 | File | Identifier | Model | Family | Tools | Role |
 |---|---|---|---|---|---|
 | `conductor.md` | `conductor` | `claude-sonnet-5` | Claude | read, subagent, skill, edit→ledger + `AGENTS.md`/`CLAUDE.md`, shell (scoped: git/gh) | Classify, dispatch, ledger, human interface, shipping |
-| `planner.md` | `planner` | `gpt-5.6-sol` | GPT | read, grep, edit→`.agent-output/**` | Socratic planning, design, ADs, requirements |
-| `investigator.md` | `investigator` | `gpt-5.6-terra` | GPT | read, grep, shell, edit→`.agent-output/**` | Read-only comprehension and root cause |
-| `builder.md` | `builder` | `gpt-5.6-terra` | GPT | read, edit, shell, grep | Implementation |
-| `mechanic.md` | `mechanic` | `gpt-5.6-terra` | GPT | read, edit, shell | Trivial mechanical edits |
+| `planner.md` | `planner` | `gpt-6-sol` | GPT | read, grep, edit→`.agent-output/**` | Socratic planning, design, ADs, requirements |
+| `investigator.md` | `investigator` | `gpt-6-sol` | GPT | read, grep, shell, edit→`.agent-output/**` | Read-only comprehension and root cause |
+| `builder.md` | `builder` | `gpt-6-sol` | GPT | read, edit, shell, grep | Implementation |
+| `mechanic.md` | `mechanic` | `gpt-6-luna` | GPT | read, edit, shell | Trivial mechanical edits |
 | `verifier.md` | `verifier` | `gemini-3.8-flash` | Gemini | read, grep, shell | Cross-family review + independent execution |
-| `adversary.md` | `adversary` | `claude-opus-5` | Claude | read, grep, shell | Security review |
-| `scribe.md` | `scribe` | `gpt-5.6-luna` | GPT | read, edit, grep | Documentation |
-| `researcher.md` | `researcher` | `gpt-5.6-luna` | GPT | read, grep, webfetch, websearch, edit→`.agent-output/**` | External research |
+| `adversary.md` | `adversary` | `claude-opus-5.5` | Claude | read, grep, shell | Security review |
+| `scribe.md` | `scribe` | `gpt-6-luna` | GPT | read, edit, grep | Documentation |
+| `researcher.md` | `researcher` | `gpt-6-luna` | GPT | read, grep, webfetch, websearch, edit→`.agent-output/**` | External research |
 
 `conductor` is `mode: primary`. Everything else is `mode: subagent`.
 
@@ -281,11 +281,9 @@ Only the aliases this roster actually uses:
 | OpenCode `model` | Copilot `model` |
 |---|---|
 | `github-copilot/claude-sonnet-5` | `Claude Sonnet 5 (copilot)` |
-| `github-copilot/claude-opus-5` | `Claude Opus 5 (copilot)` |
-| `github-copilot/claude-haiku-4.5` | `Claude Haiku 4.5 (copilot)` |
-| `github-copilot/gpt-5.6-terra` | `GPT-5.6 Terra (copilot)` |
-| `github-copilot/gpt-5.6-sol` | `GPT-5.6 Sol (copilot)` |
-| `github-copilot/gpt-5.6-luna` | `GPT-5.6 Luna (copilot)` |
+| `github-copilot/claude-opus-5.5` | `Claude Opus 5.5 (copilot)` |
+| `github-copilot/gpt-6-sol` | `GPT-6 Sol (copilot)` |
+| `github-copilot/gpt-6-luna` | `GPT-6 Luna (copilot)` |
 | `github-copilot/gemini-3.8-flash` | `Gemini 3.8 Flash (copilot)` |
 
 ### Scoped `edit` does not port

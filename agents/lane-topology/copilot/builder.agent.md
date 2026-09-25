@@ -4,7 +4,7 @@ description: >
   lane) or a Design Brief (BUILD lane), and gets it green. Does not design, does not
   decide architecture, does not review its own work. Up-ramps instead of guessing.
 tools: ["read", "edit", "execute", "search"]
-model: GPT-5.6 Terra (copilot)
+model: GPT-6 Sol (copilot)
 user-invocable: false
 ---
 
@@ -134,7 +134,7 @@ cycle. Two cycles without convergence escalates to the human.
 
 ## Model Selection Rationale
 
-**Current model:** GPT-5.6 Terra · **Family:** OpenAI / GPT
+**Current model:** GPT-6 Sol · **Family:** OpenAI / GPT
 
 A strong agentic coding model — the Builder runs long tool loops, edits across files,
 reads test output, and iterates to green, which is exactly what this tier is built

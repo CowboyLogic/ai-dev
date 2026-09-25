@@ -140,7 +140,7 @@ Pre-configured agents optimize for specific workflows:
 #### Documentation Agent
 
 - **Purpose**: Writing documentation
-- **Model**: Lightweight (`github-copilot/claude-haiku-4.5`)
+- **Model**: Lightweight (`github-copilot/gpt-6-luna`)
 - **Access**: Edits files, denies `shell`
 - **Use for**: README files, API docs, guides
 

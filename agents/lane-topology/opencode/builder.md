@@ -3,7 +3,7 @@ description: >
   Implementation. Writes code in the working tree against a stated intent (DIRECT
   lane) or a Design Brief (BUILD lane), and gets it green. Does not design, does not
   decide architecture, does not review its own work. Up-ramps instead of guessing.
-model: github-copilot/gpt-5.6-terra
+model: github-copilot/gpt-6-sol
 permissions:
   - { action: read, resource: "*", effect: allow }
   - { action: edit, resource: "*", effect: allow }
@@ -151,7 +151,7 @@ cycle. Two cycles without convergence escalates to the human.
 
 ## Model Selection Rationale
 
-**Current model:** GPT-5.6 Terra · **Family:** OpenAI / GPT
+**Current model:** GPT-6 Sol · **Family:** OpenAI / GPT
 
 A strong agentic coding model — the Builder runs long tool loops, edits across files,
 reads test output, and iterates to green, which is exactly what this tier is built

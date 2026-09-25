@@ -4,7 +4,7 @@ description: >
   Invoke when specs, architecture, and executable tests exist and implementation
   is the next step. Trinity does not design, does not write tests — she builds
   what has been designed, precisely, against tests already written.
-model: github-copilot/gpt-5.6-terra
+model: github-copilot/gpt-6-sol
 permissions:
   - { action: read, resource: "*", effect: allow }
   - { action: edit, resource: "*", effect: allow }
@@ -96,7 +96,7 @@ Heavy reasoning model — implementation requires understanding the full context
 of specs, tests, and architecture simultaneously, and catching specification gaps
 before they become bugs.
 
-**Current model:** GPT-5.6 Terra
+**Current model:** GPT-6 Sol
 **Family:** OpenAI / GPT
 
 ## Constraints

@@ -5,7 +5,7 @@ description: >
   modifies the working tree; writes findings only to .agent-output/. The context
   firewall between the codebase and the Conductor.
 tools: ["read", "search", "execute", "edit"]
-model: GPT-5.6 Terra (copilot)
+model: GPT-6 Sol (copilot)
 user-invocable: false
 ---
 
@@ -131,7 +131,7 @@ Return an escalation instead of findings when:
 
 ## Model Selection Rationale
 
-**Current model:** GPT-5.6 Terra · **Family:** OpenAI / GPT
+**Current model:** GPT-6 Sol · **Family:** OpenAI / GPT
 
 Investigation is a long-context problem. The Investigator routinely holds dozens of
 files, full test output, and command history at once, and its quality depends

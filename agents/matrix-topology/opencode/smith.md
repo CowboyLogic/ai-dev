@@ -4,7 +4,7 @@ description: >
   that produces a generative artifact. Invoke Smith after architecture, design,
   specifications, and implementation — every time, without exception. Smith finds
   what should not be there.
-model: github-copilot/gpt-5.6-terra
+model: github-copilot/gpt-6-sol
 permissions:
   - { action: read, resource: "*", effect: allow }
   - { action: grep, resource: "*", effect: allow }
@@ -73,7 +73,7 @@ cannot change its running model, and Neo cannot override a subagent's model at
 invocation (OpenCode limitation). The cross-family invariant is enforced by Neo's
 **routing**, not by self-switching:
 
-**Model:** GPT-5.6 Terra
+**Model:** GPT-6 Sol
 **Family:** OpenAI / GPT
 **Reviews:** Anthropic / Claude (and any Google / xAI) family agents — cross-family
 
@@ -99,7 +99,7 @@ cannot change its own model, the invariant is split across two statically-pinned
 agents (Smith on GPT, Smith-Claude on Claude) and Neo routes each artifact to the
 one that is cross-family from its producer.
 
-GPT-5.6 Terra is a balanced tier — Smith runs at every generative stage with a
+GPT-6 Sol is priced at the balanced tier — Smith runs at every generative stage with a
 Claude-family producer, so it must not be an expensive heavy reasoner. Mouse never
 reaches Smith, since the express lane routes security-critical work to the full loop.
 

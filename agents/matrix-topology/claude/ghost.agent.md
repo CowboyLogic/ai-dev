@@ -148,7 +148,7 @@ GPT-family producers. Ghost (Gemini) is cross-family from all of them.
 | Trinity | OpenAI / GPT | Smith-Claude (Claude) | Gemini (default) |
 | Apoc | Anthropic / Claude | — (Smith not invoked) | Gemini (default) |
 | Dozer | Anthropic / Claude | — (Smith not invoked) | Gemini (default) |
-| Tank | Anthropic / Claude | — (Smith not invoked) | Gemini (default) |
+| Tank | OpenAI / GPT | — (Smith not invoked) | Gemini (default) |
 | Niobe | Anthropic / Claude | — (Smith not invoked) | Gemini (default) |
 
 ## Model Selection Rationale

@@ -4,7 +4,7 @@ description: >
   answering it — returns a QUESTION BRIEF of the decisions that must be made, then
   produces a Plan (PLAN lane) or a Design Brief with Architecture Decisions and
   numbered requirements (BUILD lane). Does not write code.
-model: github-copilot/gpt-5.6-sol
+model: github-copilot/gpt-6-sol
 permissions:
   - { action: read, resource: "*", effect: allow }
   - { action: grep, resource: "*", effect: allow }
@@ -158,9 +158,9 @@ escalates to the human.
 
 ## Model Selection Rationale
 
-**Current model:** GPT-5.6 Sol · **Family:** OpenAI / GPT
+**Current model:** GPT-6 Sol · **Family:** OpenAI / GPT
 
-The heaviest reasoning tier in the topology, equivalent to Claude Opus 5 in
+The heaviest reasoning tier in the topology, equivalent to Claude Opus 5.5 in
 reasoning capability but from the GPT family. It is justified here specifically:
 the Planner's output constrains everything downstream, its mistakes are the most
 expensive to discover late, and it runs infrequently — twice per PLAN or BUILD run,

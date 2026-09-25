@@ -60,12 +60,13 @@ Lightweight model — information retrieval and synthesis does not require heavy
 reasoning capability. A capable, cost-effective model is the right choice here.
 Tank runs frequently and should not consume premium model capacity unnecessarily.
 
-Tank was previously Gemini Flash. It is now Claude Haiku — equivalent cost tier,
-equivalent task profile. The change ensures Ghost (Gemini) can satisfy the
-cross-family review requirement across all agents without a second Ghost variant.
+Tank was previously Gemini Flash, then Claude Haiku. It is now GPT-6 Luna — a
+cheaper tier with the same task profile. Any non-Gemini family keeps Ghost (Gemini)
+cross-family from Tank, and Tank's findings are not routed to Smith, so the GPT pin
+needs no change to review routing.
 
-**Current model:** Claude Haiku 4.5
-**Family:** Anthropic / Claude
+**Current model:** GPT-6 Luna
+**Family:** OpenAI / GPT
 
 ## Constraints
 
