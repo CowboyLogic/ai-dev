@@ -217,7 +217,6 @@ Use specific scopes that match your project structure:
 
 ### Subject Line Checklist
 - [ ] Under 50 characters
-- [ ] Starts with capital letter
 - [ ] No ending punctuation
 - [ ] Imperative mood ("Add" not "Added")
 - [ ] Specific and descriptive
