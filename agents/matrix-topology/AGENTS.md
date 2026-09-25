@@ -15,7 +15,7 @@ rules that keep all three formats consistent.
 
 ## Directory Structure
 
-```
+```text
 agents/matrix-topology/
 ├── opencode/        # Canonical source — OpenCode V2 format, <id>.md
 ├── claude/          # Claude Code format (derived from opencode/)

@@ -624,7 +624,7 @@ git clone https://github.com/CowboyLogic/ai-dev ~/src/ai-dev
 ```bash
 mkdir -p ~/.config/opencode
 ln -sfn ~/src/ai-dev/harness/opencode/opencode.jsonc ~/.config/opencode/opencode.jsonc
-ln -sfn ~/src/ai-dev/harness/opencode/guardrails.md  ~/.config/opencode/guardrails.md
+ln -sfn ~/src/ai-dev/harness/opencode/guardrails.md  ~/.config/opencode/AGENTS.md
 ln -sfn ~/src/ai-dev/agents/matrix-topology/opencode ~/.config/opencode/agents
 ```
 
@@ -634,15 +634,16 @@ ln -sfn ~/src/ai-dev/agents/matrix-topology/opencode ~/.config/opencode/agents
 New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.config\opencode"
 New-Item -ItemType SymbolicLink -Force -Path "$env:USERPROFILE\.config\opencode\opencode.jsonc" `
   -Target "$env:USERPROFILE\src\ai-dev\harness\opencode\opencode.jsonc"
-New-Item -ItemType SymbolicLink -Force -Path "$env:USERPROFILE\.config\opencode\guardrails.md" `
+New-Item -ItemType SymbolicLink -Force -Path "$env:USERPROFILE\.config\opencode\AGENTS.md" `
   -Target "$env:USERPROFILE\src\ai-dev\harness\opencode\guardrails.md"
 New-Item -ItemType Junction -Path "$env:USERPROFILE\.config\opencode\agents" `
   -Target "$env:USERPROFILE\src\ai-dev\agents\matrix-topology\opencode"
 ```
 
-`default_agent` is `neo`, so every session starts with the Conductor. `guardrails.md`
-is loaded on every session via the `instructions` field in `opencode.jsonc`, and the
-`/change` command gives you the express lane.
+`default_agent` is `neo`, so every session starts with the Conductor, and the
+`/change` command gives you the express lane. `guardrails.md` is linked as the global
+`~/.config/opencode/AGENTS.md`, which OpenCode V2 loads on every session. V2 does not
+load the `instructions` field, so a `guardrails.md` link alone does nothing.
 
 Adding a new agent: drop the `<id>.md` file into
 `agents/matrix-topology/opencode/` (OpenCode V2 derives the agent ID from the filename), follow the synchronization checklist in
