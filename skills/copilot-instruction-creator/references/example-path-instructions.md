@@ -1,8 +1,13 @@
+---
+applyTo: "src/api/**,server/**"
+---
+
 # API Layer Instructions
 
 These instructions apply to all API-related files, backend services, and server-side code.
 
 ## API Design Principles
+
 - Follow RESTful API design patterns
 - Use consistent HTTP status codes
 - Implement proper content negotiation
@@ -10,6 +15,7 @@ These instructions apply to all API-related files, backend services, and server-
 - Document all endpoints with OpenAPI/Swagger
 
 ## Authentication & Authorization
+
 - Implement JWT or OAuth 2.0 for authentication
 - Use role-based access control (RBAC)
 - Validate tokens on every request
@@ -17,6 +23,7 @@ These instructions apply to all API-related files, backend services, and server-
 - Log authentication failures for security monitoring
 
 ## Data Validation
+
 - Validate all input data on the server side
 - Use schema validation libraries (Joi, Yup, etc.)
 - Sanitize user inputs to prevent injection attacks
@@ -24,6 +31,7 @@ These instructions apply to all API-related files, backend services, and server-
 - Return meaningful validation error messages
 
 ## Error Handling
+
 - Use consistent error response format
 - Implement proper HTTP status codes
 - Log errors with appropriate levels
@@ -31,6 +39,7 @@ These instructions apply to all API-related files, backend services, and server-
 - Implement graceful degradation
 
 ## Security Best Practices
+
 - Implement HTTPS for all endpoints
 - Use security headers (CSP, HSTS, etc.)
 - Implement rate limiting and throttling
@@ -39,6 +48,7 @@ These instructions apply to all API-related files, backend services, and server-
 - Implement CORS policies appropriately
 
 ## Performance Optimization
+
 - Implement caching strategies (Redis, in-memory)
 - Use database indexes appropriately
 - Implement pagination for large datasets
@@ -47,6 +57,7 @@ These instructions apply to all API-related files, backend services, and server-
 - Implement request/response compression
 
 ## Logging & Monitoring
+
 - Log all API requests and responses
 - Implement structured logging
 - Monitor response times and error rates
@@ -54,6 +65,7 @@ These instructions apply to all API-related files, backend services, and server-
 - Use correlation IDs for request tracing
 
 ## Testing Strategy
+
 - Write unit tests for all business logic
 - Implement integration tests for API endpoints
 - Use test databases for testing

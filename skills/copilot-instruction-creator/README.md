@@ -10,7 +10,7 @@ This skill provides step-by-step guidance for creating effective custom instruct
 
 ## Key Features
 
-- **Personal Instructions**: Individual preferences for Copilot Chat on GitHub.com
+- **Personal Instructions**: Individual preferences for Copilot Chat on GitHub.com or the Copilot CLI
 - **Repository Instructions**: Project-specific standards and context
 - **Organization Instructions**: Company-wide policies and preferences
 - **Path-Specific Instructions**: Targeted guidance for different file types or directories
@@ -21,11 +21,11 @@ This skill provides step-by-step guidance for creating effective custom instruct
 
 - **`SKILL.md`** — Core skill guide: workflow steps, instruction types, writing guidelines, and troubleshooting
 - **`references/example-repository-instructions.md`** — Sample repository-wide `.github/copilot-instructions.md` for a React/TypeScript project
-- **`references/example-path-instructions.md`** — Sample path-specific `.github/instructions/*.instructions.md` for tests and API files
+- **`references/example-path-instructions.md`** — Sample path-specific `.github/instructions/*.instructions.md` for API files, with `applyTo` frontmatter
 
 ## Quick Start
 
-1. **Check the latest GitHub documentation**: Always visit https://docs.github.com/en/copilot/concepts/prompting/response-customization first
+1. **Check the latest GitHub documentation**: Always visit <https://docs.github.com/en/copilot/concepts/prompting/response-customization> first
 2. **Determine your scope**: Personal, repository, or organization level
 3. **Choose instruction type**: Repository-wide, path-specific, or agent instructions
 4. **Analyze your needs**: What behaviors need customization?
@@ -35,17 +35,22 @@ This skill provides step-by-step guidance for creating effective custom instruct
 ## Types of Custom Instructions
 
 ### Personal Instructions
-- Apply to your individual Copilot Chat experience on GitHub.com
+
+- Apply to your individual Copilot Chat experience on GitHub.com (profile picture > **Personal instructions**)
+- Copilot CLI reads `~/.copilot/copilot-instructions.md` and `~/.copilot/instructions/**/*.instructions.md`
 - Set personal preferences like language, response style, or communication preferences
 - Example: "Always respond in clear, concise English with practical examples."
 
 ### Repository Instructions
+
 - **Repository-wide**: `.github/copilot-instructions.md` - applies to entire repository
-- **Path-specific**: `.github/instructions/NAME.instructions.md` - applies to specific paths
-- **Agent instructions**: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md` - model-specific guidance
+- **Path-specific**: `.github/instructions/NAME.instructions.md` - applies to files matching its `applyTo` frontmatter glob (required)
+- **Agent instructions**: `AGENTS.md` anywhere in the repository (nearest wins), or a single root `CLAUDE.md` or `GEMINI.md`
 
 ### Organization Instructions
-- Apply to all organization members (Enterprise plan required)
+
+- Apply to all organization members (Copilot Business or Enterprise; set by organization owners)
+- Supported only in Copilot Chat, code review, and cloud agent on GitHub.com
 - Set company-wide standards and preferences
 - Example: "Always follow our security guidelines and coding standards."
 
@@ -84,6 +89,10 @@ This is a React TypeScript application for task management.
 Create `.github/instructions/api.instructions.md`:
 
 ```markdown
+---
+applyTo: "src/api/**,server/**"
+---
+
 # API Layer Instructions
 
 These instructions apply to API-related files and backend code.
@@ -106,10 +115,11 @@ These instructions apply to API-related files and backend code.
 - Don't expose sensitive information in errors
 ```
 
-### Personal Instructions
+### Personal Instructions Example
 
-In Copilot Chat settings:
-```
+In Copilot Chat on GitHub.com (profile picture > **Personal instructions**):
+
+```text
 Always explain code concepts with practical examples.
 Prefer modern JavaScript/TypeScript features.
 When suggesting code, include comments for complex logic.
@@ -120,6 +130,7 @@ Be concise but thorough in explanations.
 ## Best Practices
 
 ### Writing Effective Instructions
+
 - **Be specific and actionable**: Use concrete examples rather than vague guidance
 - **Keep it concise**: Short, focused statements work better than long explanations
 - **Test thoroughly**: Verify instructions produce desired behavior
@@ -127,12 +138,14 @@ Be concise but thorough in explanations.
 - **Update regularly**: Review and refine as needs change
 
 ### Repository Management
+
 - **Version control**: Track instruction files in git like any other code
 - **Team alignment**: Ensure instructions reflect team consensus
 - **Documentation**: Reference instruction files in project README
 - **Gradual adoption**: Start with a few key instructions and expand
 
 ### Organization Implementation
+
 - **Start small**: Begin with a few high-impact instructions
 - **Gather feedback**: Monitor effectiveness and team satisfaction
 - **Scale gradually**: Expand coverage as the organization adopts
@@ -141,18 +154,21 @@ Be concise but thorough in explanations.
 ## Common Use Cases
 
 ### Development Teams
+
 - Enforce coding standards and conventions
 - Specify technology stack preferences
 - Define project structure and patterns
 - Set testing and documentation requirements
 
 ### Open Source Projects
+
 - Communicate contribution guidelines
 - Specify coding style and formatting
 - Define project architecture and patterns
 - Set documentation standards
 
 ### Enterprise Organizations
+
 - Enforce security and compliance requirements
 - Standardize technology choices
 - Define communication and response styles
@@ -161,18 +177,22 @@ Be concise but thorough in explanations.
 ## Troubleshooting
 
 ### Instructions Not Taking Effect
+
 - Check file location and naming conventions
+- For path-specific files, confirm the `applyTo` glob matches the target files
 - Verify Copilot plan supports custom instructions
 - Check precedence (personal overrides repository, etc.)
 - Test in different Copilot features
 
 ### Inconsistent Behavior
+
 - Review for conflicting instructions
 - Check if instructions are too broad or vague
 - Test across different file types and contexts
 - Consider path-specific instructions for complex projects
 
 ### Team Adoption Issues
+
 - Ensure instructions are documented and discoverable
 - Provide training on how to use custom instructions
 - Gather feedback and iterate on instructions
@@ -187,6 +207,6 @@ Be concise but thorough in explanations.
 ## Resources
 
 - [GitHub Custom Instructions Documentation](https://docs.github.com/en/copilot/concepts/prompting/response-customization)
-- [Adding Repository Instructions](https://docs.github.com/en/copilot/customizing-copilot/adding-repository-custom-instructions-for-github-copilot)
+- [Adding Repository Instructions](https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions)
 - [Custom Instructions Library](https://docs.github.com/en/copilot/tutorials/customization-library/custom-instructions)
 - [Support Matrix](https://docs.github.com/en/copilot/reference/custom-instructions-support)
