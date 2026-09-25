@@ -8,12 +8,6 @@ artifacts:
     type: skill
     source: skills/about-me-skill-creator
     tags: [skills, context, personalization]
-  - id: high-fidelity-context-scaffolder
-    name: High-Fidelity Context Scaffolder
-    description: Generate machine-optimized XML context files for AI agent orchestration
-    type: skill
-    source: skills/high-fidelity-context-scaffolder
-    tags: [skills, context, orchestration]
   - id: google-style-docs
     name: Google Style Docs
     description: Write technical documentation following the Google Developer Documentation Style Guide
