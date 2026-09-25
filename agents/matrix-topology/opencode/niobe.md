@@ -1,16 +1,15 @@
 ---
-name: Niobe
 description: >
   Document writer agent. Invoked to produce documentation artifacts from
   completed lifecycle stages. Invoke when implementation is verified and
   documentation needs to reflect the current state of the system. Niobe
   does not invent — she captures what was built and why.
 model: github-copilot/claude-sonnet-5
-permission:
-  read: allow
-  edit: allow
+permissions:
+  - { action: read, resource: "*", effect: allow }
+  - { action: edit, resource: "*", effect: allow }
 mode: subagent
-hidden: true
+hidden: false
 ---
 
 # Niobe

@@ -1,16 +1,15 @@
 ---
-name: Morpheus
 description: >
   Spec writer agent. Invoked to produce specifications from architecture and
   design artifacts. Invoke when contracts, interfaces, and testable requirements
   need to be formally defined. Morpheus does not write code — he defines what
   code must do and what it must not do.
 model: github-copilot/claude-sonnet-5
-permission:
-  read: allow
-  edit: allow
+permissions:
+  - { action: read, resource: "*", effect: allow }
+  - { action: edit, resource: "*", effect: allow }
 mode: subagent
-hidden: true
+hidden: false
 ---
 
 # Morpheus

@@ -5,27 +5,25 @@ description: >
   modifies the working tree; writes findings only to .agent-output/. The context
   firewall between the codebase and the Conductor.
 model: github-copilot/gpt-5.6-terra
-permission:
-  read: allow
-  grep: allow
-  bash:
-    "*": allow
-    "gh *": deny
-    "git *": deny
-    "* gh *": deny
-    "* git *": deny
-    "git status*": allow
-    "git diff*": allow
-    "git log*": allow
-    "git show*": allow
-    "git blame*": allow
-    "git rev-parse*": allow
-  edit:
-    "*": deny
-    ".agent-output/**": allow
-  task: deny
-  webfetch: deny
-  websearch: deny
+permissions:
+  - { action: read, resource: "*", effect: allow }
+  - { action: grep, resource: "*", effect: allow }
+  - { action: shell, resource: "*", effect: allow }
+  - { action: shell, resource: "gh *", effect: deny }
+  - { action: shell, resource: "git *", effect: deny }
+  - { action: shell, resource: "* gh *", effect: deny }
+  - { action: shell, resource: "* git *", effect: deny }
+  - { action: shell, resource: "git status*", effect: allow }
+  - { action: shell, resource: "git diff*", effect: allow }
+  - { action: shell, resource: "git log*", effect: allow }
+  - { action: shell, resource: "git show*", effect: allow }
+  - { action: shell, resource: "git blame*", effect: allow }
+  - { action: shell, resource: "git rev-parse*", effect: allow }
+  - { action: edit, resource: "*", effect: deny }
+  - { action: edit, resource: ".agent-output/**", effect: allow }
+  - { action: subagent, resource: "*", effect: deny }
+  - { action: webfetch, resource: "*", effect: deny }
+  - { action: websearch, resource: "*", effect: deny }
 mode: subagent
 hidden: false
 ---

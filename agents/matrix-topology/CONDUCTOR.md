@@ -30,21 +30,21 @@ This topology is a **separate concern** from personal working preferences (see
 agents/matrix-topology/
   CONDUCTOR.md                    ← this document
   README.md                       ← the pattern write-up
-  opencode/                       ← OpenCode agent definitions
-    neo.agent.md                  ← Conductor
-    mouse.agent.md                ← Express Builder
-    the-architect.agent.md
-    oracle.agent.md
-    morpheus.agent.md
-    switch.agent.md
-    trinity.agent.md
-    apoc.agent.md
-    dozer.agent.md
-    tank.agent.md
-    niobe.agent.md
-    smith.agent.md                ← Security — GPT (reviews Claude-family artifacts)
-    smith-claude.agent.md         ← Security — Claude (reviews GPT-family artifacts)
-    ghost.agent.md
+  opencode/                       ← OpenCode V2 agent definitions (<id>.md)
+    neo.md                        ← Conductor
+    mouse.md                      ← Express Builder
+    the-architect.md
+    oracle.md
+    morpheus.md
+    switch.md
+    trinity.md
+    apoc.md
+    dozer.md
+    tank.md
+    niobe.md
+    smith.md                      ← Security — GPT (reviews Claude-family artifacts)
+    smith-claude.md               ← Security — Claude (reviews GPT-family artifacts)
+    ghost.md
   copilot/                        ← GitHub Copilot variants (parallel set)
 
 harness/opencode/                 ← OpenCode harness configuration
@@ -68,7 +68,7 @@ harness/opencode/                 ← OpenCode harness configuration
 - Commands (`/handoff`, `/change`) live in `opencode.jsonc`. `/change` is the
   express-lane entry point (see the Express Lane in neo.agent.md).
 
-Adding a new agent: add the `.agent.md` file to `agents/matrix-topology/opencode/`.
+Adding a new agent: add `<id>.md` to `agents/matrix-topology/opencode/` (native OpenCode V2 frontmatter).
 The symlink propagates it automatically — no other changes required. Update the
 roster table below and, if it participates in a stage, the lifecycle.
 
@@ -677,7 +677,7 @@ The resolved model assignments per agent are documented in ghost.agent.md. Updat
 that reference table when roster or model assignments change.
 
 **Model assignments are configurable:** The principles are fixed. The specific
-models are not. Update assignments in .agent.md files as better options become
+models are not. Update assignments in the agent files as better options become
 available without changing this document.
 
 ---

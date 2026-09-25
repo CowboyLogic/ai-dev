@@ -4,14 +4,14 @@ description: >
   was supposed to do. Runs at the close of the BUILD lane or on demand. Reads the
   implementation before writing a word about it.
 model: github-copilot/gpt-5.6-luna
-permission:
-  read: allow
-  edit: allow
-  grep: allow
-  bash: deny
-  task: deny
-  webfetch: deny
-  websearch: deny
+permissions:
+  - { action: read, resource: "*", effect: allow }
+  - { action: edit, resource: "*", effect: allow }
+  - { action: grep, resource: "*", effect: allow }
+  - { action: shell, resource: "*", effect: deny }
+  - { action: subagent, resource: "*", effect: deny }
+  - { action: webfetch, resource: "*", effect: deny }
+  - { action: websearch, resource: "*", effect: deny }
 mode: subagent
 hidden: false
 ---

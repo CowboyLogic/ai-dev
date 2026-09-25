@@ -4,16 +4,15 @@ description: >
   compatibility, error messages, vendor documentation. Returns findings with sources.
   Does not decide anything and does not touch the codebase.
 model: github-copilot/gpt-5.6-luna
-permission:
-  read: allow
-  grep: allow
-  webfetch: allow
-  websearch: allow
-  edit:
-    "*": deny
-    ".agent-output/**": allow
-  bash: deny
-  task: deny
+permissions:
+  - { action: read, resource: "*", effect: allow }
+  - { action: grep, resource: "*", effect: allow }
+  - { action: webfetch, resource: "*", effect: allow }
+  - { action: websearch, resource: "*", effect: allow }
+  - { action: edit, resource: "*", effect: deny }
+  - { action: edit, resource: ".agent-output/**", effect: allow }
+  - { action: shell, resource: "*", effect: deny }
+  - { action: subagent, resource: "*", effect: deny }
 mode: subagent
 hidden: false
 ---

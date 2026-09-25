@@ -5,65 +5,63 @@ description: >
   reads source, never produces artifacts, and never reviews. It routes. On a clean
   PASS in a lane that produced a diff, it also commits, pushes, and opens the pull
   request — it never merges.
-model: github-copilot/claude-sonnet-4.6
-permission:
-  read: allow
-  edit:
-    "*": deny
-    ".agent-output/**": allow
-    "AGENTS.md": allow
-    "CLAUDE.md": allow
-  grep: deny
-  task: allow
-  skill: allow
-  webfetch: deny
-  websearch: deny
-  bash:
-    "*": deny
-    "git status*": allow
-    "git diff*": allow
-    "git log*": allow
-    "git show*": allow
-    "git rev-parse*": allow
-    "git checkout -b *": allow
-    "git revert *": allow
-    "git revert *--no-commit*": deny
-    "git revert *-n *": deny
-    "git add *": allow
-    "git add -A*": deny
-    "git add --all*": deny
-    "git add *-A*": deny
-    "git add .*": deny
-    "git add :/*": deny
-    "git add -u*": deny
-    "git add --update*": deny
-    "git add *-u": deny
-    "git add * -u *": deny
-    "git add -- .*": deny
-    "git commit *": allow
-    "git commit *--amend*": deny
-    "git commit *--no-verify*": deny
-    "git push *": allow
-    "git push *--force*": deny
-    "git push *-f": deny
-    "git push *-f *": deny
-    "git push *+*": deny
-    "git push *--mirror*": deny
-    "git push *--delete*": deny
-    "git push * main*": deny
-    "git push * master*": deny
-    "git push *:main*": deny
-    "git push *:master*": deny
-    "git push *refs/heads/main*": deny
-    "git push *refs/heads/master*": deny
-    "git merge*": deny
-    "git rebase*": deny
-    "git reset*": deny
-    "git cherry-pick*": deny
-    "gh pr create *": allow
-    "gh pr view *": allow
-    "gh pr list*": allow
-    "gh pr merge*": deny
+model: github-copilot/claude-sonnet-5
+permissions:
+  - { action: read, resource: "*", effect: allow }
+  - { action: edit, resource: "*", effect: deny }
+  - { action: edit, resource: ".agent-output/**", effect: allow }
+  - { action: edit, resource: "AGENTS.md", effect: allow }
+  - { action: edit, resource: "CLAUDE.md", effect: allow }
+  - { action: grep, resource: "*", effect: deny }
+  - { action: subagent, resource: "*", effect: allow }
+  - { action: skill, resource: "*", effect: allow }
+  - { action: webfetch, resource: "*", effect: deny }
+  - { action: websearch, resource: "*", effect: deny }
+  - { action: shell, resource: "*", effect: deny }
+  - { action: shell, resource: "git status*", effect: allow }
+  - { action: shell, resource: "git diff*", effect: allow }
+  - { action: shell, resource: "git log*", effect: allow }
+  - { action: shell, resource: "git show*", effect: allow }
+  - { action: shell, resource: "git rev-parse*", effect: allow }
+  - { action: shell, resource: "git checkout -b *", effect: allow }
+  - { action: shell, resource: "git revert *", effect: allow }
+  - { action: shell, resource: "git revert *--no-commit*", effect: deny }
+  - { action: shell, resource: "git revert *-n *", effect: deny }
+  - { action: shell, resource: "git add *", effect: allow }
+  - { action: shell, resource: "git add -A*", effect: deny }
+  - { action: shell, resource: "git add --all*", effect: deny }
+  - { action: shell, resource: "git add *-A*", effect: deny }
+  - { action: shell, resource: "git add .*", effect: deny }
+  - { action: shell, resource: "git add :/*", effect: deny }
+  - { action: shell, resource: "git add -u*", effect: deny }
+  - { action: shell, resource: "git add --update*", effect: deny }
+  - { action: shell, resource: "git add *-u", effect: deny }
+  - { action: shell, resource: "git add * -u *", effect: deny }
+  - { action: shell, resource: "git add -- .*", effect: deny }
+  - { action: shell, resource: "git commit *", effect: allow }
+  - { action: shell, resource: "git commit *--amend*", effect: deny }
+  - { action: shell, resource: "git commit *--no-verify*", effect: deny }
+  - { action: shell, resource: "git push *", effect: allow }
+  - { action: shell, resource: "git push *--force*", effect: deny }
+  - { action: shell, resource: "git push *-f", effect: deny }
+  - { action: shell, resource: "git push *-f *", effect: deny }
+  - { action: shell, resource: "git push *+*", effect: deny }
+  - { action: shell, resource: "git push *--mirror*", effect: deny }
+  - { action: shell, resource: "git push *--delete*", effect: deny }
+  - { action: shell, resource: "git push * main*", effect: deny }
+  - { action: shell, resource: "git push * master*", effect: deny }
+  - { action: shell, resource: "git push *:main*", effect: deny }
+  - { action: shell, resource: "git push *:master*", effect: deny }
+  - { action: shell, resource: "git push *refs/heads/main*", effect: deny }
+  - { action: shell, resource: "git push *refs/heads/master*", effect: deny }
+  - { action: shell, resource: "git merge*", effect: deny }
+  - { action: shell, resource: "git rebase*", effect: deny }
+  - { action: shell, resource: "git reset*", effect: deny }
+  - { action: shell, resource: "git cherry-pick*", effect: deny }
+  - { action: shell, resource: "gh pr create *", effect: allow }
+  - { action: shell, resource: "gh pr view *", effect: allow }
+  - { action: shell, resource: "gh pr list*", effect: allow }
+  - { action: shell, resource: "gh pr merge*", effect: deny }
 mode: primary
 ---
 
@@ -717,7 +715,7 @@ recommends, and a specific question. Not a status dump — a decision request.
 
 ## Model Selection Rationale
 
-**Current model:** Claude Sonnet 4.6 · **Family:** Anthropic / Claude
+**Current model:** Claude Sonnet 5 · **Family:** Anthropic / Claude
 
 The Conductor is invoked on every turn and holds the longest-lived context in the
 system, so it must be fast and cheap enough to run constantly. Its actual cognitive

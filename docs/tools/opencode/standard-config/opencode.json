@@ -1,196 +1,114 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  
-  // Default model configuration - using Claude Sonnet for balanced performance
-  "model": "anthropic/claude-sonnet-4-5-20250929",
-  "small_model": "xai/grok-2-mini",
-  
-  // GitHub Copilot provider configuration
-  "provider": {
-    "github": {
-      "name": "GitHub Copilot",
-      "models": {
-        "gpt-4o": {
-          "name": "GPT-4o via Copilot"
-        },
-        "gpt-4-1": {
-          "name": "GPT-4.1 via Copilot"
-        },
-        "gpt-5": {
-          "name": "GPT-5 via Copilot"
-        },
-        "gpt-5-mini": {
-          "name": "GPT-5 mini via Copilot"
-        },
-        "gpt-5-codex": {
-          "name": "GPT-5-Codex via Copilot"
-        },
-        "claude-3-5-sonnet": {
-          "name": "Claude 3.5 Sonnet via Copilot"
-        },
-        "claude-haiku-4-5": {
-          "name": "Claude Haiku 4.5 via Copilot"
-        },
-        "claude-opus-4-1": {
-          "name": "Claude Opus 4.1 via Copilot"
-        },
-        "claude-sonnet-4": {
-          "name": "Claude Sonnet 4 via Copilot"
-        },
-        "claude-sonnet-4-5": {
-          "name": "Claude Sonnet 4.5 via Copilot"
-        },
-        "gemini-2-5-pro": {
-          "name": "Gemini 2.5 Pro via Copilot"
-        },
-        "grok-code-fast-1": {
-          "name": "Grok Code Fast 1 via Copilot"
-        },
-        "raptor-mini": {
-          "name": "Raptor mini via Copilot"
+
+  // Standard (single-file) configuration — native OpenCode V2 format.
+  // Every agent, command, and setting lives in this one file.
+  // Models use the built-in GitHub Copilot provider; sign in once with /connect.
+
+  // Default model for sessions that do not select one.
+  "model": "github-copilot/claude-sonnet-5",
+  "default_agent": "build",
+
+  // Agents. `agents` replaces the V1 `agent` map; `permissions` is an ordered rule
+  // list (last match wins) that replaces the V1 `tools` and `permission` maps.
+  // An action no rule mentions is ALLOWED — the base policy starts with allow-all.
+  "agents": {
+    // The built-in title agent replaces the V1 `small_model` setting.
+    "title": {
+      "model": "github-copilot/gpt-5-mini"
+    },
+
+    // Fast general tasks. No rules: full tool access through the base policy.
+    "quick": {
+      "description": "Fast agent for basic tasks like code formatting, simple queries, and quick fixes",
+      "mode": "primary",
+      "model": "github-copilot/gpt-5-mini"
+    },
+
+    // Code review — read-only. Denies edit/write/patch and shell.
+    "reviewer": {
+      "description": "Code review agent that analyzes code without making changes",
+      "mode": "subagent",
+      "model": "github-copilot/claude-sonnet-5",
+      "permissions": [
+        { "action": "edit", "resource": "*", "effect": "deny" },
+        { "action": "shell", "resource": "*", "effect": "deny" }
+      ]
+    },
+
+    // Documentation — may edit files, may not run shell commands.
+    "docs": {
+      "description": "Documentation agent for creating and maintaining project documentation",
+      "mode": "subagent",
+      "model": "github-copilot/claude-haiku-4.5",
+      "permissions": [
+        { "action": "shell", "resource": "*", "effect": "deny" }
+      ]
+    }
+  },
+
+  // Slash commands. `commands` replaces the V1 `command` map.
+  "commands": {
+    "quick-fix": {
+      "template": "Make a quick fix for: $ARGUMENTS. Keep it simple and fast.",
+      "description": "Quick fixes using the fast agent",
+      "agent": "quick"
+    },
+    "build": {
+      "template": "Build and test the project. Focus on: $ARGUMENTS",
+      "description": "Build tasks optimized for compilation"
+    },
+    "review": {
+      "template": "Review the following code for quality, security, and best practices: $ARGUMENTS",
+      "description": "Code review without modifications",
+      "agent": "reviewer",
+      "subagent": true
+    },
+    "document": {
+      "template": "Create or update documentation for: $ARGUMENTS. Include examples and clear explanations.",
+      "description": "Documentation creation and updates",
+      "agent": "docs"
+    },
+    "test": {
+      "template": "Run tests for $ARGUMENTS. If tests fail, analyze and suggest fixes.",
+      "description": "Run and fix tests"
+    },
+    "deploy": {
+      "template": "Deploy the application. Handle: $ARGUMENTS",
+      "description": "Deployment tasks"
+    }
+  },
+
+  // Global permission rules, applied before every agent's own rules.
+  // Allow shell generally, but ask before any push.
+  "permissions": [
+    { "action": "shell", "resource": "*", "effect": "allow" },
+    { "action": "shell", "resource": "git push *", "effect": "ask" }
+  ],
+
+  // MCP servers live under mcp.servers in V2. Servers connect automatically;
+  // set "disabled": true to keep one configured without connecting it.
+  // Substitute environment variables with {env:NAME}.
+  "mcp": {
+    "servers": {
+      "github": {
+        "type": "remote",
+        "url": "https://api.githubcopilot.com/mcp/",
+        "headers": {
+          "Authorization": "Bearer {env:GITHUB_TOKEN}"
         }
       }
     }
   },
 
-  // Specialized agents for tiered model usage
-  "agent": {
-    // Fast general tasks - using Grok for speed
-    "quick": {
-      "description": "Fast agent for basic tasks like code formatting, simple queries, and quick fixes",
-      "mode": "primary",
-      "model": "xai/grok-2-mini",
-      "temperature": 0.1,
-      "tools": {
-        "write": true,
-        "edit": true,
-        "bash": true,
-        "read": true,
-        "list": true,
-        "glob": true,
-        "grep": true
-      }
-    },
+  // Update checks: "disable", "notify", or "auto". Honored only in the global
+  // config (~/.config/opencode/opencode.json); ignored in a project config.
+  "update": "notify",
 
-    // Code review agent - read-only with advanced reasoning
-    "reviewer": {
-      "description": "Code review agent that analyzes code without making changes",
-      "mode": "subagent",
-      "model": "anthropic/claude-sonnet-4-5-20250929",
-      "temperature": 0.1,
-      "tools": {
-        "write": false,
-        "edit": false,
-        "bash": false,
-        "read": true,
-        "list": true,
-        "glob": true,
-        "grep": true,
-        "webfetch": true
-      }
-    },
-
-    // Documentation agent - specialized for writing docs
-    "docs": {
-      "description": "Documentation agent for creating and maintaining project documentation",
-      "mode": "subagent",
-      "model": "anthropic/claude-sonnet-4-5-20250929",
-      "temperature": 0.3,
-      "tools": {
-        "write": true,
-        "edit": true,
-        "bash": false,
-        "read": true,
-        "list": true,
-        "glob": true,
-        "grep": true,
-        "webfetch": true
-      }
-    }
-  },
-
-  // Custom commands that leverage the tiered approach
-  "command": {
-    "quick-fix": {
-      "template": "Make a quick fix for: $ARGUMENTS. Keep it simple and fast.",
-      "description": "Quick fixes using fast model",
-      "agent": "quick"
-    },
-    
-    "build": {
-      "template": "Build and test the project. Focus on: $ARGUMENTS",
-      "description": "Build tasks optimized for compilation"
-    },
-    
-    "review": {
-      "template": "Review the following code for quality, security, and best practices: $ARGUMENTS",
-      "description": "Code review without modifications",
-      "agent": "reviewer"
-    },
-    
-    "document": {
-      "template": "Create or update documentation for: $ARGUMENTS. Include examples and clear explanations.",
-      "description": "Documentation creation and updates", 
-      "agent": "docs"
-    },
-
-    "test": {
-      "template": "Run tests for $ARGUMENTS. If tests fail, analyze and suggest fixes.",
-      "description": "Run and fix tests"
-    },
-
-    "deploy": {
-      "template": "Deploy the application. Handle: $ARGUMENTS",
-      "description": "Deployment tasks"
-    },
-
-    }
-  },
-
-  // Tool configuration - enable all tools by default
-  "tools": {
-    "write": true,
-    "edit": true, 
-    "read": true,
-    "list": true,
-    "bash": true,
-    "glob": true,
-    "grep": true,
-    "webfetch": true,
-    "task": true,
-    "todowrite": true,
-    "todoread": true
-  },
-
-  // Permission configuration - ask for destructive operations
-  "permission": {
-    "bash": "allow",
-    "write": "allow",
-    "edit": "allow"
-  },
-
-  // Additional configuration
-  "autoupdate": true,
-  "theme": "opencode",
-
-  // Instructions - include project-specific rules
-  "instructions": [
-    "AGENTS.md",
-    ".cursor/rules/*.md",
-    "README.md"
-	],
-  // MCP server configurations
-  "mcp": {
-    "github": {
-      "type": "remote",
-      "url": "https://api.githubcopilot.com/mcp/",
-      "enabled": true,
-      "headers": {
-        "Authorization": "Bearer ${GITHUB_TOKEN}"
-      }
-    }
-  },
-
-  // Sharing configuration
   "share": "manual"
+
+  // Not here in V2:
+  // - "theme" and keybinds belong in the terminal client config, ~/.config/opencode/cli.json.
+  // - "instructions" is accepted but not loaded. Put project guidance in AGENTS.md,
+  //   which V2 discovers automatically.
 }

@@ -17,7 +17,7 @@ rules that keep all three formats consistent.
 
 ```
 agents/matrix-topology/
-├── opencode/        # Canonical source — OpenCode CLI format
+├── opencode/        # Canonical source — OpenCode V2 format, <id>.md
 ├── claude/          # Claude Code format (derived from opencode/)
 ├── copilot/         # GitHub Copilot format (derived from opencode/)
 ├── AGENTS.md        # This file — synchronization directive
@@ -62,7 +62,7 @@ folders is a bug — not a variant.
 > [!IMPORTANT]
 > **The roster is closed.** These fourteen are the only legal dispatch targets.
 > `general`, `explore`, and every other built-in or all-purpose subagent are banned
-> unconditionally in `neo.agent.md`. A `general` dispatch means the roster left the
+> unconditionally in Neo's agent file. A `general` dispatch means the roster left the
 > request with no legal move — that is a **roster gap, not a config failure**. Fix it
 > by adding a capability or an explicit decomposition path, never by relaxing the ban.
 >
@@ -74,7 +74,7 @@ folders is a bug — not a variant.
 ### Everything flows through Neo — no subagent-to-subagent handoff
 
 A subagent returns to Neo and stops. There is no channel by which one subagent hands
-anything to another: working agents hold no `task` permission, and a running subagent
+anything to another: working agents hold no `subagent` permission, and a running subagent
 cannot receive a message from a peer. Nested delegation is unreliable in OpenCode, and
 this is the same constraint seen from the input side.
 
@@ -102,25 +102,37 @@ The body is identical in all three.
 
 ### OpenCode (`opencode/`)
 
+Native OpenCode V2 frontmatter. Files are named `<id>.md` — V2 derives the agent ID
+from the filename, so `tank.agent.md` would load as `tank.agent` and Neo's dispatch to
+`tank` would resolve to nothing. There is no `name:` field; the filename is the ID.
+
 ```yaml
 ---
-name: Agent Name
 description: >
   One-line description.
 model: github-copilot/<model-id>
-permission:
-  read: allow
-  edit: allow       # where applicable
-  bash: allow       # where applicable
-  grep: allow       # where applicable
-  webfetch: allow   # where applicable
-  websearch: allow  # where applicable
-  task: allow       # Neo only
+permissions:                                               # ordered; last match wins
+  - { action: read, resource: "*", effect: allow }
+  - { action: edit, resource: "*", effect: allow }         # where applicable
+  - { action: shell, resource: "*", effect: allow }        # where applicable
+  - { action: grep, resource: "*", effect: allow }         # where applicable
+  - { action: webfetch, resource: "*", effect: allow }     # where applicable
+  - { action: websearch, resource: "*", effect: allow }    # where applicable
+  - { action: subagent, resource: "*", effect: allow }     # Neo only
 mode: subagent      # all except Neo
 # mode: primary     # Neo only
-hidden: true        # all except Neo
+hidden: false       # all except Neo — see below
 ---
 ```
+
+> [!WARNING]
+> **Subagents must ship `hidden: false` under V2.** V2's `hidden` removes an agent from
+> the subagent catalog as well as from listings, so the V1-era `hidden: true` would stop
+> Neo dispatching any of them. Under V1 it only hid the agent from user selection.
+
+V2 action names differ from V1: `bash` is `shell`, `task` is `subagent`, and
+`write`/`patch` are `edit`. An action no rule mentions is allowed — V2's base policy
+starts with an allow-all rule.
 
 ### Claude Code (`claude/`)
 
@@ -174,20 +186,20 @@ agents:                  # Neo only
 ---
 ```
 
-Copilot tool aliases: `read`, `edit`, `run` (bash), `search` (grep), `web` (fetch/search), `agent` (task/subagent)
+Copilot tool aliases: `read`, `edit`, `run` (shell), `search` (grep), `web` (fetch/search), `agent` (subagent)
 
 ---
 
 ## Tool Mapping Reference
 
-| OpenCode permission | Claude Code tool | Copilot tool |
+| OpenCode V2 action | Claude Code tool | Copilot tool |
 |---|---|---|
 | `read` | `Read` | `"read"` |
 | `edit` | `Edit` | `"edit"` |
-| `bash` | `Bash` | `"run"` |
+| `shell` | `Bash` | `"run"` |
 | `grep` | `Grep` | `"search"` |
 | `webfetch` / `websearch` | `WebFetch` | `"web"` |
-| `task` | `Task` | `"agent"` |
+| `subagent` | `Task` | `"agent"` |
 
 ---
 
@@ -202,7 +214,7 @@ a new pin is introduced — do not leave retired IDs in the table.
 | `github-copilot/claude-sonnet-5` | `sonnet` | `Claude Sonnet 5 (copilot)` |
 | `github-copilot/claude-haiku-4.5` | `haiku` | `Claude Haiku 4.5 (copilot)` |
 | `github-copilot/gpt-5.6-terra` | `inherit` *(GPT — not available)* | `GPT-5.6 Terra (copilot)` |
-| `github-copilot/gemini-3.1-pro-preview` | `inherit` *(Gemini — not available)* | `Gemini 3.1 Pro (copilot)` |
+| `github-copilot/gemini-3.8-flash` | `inherit` *(Gemini — not available)* | `Gemini 3.8 Flash (copilot)` |
 
 > [!NOTE]
 > Claude Code only serves Claude models. Agents designated for GPT or Gemini families
@@ -219,14 +231,13 @@ The Copilot column carries a separate caveat.
 
 ### Scoped permissions: catch-all first, overrides after
 
-OpenCode evaluates permission patterns in order and **the last matching rule wins**.
+OpenCode evaluates permission rules in order and **the last matching rule wins**.
 The catch-all `"*"` therefore goes **first**, with specific grants after it:
 
 ```yaml
-permission:
-  edit:
-    "*": deny                    # catch-all FIRST
-    ".agent-output/**": allow   # specific override AFTER
+permissions:
+  - { action: edit, resource: "*", effect: deny }                 # catch-all FIRST
+  - { action: edit, resource: ".agent-output/**", effect: allow } # override AFTER
 ```
 
 Written the other way round, `"*": deny` is the last match for every path and the
@@ -235,8 +246,8 @@ still looks correct at a glance, and OpenCode raises no error. `tank` and `dozer
 both shipped this inversion once; check the order whenever you touch a scoped grant.
 
 > [!NOTE]
-> Authoritative source: `skills/agent-creator-opencode/references/v1/permissions.md`
-> → *Pattern matching rules*. Load that skill before editing any OpenCode frontmatter.
+> Authoritative source: `skills/agent-creator-opencode/references/v2/permissions.md`
+> → rule matching. Load that skill before editing any OpenCode frontmatter.
 
 ### Scoped `edit` does not port
 
@@ -261,12 +272,12 @@ When modifying any agent:
 - [ ] No folder has a body that diverges from `opencode/`
 - [ ] **Body/frontmatter agreement:** every capability the body tells the agent to use is
       actually granted in the frontmatter of *all three* formats. An agent told to write a
-      file needs `edit`. OpenCode defaults unlisted permissions to **allow**, so this class
+      file needs `edit`. OpenCode V2 allows any action no rule mentions, so this class
       of bug is invisible there and hard-fails in Claude Code and Copilot, where `tools:`
       is a strict allowlist.
 - [ ] **Roster closure:** no plausible request is left with no legal single agent — or Neo
       has an explicit decomposition path for it
-- [ ] Bumped `TOPOLOGY VERSION` in `opencode/neo.agent.md` (and re-synced it to the other
+- [ ] Bumped `TOPOLOGY VERSION` in `opencode/neo.md` (and re-synced it to the other
       two formats) if any agent body changed
 - [ ] Ran `./verify-deployment.sh --update` to regenerate `MANIFEST.sha256` — **last step,
       after every other change is final**
@@ -275,7 +286,7 @@ Do not spot-check body parity by eye. Verify it mechanically:
 
 ```bash
 cd agents/matrix-topology
-for f in opencode/*.agent.md; do a=$(basename "$f" .agent.md)
+for f in opencode/*.md; do a=$(basename "$f" .md)
   for d in claude copilot; do
     diff -q <(sed -n '/^---$/,$p' "$f" | sed '1,/^---$/d') \
             <(sed -n '/^---$/,$p' "$d/$a.agent.md" | sed '1,/^---$/d') >/dev/null \
@@ -295,7 +306,7 @@ for a topology behaving like an older revision.
 
 Two reporting mechanisms, deliberately advisory — nothing blocks a stale run:
 
-**1. `TOPOLOGY VERSION` in Neo's body.** A dated line at the top of `neo.agent.md`,
+**1. `TOPOLOGY VERSION` in Neo's body.** A dated line at the top of Neo's agent file,
 which Neo states verbatim in its session-start summary. This is body content, not
 frontmatter, because **an agent cannot see its own frontmatter** — frontmatter is
 harness config, the body is the prompt. It lives in Neo alone: Neo is the only agent
@@ -317,7 +328,7 @@ three formats and costs zero tokens, since it never enters a prompt.
 ```
 
 Deployed files are matched by **basename**, so a flattened deploy directory works, and
-the `.agent.md` → `.md` rename some deploys use is tolerated. Exit code is non-zero on
+either `<id>.md` or `<id>.agent.md` is accepted in a deploy directory. Exit code is non-zero on
 any stale or missing file.
 
 > [!IMPORTANT]
@@ -329,19 +340,19 @@ any stale or missing file.
 
 ## Adding a New Agent
 
-1. Write the canonical agent in `opencode/` with full OpenCode frontmatter and body
+1. Write the canonical agent in `opencode/<id>.md` with native OpenCode V2 frontmatter and body
 2. Confirm the frontmatter grants every capability the body assumes — in all three formats
 3. Copy the body verbatim to `claude/` — apply Claude Code frontmatter only
 4. Copy the body verbatim to `copilot/` — apply Copilot frontmatter only
 5. Add the agent to the roster table in this file
 6. Add the agent to Neo's `agents:` list in `copilot/neo.agent.md`
-7. Add the agent to Neo's routing table in `opencode/neo.agent.md` — **all three formats**,
+7. Add the agent to Neo's routing table in `opencode/neo.md` — **all three formats**,
    since that table is body content and is what closes the roster
 8. Update `CONDUCTOR.md` with the new agent's role, model, and lifecycle position
 9. Update `README.md` with a brief description for human readers
 10. Re-run the roster-closure check: does the new agent's role boundary create a request
     that no single agent can now serve?
-11. Bump `TOPOLOGY VERSION` in `opencode/neo.agent.md`, then run
+11. Bump `TOPOLOGY VERSION` in `opencode/neo.md`, then run
     `./verify-deployment.sh --update` to regenerate the manifest
 
 ---
@@ -349,6 +360,6 @@ any stale or missing file.
 ## Authoritative References
 
 - **Topology rules and lifecycle:** `CONDUCTOR.md` in this directory
-- **OpenCode frontmatter schema:** `skills/agent-creator-opencode/references/v1/properties.md` (V1) and `references/v2/agents.md` (V2)
+- **OpenCode frontmatter schema:** `skills/agent-creator-opencode/references/v2/agents.md` and `references/v2/permissions.md` (V2 — the format these files use)
 - **Copilot frontmatter schema:** `skills/agent-creator-copilot/references/frontmatter-reference.md`
 - **Claude Code frontmatter schema:** See the `claude/` section above (no separate reference file)

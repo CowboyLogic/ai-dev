@@ -1,16 +1,15 @@
 ---
-name: The Architect
 description: >
   Architecture agent. Invoked at the architecture stage of the development
   lifecycle to produce structure, key decisions, and extension points. Invoke
   when designing system structure, making significant technical decisions, or
   defining how components relate.
 model: github-copilot/claude-opus-4.8
-permission:
-  read: allow
-  edit: allow
+permissions:
+  - { action: read, resource: "*", effect: allow }
+  - { action: edit, resource: "*", effect: allow }
 mode: subagent
-hidden: true
+hidden: false
 ---
 
 # The Architect

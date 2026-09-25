@@ -1,5 +1,4 @@
 ---
-name: Mouse
 description: >
   Express-lane builder. Invoked by Neo for small, well-scoped changes that do not
   warrant the full lifecycle. Mouse implements the change directly in the working
@@ -7,12 +6,12 @@ description: >
   Mouse does not design, does not write specs, and does not invoke reviewers —
   Neo owns the express review loop.
 model: github-copilot/gpt-5.6-terra
-permission:
-  read: allow
-  edit: allow
-  bash: allow
+permissions:
+  - { action: read, resource: "*", effect: allow }
+  - { action: edit, resource: "*", effect: allow }
+  - { action: shell, resource: "*", effect: allow }
 mode: subagent
-hidden: true
+hidden: false
 ---
 
 # Mouse — Express-Lane Builder

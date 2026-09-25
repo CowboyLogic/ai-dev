@@ -1,12 +1,7 @@
 ---
 description: REST/GraphQL API design, OpenAPI specs, and API integration
 mode: subagent
-model: github-copilot/grok-code-fast-1
-temperature: 0.2
-tools:
-  write: true
-  edit: true
-  bash: true
+model: github-copilot/gpt-5.6-terra
 ---
 
 # Agent Purpose
@@ -45,9 +40,11 @@ The API agent is designed to assist with API design, documentation, and integrat
 ## Examples
 
 ### Example Scenario 1
+
 "The API lacks pagination. Add support for paginated responses."
 
 ### Example Scenario 2
+
 "The error codes are inconsistent. Standardize error codes across all endpoints."
 
 ## Important Considerations

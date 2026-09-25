@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parent
 OPENCODE, COPILOT = ROOT / "opencode", ROOT / "copilot"
 
 # The one agent allowed to hold each otherwise-forbidden capability.
-SOLE_HOLDER = {"task": "conductor", "webfetch": "researcher", "websearch": "researcher"}
+SOLE_HOLDER = {"subagent": "conductor", "webfetch": "researcher", "websearch": "researcher"}
 
 # Agents that must not hold shell at all.
 NO_BASH = {"planner", "scribe", "researcher"}
@@ -45,16 +45,37 @@ FORBIDDEN_CMDS = [
 # Agents whose `edit` must not reach the working tree, and the path that proves it.
 SANDBOXED_EDIT = {"planner", "investigator", "researcher"}
 
-# OpenCode permission -> Copilot tool alias, per AGENTS.md.
+# OpenCode V2 permission action -> Copilot tool alias, per AGENTS.md.
 TOOL_MAP = {
     "read": "read",
     "edit": "edit",
-    "bash": "execute",
+    "shell": "execute",
     "grep": "search",
     "webfetch": "web",
     "websearch": "web",
-    "task": "agent",
+    "subagent": "agent",
 }
+
+# OpenCode V2 base policy. Every agent starts with it, and agent rules are appended
+# after it — so an action no agent rule mentions is ALLOWED. This is the default-allow
+# trap, and V2 kept it: it is now an explicit first rule instead of an implicit default.
+BASE_POLICY = [
+    {"action": "*", "resource": "*", "effect": "allow"},
+    {"action": "external_directory", "resource": "*", "effect": "ask"},
+    {"action": "read", "resource": "*.env", "effect": "ask"},
+    {"action": "read", "resource": "*.env.*", "effect": "ask"},
+    {"action": "read", "resource": "*.env.example", "effect": "allow"},
+]
+
+# V1 fields and action names. The agents are native V2; a V1 field that slips back
+# in is either silently translated or ignored, and neither is what the file says.
+LEGACY_FIELDS = {"permission", "tools", "name", "prompt", "disable", "maxSteps",
+                 "temperature", "top_p", "variant"}
+LEGACY_ACTIONS = {"bash": "shell", "task": "subagent", "write": "edit",
+                  "patch": "edit", "list": "glob"}
+
+# The V2 shell scanner checks each command of a compound command separately.
+SHELL_SEPARATORS = re.compile(r"\s*(?:&&|\|\||;|\|)\s*")
 
 failures: list[str] = []
 checks_run = 0
@@ -75,44 +96,65 @@ def frontmatter(path: Path) -> tuple[dict, str]:
     return yaml.safe_load(m.group(1)) or {}, text[m.end():]
 
 
-def resolve(rules, value: str) -> str:
-    """Resolve `value` against an OpenCode permission block.
+def pattern_matches(pattern: str, value: str, shell: bool = False) -> bool:
+    """V2 whole-value wildcards: `*` is zero or more characters including `/`, `?`
+    is exactly one. A shell pattern ending in ` *` also matches the bare command."""
+    regex = "".join(
+        "." if c == "?" else ".*" if c == "*" else re.escape(c) for c in pattern
+    )
+    if re.fullmatch(regex, value, re.S):
+        return True
+    return shell and pattern.endswith(" *") and pattern_matches(pattern[:-2], value)
 
-    Two semantics matter and both have burned this repo: LAST matching rule wins
-    (so the catch-all goes first), and patterns match the ENTIRE command string
-    (so a deny anchored at the start is evaded by any prefix).
+
+def resolve(rules: list, action: str, value: str) -> str:
+    """Resolve one (action, resource) check the way OpenCode V2 does.
+
+    LAST matching rule wins (so the catch-all goes first), starting from the base
+    policy, whose first rule allows everything.
     """
-    if not isinstance(rules, dict):
-        return rules if isinstance(rules, str) else "allow"
-    verdict = "allow"  # absent block == granted
-    for pattern, action in rules.items():
-        regex = "".join(
-            "." if c == "?" else ".*" if c == "*" else re.escape(c) for c in pattern
-        )
-        if re.fullmatch(regex, value):
-            verdict = action
+    verdict = "ask"  # V2's no-match default; unreachable while the base policy leads
+    for rule in BASE_POLICY + rules:
+        if pattern_matches(rule["action"], action) and pattern_matches(
+            rule["resource"], value, shell=(action == "shell")
+        ):
+            verdict = rule["effect"]
     return verdict
 
 
-def granted(perm: dict, key: str) -> bool:
-    """True if `key` is effectively allowed.
+def resolve_shell(rules: list, command: str, split: bool) -> str:
+    """Whole-string resolution (split=False), or per-command as the V2 scanner does
+    (split=True): any deny denies, otherwise any ask asks, otherwise allow."""
+    parts = SHELL_SEPARATORS.split(command) if split else [command]
+    verdicts = {resolve(rules, "shell", part) for part in parts if part}
+    for effect in ("deny", "ask"):
+        if effect in verdicts:
+            return effect
+    return "allow"
 
-    OpenCode defaults UNLISTED keys to allow. This default is the single most
-    expensive thing about the format: three agents once held unrestricted shell and
-    all eight could dispatch subagents, purely by omission, and no file said so.
+
+def mentions(rules: list, action: str) -> bool:
+    return any(rule["action"] == action for rule in rules)
+
+
+def granted(rules: list, action: str) -> bool:
+    """True if `action` is allowed for at least one resource.
+
+    The base policy allows every action, so an action no rule mentions is granted.
+    Three agents once held unrestricted shell and all eight could dispatch subagents,
+    purely by omission, and no file said so. Otherwise: the last catch-all rule for
+    the action sets the baseline, and any specific allow AFTER it re-opens the action
+    for that resource. Specific rules before the catch-all are shadowed by it.
     """
-    if key not in perm:
-        return True  # absent == granted
-    v = perm[key]
-    if isinstance(v, dict):
-        # A pattern map with no catch-all still defaults to allow for anything it
-        # does not match, so a deny-only block grants everything it forgot to name.
-        # Treating it as "not granted" would be the default-allow trap a second time,
-        # this time in the checker meant to catch it.
-        if "*" not in v:
-            return True
-        return v["*"] == "allow" or any(a == "allow" for p, a in v.items() if p != "*")
-    return v == "allow"
+    baseline, after = True, []
+    for rule in rules:
+        if not pattern_matches(rule["action"], action):
+            continue
+        if rule["resource"] == "*":
+            baseline, after = rule["effect"] == "allow", []
+        else:
+            after.append(rule)
+    return baseline or any(rule["effect"] == "allow" for rule in after)
 
 
 def main() -> int:
@@ -144,22 +186,45 @@ def main() -> int:
                 m.group(1),
             )
 
-    # 3. The default-allow trap: capabilities must be denied by NAME, not by omission.
+    # 2b. Native V2 frontmatter: an ordered `permissions` list of well-formed rules,
+    #     and no V1 field or action name that V2 would translate or ignore.
+    rules_of: dict[str, list] = {}
     for name, (fm, _) in agents.items():
-        perm = fm.get("permission") or {}
+        for field in sorted(LEGACY_FIELDS & set(fm)):
+            check(False, f"{name}: V1 field '{field}'", "use the V2 equivalent")
+        rules = fm.get("permissions")
+        check(isinstance(rules, list) and bool(rules), f"{name}: no 'permissions' list")
+        rules = rules if isinstance(rules, list) else []
+        for rule in rules:
+            ok = isinstance(rule, dict) and set(rule) == {"action", "resource", "effect"}
+            check(ok, f"{name}: malformed rule", repr(rule))
+            if ok:
+                check(rule["effect"] in ("allow", "ask", "deny"), f"{name}: bad effect", repr(rule))
+                legacy = LEGACY_ACTIONS.get(rule["action"])
+                check(not legacy, f"{name}: V1 action '{rule['action']}'", f"use '{legacy}'")
+        rules_of[name] = [r for r in rules if isinstance(r, dict) and "action" in r]
+
+    # 3. The default-allow trap: capabilities must be denied by NAME, not by omission.
+    for name in agents:
         for key, holder in SOLE_HOLDER.items():
             if name != holder:
-                check(not granted(perm, key), f"{name} holds '{key}'", "deny it explicitly")
+                check(not granted(rules_of[name], key), f"{name} holds '{key}'", "deny it explicitly")
 
     # 3b. Shell: the three non-shell agents hold none, and nobody can mutate git.
-    for name, (fm, _) in agents.items():
-        perm = fm.get("permission") or {}
-        bash = perm.get("bash", {})
+    #     Forbidden commands must be denied BOTH whole-string and per-command. The V2
+    #     scanner splits compound commands, but a command it cannot split is checked
+    #     whole — and then only the wrapped denies (`* git *`) stand in the way.
+    for name in agents:
+        rules = rules_of[name]
         if name in NO_BASH:
-            check(not granted(perm, "bash"), f"{name} must have 'bash: deny'")
+            check(not granted(rules, "shell"), f"{name} must deny 'shell'")
             continue
         for cmd in FORBIDDEN_CMDS:
-            check(resolve(bash, cmd) == "deny", f"{name} can run", repr(cmd))
+            for split in (False, True):
+                check(
+                    resolve_shell(rules, cmd, split) == "deny",
+                    f"{name} can run", f"{cmd!r} ({'per-command' if split else 'whole string'})",
+                )
 
     # 3c. Sandboxed edit really is sandboxed — and the grant is not shadowed.
     #     Rule order was inverted here once, denying every path including the one
@@ -167,16 +232,16 @@ def main() -> int:
     for name in SANDBOXED_EDIT:
         if name not in agents:
             continue
-        edit = (agents[name][0].get("permission") or {}).get("edit", {})
-        check(resolve(edit, "src/main.py") == "deny", f"{name} can edit the working tree")
+        rules = rules_of[name]
+        check(resolve(rules, "edit", "src/main.py") == "deny", f"{name} can edit the working tree")
         check(
-            resolve(edit, ".agent-output/notes.md") == "allow",
+            resolve(rules, "edit", ".agent-output/notes.md") == "allow",
             f"{name} cannot write .agent-output",
             "catch-all '*' must come FIRST, specific grant after",
         )
 
     # 3d. The Conductor ships, so its allowlist is the one that must be exact.
-    cond_bash = (agents["conductor"][0].get("permission") or {}).get("bash", {})
+    cond_rules = rules_of["conductor"]
     for cmd, want in [
         ("git checkout -b fix/x", "allow"),
         ("git checkout -- .", "deny"),          # discards work as surely as reset
@@ -199,7 +264,12 @@ def main() -> int:
         ("gh pr create --title x", "allow"),
         ("npm test", "deny"),                   # the Conductor does not run tests
     ]:
-        check(resolve(cond_bash, cmd) == want, f"conductor: {cmd!r} should be {want}")
+        for split in (False, True):
+            check(
+                resolve_shell(cond_rules, cmd, split) == want,
+                f"conductor: {cmd!r} should be {want}",
+                "per-command" if split else "whole string",
+            )
 
     # 4. Subagents declare hidden; every agent declares a model.
     for name, (fm, _) in agents.items():
@@ -255,13 +325,13 @@ def main() -> int:
             continue
         cfm, _ = frontmatter(mirror)
         tools = set(cfm.get("tools") or [])
-        perm = fm.get("permission") or {}
+        rules = rules_of[name]
         for key, alias in TOOL_MAP.items():
-            if key not in perm:
+            if not mentions(rules, key):
                 continue  # unlisted in OpenCode; nothing asserted to mirror
-            if granted(perm, key):
+            if granted(rules, key):
                 check(alias in tools, f"{name}: '{key}' allowed but Copilot lacks '{alias}'")
-            elif not any(granted(perm, k) for k, a in TOOL_MAP.items() if a == alias):
+            elif not any(granted(rules, k) for k, a in TOOL_MAP.items() if a == alias):
                 check(alias not in tools, f"{name}: '{key}' denied but Copilot grants '{alias}'")
 
     # 7. The Conductor's routing table only names agents that exist.

@@ -71,7 +71,7 @@ findings between agents without re-deriving them.
 <!-- artifact-sync:roster:start -->
 | Agent | Model | Job | Source |
 |---|---|---|---|
-| **Conductor** | `github-copilot/claude-sonnet-4.6` | Primary interactive agent. Classifies every request into a lane, dispatches the right specialist, holds the ledger, and talks to the human. The Conductor never reads source, never produces artifacts, and never reviews. It routes. On a clean PASS in a lane that produced a diff, it also commits, pushes, and opens the pull request — it never merges. | [conductor.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/conductor.md) |
+| **Conductor** | `github-copilot/claude-sonnet-5` | Primary interactive agent. Classifies every request into a lane, dispatches the right specialist, holds the ledger, and talks to the human. The Conductor never reads source, never produces artifacts, and never reviews. It routes. On a clean PASS in a lane that produced a diff, it also commits, pushes, and opens the pull request — it never merges. | [conductor.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/conductor.md) |
 | **Adversary** | `github-copilot/claude-opus-5` | Security review. Approaches every artifact as an attacker would — what should not be there, what was missed, what can be reached, what fails open. Dispatched into whatever lane the work is already in whenever the security band is critical. Returns PASS / FIX / ESCALATE with findings by severity. | [adversary.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/adversary.md) |
 | **Builder** | `github-copilot/gpt-5.6-terra` | Implementation. Writes code in the working tree against a stated intent (DIRECT lane) or a Design Brief (BUILD lane), and gets it green. Does not design, does not decide architecture, does not review its own work. Up-ramps instead of guessing. | [builder.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/builder.md) |
 | **Investigator** | `github-copilot/gpt-5.6-terra` | Codebase comprehension and root-cause analysis. Answers "why", "where", "how does this work", and "what does this touch". Reads widely, returns compactly. Never modifies the working tree; writes findings only to .agent-output/. The context firewall between the codebase and the Conductor. | [investigator.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/investigator.md) |
@@ -79,7 +79,7 @@ findings between agents without re-deriving them.
 | **Planner** | `github-copilot/gpt-5.6-sol` | Socratic planning, design, and specification. Interrogates the request before answering it — returns a QUESTION BRIEF of the decisions that must be made, then produces a Plan (PLAN lane) or a Design Brief with Architecture Decisions and numbered requirements (BUILD lane). Does not write code. | [planner.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/planner.md) |
 | **Researcher** | `github-copilot/gpt-5.6-luna` | External information retrieval. Current library APIs, protocol details, version compatibility, error messages, vendor documentation. Returns findings with sources. Does not decide anything and does not touch the codebase. | [researcher.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/researcher.md) |
 | **Scribe** | `github-copilot/gpt-5.6-luna` | Documentation. Writes docs that describe what the code actually does, not what it was supposed to do. Runs at the close of the BUILD lane or on demand. Reads the implementation before writing a word about it. | [scribe.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/scribe.md) |
-| **Verifier** | `github-copilot/gemini-3.6-flash` | Cross-family review of every artifact and diff that leaves a lane. Unlike a pure reader, the Verifier runs the build and the tests itself — a working agent's "it's green" is a claim, and the Verifier is where it becomes evidence. Finds gaps, not just bugs. Returns PASS / FIX / ESCALATE. | [verifier.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/verifier.md) |
+| **Verifier** | `github-copilot/gemini-3.8-flash` | Cross-family review of every artifact and diff that leaves a lane. Unlike a pure reader, the Verifier runs the build and the tests itself — a working agent's "it's green" is a claim, and the Verifier is where it becomes evidence. Finds gaps, not just bugs. Returns PASS / FIX / ESCALATE. | [verifier.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/opencode/verifier.md) |
 <!-- artifact-sync:roster:end -->
 
 The Conductor is the only agent you talk to and the only one with dispatch
@@ -123,6 +123,12 @@ ln -sfn ~/src/ai-dev/harness/opencode-lane/guardrails.md   ~/.config/opencode/gu
 ln -sfn ~/src/ai-dev/harness/opencode-lane/commands         ~/.config/opencode/commands
 ln -sfn ~/src/ai-dev/agents/lane-topology/opencode          ~/.config/opencode/agents
 ```
+
+> [!IMPORTANT]
+> The `opencode/` agents use native **OpenCode V2** frontmatter (an ordered
+> `permissions` rule list with V2 action names such as `shell` and `subagent`).
+> Subagents ship `hidden: false`, which V2 requires for the Conductor to dispatch
+> them. Do not point an OpenCode V1 client at these files.
 
 `default_agent` is `conductor`. See the
 [README's Deploying It section](https://github.com/CowboyLogic/ai-dev/blob/main/agents/lane-topology/README.md#deploying-it)

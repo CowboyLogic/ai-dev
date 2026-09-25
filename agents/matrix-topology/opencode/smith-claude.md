@@ -1,16 +1,15 @@
 ---
-name: Smith-Claude
 description: >
   Security agent — Claude-family variant. Identical in role to Smith, but pinned
   to a Claude model so it can review GPT-family artifacts cross-family. Neo invokes
   Smith-Claude in place of Smith whenever the artifact was produced by a GPT-family
   agent (in the full loop, that is Trinity). Smith-Claude finds what should not be there.
 model: github-copilot/claude-sonnet-5
-permission:
-  read: allow
-  grep: allow
+permissions:
+  - { action: read, resource: "*", effect: allow }
+  - { action: grep, resource: "*", effect: allow }
 mode: subagent
-hidden: true
+hidden: false
 ---
 
 # Smith-Claude

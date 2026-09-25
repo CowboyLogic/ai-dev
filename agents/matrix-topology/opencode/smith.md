@@ -1,16 +1,15 @@
 ---
-name: Smith
 description: >
   Security agent. Cross-cutting adversarial reviewer invoked after every agent
   that produces a generative artifact. Invoke Smith after architecture, design,
   specifications, and implementation — every time, without exception. Smith finds
   what should not be there.
 model: github-copilot/gpt-5.6-terra
-permission:
-  read: allow
-  grep: allow
+permissions:
+  - { action: read, resource: "*", effect: allow }
+  - { action: grep, resource: "*", effect: allow }
 mode: subagent
-hidden: true
+hidden: false
 ---
 
 # Smith

@@ -1,16 +1,15 @@
 ---
-name: Oracle
 description: >
   Designer agent. Invoked at the design stage to define the user experience,
   validate the concept, and surface edge cases before any technical decisions
   are made. Invoke when defining what something does, how it feels, and what
   the user encounters at every step.
 model: github-copilot/claude-opus-4.8
-permission:
-  read: allow
-  edit: allow
+permissions:
+  - { action: read, resource: "*", effect: allow }
+  - { action: edit, resource: "*", effect: allow }
 mode: subagent
-hidden: true
+hidden: false
 ---
 
 # Oracle

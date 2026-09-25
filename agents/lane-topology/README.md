@@ -137,7 +137,7 @@ cognitive job or a distinct cost tier.
 | **Investigator** | `gpt-5.6-sol` | Read-only comprehension and root-cause work |
 | **Builder** | `gpt-5.6-terra` | Implementation |
 | **Mechanic** | `claude-haiku-4.5` | Trivial mechanical edits |
-| **Verifier** | `gemini-3.6-flash` | Cross-family review **+ runs the tests itself** |
+| **Verifier** | `gemini-3.8-flash` | Cross-family review **+ runs the tests itself** |
 | **Adversary** | `claude-opus-5` | Security review, dispatched by risk band |
 | **Scribe** | `claude-sonnet-5` | Documentation |
 | **Researcher** | `claude-haiku-4.5` | External research |
@@ -236,7 +236,7 @@ specific git/gh verbs shipping requires allowed back in, and `merge`, `rebase`,
 `reset`, `cherry-pick`, `gh pr merge`, force-push, and path-form `git checkout`
 denied outright. That one is genuinely enforced.
 
-Of the other eight, three (`planner`, `scribe`, `researcher`) carry `bash: deny` and
+Of the other eight, three (`planner`, `scribe`, `researcher`) deny `shell` outright and
 run no shell at all — also genuinely enforced. The remaining five need open-ended
 shell to run builds and test suites, so their grant is default-*allow* with git and
 `gh` denied bare and wrapped. That stops the obvious case. It does not stop a shell
@@ -341,7 +341,7 @@ Six tiers, assigned by consequence and frequency — not by seniority.
 | Heavy reasoning | `claude-opus-5` | Planner, Adversary | Expensive to be wrong, infrequent to run |
 | Balanced reasoning | `claude-sonnet-5` | Conductor, Scribe | Constant use, moderate cognitive load |
 | Agentic coding | `gpt-5.6-terra` | Builder | Long tool loops, iterate to green |
-| Cross-family review | `gemini-3.6-flash` | Verifier | Runs on every lane — the tier is chosen for frequency, the family for independence |
+| Cross-family review | `gemini-3.8-flash` | Verifier | Runs on every lane — the tier is chosen for frequency, the family for independence |
 | Long-context tracing | `gpt-5.6-sol` | Investigator | Same context demand, pinned off the Verifier's family |
 | Fast and cheap | `claude-haiku-4.5` | Mechanic, Researcher | High frequency, fully specified work |
 
@@ -462,13 +462,16 @@ agents.
 
 > [!IMPORTANT]
 > **The two formats are not interchangeable at the frontmatter level.** OpenCode's
-> `model`, `permission`, `mode`, and `hidden` properties have no equivalent in
+> `model`, `permissions`, `mode`, and `hidden` properties have no equivalent in
 > Copilot's agent schema — each format carries its own translated frontmatter, and
 > only the body (the prompt) is shared between them.
 >
-> Subagents in `opencode/` ship `hidden: false` so you can `@`-mention them to
-> confirm the roster loaded. `hidden` controls user selection only — it does not
-> affect the Conductor's ability to dispatch them, so either value is safe.
+> Subagents in `opencode/` ship `hidden: false`, and under OpenCode V2 they must:
+> V2's `hidden: true` removes an agent from the subagent catalog the Conductor
+> dispatches from, not just from user selection. It also lets you `@`-mention them to
+> confirm the roster loaded. The `opencode/` frontmatter is native V2 (an ordered
+> `permissions` rule list); V2 still reads V1 files, but do not point a V1 client at
+> these.
 
 ```bash
 git clone https://github.com/CowboyLogic/ai-dev ~/src/ai-dev

@@ -47,38 +47,42 @@ a bug.
 
 | File | Identifier | Model | Family | Tools | Role |
 |---|---|---|---|---|---|
-| `conductor.md` | `conductor` | `claude-sonnet-4.6` | Claude | read, task, skill, edit→ledger + `AGENTS.md`/`CLAUDE.md`, bash (scoped: git/gh) | Classify, dispatch, ledger, human interface, shipping |
+| `conductor.md` | `conductor` | `claude-sonnet-5` | Claude | read, subagent, skill, edit→ledger + `AGENTS.md`/`CLAUDE.md`, shell (scoped: git/gh) | Classify, dispatch, ledger, human interface, shipping |
 | `planner.md` | `planner` | `gpt-5.6-sol` | GPT | read, grep, edit→`.agent-output/**` | Socratic planning, design, ADs, requirements |
-| `investigator.md` | `investigator` | `gpt-5.6-terra` | GPT | read, grep, bash, edit→`.agent-output/**` | Read-only comprehension and root cause |
-| `builder.md` | `builder` | `gpt-5.6-terra` | GPT | read, edit, bash, grep | Implementation |
-| `mechanic.md` | `mechanic` | `gpt-5.6-terra` | GPT | read, edit, bash | Trivial mechanical edits |
-| `verifier.md` | `verifier` | `gemini-3.6-flash` | Gemini | read, grep, bash | Cross-family review + independent execution |
-| `adversary.md` | `adversary` | `claude-opus-5` | Claude | read, grep, bash | Security review |
+| `investigator.md` | `investigator` | `gpt-5.6-terra` | GPT | read, grep, shell, edit→`.agent-output/**` | Read-only comprehension and root cause |
+| `builder.md` | `builder` | `gpt-5.6-terra` | GPT | read, edit, shell, grep | Implementation |
+| `mechanic.md` | `mechanic` | `gpt-5.6-terra` | GPT | read, edit, shell | Trivial mechanical edits |
+| `verifier.md` | `verifier` | `gemini-3.8-flash` | Gemini | read, grep, shell | Cross-family review + independent execution |
+| `adversary.md` | `adversary` | `claude-opus-5` | Claude | read, grep, shell | Security review |
 | `scribe.md` | `scribe` | `gpt-5.6-luna` | GPT | read, edit, grep | Documentation |
 | `researcher.md` | `researcher` | `gpt-5.6-luna` | GPT | read, grep, webfetch, websearch, edit→`.agent-output/**` | External research |
 
 `conductor` is `mode: primary`. Everything else is `mode: subagent`.
 
 > [!IMPORTANT]
-> **This column is a summary, not the grant.** OpenCode defaults *unlisted*
-> permission keys to **allow** — so in OpenCode this table is only true because every
-> agent now explicitly denies what it must not have. Read [Default-Allow Is The
-> Trap](#default-allow-is-the-trap) before editing any `permission:` block. In Copilot
+> **This column is a summary, not the grant.** OpenCode V2 starts every agent from a
+> base policy whose first rule allows *every* action, so an action no rule mentions is
+> **allowed** — in OpenCode this table is only true because every agent explicitly
+> denies what it must not have. Read [Default-Allow Is The
+> Trap](#default-allow-is-the-trap) before editing any `permissions:` list. In Copilot
 > the equivalent `tools:` list *is* a strict allowlist, so the same table is
 > load-bearing there by construction.
 
-The eight subagents ship `hidden: false` so they can be `@`-mentioned directly — the
-fastest way to prove the roster is loading. `conductor` omits `hidden` entirely; it is
-the primary agent and there is nothing for it to be hidden from.
+The eight subagents ship `hidden: false`. In OpenCode V2 this is load-bearing, not a
+convenience: `hidden: true` removes an agent from the **subagent catalog** the
+Conductor dispatches from, as well as from listings and `@` discovery. It also lets
+them be `@`-mentioned directly — the fastest way to prove the roster is loading.
+`conductor` omits `hidden` entirely; it is the primary agent and there is nothing for
+it to be hidden from.
 
 > [!WARNING]
-> `hidden` is a debugging convenience with a real cost. An `@`-mentioned subagent
-> bypasses **every** control in the topology at once: no classifier, no branch check,
-> no ledger, no verdict, no cross-family review. It is the human's own escape hatch,
-> and it is fine to keep — but "setting it either way is safe" is only true of agent
-> *dispatch*, not of the system's guarantees. Once a setup is validated, consider
-> `hidden: true` on the six that a human has no reason to drive directly
-> (`builder`, `mechanic`, `verifier`, `adversary`, `scribe`, `investigator`).
+> Direct `@`-mention has a real cost. An `@`-mentioned subagent bypasses **every**
+> control in the topology at once: no classifier, no branch check, no ledger, no
+> verdict, no cross-family review. It is the human's own escape hatch. Under V1 the
+> advice was to set `hidden: true` on the six a human has no reason to drive directly
+> once a setup was validated. **Do not do that under V2** — it would remove those six
+> from the Conductor's subagent catalog and break dispatch. Visibility and dispatch are
+> one switch in V2; the escape hatch is the price of a working roster.
 
 ---
 
@@ -126,16 +130,22 @@ ever trigger it. An always-on skill has to be named at session start.
 ## OpenCode Discovery Notes
 
 **These agents are harness-specific and not portable.** The body is shareable across
-clients; the frontmatter is not. OpenCode's `model`, `permission`, `mode`, and
+clients; the frontmatter is not. OpenCode's `model`, `permissions`, `mode`, and
 `hidden` properties have no equivalent in the Copilot agent schema, so a file that
-runs here will not run there with its model pin or permissions intact. File naming is
-therefore not a compatibility concern — `.md` and `.agent.md` both load in OpenCode.
-Do not maintain a naming convention for cross-client portability that the frontmatter
-already makes impossible.
+runs here will not run there with its model pin or permissions intact. Do not maintain
+a naming convention for cross-client portability that the frontmatter already makes
+impossible — but the OpenCode files must be `<identifier>.md` (see below).
+
+**Format:** the frontmatter is native OpenCode V2 — an ordered `permissions` list of
+`{ action, resource, effect }` rules, with V2 action names (`shell`, not `bash`;
+`subagent`, not `task`). `validate.py` fails on any V1 field or action name. V2 still
+reads V1 frontmatter, but a file must be entirely one format, and V1 clients must not
+be pointed at these files.
 
 **Discovery:** `~/.config/opencode/agents/<name>.md` globally, `.opencode/agents/`
 per-project. The directory is `agents/` — plural. There is no `name:` property; the
-identifier is the filename.
+identifier is the filename **minus `.md` only** — V2 loads `conductor.agent.md` as
+`conductor.agent`, which no routing table names.
 
 **`default_agent` must name a `primary`-mode agent.** It is `conductor` here. The
 OpenCode default is the built-in `build` agent.
@@ -144,24 +154,29 @@ OpenCode default is the built-in `build` agent.
 
 Each of these was established against a running OpenCode install, and each one
 contradicts a plausible reading of the reference documentation. Trust this list over
-the schema.
+the schema. Rows marked **V2** were re-established for OpenCode V2 (2.0.16, via
+`opencode debug agents`) or taken from the V2 docs where noted; the V1 behavior they
+replace is kept for anyone still diagnosing a V1 install.
 
 | Behavior | Status |
 |---|---|
-| `.agent.md` and `.md` both load | Both work. Naming is not load-bearing. |
-| `hidden: true` blocks agent-to-agent dispatch | **False.** It only removes the agent from user selection. The Matrix topology's primary dispatches hidden subagents without issue. |
-| Agents are portable across clients | **False.** `model`, `permission`, `mode`, and `hidden` have no Copilot equivalent. Bodies are shareable; frontmatter is not. |
+| `.agent.md` and `.md` both load | **V2: both load, but naming is load-bearing.** `x.agent.md` gets ID `x.agent`, so dispatch by `x` fails. Use `x.md`. (V1: both loaded as `x`.) |
+| `hidden: true` blocks agent-to-agent dispatch | **V2: True** (V2 docs: `hidden` removes the agent from the subagent catalog). Subagents ship `hidden: false`. (V1: false — it only removed the agent from user selection.) |
+| Agents are portable across clients | **False.** `model`, `permissions`, `mode`, and `hidden` have no Copilot equivalent. Bodies are shareable; frontmatter is not. |
 | `default_agent` may name a subagent | **False.** It must name a `primary`-mode agent. |
 | A `general` dispatch means the roster failed to load | **False.** The roster loaded and the Conductor *chose* `general`, because no single agent covered the request. See Roster Closure. |
-| An unlisted `permission` key is withheld | **False.** Unlisted keys default to **allow**. See Default-Allow Is The Trap. |
-| A `bash` deny pattern blocks the command it names | **Only unwrapped.** Patterns match the full command string, so `cd x && git push` does not match `"git *"`. |
+| An action no permission rule mentions is withheld | **False.** V2's base policy allows every action first. See Default-Allow Is The Trap. |
+| A `shell` deny pattern blocks the command it names | **V2: per command** (V2 docs: the scanner checks each command of a compound command, so `cd x && git push` is checked as `git push` too). **V1: only unwrapped** — the full string was matched. Denies are written to hold under both. |
 
 ### Default-Allow Is The Trap
 
-**A permission key you did not write is a permission you granted.** OpenCode defaults
-unlisted keys to `allow` (source: `skills/agent-creator-opencode/SKILL.md` → *"Default
-behavior: most permissions are `allow`"*). Only `doom_loop` and `external_directory`
-default to `ask`, and `.env` reads default to deny.
+**A permission action you did not write is a permission you granted.** OpenCode V2
+starts every agent from a base policy whose first rule is
+`{ action: "*", resource: "*", effect: allow }`, and agent rules are appended after it
+(source: `skills/agent-creator-opencode/references/v2/permissions.md`). Only
+`external_directory` and `.env` reads fall back to `ask`. V1 had the same trap as an
+implicit default, and the history below happened under V1 — hence its `bash` and
+`task` names.
 
 This produced two invariants that were false in this repository for as long as they
 had been written down:
@@ -175,25 +190,28 @@ had been written down:
 Neither was reachable by reading the files as written; both required knowing the
 default. Both are now closed by explicit `deny` on every key an agent must not have.
 
-**When adding or editing an agent, deny by enumeration.** The relevant keys are
-`bash`, `task`, `edit`, `webfetch`, `websearch`, `read`, `grep`, `glob`, `list`, and
-`skill`. Anything the role does not need gets an explicit `deny`, even when leaving it
-out "obviously" means the same thing. It does not.
+**When adding or editing an agent, deny by enumeration.** The relevant V2 actions are
+`shell`, `subagent`, `edit`, `webfetch`, `websearch`, `read`, `grep`, `glob`, and
+`skill`. Anything the role does not need gets an explicit `deny` rule, even when
+leaving it out "obviously" means the same thing. It does not.
 
-### Bash patterns match the whole command string
+### Shell patterns and compound commands
 
-`permissions.md` → *"Commands matched against full command string including
-arguments."* A deny pattern anchored at the start of the string is therefore evaded by
-any prefix:
+Under V1, `bash` patterns matched the full command string, so a deny
+anchored at the start was evaded by any prefix:
 
 ```bash
 git push --force          # denied by "git push *--force*"
-cd . && git push --force  # matches "*" — not "git push *--force*"
+cd . && git push --force  # V1: matched "*" — not "git push *--force*"
 ```
 
-Every bash-holding subagent now also carries `"* git *": deny` and `"* gh *": deny`,
-which closes the ordinary `&&` / `;` / `|` wrapping. **This is defense in depth, not a
-boundary.** It does not stop `bash -c`, `env`, `xargs`, an alias, or a shell script the
+V2's shell scanner checks each command of a compound command separately, and any deny
+denies the whole operation — so the second line is also checked as `git push --force`.
+The docs call directory inference best effort, and a command the scanner cannot
+analyze is not split. Every shell-holding subagent therefore still carries
+`"* git *": deny` and `"* gh *": deny`, and `validate.py` requires every forbidden
+command to be denied **both** whole-string and per-command. **This is defense in
+depth, not a boundary.** It does not stop `bash -c`, `env`, `xargs`, an alias, or a shell script the
 agent writes and then runs, and no pattern list will — the five agents based on
 `"*": allow` need arbitrary build and test commands, and that is the same grant.
 
@@ -206,7 +224,7 @@ and `--all` were denied, so `git add ./` and `git add -u` both staged everything
 denylist over an allow base is best-effort by construction; `validate.py` now asserts
 every one of these resolves to `deny` so the list cannot silently regress again.
 
-The Conductor is the only agent whose bash grant is genuinely enforced, because it is
+The Conductor is the only agent whose shell grant is genuinely enforced, because it is
 the only one based on `"*": deny`. **State this honestly in any documentation of this
 topology**: the git boundary for the producing agents is prompt discipline plus a
 speed bump, and the real control is that only the Conductor is *asked* to ship.
@@ -238,24 +256,24 @@ added here.
 | `name` | *(derived from filename)* | Copilot has no `name:` requirement; the filename (`<identifier>.agent.md`) carries it. |
 | `description` | `description` | Copied verbatim. |
 | `model` | `model` | See Model Name Mapping below. |
-| `permission` | `tools` | See Tool Mapping below. |
+| `permissions` | `tools` | See Tool Mapping below. |
 | `mode: primary` | *(omit `user-invocable`, defaults to shown)* | Only `conductor` is primary. |
 | `mode: subagent` | `user-invocable: false` | All eight subagents. |
-| `hidden` | *(no equivalent — omit)* | OpenCode's `hidden` only affects `@`-mention autocomplete; Copilot's nearest concept, `user-invocable`, is already carrying the primary/subagent distinction above. |
+| `hidden` | *(no equivalent — omit)* | OpenCode's `hidden` controls listings, `@` discovery, and (V2) the subagent catalog; subagents ship `hidden: false`. Copilot's nearest concept, `user-invocable`, is already carrying the primary/subagent distinction above. |
 | — | `agents:` | `conductor` only — the list of the eight subagent identifiers it may dispatch. Requires `"agent"` in `conductor`'s `tools`. |
 
 ### Tool mapping
 
 Only the aliases this roster actually uses:
 
-| OpenCode permission | Copilot tool alias |
+| OpenCode V2 action | Copilot tool alias |
 |---|---|
 | `read` | `"read"` |
 | `edit` | `"edit"` |
-| `bash` | `"execute"` |
+| `shell` | `"execute"` |
 | `grep` | `"search"` |
 | `webfetch` / `websearch` | `"web"` |
-| `task` | `"agent"` |
+| `subagent` | `"agent"` |
 | `skill` | *(no equivalent — omit)* |
 
 ### Model name mapping
@@ -268,8 +286,7 @@ Only the aliases this roster actually uses:
 | `github-copilot/gpt-5.6-terra` | `GPT-5.6 Terra (copilot)` |
 | `github-copilot/gpt-5.6-sol` | `GPT-5.6 Sol (copilot)` |
 | `github-copilot/gpt-5.6-luna` | `GPT-5.6 Luna (copilot)` |
-| `github-copilot/gemini-3.6-flash` | `Gemini 3.6 Flash (copilot)` |
-| `github-copilot/claude-sonnet-4.6` | `Claude Sonnet 4.6 (copilot)` |
+| `github-copilot/gemini-3.8-flash` | `Gemini 3.8 Flash (copilot)` |
 
 ### Scoped `edit` does not port
 
@@ -281,9 +298,9 @@ preserved by prompt discipline in the body (both name their exact output path) b
 `copilot/investigator.agent.md` or `copilot/researcher.agent.md` as license to widen
 either role — the Constraints section in the body is still the actual boundary.
 
-### Scoped bash does not port
+### Scoped shell does not port
 
-`conductor` holds a `bash` grant in OpenCode scoped to an exact allowlist of git/gh
+`conductor` holds a `shell` grant in OpenCode scoped to an exact allowlist of git/gh
 commands (see its frontmatter and its Shipping section) — every command not on that
 list is denied by the permission engine itself. Copilot's `tools:` grant is a flat
 boolean list with no per-command scoping, so `copilot/conductor.agent.md` carries an
@@ -294,15 +311,15 @@ section and Constraints alone — the same category of gap already accepted for
 actual boundary.
 
 The same asymmetry applies in the other direction for `builder`, `mechanic`,
-`verifier`, `adversary`, and `investigator`: their OpenCode `bash` blocks deny every
+`verifier`, `adversary`, and `investigator`: their OpenCode `shell` rules deny every
 git-mutation command bare and wrapped, which raises the bar for invariant 9 without
 reaching enforcement — they are based on `"*": allow` and need to be, so a shell
-indirection still gets through (see Bash patterns match the whole command string).
+indirection still gets through (see Shell patterns and compound commands).
 Their Copilot mirrors keep the unscoped `"execute"` they always had, which was prompt-only
 before and remains so.
 
 `planner`, `scribe`, and `researcher` are the exception in both formats: they carry
-`bash: deny` in OpenCode and no `"execute"` in Copilot, so for those three the boundary is
+a `shell` `"*": deny` rule in OpenCode and no `"execute"` in Copilot, so for those three the boundary is
 real on both sides.
 
 ### Synchronization checklist
@@ -335,8 +352,9 @@ files** — which is the whole argument for having it:
 | Check | The failure it catches |
 |---|---|
 | Body parity, opencode ↔ copilot | Silent divergence between the two formats |
-| `bash`, `task`, `webfetch`, `websearch` denied by name | The default-allow trap — three agents held unrestricted shell, all eight could dispatch |
-| Forbidden commands resolved through real pattern semantics | A deny that is present but *shadowed* by a later rule, bare and wrapped (`cd x && git merge …`) |
+| Native V2 frontmatter — `permissions` list, well-formed rules, no V1 field or action name | A V1 key that V2 silently translates or ignores, so the file stops saying what runs |
+| `shell`, `subagent`, `webfetch`, `websearch` denied by name | The default-allow trap — three agents held unrestricted shell, all eight could dispatch |
+| Forbidden commands resolved through real pattern semantics, whole-string and per-command | A deny that is present but *shadowed* by a later rule, bare and wrapped (`cd x && git merge …`) |
 | Sandboxed `edit` resolves correctly for a source path *and* `.agent-output/` | The rule-ordering inversion that denied every path, including the one the grant existed for |
 | Conductor allowlist resolves exactly | `checkout -- .`, `commit --amend`, `add -A` creeping back in |
 | Verifier is cross-family from every producer | Invariants 3 and 4, including the Investigator's map channel |
@@ -344,8 +362,9 @@ files** — which is the whole argument for having it:
 | `AGENTS.md` roster ↔ real model pins | This table drifting from reality after a repin |
 
 > [!IMPORTANT]
-> The checks resolve permissions the way OpenCode does — **last matching rule wins,
-> patterns match the whole command string** — rather than grepping for pattern text. A
+> The checks resolve permissions the way OpenCode V2 does — **base policy first, last
+> matching rule wins, compound commands checked per command** (and whole-string as
+> well, for commands the scanner cannot split) — rather than grepping for pattern text. A
 > deny that is present but shadowed reads correct and does nothing, and that is the
 > failure this repository actually shipped. Do not replace these with string matching.
 
@@ -357,11 +376,11 @@ These are the properties the topology depends on. Breaking one is a redesign, no
 edit — if you change one, update `README.md` and `conductor.md` in the same
 change and say what replaced it.
 
-1. **Only the Conductor has `task`.** Nested subagent delegation does not run
+1. **Only the Conductor has `subagent`.** Nested subagent delegation does not run
    reliably in OpenCode. Every dispatch is one level deep. A subagent that needs
    another agent returns an up-ramp or escalation notice instead. All eight subagents
-   carry an explicit `task: deny` — omitting the key grants it (see Default-Allow Is
-   The Trap).
+   carry an explicit `subagent` `"*": deny` rule — omitting it grants the action (see
+   Default-Allow Is The Trap).
 
 2. **The Conductor produces nothing and reviews nothing.** No source reads, no grep,
    no test runs, no artifacts, no reviews. Its `read` is for the ledger and artifact
@@ -386,7 +405,7 @@ change and say what replaced it.
    Adversary (Claude) with no routing logic.
 
 5. **The Verifier executes.** It runs the build and test suite itself. No lane
-   advances on a working agent's self-reported green. Removing `bash` from the
+   advances on a working agent's self-reported green. Removing `shell` from the
    Verifier removes the topology's main reliability property.
 
 6. **Verdicts are exactly `PASS` / `FIX` / `ESCALATE`.** One field, three values. Do
@@ -412,17 +431,17 @@ change and say what replaced it.
    lane in `conductor.md`. That lane does not relax this line; it exists so nobody
    reaches past it under pressure.
 
-   For the Conductor this is **permission-enforced**: its `bash` is based on
+   For the Conductor this is **permission-enforced**: its `shell` rules are based on
    `"*": deny`, so only the enumerated safe verbs run at all, and `merge`, `rebase`,
    `reset`, `cherry-pick`, `gh pr merge`, force-push, and `git checkout` other than
    `-b` are all denied outright.
 
    For the other eight it is **enforced in layers, and the layers are not equal.**
-   `planner`, `scribe`, and `researcher` carry `bash: deny` — nothing runs, full stop.
+   `planner`, `scribe`, and `researcher` carry a `shell` deny-all — nothing runs, full stop.
    The five that need shell to build and test (`builder`, `mechanic`, `verifier`,
-   `adversary`, `investigator`) are based on `"*": allow` with git and `gh` denied
+   `adversary`, `investigator`) are based on `shell` `"*": allow` with git and `gh` denied
    both bare and wrapped; that stops the ordinary case and does not stop a determined
-   one (see Bash patterns match the whole command string). Do not describe those five
+   one (see Shell patterns and compound commands). Do not describe those five
    as permission-enforced. The real control is that nothing ever *asks* them to ship.
 
 10. **Facts propagate; reasoning does not flow sideways.** Agents return a `FACTS:`
@@ -481,9 +500,9 @@ on every turn.
 > **first** and the specific grant after it:
 >
 > ```yaml
-> edit:
->   "*": deny                    # catch-all FIRST
->   ".agent-output/**": allow   # specific override AFTER
+> permissions:
+>   - { action: edit, resource: "*", effect: deny }                 # catch-all FIRST
+>   - { action: edit, resource: ".agent-output/**", effect: allow } # override AFTER
 > ```
 >
 > Both agents originally shipped this inverted — `".agent-output/**": allow` first,
@@ -495,8 +514,7 @@ on every turn.
 > This is the same lesson one layer down. The block *reads* correct, OpenCode raises
 > no error, and nothing surfaces until an agent quietly fails to produce its artifact.
 > Authoritative source:
-> `skills/agent-creator-opencode/references/v1/permissions.md` → *Pattern matching
-> rules*. Load that skill before editing any OpenCode frontmatter.
+> `skills/agent-creator-opencode/references/v2/permissions.md` → rule matching. Load that skill before editing any OpenCode frontmatter.
 
 Both failures above share one root, and it generalises past agent selection.
 
@@ -536,9 +554,9 @@ unverified and does not matter to the decision.
   Mapping), then update that agent's *Model Selection Rationale* section (body — so
   update it once, in both files). If the change alters the agent's model *family*,
   check invariants 3 and 4 before proceeding.
-- **Tool change** → update `permission:` in `opencode/` and `tools:` in `copilot/`
+- **Tool change** → update `permissions:` in `opencode/` and `tools:` in `copilot/`
   (see Tool Mapping), and the agent's Constraints section in the body. Granting
-  `task` (`"agent"` in Copilot) to a subagent violates invariant 1.
+  `subagent` (`"agent"` in Copilot) to a subagent violates invariant 1.
 - **Role change** → update the agent file in both formats, the Conductor's routing
   table (body — updates both automatically once synced), the classifier table if
   lane assignment changed, and the README roster.
@@ -574,8 +592,8 @@ every agent is a dispatch, a handoff, and a place for context to be lost.
 
 Every agent file carries these sections. Keep them in this order.
 
-1. Frontmatter — `description`, `model`, `permission`, `mode`, and `hidden` on
-   subagents. There is no `name:` property; the filename is the identifier
+1. Frontmatter (native OpenCode V2) — `description`, `model`, `permissions`, `mode`,
+   and `hidden: false` on subagents. There is no `name:` property; the filename is the identifier
 2. `# <Name>` and `## Role` — what it does and, where non-obvious, why it exists
 3. `## Inputs` — the brief it receives from the Conductor, as a fenced block
 4. `## Working Protocol` — how it does the work
