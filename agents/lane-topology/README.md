@@ -133,7 +133,7 @@ cognitive job or a distinct cost tier.
 | Agent | Model | Job |
 |---|---|---|
 | **Conductor** | `claude-sonnet-5` | Classifies, dispatches, holds the ledger, talks to you. Nothing else. |
-| **Planner** | `gpt-6-sol` | Socratic planning → design → Architecture Decisions → numbered requirements |
+| **Planner** | `claude-opus-5.5` | Socratic planning → design → Architecture Decisions → numbered requirements |
 | **Investigator** | `gpt-6-sol` | Read-only comprehension and root-cause work |
 | **Builder** | `gpt-6-sol` | Implementation |
 | **Mechanic** | `gpt-6-luna` | Trivial mechanical edits |
@@ -338,9 +338,9 @@ Five tiers, assigned by consequence and frequency — not by seniority.
 
 | Tier | Model | Who | Why |
 |---|---|---|---|
-| Heavy reasoning | `claude-opus-5.5` | Adversary | Expensive to be wrong, infrequent to run |
+| Heavy reasoning | `claude-opus-5.5` | Planner, Adversary | Expensive to be wrong, infrequent to run |
 | Balanced reasoning | `claude-sonnet-5` | Conductor | Constant use, moderate cognitive load |
-| Reasoning, coding, and tracing | `gpt-6-sol` | Planner, Builder, Investigator | Planning, long tool loops, and long-context tracing — all pinned off the Verifier's family |
+| Coding and tracing | `gpt-6-sol` | Builder, Investigator | Long tool loops and long-context tracing — both pinned off the Verifier's family |
 | Cross-family review | `gemini-3.8-flash` | Verifier | Runs on every lane — the tier is chosen for frequency, the family for independence |
 | Fast and cheap | `gpt-6-luna` | Mechanic, Scribe, Researcher | High frequency, fully specified work |
 
