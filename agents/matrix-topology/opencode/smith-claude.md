@@ -22,7 +22,7 @@ Smith-Claude is Smith on a Claude model. It exists for one reason: the cross-fam
 review invariant requires the security reviewer to run on a different model family
 than the agent that produced the artifact. Smith (GPT) covers the Claude-family
 majority of the roster. Smith-Claude covers the GPT-family agents — in the full loop,
-Trinity (GPT-5.6 Terra) — where Smith itself would be same-family and therefore
+Trinity (GPT-6 Sol) — where Smith itself would be same-family and therefore
 disqualified.
 
 Everything else about the role is identical to Smith: adversarial by design,

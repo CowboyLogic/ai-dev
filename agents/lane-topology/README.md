@@ -127,20 +127,20 @@ fifteen questions isn't thorough — it's the Planner offloading its job onto yo
 
 ## The Crew
 
-Nine agents, six model tiers. Every role earns its slot on either a distinct
+Nine agents, five model tiers. Every role earns its slot on either a distinct
 cognitive job or a distinct cost tier.
 
 | Agent | Model | Job |
 |---|---|---|
 | **Conductor** | `claude-sonnet-5` | Classifies, dispatches, holds the ledger, talks to you. Nothing else. |
-| **Planner** | `claude-opus-5` | Socratic planning → design → Architecture Decisions → numbered requirements |
-| **Investigator** | `gpt-5.6-sol` | Read-only comprehension and root-cause work |
-| **Builder** | `gpt-5.6-terra` | Implementation |
-| **Mechanic** | `claude-haiku-4.5` | Trivial mechanical edits |
+| **Planner** | `gpt-6-sol` | Socratic planning → design → Architecture Decisions → numbered requirements |
+| **Investigator** | `gpt-6-sol` | Read-only comprehension and root-cause work |
+| **Builder** | `gpt-6-sol` | Implementation |
+| **Mechanic** | `gpt-6-luna` | Trivial mechanical edits |
 | **Verifier** | `gemini-3.8-flash` | Cross-family review **+ runs the tests itself** |
-| **Adversary** | `claude-opus-5` | Security review, dispatched by risk band |
-| **Scribe** | `claude-sonnet-5` | Documentation |
-| **Researcher** | `claude-haiku-4.5` | External research |
+| **Adversary** | `claude-opus-5.5` | Security review, dispatched by risk band |
+| **Scribe** | `gpt-6-luna` | Documentation |
+| **Researcher** | `gpt-6-luna` | External research |
 
 ### The Conductor does not do the work
 
@@ -323,10 +323,10 @@ permits by design. Only the sideways flow into a reviewer has to cross a family 
 
 ## Model Sizing
 
-Six tiers, assigned by consequence and frequency — not by seniority.
+Five tiers, assigned by consequence and frequency — not by seniority.
 
 > [!NOTE]
-> **This ladder is an assertion, not a measurement.** The claim that six tiers and a
+> **This ladder is an assertion, not a measurement.** The claim that five tiers and a
 > separately-pinned executing reviewer are worth paying for is empirical, and until
 > recently nothing here produced evidence either way. The Conductor now reports a
 > dispatch count when a lane closes — `LANE COST: MECHANICAL — 2 dispatches (mechanic
@@ -338,12 +338,11 @@ Six tiers, assigned by consequence and frequency — not by seniority.
 
 | Tier | Model | Who | Why |
 |---|---|---|---|
-| Heavy reasoning | `claude-opus-5` | Planner, Adversary | Expensive to be wrong, infrequent to run |
-| Balanced reasoning | `claude-sonnet-5` | Conductor, Scribe | Constant use, moderate cognitive load |
-| Agentic coding | `gpt-5.6-terra` | Builder | Long tool loops, iterate to green |
+| Heavy reasoning | `claude-opus-5.5` | Adversary | Expensive to be wrong, infrequent to run |
+| Balanced reasoning | `claude-sonnet-5` | Conductor | Constant use, moderate cognitive load |
+| Reasoning, coding, and tracing | `gpt-6-sol` | Planner, Builder, Investigator | Planning, long tool loops, and long-context tracing — all pinned off the Verifier's family |
 | Cross-family review | `gemini-3.8-flash` | Verifier | Runs on every lane — the tier is chosen for frequency, the family for independence |
-| Long-context tracing | `gpt-5.6-sol` | Investigator | Same context demand, pinned off the Verifier's family |
-| Fast and cheap | `claude-haiku-4.5` | Mechanic, Researcher | High frequency, fully specified work |
+| Fast and cheap | `gpt-6-luna` | Mechanic, Scribe, Researcher | High frequency, fully specified work |
 
 Two of these are worth calling out because they invert the obvious choice:
 

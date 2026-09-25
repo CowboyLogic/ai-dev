@@ -4,7 +4,7 @@ description: >
   lifecycle to produce structure, key decisions, and extension points. Invoke
   when designing system structure, making significant technical decisions, or
   defining how components relate.
-model: github-copilot/claude-opus-4.8
+model: github-copilot/claude-opus-5.5
 permissions:
   - { action: read, resource: "*", effect: allow }
   - { action: edit, resource: "*", effect: allow }
@@ -74,7 +74,7 @@ cross-family control does not come from adjacent working stages differing. It co
 from Smith and Ghost reviewing every artifact cross-family. The Opus tier here is
 about matching the stakes of the architecture stage, not about family separation.
 
-**Current model:** Claude Opus 4.8
+**Current model:** Claude Opus 5.5
 **Family:** Anthropic / Claude
 
 ## Constraints

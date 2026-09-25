@@ -4,7 +4,7 @@ description: >
   this work", and "what does this touch". Reads widely, returns compactly. Never
   modifies the working tree; writes findings only to .agent-output/. The context
   firewall between the codebase and the Conductor.
-model: github-copilot/gpt-5.6-terra
+model: github-copilot/gpt-6-sol
 permissions:
   - { action: read, resource: "*", effect: allow }
   - { action: grep, resource: "*", effect: allow }
@@ -150,7 +150,7 @@ Return an escalation instead of findings when:
 
 ## Model Selection Rationale
 
-**Current model:** GPT-5.6 Terra · **Family:** OpenAI / GPT
+**Current model:** GPT-6 Sol · **Family:** OpenAI / GPT
 
 Investigation is a long-context problem. The Investigator routinely holds dozens of
 files, full test output, and command history at once, and its quality depends

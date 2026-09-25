@@ -4,7 +4,7 @@ description: >
   was supposed to do. Runs at the close of the BUILD lane or on demand. Reads the
   implementation before writing a word about it.
 tools: ["read", "edit", "search"]
-model: GPT-5.6 Luna (copilot)
+model: GPT-6 Luna (copilot)
 user-invocable: false
 ---
 
@@ -79,7 +79,7 @@ claims the code does not support. On `FIX`, the Scribe corrects in one cycle.
 
 ## Model Selection Rationale
 
-**Current model:** GPT-5.6 Luna · **Family:** OpenAI / GPT
+**Current model:** GPT-6 Luna · **Family:** OpenAI / GPT
 
 Documentation requires accurate comprehension of a full implementation plus the
 judgment to decide what a reader actually needs — real reasoning, but not the heaviest

@@ -1,7 +1,7 @@
 ---
 description: Performance profiling, optimization, and analysis
 mode: subagent
-model: github-copilot/gpt-5.6-terra
+model: github-copilot/gpt-6-sol
 ---
 
 # Agent Purpose

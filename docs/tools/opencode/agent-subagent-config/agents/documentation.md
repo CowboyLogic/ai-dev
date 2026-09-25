@@ -1,7 +1,7 @@
 ---
 description: Technical documentation, API docs, and README files
 mode: subagent
-model: github-copilot/claude-haiku-4.5
+model: github-copilot/gpt-6-luna
 permissions:
   - { action: shell, resource: "*", effect: deny }
 ---

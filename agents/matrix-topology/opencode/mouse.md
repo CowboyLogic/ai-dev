@@ -5,7 +5,7 @@ description: >
   tree, gets it green (build/tests/typecheck), and returns to Neo for review.
   Mouse does not design, does not write specs, and does not invoke reviewers —
   Neo owns the express review loop.
-model: github-copilot/gpt-5.6-terra
+model: github-copilot/gpt-6-sol
 permissions:
   - { action: read, resource: "*", effect: allow }
   - { action: edit, resource: "*", effect: allow }
@@ -104,7 +104,7 @@ balanced tier is the right cost/capability trade, not a heavy reasoner. Mouse (G
 also cross-family from Ghost (Gemini), so the express lane's single review gate is
 cross-family with a static assignment — no model switching required.
 
-**Current model:** GPT-5.6 Terra
+**Current model:** GPT-6 Sol
 **Family:** OpenAI / GPT
 
 ## Constraints

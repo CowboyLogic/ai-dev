@@ -52,7 +52,7 @@ For global use, put the agent files in `~/.config/opencode/agents/` instead.
 | --- | --- | --- | --- |
 | `quick` | primary | `github-copilot/gpt-5-mini` | Full |
 | `reviewer` | subagent | `github-copilot/claude-sonnet-5` | Read-only: deny all, then allow `read`, `glob`, `grep`, `webfetch` |
-| `docs` | subagent | `github-copilot/claude-haiku-4.5` | Edits files, denies `shell` |
+| `docs` | subagent | `github-copilot/gpt-6-luna` | Edits files, denies `shell` |
 | `title` (built-in) | hidden | `github-copilot/gpt-5-mini` | Generates session titles; replaces V1 `small_model` |
 
 The default model is `github-copilot/claude-sonnet-5` and the default agent is the built-in `build`.
@@ -68,20 +68,20 @@ Primary agents, defined in `opencode.json`:
 | Agent | Model | Access |
 | --- | --- | --- |
 | `plan` | `github-copilot/claude-sonnet-5` | Edits files (to write plans), denies `shell`; prompt from `prompts/plan.txt` |
-| `build` | `github-copilot/gpt-5.6-terra` | Full |
+| `build` | `github-copilot/gpt-6-sol` | Full |
 
 Subagents, one file each in `.opencode/agents/`:
 
 | Agent | Model | Access |
 | --- | --- | --- |
-| `api` | `github-copilot/gpt-5.6-terra` | Full |
+| `api` | `github-copilot/gpt-6-sol` | Full |
 | `architect` | `github-copilot/claude-sonnet-5` | Read-only: deny all, then allow `read`, `glob`, `grep` |
-| `cloud` | `github-copilot/gpt-5.6-terra` | Full |
+| `cloud` | `github-copilot/gpt-6-sol` | Full |
 | `data` | `github-copilot/gpt-5-mini` | Full |
-| `database` | `github-copilot/gpt-5.6-terra` | Full |
+| `database` | `github-copilot/gpt-6-sol` | Full |
 | `devops` | `github-copilot/gpt-5-mini` | Full |
-| `documentation` | `github-copilot/claude-haiku-4.5` | Edits files, denies `shell` |
-| `performance` | `github-copilot/gpt-5.6-terra` | Full |
+| `documentation` | `github-copilot/gpt-6-luna` | Edits files, denies `shell` |
+| `performance` | `github-copilot/gpt-6-sol` | Full |
 | `research` | `github-copilot/gpt-5-mini` | Denies `edit`, may run shell |
 | `reviewer` | `github-copilot/claude-sonnet-5` | Read-only: deny all, then allow `read`, `glob`, `grep` |
 | `security` | `github-copilot/claude-sonnet-5` | Denies `edit`, may run shell |

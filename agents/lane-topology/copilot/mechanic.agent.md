@@ -4,7 +4,7 @@ description: >
   comments, log lines, mechanical renames. No logic changes, no control flow, no new
   dependencies. Fast and cheap by design. Stops the moment a change requires thought.
 tools: ["read", "edit", "execute"]
-model: GPT-5.6 Terra (copilot)
+model: GPT-6 Luna (copilot)
 user-invocable: false
 ---
 
@@ -95,7 +95,7 @@ Builder takes it.
 
 ## Model Selection Rationale
 
-**Current model:** GPT-5.6 Terra · **Family:** OpenAI / GPT
+**Current model:** GPT-6 Luna · **Family:** OpenAI / GPT
 
 The cheapest and fastest tier available, which is the entire point. This work is
 high-frequency, low-stakes, and fully specified before the agent starts. The risk of

@@ -224,7 +224,7 @@ and defines each subagent as a Markdown file in `.opencode/agents/`.
 ```jsonc
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "github-copilot/gpt-5.6-terra",
+  "model": "github-copilot/gpt-6-sol",
   "agents": {
     "plan": {
       "mode": "primary",
@@ -235,7 +235,7 @@ and defines each subagent as a Markdown file in `.opencode/agents/`.
         { "action": "shell", "resource": "*", "effect": "deny" }
       ]
     },
-    "build": { "mode": "primary", "model": "github-copilot/gpt-5.6-terra" }
+    "build": { "mode": "primary", "model": "github-copilot/gpt-6-sol" }
   }
 }
 ```
@@ -286,14 +286,14 @@ style. Both are standard YAML.
 
 | Agent | Model | Access |
 |---|---|---|
-| `api` | `github-copilot/gpt-5.6-terra` | Full |
+| `api` | `github-copilot/gpt-6-sol` | Full |
 | `architect` | `github-copilot/claude-sonnet-5` | Read-only (deny all, then allow read, glob, grep) |
-| `cloud` | `github-copilot/gpt-5.6-terra` | Full |
+| `cloud` | `github-copilot/gpt-6-sol` | Full |
 | `data` | `github-copilot/gpt-5-mini` | Full |
-| `database` | `github-copilot/gpt-5.6-terra` | Full |
+| `database` | `github-copilot/gpt-6-sol` | Full |
 | `devops` | `github-copilot/gpt-5-mini` | Full |
-| `documentation` | `github-copilot/claude-haiku-4.5` | Edit, no shell |
-| `performance` | `github-copilot/gpt-5.6-terra` | Full |
+| `documentation` | `github-copilot/gpt-6-luna` | Edit, no shell |
+| `performance` | `github-copilot/gpt-6-sol` | Full |
 | `research` | `github-copilot/gpt-5-mini` | Shell, no edit |
 | `reviewer` | `github-copilot/claude-sonnet-5` | Read-only (deny all, then allow read, glob, grep) |
 | `security` | `github-copilot/claude-sonnet-5` | Shell, no edit |
@@ -398,11 +398,11 @@ offers before pinning a model.
 
 | Tier | Model | Used for |
 |---|---|---|
-| Fast and cheap | `github-copilot/gpt-5-mini`, `github-copilot/claude-haiku-4.5` | Title generation, docs, data, simple tasks |
+| Fast and cheap | `github-copilot/gpt-6-luna`, `github-copilot/gpt-5-mini` | Title generation, docs, data, simple tasks |
 | Balanced | `github-copilot/claude-sonnet-5` | Review, security, architecture, orchestration |
-| Agentic coding | `github-copilot/gpt-5.6-terra` | Implementation and build loops |
+| Agentic coding | `github-copilot/gpt-6-sol` | Implementation, planning, and build loops |
 | Cross-family review | `github-copilot/gemini-3.8-flash` | Independent review from a third model family |
-| Heavy reasoning | `github-copilot/claude-opus-5` | Infrequent, high-stakes planning and design |
+| Heavy reasoning | `github-copilot/claude-opus-5.5` | Infrequent, high-stakes planning, design, and security review |
 
 > [!WARNING]
 > Copilot retires models regularly. Models that earlier versions of this guide and its

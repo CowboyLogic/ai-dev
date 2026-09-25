@@ -44,7 +44,7 @@
     "docs": {
       "description": "Documentation agent for creating and maintaining project documentation",
       "mode": "subagent",
-      "model": "github-copilot/claude-haiku-4.5",
+      "model": "github-copilot/gpt-6-luna",
       "permissions": [
         { "action": "shell", "resource": "*", "effect": "deny" }
       ]

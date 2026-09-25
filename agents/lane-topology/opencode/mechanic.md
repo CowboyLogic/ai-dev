@@ -3,7 +3,7 @@ description: >
   Trivial mechanical edits — typos, version bumps, config values, formatting,
   comments, log lines, mechanical renames. No logic changes, no control flow, no new
   dependencies. Fast and cheap by design. Stops the moment a change requires thought.
-model: github-copilot/gpt-5.6-terra
+model: github-copilot/gpt-6-luna
 permissions:
   - { action: read, resource: "*", effect: allow }
   - { action: edit, resource: "*", effect: allow }
@@ -111,7 +111,7 @@ Builder takes it.
 
 ## Model Selection Rationale
 
-**Current model:** GPT-5.6 Terra · **Family:** OpenAI / GPT
+**Current model:** GPT-6 Luna · **Family:** OpenAI / GPT
 
 The cheapest and fastest tier available, which is the entire point. This work is
 high-frequency, low-stakes, and fully specified before the agent starts. The risk of

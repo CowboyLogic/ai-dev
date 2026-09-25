@@ -5,7 +5,7 @@ description: >
   when designing system structure, making significant technical decisions, or
   defining how components relate.
 tools: ["read", "edit"]
-model: Claude Opus 4.8 (copilot)
+model: Claude Opus 5.5 (copilot)
 user-invocable: false
 ---
 
@@ -71,7 +71,7 @@ cross-family control does not come from adjacent working stages differing. It co
 from Smith and Ghost reviewing every artifact cross-family. The Opus tier here is
 about matching the stakes of the architecture stage, not about family separation.
 
-**Current model:** Claude Opus 4.8
+**Current model:** Claude Opus 5.5
 **Family:** Anthropic / Claude
 
 ## Constraints
