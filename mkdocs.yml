@@ -91,7 +91,6 @@ nav:
   - Skills:
       - Overview: skills/index.md
       - About-Me Skill Creator: skills/about-me-skill-creator.md
-      - High-Fidelity Context Scaffolder: skills/high-fidelity-context-scaffolder.md
       - Google Style Docs: skills/google-style-docs.md
       - Git Commit Messages: skills/git-commit-messages.md
       - Docker Image Management: skills/docker-image-management.md

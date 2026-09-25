@@ -56,16 +56,6 @@ session.
 
 ---
 
-### High-Fidelity Context Scaffolder
-
-Generate machine-optimized XML context files (`AGENTS.xml`, `ARCHITECTURE.xml`) for AI agent orchestration.
-Produces structured, information-dense context that agents consume at session start to understand a codebase
-without exploration overhead.
-
-[Skill Overview](high-fidelity-context-scaffolder.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/high-fidelity-context-scaffolder)
-
----
-
 ### Google Style Docs
 
 Write technical documentation following the Google Developer Documentation Style Guide.
