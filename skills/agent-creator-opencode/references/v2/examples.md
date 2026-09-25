@@ -233,8 +233,10 @@ after the `read` allow if secrets must stay unread.
       "model": "github-copilot/claude-haiku-4.5",
       "system": "You are a code reviewer. Report findings in severity order with file and line references. Do not modify files.",
       "permissions": [
-        { "action": "edit", "resource": "*", "effect": "deny" },
-        { "action": "shell", "resource": "*", "effect": "deny" },
+        { "action": "*", "resource": "*", "effect": "deny" },
+        { "action": "read", "resource": "*", "effect": "allow" },
+        { "action": "glob", "resource": "*", "effect": "allow" },
+        { "action": "grep", "resource": "*", "effect": "allow" },
         { "action": "shell", "resource": "git diff *", "effect": "allow" }
       ]
     }

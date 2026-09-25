@@ -8,6 +8,13 @@ model: github-copilot/claude-sonnet-5
 permissions:
   - { action: read, resource: "*", effect: allow }
   - { action: grep, resource: "*", effect: allow }
+  # Deny by name what this role must not have: V2 allows any action no rule mentions.
+  - { action: edit, resource: "*", effect: deny }
+  - { action: shell, resource: "*", effect: deny }
+  - { action: subagent, resource: "*", effect: deny }
+  - { action: webfetch, resource: "*", effect: deny }
+  - { action: websearch, resource: "*", effect: deny }
+  - { action: skill, resource: "*", effect: deny }
 mode: subagent
 hidden: false
 ---

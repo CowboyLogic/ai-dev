@@ -12,6 +12,10 @@ permissions:
   - { action: websearch, resource: "*", effect: allow }
   - { action: edit, resource: "*", effect: deny }
   - { action: edit, resource: ".agent-output/**", effect: allow }
+  # Deny by name what this role must not have: V2 allows any action no rule mentions.
+  - { action: shell, resource: "*", effect: deny }
+  - { action: subagent, resource: "*", effect: deny }
+  - { action: skill, resource: "*", effect: deny }
 mode: subagent
 hidden: false
 ---

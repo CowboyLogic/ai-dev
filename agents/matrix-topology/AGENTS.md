@@ -119,6 +119,13 @@ permissions:                                               # ordered; last match
   - { action: webfetch, resource: "*", effect: allow }     # where applicable
   - { action: websearch, resource: "*", effect: allow }    # where applicable
   - { action: subagent, resource: "*", effect: allow }     # Neo only
+  # Then deny by name every action the role must not have. V2 allows any action
+  # no rule mentions, so an allow-list alone grants everything else:
+  - { action: subagent, resource: "*", effect: deny }      # all except Neo
+  - { action: shell, resource: "*", effect: deny }         # agents without shell
+  - { action: webfetch, resource: "*", effect: deny }      # all except Tank
+  - { action: websearch, resource: "*", effect: deny }     # all except Tank
+  - { action: skill, resource: "*", effect: deny }         # all except Neo
 mode: subagent      # all except Neo
 # mode: primary     # Neo only
 hidden: false       # all except Neo — see below
@@ -132,7 +139,11 @@ hidden: false       # all except Neo — see below
 
 V2 action names differ from V1: `bash` is `shell`, `task` is `subagent`, and
 `write`/`patch` are `edit`. An action no rule mentions is allowed — V2's base policy
-starts with an allow-all rule.
+starts with an allow-all rule. Every agent therefore **denies by name** the capabilities
+its role excludes (`subagent`, `shell`, `edit`, `webfetch`, `websearch`, `skill`), and
+Neo denies `general` and `explore` as subagent targets, enforcing the roster ban. The
+agents do not use a catch-all `"*"` deny: it would also override the access V2 grants
+every agent to its own tool-output and shell-output directories.
 
 ### Claude Code (`claude/`)
 

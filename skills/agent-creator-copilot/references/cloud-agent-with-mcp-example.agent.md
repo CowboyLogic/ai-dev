@@ -3,9 +3,12 @@ name: cloud-deploy-assistant
 description: Prepares Terraform changes for Google Cloud Platform on GitHub.com's Copilot cloud agent. Use when an issue asks for GCP infrastructure changes, Terraform plan review, or cost impact of an infrastructure change.
 # `execute` is required for terraform fmt/validate/plan, and Copilot cannot scope it per
 # command, so the "never apply or destroy" rule in the body is behavioral only. Enforce it
-# with credentials: give the cloud agent a read-only GCP identity (repository Agents
-# secrets) that can run `terraform plan` but not change infrastructure. With no write
-# credential, `terraform apply` and `terraform destroy` fail regardless of the prompt.
+# with credentials: store a read-only GCP service-account key as a repository Agents
+# secret WITHOUT the COPILOT_MCP_ prefix (for example GOOGLE_CREDENTIALS). Unprefixed
+# Agents secrets are exposed to the agent's shell as environment variables; COPILOT_MCP_
+# secrets, like the billing key below, reach only MCP servers. Grant that identity plan
+# permissions only, and give the ephemeral runner no other cloud credentials, so
+# `terraform apply` and `terraform destroy` fail regardless of the prompt.
 tools: ["read", "edit", "search", "execute", "github/issue_read", "github/pull_request_read", "gcp-cost/*"]
 target: github-copilot
 mcp-servers:

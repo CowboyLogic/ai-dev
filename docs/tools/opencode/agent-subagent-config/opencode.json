@@ -4,11 +4,12 @@
   "agents": {
     "plan": {
       "mode": "primary",
-      "description": "You must use subagents to plan and analyze without making changes. During more moderate and complex plans, write the plan to a Markdown formatted file in the current working directory.",
+      "description": "You must use subagents to plan and analyze without making changes. During more moderate and complex plans, write the plan to a Markdown formatted file under plans/.",
       "system": "{file:./prompts/plan.txt}",
       "model": "github-copilot/claude-sonnet-5",
       "permissions": [
-        { "action": "edit", "resource": "*", "effect": "allow" },
+        { "action": "edit", "resource": "*", "effect": "deny" },
+        { "action": "edit", "resource": "plans/**", "effect": "allow" },
         { "action": "shell", "resource": "*", "effect": "deny" }
       ]
     },

@@ -271,6 +271,15 @@ def main() -> int:
                 "per-command" if split else "whole string",
             )
 
+    # 3e. The roster ban on built-in all-purpose subagents is enforced, not just stated.
+    #     A `general` dispatch is how the roster-closure incident happened.
+    for target in ("general", "explore"):
+        check(
+            resolve(cond_rules, "subagent", target) == "deny",
+            f"conductor can dispatch '{target}'", "deny it by name",
+        )
+    check(resolve(cond_rules, "subagent", "builder") == "allow", "conductor cannot dispatch builder")
+
     # 4. Subagents declare hidden; every agent declares a model.
     for name, (fm, _) in agents.items():
         check("model" in fm, "no model pin", name)
