@@ -160,7 +160,13 @@ escalates to the human.
 
 **Current model:** Claude Opus 5.5 · **Family:** Anthropic / Claude
 
-The heaviest reasoning tier in the topology. It is justified here specifically:
+The family is the point of this pin, not only the tier. In hands-on use, the
+Claude family is stronger at planning and design, and the GPT family is stronger at
+code. This roster follows that split: design goes to Claude, and implementation goes
+to GPT (see the Builder). An earlier GPT pin here was chosen for family diversity,
+and it gave up planning quality to get it.
+
+The tier is the heaviest in the topology. It is justified here specifically:
 the Planner's output constrains everything downstream, its mistakes are the most
 expensive to discover late, and it runs infrequently — twice per PLAN or BUILD run,
 never in the DIRECT or MECHANICAL lanes. Question quality is the whole product of

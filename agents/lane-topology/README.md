@@ -338,7 +338,7 @@ Five tiers, assigned by consequence and frequency — not by seniority.
 
 | Tier | Model | Who | Why |
 |---|---|---|---|
-| Heavy reasoning | `claude-opus-5.5` | Planner, Adversary | Expensive to be wrong, infrequent to run |
+| Heavy reasoning | `claude-opus-5.5` | Planner, Adversary | Expensive to be wrong, infrequent to run; Claude is the stronger family for planning and design |
 | Balanced reasoning | `claude-sonnet-5` | Conductor | Constant use, moderate cognitive load |
 | Coding and tracing | `gpt-6-sol` | Builder, Investigator | Long tool loops and long-context tracing — both pinned off the Verifier's family |
 | Cross-family review | `gemini-3.8-flash` | Verifier | Runs on every lane — the tier is chosen for frequency, the family for independence |
