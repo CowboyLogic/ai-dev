@@ -134,7 +134,7 @@ Pre-configured agents optimize for specific workflows:
 
 - **Purpose**: Code analysis
 - **Model**: Advanced (`github-copilot/claude-sonnet-5`)
-- **Access**: Read-only (denies `edit` and `shell`)
+- **Access**: Read-only (denies every action, then allows `read`, `glob`, `grep`, `webfetch`)
 - **Use for**: Code review, security audits, analysis
 
 #### Documentation Agent

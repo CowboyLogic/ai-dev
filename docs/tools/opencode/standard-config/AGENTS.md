@@ -51,7 +51,7 @@ For global use, put the agent files in `~/.config/opencode/agents/` instead.
 | Agent | Mode | Model | Access |
 | --- | --- | --- | --- |
 | `quick` | primary | `github-copilot/gpt-5-mini` | Full |
-| `reviewer` | subagent | `github-copilot/claude-sonnet-5` | Read-only: denies `edit` and `shell` |
+| `reviewer` | subagent | `github-copilot/claude-sonnet-5` | Read-only: deny all, then allow `read`, `glob`, `grep`, `webfetch` |
 | `docs` | subagent | `github-copilot/claude-haiku-4.5` | Edits files, denies `shell` |
 | `title` (built-in) | hidden | `github-copilot/gpt-5-mini` | Generates session titles; replaces V1 `small_model` |
 
@@ -75,7 +75,7 @@ Subagents, one file each in `.opencode/agents/`:
 | Agent | Model | Access |
 | --- | --- | --- |
 | `api` | `github-copilot/gpt-5.6-terra` | Full |
-| `architect` | `github-copilot/claude-sonnet-5` | Read-only: denies `edit` and `shell` |
+| `architect` | `github-copilot/claude-sonnet-5` | Read-only: deny all, then allow `read`, `glob`, `grep` |
 | `cloud` | `github-copilot/gpt-5.6-terra` | Full |
 | `data` | `github-copilot/gpt-5-mini` | Full |
 | `database` | `github-copilot/gpt-5.6-terra` | Full |
@@ -83,7 +83,7 @@ Subagents, one file each in `.opencode/agents/`:
 | `documentation` | `github-copilot/claude-haiku-4.5` | Edits files, denies `shell` |
 | `performance` | `github-copilot/gpt-5.6-terra` | Full |
 | `research` | `github-copilot/gpt-5-mini` | Denies `edit`, may run shell |
-| `reviewer` | `github-copilot/claude-sonnet-5` | Read-only: denies `edit` and `shell` |
+| `reviewer` | `github-copilot/claude-sonnet-5` | Read-only: deny all, then allow `read`, `glob`, `grep` |
 | `security` | `github-copilot/claude-sonnet-5` | Denies `edit`, may run shell |
 | `testing` | `github-copilot/gpt-5-mini` | Full |
 | `uxui` | `github-copilot/gemini-3.8-flash` | Edits files, denies `shell` |
