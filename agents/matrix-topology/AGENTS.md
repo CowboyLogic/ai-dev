@@ -223,6 +223,12 @@ a new pin is introduced — do not leave retired IDs in the table.
 > is not enforceable in Claude Code. `tank` (GPT-designated) is the one exception: it
 > uses `haiku`, because inheriting a heavier session model would multiply the cost of
 > the most frequently dispatched agent.
+>
+> Tank's GPT pin is **temporary economics**, not a design decision: GPT-6 Luna is
+> currently far cheaper than any Claude tier. Expect Tank to return to Claude when
+> Anthropic ships Sonnet 5.5 / Haiku 5.5 at comparable pricing. When it does, update the
+> `model` in all three formats, the *Model Selection Rationale* body, Ghost's family
+> table, and the Claude-family note in `CONDUCTOR.md`, and drop this exception.
 
 The Copilot column carries a separate caveat.
 
