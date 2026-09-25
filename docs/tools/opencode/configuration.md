@@ -119,8 +119,11 @@ Its sections are described below.
       "mode": "subagent",
       "model": "github-copilot/claude-sonnet-5",
       "permissions": [
-        { "action": "edit", "resource": "*", "effect": "deny" },
-        { "action": "shell", "resource": "*", "effect": "deny" }
+        { "action": "*", "resource": "*", "effect": "deny" },
+        { "action": "read", "resource": "*", "effect": "allow" },
+        { "action": "glob", "resource": "*", "effect": "allow" },
+        { "action": "grep", "resource": "*", "effect": "allow" },
+        { "action": "webfetch", "resource": "*", "effect": "allow" }
       ]
     }
   }
@@ -284,7 +287,7 @@ style. Both are standard YAML.
 | Agent | Model | Access |
 |---|---|---|
 | `api` | `github-copilot/gpt-5.6-terra` | Full |
-| `architect` | `github-copilot/claude-sonnet-5` | Read-only (edit and shell denied) |
+| `architect` | `github-copilot/claude-sonnet-5` | Read-only (deny all, then allow read, glob, grep) |
 | `cloud` | `github-copilot/gpt-5.6-terra` | Full |
 | `data` | `github-copilot/gpt-5-mini` | Full |
 | `database` | `github-copilot/gpt-5.6-terra` | Full |
@@ -292,7 +295,7 @@ style. Both are standard YAML.
 | `documentation` | `github-copilot/claude-haiku-4.5` | Edit, no shell |
 | `performance` | `github-copilot/gpt-5.6-terra` | Full |
 | `research` | `github-copilot/gpt-5-mini` | Shell, no edit |
-| `reviewer` | `github-copilot/claude-sonnet-5` | Read-only (edit and shell denied) |
+| `reviewer` | `github-copilot/claude-sonnet-5` | Read-only (deny all, then allow read, glob, grep) |
 | `security` | `github-copilot/claude-sonnet-5` | Shell, no edit |
 | `testing` | `github-copilot/gpt-5-mini` | Full |
 | `uxui` | `github-copilot/gemini-3.8-flash` | Edit, no shell |
@@ -354,8 +357,10 @@ it:
 ]
 ```
 
-**An action you do not mention is allowed.** A read-only agent needs explicit `edit` and
-`shell` deny rules. Leaving them out grants both. The topologies in this repository deny
+**An action you do not mention is allowed.** Denying only `edit` and `shell` does not make
+an agent read-only: `subagent`, `skill`, `question`, web, and MCP actions stay open. For a
+read-only agent, start with a catch-all `{ "action": "*", "resource": "*", "effect": "deny" }`
+and then allow `read`, `glob`, and `grep`. The topologies in this repository deny
 every action a role must not have, by name.
 
 ### Rule order is the classic bug
@@ -561,7 +566,7 @@ Run it again.
 |---|---|
 | Agent missing from `@` and from delegation | File is not under an `agents/` directory, or it has `hidden: true` |
 | Delegation to `x` fails, but `x.agent` exists | File is named `x.agent.md`. Rename it to `x.md` |
-| Read-only agent edited a file | No explicit `edit` deny rule. Omitted actions are allowed |
+| Read-only agent edited a file or launched a subagent | No catch-all deny. Omitted actions are allowed |
 | Scoped edit grant denies everything | Catch-all `"*"` rule placed after the specific rule |
 | Rules in `guardrails.md` are ignored | Loaded through `instructions`, which V2 does not load. Use `AGENTS.md` |
 | Editor flags `agents` or `permissions` | The published schema is V1-only. See the warning at the top |

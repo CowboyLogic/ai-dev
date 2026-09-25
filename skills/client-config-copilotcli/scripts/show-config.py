@@ -5,7 +5,9 @@ Usage: python show-config.py [--json]
 
 Reads $COPILOT_HOME (default ~/.copilot) and project config in the current directory.
 Secrets are never printed: config.json values (which can hold a plaintext auth token) are
-reduced to key names, and token/key-like environment variables are masked.
+reduced to key names; settings.json is redacted recursively in both output modes (secret-like
+keys at any depth, every value under `env`/`headers`, token-shaped strings); and
+token/key-like environment variables are masked.
 """
 import json
 import os
@@ -59,7 +61,10 @@ OTHER_VARS = [
     "COPILOT_CUSTOM_INSTRUCTIONS_DIRS",
     "COPILOT_SKILLS_DIRS",
 ]
-SECRET_MARKERS = ("KEY", "TOKEN", "SECRET", "PASSWORD")
+SECRET_MARKERS = ("KEY", "TOKEN", "SECRET", "PASSWORD", "AUTH", "CREDENTIAL")
+# Maps whose values are credentials regardless of key name (e.g. an "Authorization" header).
+SECRET_MAPS = ("env", "headers")
+TOKEN_VALUE = re.compile(r"^(gh[opsur]_|github_pat_|sk-|xox[abp]-|Bearer\s)", re.I)
 
 
 def strip_jsonc(text):
@@ -107,6 +112,23 @@ def mask(name, value):
     value = str(value)
     if any(marker in name.upper() for marker in SECRET_MARKERS):
         return value[:4] + "..." if len(value) > 4 else "***"
+    return value
+
+
+def redact(value, key="", in_secret_map=False):
+    """Recursively mask secrets in parsed JSON before it is printed, in any mode."""
+    if isinstance(value, dict):
+        return {
+            k: redact(v, k, in_secret_map or k.lower() in SECRET_MAPS) for k, v in value.items()
+        }
+    if isinstance(value, list):
+        return [redact(v, key, in_secret_map) for v in value]
+    if isinstance(value, str) and (
+        in_secret_map
+        or any(marker in key.upper() for marker in SECRET_MARKERS)
+        or TOKEN_VALUE.match(value)
+    ):
+        return "***"
     return value
 
 
@@ -176,11 +198,11 @@ def show_settings(path, as_json):
     elif not settings:
         print("  (empty)")
     elif as_json:
-        print(json.dumps(settings, indent=2))
+        print(json.dumps(redact(settings), indent=2))
     else:
-        for key, value in settings.items():
+        for key, value in redact(settings).items():
             shown = json.dumps(value) if isinstance(value, (dict, list)) else value
-            print(f"  {key}: {mask(key, shown)}")
+            print(f"  {key}: {shown}")
 
 
 def main():

@@ -3,8 +3,10 @@ description: Code review for best practices and issues
 mode: subagent
 model: github-copilot/claude-sonnet-5
 permissions:
-  - { action: edit, resource: "*", effect: deny }
-  - { action: shell, resource: "*", effect: deny }
+  - { action: "*", resource: "*", effect: deny }
+  - { action: read, resource: "*", effect: allow }
+  - { action: glob, resource: "*", effect: allow }
+  - { action: grep, resource: "*", effect: allow }
 ---
 
 # Agent Purpose

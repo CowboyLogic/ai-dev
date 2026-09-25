@@ -22,21 +22,26 @@ description: Reviews code changes for security issues, performance problems, and
 mode: subagent
 model: github-copilot/claude-haiku-4.5
 permissions:
-  - action: edit
+  # Catch-all deny first: V2 starts from allow-all, so denying only edit and
+  # shell would still leave subagent, skill, question, and web actions open.
+  - action: "*"
     resource: "*"
     effect: deny
-  - action: shell
+  - action: read
     resource: "*"
-    effect: deny
+    effect: allow
+  - action: glob
+    resource: "*"
+    effect: allow
+  - action: grep
+    resource: "*"
+    effect: allow
   - action: shell
     resource: "git diff *"
     effect: allow
   - action: shell
     resource: "git log *"
     effect: allow
-  - action: webfetch
-    resource: "*"
-    effect: deny
 ---
 
 You are a code reviewer. When given code or a diff, analyze it for:
