@@ -105,7 +105,7 @@ V2 runs a shared background server: env vars must reach it (`opencode service se
 
 ## Scripts
 
-- `scripts/show-config.py` — display all config files (V1 and V2, JSONC-aware) with a detected-format summary
+- `scripts/show-config.py` — display all config files (V1 and V2, JSONC-aware) with a detected-format summary; secrets are redacted and unparsable files are not echoed
 - `scripts/update-references.py` — fetch latest upstream docs for self-update
 
 Run with: `python scripts/<script>.py`
