@@ -12,11 +12,16 @@ broker starts Copilot CLI only when Claude invokes a tool.
 
 | Tool | Copilot authority | Use it for |
 |---|---|---|
-| `copilot_research` | Read-only | Codebase reconnaissance, diagnosis, and an independent opinion. |
-| `copilot_review` | Read-only | A Git diff, proposed plan, or named-file review. |
-| `copilot_implement` | Exact named files | A bounded change with explicit acceptance criteria. |
+| `delegate_research` | Read-only | Codebase reconnaissance, diagnosis, and an independent opinion. |
+| `delegate_review` | Read-only | A Git diff, proposed plan, or named-file review. |
+| `delegate_implement` | Exact named files | A bounded change with explicit acceptance criteria. |
 | `broker_status` | No model invocation | Checking the installed Copilot CLI and active broker policy. |
 | `broker_receipt` | No model invocation | Retrieving retained full detail by `requestId`. |
+
+> [!NOTE]
+> The delegation tools were previously named `copilot_research`, `copilot_review`,
+> and `copilot_implement`. Those names still work for one version as unlisted,
+> deprecated aliases whose receipts carry `deprecated: true`.
 
 Implementation runs hold a workspace lock so two broker write delegations cannot
 modify the same checkout at once. Use a separate Git worktree for material changes
@@ -56,7 +61,7 @@ Start with read-only delegation. State the question, acceptance criteria, releva
 files, expected response shape, desired model, and Copilot credit ceiling.
 
 ```text
-Use copilot_research to diagnose the failing payment tests. Do not modify files.
+Use delegate_research to diagnose the failing payment tests. Do not modify files.
 Return the most likely cause, the evidence, the smallest safe fix, and tests that
 would validate it. Use the low-cost model and max_ai_credits 30.
 ```
@@ -65,7 +70,7 @@ Use implementation mode only after deciding the desired change. Name every writa
 file and run verification from the parent agent after inspecting Copilot's diff.
 
 ```text
-Use copilot_implement to add the missing parser validation. It may modify only
+Use delegate_implement to add the missing parser validation. It may modify only
 src/parser.ts and tests/parser.test.ts. Use max_ai_credits 30. Do not commit or change
 dependencies. Inspect the diff and run npm test after Copilot returns.
 ```
@@ -107,7 +112,7 @@ default. Call `broker_status` in a new Claude session to confirm the active poli
 then tell Claude to use a profile by name:
 
 ```text
-Use copilot_review with the review profile to examine the current diff.
+Use delegate_review with the review profile to examine the current diff.
 ```
 
 Per-call `model`, `effort`, `context`, `max_ai_credits`, and `timeout_seconds` values

@@ -24,8 +24,8 @@ criteria, relevant evidence, and the precise question that Copilot should answer
 
 ## Authority model
 
-`copilot_research` and `copilot_review` receive only Copilot's `read` tool.
-`copilot_implement` receives `read` and an exact `write(PATH)` permission for each
+`delegate_research` and `delegate_review` receive only Copilot's `read` tool.
+`delegate_implement` receives `read` and an exact `write(PATH)` permission for each
 declared writable file. Writable paths cannot contain the punctuation used by
 Copilot's permission syntax. It cannot run shell commands, including test commands,
 because repository-controlled test hooks could write beyond its file scope. The parent
@@ -64,6 +64,7 @@ by default; `FEDERATED_BROKER_RECEIPT_KEEP` changes the limit.
 | `outputCompacted` | `true` when the broker omitted or bounded captured output. Inspect `finalResponseAvailable` before relying on a successful provider exit. |
 | `finalResponseAvailable`, `finalResponse`, `finalResponseTruncated` | Whether a final message was extracted, its bounded text, and whether the lean copy was truncated. The full captured copy remains retrievable. |
 | `detailAvailable` | Whether the full receipt was persisted. A persistence failure does not discard the lean result. |
+| `deprecated` | Present and `true` only when the request used a deprecated `copilot_*` tool alias. Call the matching `delegate_*` tool instead. |
 | `untrustedContent`, `limitations` | Worker fields to treat as data and broker limitations requiring parent verification. |
 
 Do not treat a receipt as an approval to commit, publish, deploy, or accept a change.
@@ -77,7 +78,7 @@ sizes. `usageObserved` is null until actual CLI usage is verified. Set
 `FEDERATED_BROKER_HOST` and `FEDERATED_BROKER_ACCOUNT_LABEL` to label runs; the
 account label does not authenticate or select the Copilot account.
 
-`copilot_review` attaches `git diff HEAD`, so it includes both staged and unstaged
+`delegate_review` attaches `git diff HEAD`, so it includes both staged and unstaged
 tracked changes. Git does not include untracked files in that diff; name those files
 in `paths` when their contents matter to the review.
 

@@ -11,11 +11,11 @@ the final response.
 
 ## Choose a delegation mode
 
-- Use `copilot_research` for codebase reconnaissance, failure analysis, and an
+- Use `delegate_research` for codebase reconnaissance, failure analysis, and an
   independent technical opinion. It gives Copilot read access only.
-- Use `copilot_review` to assess the current Git diff or named files. It gives
+- Use `delegate_review` to assess the current Git diff or named files. It gives
   Copilot read access only and can attach a bounded working-tree diff.
-- Use `copilot_implement` only after the parent agent has defined the change and
+- Use `delegate_implement` only after the parent agent has defined the change and
   the exact files Copilot may modify. It requires explicit writable paths and
   serializes write delegations per workspace.
 

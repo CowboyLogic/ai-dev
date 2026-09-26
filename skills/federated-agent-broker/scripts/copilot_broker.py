@@ -37,7 +37,7 @@ except ImportError:  # Windows does not provide POSIX advisory file locks.
 
 
 SERVER_NAME = "federated-agent-broker"
-SERVER_VERSION = "0.2.0"
+SERVER_VERSION = "0.3.0"
 MAX_LEAN_RECEIPT_CHARS = 20_000
 RECEIPT_ID_PATTERN = re.compile(r"^del_[0-9a-f]{16}$")
 TASK_CLASSES = (
@@ -138,6 +138,18 @@ class ActiveChild:
 _children: dict[Any, ActiveChild] = {}
 _children_lock = threading.Lock()
 _cancelled_requests: set[Any] = set()
+# Delegation tools are verb-first; the provider is a route detail, not part of the name.
+DELEGATION_TOOLS = {
+    "delegate_research": "research",
+    "delegate_review": "review",
+    "delegate_implement": "implement",
+}
+# Callable for one version so existing callers keep working, but not listed by tools/list.
+DEPRECATED_TOOL_ALIASES = {
+    "copilot_research": "delegate_research",
+    "copilot_review": "delegate_review",
+    "copilot_implement": "delegate_implement",
+}
 _stdin_closed = False
 
 
@@ -339,7 +351,7 @@ def tool_definitions() -> list[dict[str, Any]]:
         common_properties,
         ["task"],
     )
-    research["name"] = "copilot_research"
+    research["name"] = "delegate_research"
 
     review_properties = {
         **common_properties,
@@ -354,7 +366,7 @@ def tool_definitions() -> list[dict[str, Any]]:
         review_properties,
         ["task"],
     )
-    review["name"] = "copilot_review"
+    review["name"] = "delegate_review"
 
     implementation_properties = {
         **common_properties,
@@ -371,7 +383,7 @@ def tool_definitions() -> list[dict[str, Any]]:
         implementation_properties,
         ["task", "writable_paths"],
     )
-    implementation["name"] = "copilot_implement"
+    implementation["name"] = "delegate_implement"
 
     status = _tool_schema(
         "Report broker policy and whether the configured Copilot executable is available. It does not call a model.",
@@ -1281,7 +1293,7 @@ def broker_status() -> dict[str, Any]:
         "policy": {
             "defaultMaxAiCredits": DEFAULT_MAX_AI_CREDITS,
             "minimumMaxAiCredits": MIN_MAX_AI_CREDITS,
-            "readOnlyTools": ["copilot_research", "copilot_review"],
+            "readOnlyTools": ["delegate_research", "delegate_review"],
             "implementationRequiresExactWritablePaths": True,
             "implementationWorkspaceLock": True,
             "implementationRequiresPosix": True,
@@ -1352,20 +1364,19 @@ class McpServer:
                 return tool_result(broker_receipt(arguments.get("requestId")))
             except BrokerError as error:
                 return tool_result({"error": str(error)}, is_error=True)
-        modes = {
-            "copilot_research": "research",
-            "copilot_review": "review",
-            "copilot_implement": "implement",
-        }
-        if name not in modes:
+        if name not in DELEGATION_TOOLS and name not in DEPRECATED_TOOL_ALIASES:
             return tool_result({"error": f"unknown broker tool: {name}"}, is_error=True)
+        replacement = DEPRECATED_TOOL_ALIASES.get(name)
         try:
-            delegation = parse_request(modes[name], arguments)
+            delegation = parse_request(DELEGATION_TOOLS[replacement or name], arguments)
             if delegation.mode == "implement":
                 with workspace_lock(delegation.workspace):
                     receipt = run_delegation(delegation, rpc_id=rpc_id)
             else:
                 receipt = run_delegation(delegation, rpc_id=rpc_id)
+            if replacement:
+                receipt["deprecated"] = True
+                receipt["limitations"].append(f"{name} is a deprecated alias; call {replacement} instead.")
             return tool_result(receipt, is_error=receipt["status"] != "completed" or bool(receipt["undeclaredChanges"]))
         except BrokerError as error:
             return tool_result({"error": str(error)}, is_error=True)

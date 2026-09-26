@@ -56,8 +56,12 @@ Use these manual instructions if you do not use the setup script.
    ```
 
 3. Start a new Claude Code session and run `/mcp`. The server should expose
-   `copilot_research`, `copilot_review`, `copilot_implement`, `broker_status`, and
+   `delegate_research`, `delegate_review`, `delegate_implement`, `broker_status`, and
    `broker_receipt`.
+
+   The earlier names `copilot_research`, `copilot_review`, and `copilot_implement`
+   still work for one version as deprecated aliases. They are not listed by
+   `/mcp`, and their receipts carry `deprecated: true`.
 
 The command stores the resolved script path in Claude Code's user configuration. To
 remove it later, run `claude mcp remove federated-agent-broker`.
@@ -67,18 +71,18 @@ remove it later, run `claude mcp remove federated-agent-broker`.
 Ask Claude to use a named broker tool and include a bounded objective. For example:
 
 ```text
-Use copilot_research to inspect the failing tests in packages/api. Do not change files.
+Use delegate_research to inspect the failing tests in packages/api. Do not change files.
 Report the likely root cause, relevant paths, smallest safe fix, and tests to run.
 Use max_ai_credits 30.
 ```
 
-For a review, ask Claude to call `copilot_review`. It can attach the current working
+For a review, ask Claude to call `delegate_review`. It can attach the current working
 tree diff, clipped to 40,000 characters, and still gives Copilot read-only access.
 
 For implementation, provide exact files rather than a directory:
 
 ```text
-Use copilot_implement to add the missing validation described in the task.
+Use delegate_implement to add the missing validation described in the task.
 It may modify only src/validation.ts and tests/validation.test.ts.
 Use max_ai_credits 30. Afterward, inspect the receipt, then run npm test yourself.
 ```

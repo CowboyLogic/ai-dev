@@ -36,7 +36,7 @@ class CopilotBrokerTests(unittest.TestCase):
         assert result is not None
         self.assertEqual(
             [tool["name"] for tool in result["result"]["tools"]],
-            ["copilot_research", "copilot_review", "copilot_implement", "broker_status", "broker_receipt"],
+            ["delegate_research", "delegate_review", "delegate_implement", "broker_status", "broker_receipt"],
         )
 
     def test_implementation_rejects_unbounded_paths(self) -> None:
@@ -620,7 +620,7 @@ class CopilotBrokerTests(unittest.TestCase):
             worker = Path(self.state.name, "worker.py")
             worker.write_text("import sys\nfrom pathlib import Path\nif '--version' in sys.argv:\n    print('fake 1.0')\n    sys.exit(0)\nPath('leak.txt').write_text('x')\nprint('''{\"type\":\"assistant.message\",\"content\":\"done\"}''')\n")
             request = {"jsonrpc": "2.0", "id": 8, "method": "tools/call", "params": {
-                "name": "copilot_implement", "arguments": {"task": "Edit", "workspace": workspace,
+                "name": "delegate_implement", "arguments": {"task": "Edit", "workspace": workspace,
                 "writable_paths": ["allowed.txt"]}}}
             with patch.dict(os.environ, {"FEDERATED_BROKER_COPILOT_BIN": f"{sys.executable} {worker}"}):
                 response = broker.McpServer().handle_request(request)
@@ -630,6 +630,26 @@ class CopilotBrokerTests(unittest.TestCase):
             self.assertEqual(lean["undeclaredChanges"][0]["path"], "leak.txt")
             log = json.loads((Path(self.state.name) / "delegations.jsonl").read_text().splitlines()[0])
             self.assertEqual(log["undeclaredChangesCount"], 1)
+
+    def test_deprecated_alias_runs_unlisted_and_is_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as workspace:
+            worker = Path(self.state.name, "worker.py")
+            worker.write_text("import sys\nif '--version' in sys.argv:\n    print('fake 1.0')\n    sys.exit(0)\nprint('''{\"type\":\"assistant.message\",\"content\":\"done\"}''')\n")
+            server = broker.McpServer()
+            listed = {tool["name"] for tool in broker.tool_definitions()}
+            self.assertFalse(listed & set(broker.DEPRECATED_TOOL_ALIASES))
+            with patch.dict(os.environ, {"FEDERATED_BROKER_COPILOT_BIN": f"{sys.executable} {worker}"}):
+                current = server.handle_request({"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {
+                    "name": "delegate_research", "arguments": {"task": "Inspect", "workspace": workspace}}})
+                alias = server.handle_request({"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {
+                    "name": "copilot_research", "arguments": {"task": "Inspect", "workspace": workspace}}})
+            assert current is not None and alias is not None
+            current_lean = json.loads(current["result"]["content"][0]["text"])
+            alias_lean = json.loads(alias["result"]["content"][0]["text"])
+            self.assertNotIn("deprecated", current_lean)
+            self.assertEqual(alias_lean["status"], "completed")
+            self.assertTrue(alias_lean["deprecated"])
+            self.assertTrue(any("call delegate_research instead" in item for item in alias_lean["limitations"]))
 
     def test_post_run_hash_failure_is_logged_once(self) -> None:
         with tempfile.TemporaryDirectory() as workspace:
@@ -668,7 +688,7 @@ class CopilotBrokerTests(unittest.TestCase):
                 self.addCleanup(stream.close)
         assert process.stdin is not None
         process.stdin.write(json.dumps({"jsonrpc": "2.0", "id": 77, "method": "tools/call", "params": {
-            "name": "copilot_research", "arguments": {"task": "Wait", "workspace": workspace}}}) + "\n")
+            "name": "delegate_research", "arguments": {"task": "Wait", "workspace": workspace}}}) + "\n")
         process.stdin.flush()
         deadline = time.monotonic() + 10
         while not pid_file.exists() and time.monotonic() < deadline:
@@ -731,7 +751,7 @@ class CopilotBrokerTests(unittest.TestCase):
         import io
         with tempfile.TemporaryDirectory() as workspace:
             request = {"jsonrpc": "2.0", "id": 91, "method": "tools/call", "params": {
-                "name": "copilot_research", "arguments": {"task": "Inspect", "workspace": workspace}}}
+                "name": "delegate_research", "arguments": {"task": "Inspect", "workspace": workspace}}}
             output = io.StringIO()
             with patch.object(broker, "run_delegation", side_effect=RuntimeError("broken")), patch.object(
                 sys, "stdin", io.StringIO(json.dumps(request) + "\n")
