@@ -11,6 +11,7 @@ This skill provides comprehensive guidance for creating custom instructions that
 ## When to Use This Skill
 
 Use this skill when:
+
 - Setting up personal custom instructions for consistent Copilot behavior
 - Creating repository-wide instructions for project-specific standards
 - Developing organization-level instructions for company-wide preferences
@@ -20,21 +21,24 @@ Use this skill when:
 
 ## Prerequisites
 
-- **Always check the latest GitHub documentation**: https://docs.github.com/en/copilot/concepts/prompting/response-customization
+- **Always check the latest GitHub documentation**: <https://docs.github.com/en/copilot/concepts/prompting/response-customization>
 - Access to GitHub Copilot (Pro, Pro+, Business, or Enterprise plan)
 - Understanding of your project, team, or organization's needs
 - Knowledge of the context where instructions will be applied
 
 ## Latest Information Check
 
-**IMPORTANT**: Before creating any custom instructions, always check the official GitHub documentation for the latest information: https://docs.github.com/en/copilot/concepts/prompting/response-customization
+**IMPORTANT**: Before creating any custom instructions, always check the official GitHub documentation for the latest information: <https://docs.github.com/en/copilot/concepts/prompting/response-customization>
 
 Key points from the latest documentation:
+
 - Three types: Personal, Repository, and Organization instructions
 - Repository instructions include repository-wide, path-specific, and agent instructions
-- Precedence: Personal > Repository > Organization
+- Precedence: Personal > Repository (path-specific, then repository-wide, then agent) > Organization
+- All relevant instruction sets are sent to Copilot; precedence only decides conflicts between them
+- Path-specific `.instructions.md` files require an `applyTo` glob in YAML frontmatter
 - Instructions should be short, self-contained statements
-- Support varies across different Copilot features and environments
+- Support varies by surface (GitHub.com, VS Code, JetBrains, Copilot CLI, and others) — check the [support matrix](https://docs.github.com/en/copilot/reference/custom-instructions-support)
 
 ## Instructions
 
@@ -42,11 +46,11 @@ Key points from the latest documentation:
 
 1. **Identify the scope**: Personal, repository, or organization level?
 2. **Choose instruction type**:
-   - **Personal**: Individual preferences on GitHub.com
+   - **Personal**: Individual preferences — Copilot Chat on GitHub.com, or `~/.copilot/copilot-instructions.md` and `~/.copilot/instructions/**/*.instructions.md` for the Copilot CLI
    - **Repository-wide**: `.github/copilot-instructions.md` for entire repository
-   - **Path-specific**: `.github/instructions/NAME.instructions.md` for specific paths
-   - **Agent instructions**: `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md` files
-   - **Organization**: Organization-wide settings (owners only, Enterprise required)
+   - **Path-specific**: `.github/instructions/**/NAME.instructions.md` for specific paths (requires `applyTo` frontmatter)
+   - **Agent instructions**: `AGENTS.md` anywhere in the repository (the nearest one in the directory tree wins), or a single `CLAUDE.md` or `GEMINI.md` at the repository root
+   - **Organization**: Organization-wide settings (owners only, Copilot Business or Enterprise; GitHub.com Chat, code review, and cloud agent only)
 
 3. **Assess requirements**: What behaviors need to be customized?
 
@@ -71,13 +75,15 @@ Key points from the latest documentation:
 ### Step 3: Structure Your Instructions
 
 1. **Start with project overview**:
-   ```
+
+   ```markdown
    # Project Overview
    This project is a [description]. It is built using [technologies] and uses [databases/frameworks].
    ```
 
 2. **Document folder structure**:
-   ```
+
+   ```markdown
    ## Folder Structure
    - `/src`: Contains the source code for the [component]
    - `/tests`: Contains test files
@@ -85,7 +91,8 @@ Key points from the latest documentation:
    ```
 
 3. **Specify coding standards**:
-   ```
+
+   ```markdown
    ## Coding Standards
    - Use [naming convention] for variables/functions
    - Follow [style guide] for formatting
@@ -93,7 +100,8 @@ Key points from the latest documentation:
    ```
 
 4. **List libraries and frameworks**:
-   ```
+
+   ```markdown
    ## Libraries and Frameworks
    - [Library] v[version] for [purpose]
    - [Framework] with [configuration]
@@ -102,6 +110,7 @@ Key points from the latest documentation:
 ### Step 4: Write Effective Instructions
 
 **Guidelines for writing instructions**:
+
 - Keep statements short and self-contained
 - Use natural language
 - Focus on broadly applicable information
@@ -109,6 +118,7 @@ Key points from the latest documentation:
 - Test for effectiveness
 
 **Common instruction patterns**:
+
 - Language preferences: `Always respond in [language].`
 - Coding standards: `Use [convention] for [element].`
 - Framework usage: `Use [framework] with [library].`
@@ -117,29 +127,43 @@ Key points from the latest documentation:
 
 ### Step 5: Create the Instruction Files
 
-#### For Repository Instructions:
+#### For Repository Instructions
+
 1. **Repository-wide instructions**:
    - Create `.github/copilot-instructions.md`
    - Include all broadly applicable instructions
 
 2. **Path-specific instructions**:
-   - Create `.github/instructions/` directory
+   - Create `.github/instructions/` directory (subdirectories are allowed)
    - Add `NAME.instructions.md` files (e.g., `frontend.instructions.md`)
-   - Use specific instructions for particular paths
+   - Start each file with YAML frontmatter containing `applyTo` — a glob, or comma-separated globs, matching the files the instructions cover. Without it, the file is never applied.
+   - Optionally add `excludeAgent: "code-review"` or `excludeAgent: "cloud-agent"` to keep one of those agents from using the file
+
+   ```markdown
+   ---
+   applyTo: "**/*.ts,**/*.tsx"
+   ---
+
+   Use strict TypeScript. Never use `any`.
+   ```
 
 3. **Agent instructions**:
-   - Create `AGENTS.md`, `CLAUDE.md`, or `GEMINI.md`
+   - Create `AGENTS.md` files anywhere in the repository — the nearest one in the directory tree takes precedence
+   - Alternatively, use a single `CLAUDE.md` or `GEMINI.md` at the repository root
    - Include agent-specific customizations
 
-#### For Personal Instructions:
-1. Go to Copilot Chat on GitHub.com
-2. Access the custom instructions popup
-3. Add your personal preferences
+#### For Personal Instructions
 
-#### For Organization Instructions:
-1. Organization owners only (Enterprise required)
-2. Access organization Copilot settings
-3. Configure organization-wide instructions
+- **GitHub.com**: In Copilot Chat, click your profile picture, select **Personal instructions**, enter your preferences, and save
+- **Copilot CLI**: Create `~/.copilot/copilot-instructions.md`, or modular `~/.copilot/instructions/**/*.instructions.md` files matched by `applyTo`
+- **VS Code / JetBrains**: Personal instructions live in the IDE's user profile — see the IDE's documentation
+
+#### For Organization Instructions
+
+1. Organization owners only, for organizations with Copilot Business or Copilot Enterprise
+2. Go to organization **Settings** > **Copilot** > **Custom instructions**
+3. Enter instructions in the **Preferences and instructions** box and save
+4. Applies only to Copilot Chat, Copilot code review, and Copilot cloud agent on GitHub.com
 
 ### Step 6: Test and Refine
 
@@ -226,6 +250,10 @@ This project is a modern web application built with React and TypeScript. It pro
 Create `.github/instructions/tests.instructions.md`:
 
 ```markdown
+---
+applyTo: "**/*.test.ts,**/*.test.tsx"
+---
+
 # Testing Instructions
 
 These instructions apply to all test files in the repository.
@@ -260,9 +288,9 @@ These instructions apply to all test files in the repository.
 
 ### Example 3: Personal Instructions
 
-In Copilot Chat settings on GitHub.com:
+In Copilot Chat on GitHub.com (profile picture > **Personal instructions**):
 
-```
+```text
 Always respond in clear, concise English.
 Explain code concepts with practical examples.
 Prefer modern JavaScript/TypeScript features.
@@ -272,9 +300,9 @@ Focus on readable, maintainable solutions over clever optimizations.
 
 ### Example 4: Organization Instructions
 
-For organization owners (Enterprise plan):
+For organization owners (Copilot Business or Enterprise), in organization **Settings** > **Copilot** > **Custom instructions**:
 
-```
+```text
 Always respond in English unless specifically requested otherwise.
 For security-related questions, reference the company security guidelines.
 Use the organization's approved coding standards.
@@ -285,6 +313,7 @@ Prefer our standard technology stack unless there's a specific reason to deviate
 ## Best Practices
 
 ### Writing Effective Instructions
+
 - **Be specific**: Use concrete examples rather than vague guidance
 - **Keep it concise**: Short statements are more effective than long explanations
 - **Test thoroughly**: Verify instructions work as intended
@@ -292,17 +321,20 @@ Prefer our standard technology stack unless there's a specific reason to deviate
 - **Update regularly**: Review and update as project needs change
 
 ### Repository Instructions
+
 - **Broad applicability**: Focus on information relevant to most repository interactions
 - **Version control**: Track instruction files in git
 - **Team alignment**: Ensure instructions reflect team consensus
 - **Documentation**: Reference instruction files in project README
 
 ### Personal Instructions
+
 - **Individual preferences**: Focus on your personal workflow preferences
 - **Complement repository**: Don't override important project standards
 - **Minimal but effective**: Few high-impact instructions are better than many
 
 ### Organization Instructions
+
 - **Company standards**: Enforce organization-wide policies and preferences
 - **Cultural alignment**: Reflect company values and communication style
 - **Security first**: Include security-related guidelines
@@ -313,11 +345,14 @@ Prefer our standard technology stack unless there's a specific reason to deviate
 **Issue**: Copilot not following instructions
 **Solution**: Check precedence (personal > repository > organization), ensure instructions are clear and specific
 
+**Issue**: Path-specific instructions never apply
+**Solution**: Confirm the file is under `.github/instructions/`, ends in `.instructions.md`, and has an `applyTo` glob in frontmatter that matches the target files
+
 **Issue**: Instructions too broad or conflicting
 **Solution**: Refine wording, remove contradictions, test in different contexts
 
 **Issue**: Instructions not applying to certain features
-**Solution**: Check support matrix at https://docs.github.com/en/copilot/reference/custom-instructions-support
+**Solution**: Check support matrix at <https://docs.github.com/en/copilot/reference/custom-instructions-support>
 
 **Issue**: Team members getting different responses
 **Solution**: Ensure repository instructions are consistent, check for personal overrides
@@ -328,13 +363,14 @@ Prefer our standard technology stack unless there's a specific reason to deviate
 ## Additional Resources
 
 - **[GitHub Custom Instructions Documentation](https://docs.github.com/en/copilot/concepts/prompting/response-customization)** - Official documentation (always check first)
-- [Adding Repository Custom Instructions](https://docs.github.com/en/copilot/customizing-copilot/adding-repository-custom-instructions-for-github-copilot) - Step-by-step guide
+- [Adding Repository Custom Instructions](https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions) - Step-by-step guide
 - [Custom Instructions Library](https://docs.github.com/en/copilot/tutorials/customization-library/custom-instructions) - Curated examples
 - [Custom Instructions Support](https://docs.github.com/en/copilot/reference/custom-instructions-support) - Feature compatibility matrix
 
 ## Testing Checklist
 
 - [ ] Instructions follow the correct file naming and location conventions
+- [ ] Every path-specific `.instructions.md` file has an `applyTo` glob in frontmatter
 - [ ] Content is clear, concise, and self-contained
 - [ ] Instructions don't conflict with each other
 - [ ] Tested across different Copilot features and contexts

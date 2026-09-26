@@ -3,17 +3,16 @@ description: >
   External information retrieval. Current library APIs, protocol details, version
   compatibility, error messages, vendor documentation. Returns findings with sources.
   Does not decide anything and does not touch the codebase.
-model: github-copilot/gpt-5.6-luna
-permission:
-  read: allow
-  grep: allow
-  webfetch: allow
-  websearch: allow
-  edit:
-    "*": deny
-    ".agent-output/**": allow
-  bash: deny
-  task: deny
+model: github-copilot/gpt-6-luna
+permissions:
+  - { action: read, resource: "*", effect: allow }
+  - { action: grep, resource: "*", effect: allow }
+  - { action: webfetch, resource: "*", effect: allow }
+  - { action: websearch, resource: "*", effect: allow }
+  - { action: edit, resource: "*", effect: deny }
+  - { action: edit, resource: ".agent-output/**", effect: allow }
+  - { action: shell, resource: "*", effect: deny }
+  - { action: subagent, resource: "*", effect: deny }
 mode: subagent
 hidden: false
 ---
@@ -116,7 +115,7 @@ is a different agent's job and the Conductor sequences it.
 
 ## Model Selection Rationale
 
-**Current model:** GPT-5.6 Luna · **Family:** OpenAI / GPT
+**Current model:** GPT-6 Luna · **Family:** OpenAI / GPT
 
 The cheapest tier, matched to the task: retrieval and summarization against sources
 that are already authoritative. There is no synthesis or judgment here — the
@@ -128,6 +127,5 @@ The one real risk on a light model is uncritical source acceptance, which is why
 protocol is explicit about primary sources, dates, and versions, and why `CONFIDENCE`
 is a required field.
 
-> `gemini-3-flash-preview` is a reasonable alternate pin — comparable cost, larger
-> context for long documentation pages, and a different family for independent
-> fact-finding.
+> `gemini-3.8-flash` is an alternate pin when a different family for independent
+> fact-finding matters more than cost — it costs several times more than GPT-6 Luna.

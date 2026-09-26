@@ -1,38 +1,71 @@
 {
-  "_comment": "Source URLs for this skill's reference files. Run scripts/update-references.py to refresh.",
+  "_comment": "Source URLs for this skill's reference files. Run scripts/update-references.py to refresh. docs.github.com URLs are fetched as Markdown via the docs article API.",
   "index": "https://docs.github.com/en/copilot/how-tos/copilot-cli",
   "references": {
     "references/config-schema.md": {
       "urls": [
+        "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-config-dir-reference",
+        "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/change-settings",
         "https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/configure-copilot-cli",
         "https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/authenticate-copilot-cli",
-        "https://docs.github.com/en/copilot/concepts/agents/about-copilot-cli"
+        "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/use-byok-models",
+        "https://docs.github.com/en/copilot/concepts/agents/copilot-cli/about-copilot-cli"
       ],
-      "covers": "config.json (trustedFolders), CLI permission flags (tools/paths/URLs), authentication, BYOK models, environment variables, interactive slash commands"
+      "covers": "~/.copilot directory layout, settings.json (user/repo/local keys and precedence), config.json (trustedFolders), allowed_models.txt, MDM managed settings, environment variables, authentication, BYOK providers and providers.json, model usage"
+    },
+    "references/permissions.md": {
+      "urls": [
+        "https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli/allowing-tools",
+        "https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/configure-copilot-cli",
+        "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-config-dir-reference",
+        "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
+      ],
+      "covers": "Trusted directories, tool/path/URL permission flags, permission patterns, tool names, approval prompts and modes, permissions-config.json schema, sandbox settings, allow-all restriction, managed permission rules"
+    },
+    "references/cli-commands.md": {
+      "urls": [
+        "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
+      ],
+      "covers": "Terminal subcommands, command-line options, session management, slash commands"
     },
     "references/mcp.md": {
       "urls": [
-        "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers"
+        "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers",
+        "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference",
+        "https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/add-lsp-servers"
       ],
-      "covers": "mcp-config.json structure, transport types (local/http/sse), fields, CLI management commands (/mcp add/show/edit/delete)"
+      "covers": "mcp-config.json and project .mcp.json/.github/mcp.json, loading priority, transport types and fields, OAuth, /mcp and copilot mcp commands, governance, LSP servers (lsp-config.json, .github/lsp.json, /lsp)"
     },
     "references/hooks.md": {
       "urls": [
+        "https://docs.github.com/en/copilot/reference/hooks-reference",
         "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/use-hooks"
       ],
-      "covers": "hooks.json structure, all hook events, command fields, script requirements, exit codes, debugging"
+      "covers": "Hook sources and load order, file format, command/http/prompt entries, all hook events, input payloads, decision output, matchers, exit codes, disableAllHooks, debugging"
     },
     "references/skills.md": {
       "urls": [
-        "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-skills"
+        "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-skills",
+        "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
       ],
-      "covers": "SKILL.md frontmatter fields, storage locations (global vs project), CLI management commands (/skills), allowed-tools, activation"
+      "covers": "SKILL.md frontmatter fields, skill locations and priority, commands format, /skills and copilot skill commands, allowed-tools"
+    },
+    "references/agents-plugins.md": {
+      "urls": [
+        "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/create-custom-agents-for-cli",
+        "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference",
+        "https://docs.github.com/en/copilot/reference/custom-agents-configuration",
+        "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference",
+        "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/plugins-finding-installing"
+      ],
+      "covers": "Custom agent locations and frontmatter, subagent settings, built-in and sidekick agents, plugin commands, enabledPlugins/extraKnownMarketplaces, plugin.json and marketplace.json, precedence"
     },
     "references/instructions.md": {
       "urls": [
-        "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-custom-instructions"
+        "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-custom-instructions",
+        "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
       ],
-      "covers": "Instruction file locations, format, applyTo glob, excludeAgent, how files combine, AGENTS.md vs copilot-instructions.md"
+      "covers": "Instruction file locations, applyTo/excludeAgent frontmatter, how files combine, @ imports, subagent instructions, /instructions and copilot instruction"
     }
   }
 }

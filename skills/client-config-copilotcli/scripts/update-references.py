@@ -17,6 +17,7 @@ Workflow (for Claude):
 """
 import json
 import sys
+import urllib.parse
 import urllib.request
 import urllib.error
 from pathlib import Path
@@ -31,8 +32,21 @@ HEADERS = {
     "Accept": "text/html,text/markdown,text/plain,*/*",
 }
 
+DOCS_HOST = "docs.github.com"
+DOCS_ARTICLE_API = "https://docs.github.com/api/article/body?pathname="
+
+
+def to_fetch_url(url: str) -> str:
+    """Map a docs.github.com page URL to the docs article API, which returns Markdown
+    instead of a full HTML page. Other URLs are fetched as-is."""
+    parsed = urllib.parse.urlparse(url)
+    if parsed.netloc == DOCS_HOST and not parsed.path.startswith("/api/"):
+        return DOCS_ARTICLE_API + urllib.parse.quote(parsed.path, safe="/")
+    return url
+
+
 def fetch_url(url: str) -> str:
-    req = urllib.request.Request(url, headers=HEADERS)
+    req = urllib.request.Request(to_fetch_url(url), headers=HEADERS)
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             content = resp.read()

@@ -1,4 +1,9 @@
-# Agents Reference
+# V1 Agents Reference
+
+> [!NOTE]
+> This file covers **V1** agent config (`agent` map, `prompt`, `permission`, `disable`, `temperature`). Native V2
+> uses `agents`, `system`, `permissions` arrays, `disabled`, and `request.body`, defaults new custom agents to
+> `mode: primary`, and has no `scout` agent. See [v2/agents.md](v2/agents.md).
 
 ## Built-in agents
 
@@ -9,9 +14,9 @@
 | `general` | subagent | Full access (except todo) — multi-step research tasks, parallelizable |
 | `explore` | subagent | Read-only codebase exploration — find files/patterns fast |
 | `scout` | subagent | Read-only external docs/dependency research — clones deps into opencode's cache, cross-references upstream source |
-| `compaction` | system (hidden) | Summarises context when it fills up |
-| `title` | system (hidden) | Generates session titles |
-| `summary` | system (hidden) | Generates session summaries |
+| `compaction` | primary (hidden) | Summarises context when it fills up |
+| `title` | primary (hidden) | Generates session titles |
+| `summary` | primary (hidden) | Generates session summaries |
 
 Switch primary agents with Tab (`agent_cycle`) or Shift+Tab (`agent_cycle_reverse`).
 Invoke subagents with `@general`, `@explore`, `@scout`, or let the primary agent call them automatically.
@@ -53,18 +58,23 @@ When a subagent creates a child session: `session_child_first` (default Leader+D
 | `description` | Purpose — used for @ autocomplete and auto-routing. **Required** | `"Reviews code for quality"` |
 | `mode` | `"primary"` (user-selectable), `"subagent"` (invoked by agents), `"all"` — defaults to `"all"` if unset | `"subagent"` |
 | `model` | Override default model for this agent | `"anthropic/claude-opus-4-5"` |
-| `variant` | Model variant specification | `"thinking"` |
-| `prompt` | System prompt — inline string or `{file:path}` | `"{file:./prompts/reviewer.md}"` |
-| `temperature` | Response randomness 0.0–1.0 | `0.1` |
+| `variant` | Default model variant (applies only when using the agent's configured model) | `"high"` |
+| `prompt` | System prompt — inline string or `{file:path}` (path relative to the config file) | `"{file:./prompts/reviewer.md}"` |
+| `temperature` | Response randomness, typically 0.0–1.0; unset uses model defaults | `0.1` |
 | `top_p` | Response diversity control | `0.9` |
 | `steps` | Max agentic iterations before falling back to text | `30` |
 | `permission` | Tool access rules (see permissions.md) | `{"edit": "deny"}` |
 | `color` | Hex `#RRGGBB` or theme color name | `"#e06c75"` or `"accent"` |
 | `disable` | Set `true` to disable agent | `true` |
-| `hidden` | Hide from @ autocomplete | `true` |
+| `hidden` | Hide a subagent from @ autocomplete (still invocable via the Task tool) | `true` |
 | `options` | Generic options object | `{}` |
+| `tools` | **Deprecated** — use `permission` (`true` ≈ `{"*": "allow"}`, `false` ≈ `{"*": "deny"}`) | `{"write": false}` |
+| `maxSteps` | **Deprecated** — use `steps` | — |
 
 Theme color names: `primary`, `secondary`, `accent`, `success`, `warning`, `error`, `info`
+
+Any other key in an agent entry is passed straight to the provider as a model option (e.g. `"reasoningEffort": "high"`
+for OpenAI reasoning models).
 
 ---
 
@@ -125,8 +135,9 @@ Use glob patterns for fine-grained bash control:
           "rm *": "ask"
         },
         "task": {
-          "*": "allow",
-          "my-mcp_*": "deny"
+          "*": "deny",
+          "code-reviewer": "ask",
+          "orchestrator-*": "allow"
         }
       }
     }
@@ -134,7 +145,8 @@ Use glob patterns for fine-grained bash control:
 }
 ```
 
-The `task` permission controls which subagents this agent can invoke, using glob patterns on agent or MCP tool names. Set `"deny"` to block invocation.
+The `task` permission controls which subagents this agent can invoke via the Task tool, using glob patterns on
+subagent names. A denied subagent is removed from the Task tool description entirely.
 
 ---
 

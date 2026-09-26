@@ -106,7 +106,7 @@ any review, Ghost confirms two things: the model family of the agent that produc
 the artifact, and the model family Smith used (where Smith was involved). Ghost
 must differ from both where possible.
 
-**Default model:** github-copilot/gemini-3.1-pro-preview
+**Default model:** github-copilot/gemini-3.8-flash
 **Default family:** Google / Gemini
 **Use when reviewing:** Anthropic / Claude or OpenAI / GPT family agents
 
@@ -148,7 +148,7 @@ GPT-family producers. Ghost (Gemini) is cross-family from all of them.
 | Trinity | OpenAI / GPT | Smith-Claude (Claude) | Gemini (default) |
 | Apoc | Anthropic / Claude | — (Smith not invoked) | Gemini (default) |
 | Dozer | Anthropic / Claude | — (Smith not invoked) | Gemini (default) |
-| Tank | Anthropic / Claude | — (Smith not invoked) | Gemini (default) |
+| Tank | OpenAI / GPT | — (Smith not invoked) | Gemini (default) |
 | Niobe | Anthropic / Claude | — (Smith not invoked) | Gemini (default) |
 
 ## Model Selection Rationale
@@ -157,7 +157,7 @@ Ghost's purpose is cross-family independence — a genuinely different perspecti
 from a different model family. Fixing Ghost to a single static model breaks that
 guarantee the moment the working agent or Smith shares that family.
 
-The default model (Gemini 3.1 Pro) covers the entire current roster — all working
+The default model (Gemini 3.8 Flash) covers the entire current roster — all working
 agents are Claude or GPT family, and Ghost (Gemini) is cross-family from both.
 The alternate (Claude Sonnet 5) is reserved for any future agent assigned a
 Gemini model. Trinity review cycles are the highest-coverage: Trinity (GPT) +

@@ -1,234 +1,235 @@
-# MCP Servers Reference
+# MCP and LSP Servers Reference
 
-## Config file location
+## MCP config locations and priority
 
-```
-~/.copilot/mcp-config.json
-```
+| Source | Location | Priority |
+|--------|----------|----------|
+| Session-only | `--additional-mcp-config=JSON` or `=@file.json` | Highest |
+| Plugins | Plugin MCP configs | |
+| Workspace | `.mcp.json` (any dir from cwd up to the repo root) and `.github/mcp.json` | |
+| User | `~/.copilot/mcp-config.json` (or `$COPILOT_HOME/mcp-config.json`) | Lowest |
+| Built-in | `github-mcp-server`, `playwright`, `fetch`, `time` | Always available |
 
-(Or `$COPILOT_HOME/mcp-config.json`)
+Same-name servers: the higher-priority source wins. Within workspace files, files closer to cwd
+win, and `.mcp.json` beats `.github/mcp.json` in the same directory. VS Code's
+`.vscode/mcp.json` is **not** read (see [Migrating](#migrating-from-vscodemcpjson)).
 
-**Server names** can include spaces and special characters (supported as of v1.0.35). Enclose in quotes when referencing in CLI commands.
-
-**OAuth**: MCP OAuth authentication is handled through the shared runtime flow. When removing an MCP server, its OAuth state is automatically cleared.
+Workspace servers load only in trusted directories. In `-p` they load if the directory is already
+trusted, otherwise only with `GITHUB_COPILOT_PROMPT_MODE_WORKSPACE_MCP=true`.
 
 ## Structure
 
 ```json
 {
   "mcpServers": {
-    "server-name": {
+    "playwright": {
       "type": "local",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-github"],
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "$GITHUB_PERSONAL_ACCESS_TOKEN"
-      },
+      "args": ["@playwright/mcp@latest"],
+      "env": {},
+      "tools": ["*"]
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": { "CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}" },
       "tools": ["*"]
     }
   }
 }
 ```
 
-**Credential pattern**: Values in `env` that start with `$` are resolved from the user's shell environment at load time. Set credentials in your shell profile (e.g. `~/.bashrc`, `~/.zshrc`, PowerShell `$PROFILE`) — never hardcode secret values in `mcp-config.json`.
+Project files (`.mcp.json`, `.github/mcp.json`) may also use a bare top-level format where each key
+is a server name:
+
+```json
+{ "playwright": { "type": "local", "command": "npx", "args": ["@playwright/mcp@latest"] } }
+```
+
+**Credentials**: `env` supports `$VAR`, `${VAR}`, and `${VAR:-default}` expansion, and `headers`
+support variable expansion. Keep secrets in your shell profile, not in the file. `PATH` is
+inherited automatically.
 
 ---
 
 ## Transport types
 
-### `local` (stdio — most common)
+| `type` | Description | Required fields |
+|--------|-------------|-----------------|
+| `local` / `stdio` | Local process over stdin/stdout (default `local`; `stdio` is the portable name) | `command`, `args` |
+| `http` | Streamable HTTP (`"streamable-http"` accepted as alias) | `url` |
+| `sse` | Legacy Server-Sent Events — deprecated in the MCP spec, still supported | `url` |
 
-Starts a local process, communicates over stdin/stdout.
-
-```json
-{
-  "type": "local",
-  "command": "node",
-  "args": ["path/to/server.js"],
-  "env": { "API_KEY": "$MY_API_KEY" },
-  "tools": ["*"]
-}
-```
-
-### `http` (Streamable HTTP)
-
-```json
-{
-  "type": "http",
-  "url": "https://mcp.example.com/mcp",
-  "headers": { "Authorization": "Bearer YOUR_TOKEN" },
-  "tools": ["*"]
-}
-```
-
-### `sse` (Server-Sent Events — legacy, deprecated but supported)
-
-```json
-{
-  "type": "sse",
-  "url": "https://mcp.example.com/sse",
-  "headers": { "Authorization": "Bearer YOUR_TOKEN" },
-  "tools": ["*"]
-}
-```
-
----
-
-## Fields reference
+### Local server fields
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `type` | Yes | `local` \| `http` \| `sse` |
-| `tools` | Yes | Array of allowed tool names, or `["*"]` for all |
-| `command` | local only | Executable to run |
-| `args` | local only | Arguments array |
-| `env` | local only | Environment variables object |
-| `url` | http/sse only | Remote server URL |
-| `headers` | http/sse only | HTTP headers (for auth etc.) |
+| `command` | Yes | Command to start the server |
+| `args` | Yes | Argument array |
+| `tools` | Yes | `["*"]` or a list of tool names |
+| `type` | No | `"local"` (default) or `"stdio"` |
+| `env` | No | Environment variables (expansion supported) |
+| `cwd` | No | Working directory |
+| `timeout` | No | Tool discovery / call timeout in ms (default `30000`) |
+| `deferTools` | No | `"auto"` (default) or `"never"` (always visible under tool search) |
+| `disableToolCache` | No | `true` skips the tool snapshot cache for this server |
+| `slowConnectionThresholdMs` | No | Warn after this many ms connecting (default `10000`; warning only) |
 
----
+### Remote server fields
 
-## Common MCP servers
+| Field | Required | Description |
+|-------|----------|-------------|
+| `type` | Yes | `"http"` or `"sse"` |
+| `url` | Yes | Server URL |
+| `tools` | Yes | Tools to enable |
+| `headers` | No | HTTP headers (expansion supported) |
+| `oauthClientId` | No | Static OAuth client ID (skips dynamic registration) |
+| `oauthPublicClient` | No | Default `true`; `false` for confidential clients |
+| `oauthGrantType` | No | `"authorization_code"` (default) or `"client_credentials"` (headless) |
+| `oidc` | No | `true` injects GitHub OIDC tokens (`GITHUB_COPILOT_OIDC_MCP_TOKEN[_SUFFIX]` in `env`, or Bearer header for remote) |
+| `timeout`, `deferTools`, `slowConnectionThresholdMs` | No | As for local servers |
 
-### GitHub
-```json
-"github": {
-  "type": "local",
-  "command": "npx",
-  "args": ["-y", "@modelcontextprotocol/server-github"],
-  "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "$GITHUB_PERSONAL_ACCESS_TOKEN" },
-  "tools": ["*"]
-}
-```
+Optional `filterMapping` controls output processing: `none`, `markdown`, or `hidden_characters`
+(default).
 
-Set the token in your shell profile: `export GITHUB_PERSONAL_ACCESS_TOKEN=ghp_...`
-
-### Filesystem
-```json
-"filesystem": {
-  "type": "local",
-  "command": "npx",
-  "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/user/projects"],
-  "tools": ["*"]
-}
-```
-
-### Memory
-```json
-"memory": {
-  "type": "local",
-  "command": "npx",
-  "args": ["-y", "@modelcontextprotocol/server-memory"],
-  "tools": ["*"]
-}
-```
-
-### PostgreSQL
-```json
-"postgres": {
-  "type": "local",
-  "command": "npx",
-  "args": ["-y", "@modelcontextprotocol/server-postgres"],
-  "env": { "DATABASE_URL": "$DATABASE_URL" },
-  "tools": ["*"]
-}
-```
-
-Set the connection string in your shell profile: `export DATABASE_URL=postgresql://user:pass@localhost/db`
-
-> If the server package requires the connection string as a positional argument rather than an env var, use `"args": ["-y", "@modelcontextprotocol/server-postgres", "$DATABASE_URL"]` — the `$VAR` reference is expanded from the user environment at load time.
+Headless OAuth (`client_credentials`) also needs `oauthPublicClient: false` and a `client_secret`
+stored in the system keychain (set via the `/mcp` UI).
 
 ---
 
 ## Adding servers
 
-### Via interactive CLI (recommended)
-```
+### Interactive
+
+```text
 /mcp add
 ```
-Launches a guided form — enter server name, type, command/URL, and any env vars.
 
-### Via terminal subcommand (no interactive session needed)
+Opens a form (Tab between fields, Ctrl+S to save; takes effect immediately). Enter `env` as
+`KEY=VALUE` pairs or JSON.
+
+### Terminal
+
 ```bash
-# Local (stdio) — command follows `--`
-copilot mcp add SERVER-NAME -- COMMAND [ARGS...]
+# Local (stdio) — command after --
 copilot mcp add context7 -- npx -y @upstash/context7-mcp
+copilot mcp add github --env GITHUB_PERSONAL_ACCESS_TOKEN=YOUR_PAT -- \
+  docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN ghcr.io/github/github-mcp-server
 
-# Remote (http/sse)
-copilot mcp add --transport http SERVER-NAME URL
+# Remote
 copilot mcp add --transport http notion https://mcp.notion.com/mcp
+copilot mcp add --transport http --header "Authorization: Bearer YOUR-TOKEN" stripe https://mcp.stripe.com
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--env KEY=VALUE` | Set an env var for the server (repeatable) |
-| `--header "HEADER: VALUE"` | Set an HTTP header for remote servers (repeatable) |
-| `--transport TRANSPORT` | `stdio` (default) \| `http` \| `sse` |
-| `--tools TOOLS` | `*` (default, all), comma-separated list, or `""` for none |
-| `--timeout MS` | Timeout in milliseconds |
+| Option | Description |
+|--------|-------------|
+| `--transport` | `stdio` (default), `http`, `sse` |
+| `--env KEY=VALUE` | Env var (repeatable) |
+| `--header "H: V"` | Header for remote servers (repeatable) |
+| `--tools` | `"*"` (default), comma-separated list, or `""` for none |
+| `--timeout MS` | Default `30000` |
+| `--json` | Print the added config as JSON |
+| `--show-secrets` | Print full env/header values (avoid in shared logs) |
 
-Added servers go to the user config `~/.copilot/mcp-config.json`.
+`copilot mcp add` writes to `~/.copilot/mcp-config.json`.
 
-### Via direct editing
-Edit `~/.copilot/mcp-config.json` directly. Useful for sharing configs or adding multiple servers at once.
+### Registry search (experimental)
 
-### Via registry search (experimental)
-```
-/mcp search              # browse top servers by stars
-/mcp search QUERY        # search by name/keyword
-```
-Requires starting Copilot CLI with `--experimental`, or running `/experimental on` in-session. Pre-populates the add form from the registry entry; org-configured registry URLs/allowlists apply if set.
+`/mcp search [QUERY]` browses the GitHub MCP Registry (or the org-configured registry) and
+pre-fills the add form. Requires `--experimental` or `/experimental on`.
 
 ---
 
-## Per-repository (project-level) MCP servers
+## Management
 
-Configure servers that only load for a specific project by committing a JSON file to the repo.
-
-| Path | Recommended use |
-|------|------------------|
-| `.mcp.json` (any dir from cwd up to repo root) | Local/per-checkout config, typically at project root |
-| `.github/mcp.json` | Shared config committed to the repo |
-
-- On startup inside a git repo, Copilot CLI walks from cwd up to the repo root loading these files.
-- If both `.mcp.json` and `.github/mcp.json` exist in the same directory, `.mcp.json` wins.
-- On server-name conflicts, files closer to cwd win; project-level definitions always beat `~/.copilot/mcp-config.json`.
-- Project files may use the `mcpServers` wrapper (as above) **or** a bare top-level format — each key is directly a server name:
-  ```json
-  { "playwright": { "type": "local", "command": "npx", "args": ["@playwright/mcp@latest"] } }
-  ```
-- **Trust gate**: project-level servers load only after you've confirmed folder trust; silently skipped in untrusted dirs. In `copilot -p` (prompt mode) they're skipped by default in untrusted dirs too — set `GITHUB_COPILOT_PROMPT_MODE_WORKSPACE_MCP=true` to load them anyway (prompt mode can't show an interactive trust prompt).
-- **Not read**: VS Code's `.vscode/mcp.json` — it uses the unsupported top-level key `servers`, so it must be migrated to `.mcp.json`/`.github/mcp.json` format.
-
----
-
-## Management commands (inside sessions)
+### In a session
 
 | Command | Purpose |
 |---------|---------|
-| `/mcp show` | List all configured servers |
-| `/mcp show SERVER-NAME` | Show status and tools for one server |
-| `/mcp edit SERVER-NAME` | Modify server config |
-| `/mcp delete SERVER-NAME` | Remove server |
-| `/mcp disable SERVER-NAME` | Disable without removing |
-| `/mcp enable SERVER-NAME` | Re-enable disabled server |
+| `/mcp` or `/mcp config` | Plugins dashboard pinned to MCP servers |
+| `/mcp list` (`ls`) | Plain-text list with status |
+| `/mcp show [NAME]` | Details and tools |
+| `/mcp edit NAME` | Edit (refuses workspace `.mcp.json` servers — edit the file) |
+| `/mcp delete NAME` | Remove |
+| `/mcp disable NAME` / `/mcp enable NAME` | Persisted toggle |
+| `/mcp auth NAME` | Re-run OAuth (for `needs-auth` status) |
+| `/mcp reload` | Reload configuration |
 
-## Management commands (terminal, no session needed)
+### In the terminal
 
 | Command | Purpose |
 |---------|---------|
-| `copilot mcp list [--json]` | List servers from all sources (user, workspace, plugin) |
-| `copilot mcp get SERVER-NAME [--json]` | Show a server's type, status, and tools |
-| `copilot mcp remove SERVER-NAME` | Remove from the user config |
+| `copilot mcp list [--json]` | All servers by source (built-in, user, workspace, plugin) |
+| `copilot mcp get NAME [--json]` | Type, status, tools |
+| `copilot mcp enable NAME` / `disable NAME` | Persisted toggle |
+| `copilot mcp remove NAME` | Remove from user config (workspace servers: edit the file) |
+
+Settings: `disabledMcpServers` (configured but not started), `enabledMcpServers` (turn on built-ins
+that are off by default). Flags: `--disable-builtin-mcps`, `--disable-mcp-server=NAME`,
+`--enable-mcp-server=NAME` (session only).
 
 ---
 
-## Tool permissions for MCP
+## Naming, tools, and permissions
 
-In CLI flags, reference MCP tools with:
+- Server names may contain any printable characters except control characters and `}`.
+- Tool names sent to the model are `serverName-toolName`, sanitized to `[A-Za-z0-9_-]`, capped at
+  64 characters.
+- Every MCP tool call requires permission. Pre-approve with `--allow-tool='SERVER'` or
+  `--allow-tool='SERVER(tool_name)'`; block with `--deny-tool='SERVER(tool_name)'`.
+- Local stdio servers can run sandboxed and show `connected (sandboxed)`.
+- Stdio servers must write logs to **stderr**; non-JSON stdout lines are dropped.
+- Tool snapshots are cached; disable per server with `disableToolCache` or globally with
+  `COPILOT_MCP_TOOL_CACHE=false`.
+
+## Governance
+
+- Enterprise registry/allowlist policies apply automatically; blocked servers show
+  `MCP server "NAME" was blocked by your enterprise "ENTERPRISE"`. Fail-closed if the policy can't
+  be verified. Built-in servers are exempt.
+- Managed settings may set `allowedMcpServers` / `deniedMcpServers` entries matching exactly one of
+  `serverUrl` (wildcards allowed), `serverCommand` (exact command + args array), or `serverName`.
+  Deny always wins; an empty `allowedMcpServers` array blocks all non-default servers.
+
+## Migrating from `.vscode/mcp.json`
 
 ```bash
---allow-tool='SERVER_NAME'              # allow all tools from server
---allow-tool='SERVER_NAME(tool_name)'   # allow specific tool
---deny-tool='SERVER_NAME(tool_name)'    # block specific tool
+jq '{mcpServers: .servers}' .vscode/mcp.json > .mcp.json
 ```
+
+---
+
+## LSP servers
+
+Language servers give the agent definitions, references, and renames.
+
+| Scope | File |
+|-------|------|
+| User | `~/.copilot/lsp-config.json` |
+| Project | `.github/lsp.json` |
+
+```json
+{
+  "lspServers": {
+    "typescript": {
+      "command": "typescript-language-server",
+      "args": ["--stdio"],
+      "fileExtensions": { ".ts": "typescript", ".tsx": "typescriptreact", ".js": "javascript" }
+    }
+  }
+}
+```
+
+Server names: alphanumerics, underscores, hyphens.
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `command` | Yes | Command that starts the server |
+| `args` | No | Arguments |
+| `fileExtensions` | Yes | Map of extension to language ID |
+| `env` | No | Env vars (`${VAR}`, `${VAR:-default}`) |
+| `rootUri` | No | Root relative to the Git root (default `"."`) |
+| `initializationOptions` | No | Sent in the LSP `initialize` request |
+| `requestTimeoutMs` | No | Request timeout (default 90 seconds) |
+
+Manage with `/lsp` (`show`, `test NAME`, `reload`, `logs`, `help`) or `copilot lsp list [--json]`.

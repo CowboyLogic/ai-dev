@@ -5,7 +5,7 @@ description: >
   whatever lane the work is already in whenever the security band is critical.
   Returns PASS / FIX / ESCALATE with findings by severity.
 tools: ["read", "search", "execute"]
-model: Claude Opus 5 (copilot)
+model: Claude Opus 5.5 (copilot)
 user-invocable: false
 ---
 
@@ -134,7 +134,7 @@ completeness. No agent in this topology is exempt from review, including this on
 
 ## Model Selection Rationale
 
-**Current model:** Claude Opus 5 · **Family:** Anthropic / Claude
+**Current model:** Claude Opus 5.5 · **Family:** Anthropic / Claude
 
 The heaviest tier, and justified by consequence rather than volume. The Adversary
 runs only on critical surfaces, so it is infrequent — and the cost of a miss is

@@ -4,17 +4,16 @@ description: >
   answering it — returns a QUESTION BRIEF of the decisions that must be made, then
   produces a Plan (PLAN lane) or a Design Brief with Architecture Decisions and
   numbered requirements (BUILD lane). Does not write code.
-model: github-copilot/gpt-5.6-sol
-permission:
-  read: allow
-  grep: allow
-  edit:
-    "*": deny
-    ".agent-output/**": allow
-  bash: deny
-  task: deny
-  webfetch: deny
-  websearch: deny
+model: github-copilot/claude-opus-5.5
+permissions:
+  - { action: read, resource: "*", effect: allow }
+  - { action: grep, resource: "*", effect: allow }
+  - { action: edit, resource: "*", effect: deny }
+  - { action: edit, resource: ".agent-output/**", effect: allow }
+  - { action: shell, resource: "*", effect: deny }
+  - { action: subagent, resource: "*", effect: deny }
+  - { action: webfetch, resource: "*", effect: deny }
+  - { action: websearch, resource: "*", effect: deny }
 mode: subagent
 hidden: false
 ---
@@ -159,10 +158,15 @@ escalates to the human.
 
 ## Model Selection Rationale
 
-**Current model:** GPT-5.6 Sol · **Family:** OpenAI / GPT
+**Current model:** Claude Opus 5.5 · **Family:** Anthropic / Claude
 
-The heaviest reasoning tier in the topology, equivalent to Claude Opus 5 in
-reasoning capability but from the GPT family. It is justified here specifically:
+The family is the point of this pin, not only the tier. In hands-on use, the
+Claude family is stronger at planning and design, and the GPT family is stronger at
+code. This roster follows that split: design goes to Claude, and implementation goes
+to GPT (see the Builder). An earlier GPT pin here was chosen for family diversity,
+and it gave up planning quality to get it.
+
+The tier is the heaviest in the topology. It is justified here specifically:
 the Planner's output constrains everything downstream, its mistakes are the most
 expensive to discover late, and it runs infrequently — twice per PLAN or BUILD run,
 never in the DIRECT or MECHANICAL lanes. Question quality is the whole product of
@@ -170,6 +174,12 @@ Pass 1, and question quality is exactly where a heavy model separates from a
 balanced one.
 
 Cross-family review is provided by the Verifier (Gemini) on every artifact.
+
+**Known, accepted gap:** the Adversary is also Opus 5.5, so when it reviews a Plan
+(critical security band) or a Design Brief (always, in BUILD), producer and reviewer
+are the same model. That review is not independent of the Planner's blind spots —
+the Verifier's review is the cross-family control on plans. Planning quality was
+judged worth that trade.
 
 ## Constraints
 

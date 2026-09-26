@@ -497,7 +497,7 @@ perspective. That difference is the control.
 ### Model Assignments Are Configurable
 
 The principles are fixed. The specific models are not. Update model assignments
-in the `.agent.md` files as better options become available, as your cost
+in the agent files as better options become available, as your cost
 constraints change, or as your evaluation of model strengths evolves. The topology
 does not depend on any specific model — it depends on the principles.
 
@@ -576,21 +576,21 @@ The topology is a destination. You can walk there one agent at a time.
 agents/matrix-topology/
   CONDUCTOR.md                ← full topology reference document
   README.md                   ← this document
-  opencode/                   ← OpenCode agent definitions
-    neo.agent.md              ← Conductor
-    oracle.agent.md           ← Design
-    the-architect.agent.md    ← Architecture
-    morpheus.agent.md         ← Specification
-    switch.agent.md           ← Test Definition
-    mouse.agent.md            ← Implementation (express lane)
-    trinity.agent.md          ← Implementation (full loop)
-    apoc.agent.md             ← Testing
-    dozer.agent.md            ← Operational Validation
-    tank.agent.md             ← Research
-    niobe.agent.md            ← Documentation
-    smith.agent.md            ← Security — GPT (reviews Claude-family artifacts)
-    smith-claude.agent.md     ← Security — Claude (reviews GPT-family artifacts)
-    ghost.agent.md            ← Review (cross-cutting)
+  opencode/                   ← OpenCode V2 agent definitions (<id>.md)
+    neo.md                    ← Conductor
+    oracle.md                 ← Design
+    the-architect.md          ← Architecture
+    morpheus.md               ← Specification
+    switch.md                 ← Test Definition
+    mouse.md                  ← Implementation (express lane)
+    trinity.md                ← Implementation (full loop)
+    apoc.md                   ← Testing
+    dozer.md                  ← Operational Validation
+    tank.md                   ← Research
+    niobe.md                  ← Documentation
+    smith.md                  ← Security — GPT (reviews Claude-family artifacts)
+    smith-claude.md           ← Security — Claude (reviews GPT-family artifacts)
+    ghost.md                  ← Review (cross-cutting)
   claude/                     ← Claude Code variants (parallel set)
   copilot/                    ← GitHub Copilot variants (parallel set)
 
@@ -599,9 +599,9 @@ harness/opencode/             ← OpenCode harness configuration
   guardrails.md               ← persistent session guardrails
 ```
 
-Each `.agent.md` file contains:
+Each agent file contains:
 
-- Frontmatter: name, model assignment, tools, skills reference
+- Frontmatter: model assignment and tool permissions (native OpenCode V2 in `opencode/`, translated per client in `claude/` and `copilot/`)
 - Role definition
 - Responsibilities
 - Input format (what it receives in a handoff)
@@ -624,7 +624,7 @@ git clone https://github.com/CowboyLogic/ai-dev ~/src/ai-dev
 ```bash
 mkdir -p ~/.config/opencode
 ln -sfn ~/src/ai-dev/harness/opencode/opencode.jsonc ~/.config/opencode/opencode.jsonc
-ln -sfn ~/src/ai-dev/harness/opencode/guardrails.md  ~/.config/opencode/guardrails.md
+ln -sfn ~/src/ai-dev/harness/opencode/guardrails.md  ~/.config/opencode/AGENTS.md
 ln -sfn ~/src/ai-dev/agents/matrix-topology/opencode ~/.config/opencode/agents
 ```
 
@@ -634,24 +634,25 @@ ln -sfn ~/src/ai-dev/agents/matrix-topology/opencode ~/.config/opencode/agents
 New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.config\opencode"
 New-Item -ItemType SymbolicLink -Force -Path "$env:USERPROFILE\.config\opencode\opencode.jsonc" `
   -Target "$env:USERPROFILE\src\ai-dev\harness\opencode\opencode.jsonc"
-New-Item -ItemType SymbolicLink -Force -Path "$env:USERPROFILE\.config\opencode\guardrails.md" `
+New-Item -ItemType SymbolicLink -Force -Path "$env:USERPROFILE\.config\opencode\AGENTS.md" `
   -Target "$env:USERPROFILE\src\ai-dev\harness\opencode\guardrails.md"
 New-Item -ItemType Junction -Path "$env:USERPROFILE\.config\opencode\agents" `
   -Target "$env:USERPROFILE\src\ai-dev\agents\matrix-topology\opencode"
 ```
 
-`default_agent` is `neo`, so every session starts with the Conductor. `guardrails.md`
-is loaded on every session via the `instructions` field in `opencode.jsonc`, and the
-`/change` command gives you the express lane.
+`default_agent` is `neo`, so every session starts with the Conductor, and the
+`/change` command gives you the express lane. `guardrails.md` is linked as the global
+`~/.config/opencode/AGENTS.md`, which OpenCode V2 loads on every session. V2 does not
+load the `instructions` field, so a `guardrails.md` link alone does nothing.
 
-Adding a new agent: drop the `.agent.md` file into
-`agents/matrix-topology/opencode/`, follow the synchronization checklist in
+Adding a new agent: drop the `<id>.md` file into
+`agents/matrix-topology/opencode/` (OpenCode V2 derives the agent ID from the filename), follow the synchronization checklist in
 `agents/matrix-topology/AGENTS.md`, and refresh both the manifest and generated
 documentation before committing.
 
 ### Updating Model Assignments
 
-Open the relevant `.agent.md` file and update the `model` field in the frontmatter.
+Open the relevant agent file and update the `model` field in the frontmatter, in all three formats.
 Update the Model Selection Rationale section to note what changed and why. No changes
 to `CONDUCTOR.md` are required unless the selection *principle* changes.
 
@@ -660,7 +661,7 @@ to `CONDUCTOR.md` are required unless the selection *principle* changes.
 This topology is not a finished product. It is a starting point that grows with use.
 
 `CONDUCTOR.md` evolves when the topology evolves — new agents, new lifecycle stages,
-refined escalation criteria. Individual `.agent.md` files evolve when a specific
+refined escalation criteria. Individual agent files evolve when a specific
 agent's role, model assignment, or constraints change. Neither document is updated
 for changes that belong in the other.
 

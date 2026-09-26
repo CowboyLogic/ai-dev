@@ -1,25 +1,27 @@
-﻿---
+---
 name: agent-creator-copilot
-description: Guide for creating custom agents for GitHub Copilot and VS Code. Use this when building custom agent profiles (.agent.md files), configuring tools, handoffs, subagents, or MCP server integrations for Copilot.
+description: Guide for creating custom agents for GitHub Copilot (cloud agent on GitHub.com, Copilot CLI, VS Code, and other IDEs). Use this when building custom agent profiles (.agent.md files), configuring tools, models, handoffs, subagents, hooks, or MCP server integrations for Copilot.
 license: MIT
 ---
 
 # Copilot Agent Creator
 
-Custom agents for GitHub Copilot and VS Code are defined in `.agent.md` Markdown files called **agent profiles**. They encode a role, behavioral instructions, and tool access without requiring extension development.
+Custom agents for GitHub Copilot are defined in `.agent.md` Markdown files called **agent profiles**. They encode a role, behavioral instructions, tool access, and optionally a model, without requiring extension development. The same profile can be used by Copilot cloud agent on GitHub.com, GitHub Copilot CLI, VS Code, JetBrains IDEs, Eclipse, and Xcode, but some properties only work on some surfaces.
 
-> **Always verify against official docs.** The canonical references are:
-> - [About custom agents](https://docs.github.com/en/copilot/concepts/agents/coding-agent/about-custom-agents)
-> - [VS Code custom agents](https://code.visualstudio.com/docs/copilot/customization/custom-agents)
-> - [Configuration reference](https://docs.github.com/en/copilot/reference/custom-agents-configuration)
+> [!IMPORTANT]
+> Always verify against the official docs before relying on a property. The canonical references are:
+>
+> - [Custom agents configuration (GitHub)](https://docs.github.com/en/copilot/reference/custom-agents-configuration)
+> - [Custom agents in VS Code](https://code.visualstudio.com/docs/agent-customization/custom-agents)
+> - [Copilot CLI custom agents reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference#custom-agents-reference)
 
 ---
 
 ## When to Use This Skill
 
-- Creating a new custom agent profile for Copilot or VS Code
-- Configuring tools, handoffs, subagents, or MCP servers in a profile
-- Choosing the right scope (workspace, user profile, org/enterprise)
+- Creating a new custom agent profile for Copilot cloud agent, Copilot CLI, or VS Code
+- Configuring tools, model, handoffs, subagents, hooks, or MCP servers in a profile
+- Choosing the right scope (repository, user, organization, enterprise)
 - Designing multi-agent workflows
 - Writing effective agent prompts
 
@@ -32,6 +34,7 @@ Custom agents for GitHub Copilot and VS Code are defined in `.agent.md` Markdown
 | Persistent persona with tool restrictions | **Custom agent profile** (this skill) |
 | One-off reusable task instructions | Prompt file (`.prompt.md`) |
 | Portable domain knowledge with scripts | Agent skill (`SKILL.md`) |
+| Deterministic command at a lifecycle event | Hook |
 | Deep VS Code IDE integration, custom UI | VS Code extension |
 | Custom tools exposed via protocol | MCP server |
 
@@ -41,30 +44,37 @@ Custom agents for GitHub Copilot and VS Code are defined in `.agent.md` Markdown
 
 ```markdown
 ---
-description: Brief description of the agent's purpose and capabilities
-tools: ["read", "search"]
+name: readme-creator
+description: Agent specializing in creating and improving README files
+tools: ["read", "search", "edit"]
 ---
 
-# Agent Name
-
-Write your agent's prompt here. This content is prepended to every chat message.
+You are a documentation specialist focused on README files. ...
 ```
 
-Custom agents require YAML frontmatter with a `description`. The Markdown body contains the agent instructions.
+`description` is the only required property (GitHub.com and Copilot CLI). In VS Code the YAML header is optional. The Markdown body holds the instructions and can be at most **30,000 characters**.
 
-> For the full property reference, load `references/frontmatter-reference.md`.
+> [!TIP]
+> For the full property reference and a per-surface compatibility table, load `references/frontmatter-reference.md`.
 
 ---
 
 ## Where to Store Agent Profiles
 
-| Scope | Location | Use Case |
+| Scope | Location | Surfaces |
 |---|---|---|
-| Workspace | `.github/agents/` | Shared with team via version control |
-| Workspace (Claude compat) | `.claude/agents/` | Works in VS Code and Claude Code |
-| User profile | `~/.copilot/agents/` | Personal agents, available everywhere |
-| Organization | `agents/` in org's `.github` or `.github-private` repo | Shared across all org repos |
-| Enterprise | `agents/` in a designated org's `.github-private` repo (set in enterprise settings) | Shared across the whole enterprise |
+| Repository / workspace | `.github/agents/<name>.agent.md` | All |
+| Repository (Claude format) | `.claude/agents/<name>.md` | VS Code, Copilot CLI |
+| User | `~/.copilot/agents/` | VS Code, Copilot CLI |
+| User (Claude format) | `~/.claude/agents/` | VS Code |
+| Organization | `agents/<name>.md` in the org's `.github` or `.github-private` repo | GitHub.com, IDEs (VS Code needs `github.copilot.chat.organizationCustomAgents.enabled`) |
+| Enterprise | `agents/<name>.md` in the `.github-private` repo of an org designated in enterprise settings | GitHub.com, IDEs |
+| Plugin | `<plugin>/agents/` | Copilot CLI |
+
+The filename (minus `.md` / `.agent.md`) is the agent's ID and is used for deduplication. On name conflicts the lowest (most specific) level wins: repository over organization, organization over enterprise.
+
+> [!WARNING]
+> The Copilot CLI docs disagree on user vs. project precedence: the how-to says the home-directory agent wins, the command reference says project-level agents win. Avoid duplicate names across scopes.
 
 ---
 
@@ -72,20 +82,33 @@ Custom agents require YAML frontmatter with a `description`. The Markdown body c
 
 ```yaml
 tools: ["read", "search"]          # specific tools (least privilege)
-tools: ["*"]                       # all tools
+tools: ["*"]                       # all tools (same as omitting tools)
 tools: []                          # no tools
-tools: ["read", "my-server/*"]     # built-in + all tools from an MCP server
+tools: ["read", "my-server/*"]     # alias + all tools from an MCP server
 ```
 
-Apply least privilege — start read-only and add write/execute tools only when required.
+Portable aliases: `execute`, `read`, `edit`, `search`, `agent`, `web`, `todo`. Unrecognized tool names are ignored, so one profile can list surface-specific tools. Apply least privilege: start read-only and add write/execute tools only when required.
 
-> For tool aliases, config syntax patterns, and the built-in server list, load `references/tools-reference.md`.
+> [!TIP]
+> For the alias table, VS Code tool sets and tool names, MCP namespacing, and CLI behavior, load `references/tools-reference.md`.
 
 ---
 
-## Handoffs
+## Model
 
-VS Code / IDEs only — ignored on GitHub.com's cloud agent. Handoffs create guided transitions between agents. After a response, handoff buttons appear so users can continue with context pre-filled.
+```yaml
+model: Claude Sonnet 5                     # VS Code / IDEs: display name
+model: ["Claude Opus 5", "GPT-5.5"]        # VS Code: prioritized fallback list
+model: gpt-5.6-luna                       # Copilot CLI: model ID
+```
+
+Model names differ by surface (display names in VS Code, lowercase IDs in the CLI) and the model roster changes often. Check the [supported models](https://docs.github.com/en/copilot/reference/ai-models/supported-models) page, including its retirement table, before pinning a model.
+
+---
+
+## Handoffs (VS Code / IDEs)
+
+Ignored on GitHub.com's cloud agent. After a response, handoff buttons let the user switch to another agent with a pre-filled prompt.
 
 ```yaml
 handoffs:
@@ -95,23 +118,20 @@ handoffs:
     send: false
 ```
 
-> For the full handoffs property table and `model` override, load `references/frontmatter-reference.md`.
-
 ---
 
-## Subagents
+## Subagents (VS Code and Copilot CLI)
 
-VS Code / IDEs only — not supported on GitHub.com's cloud agent. Agents can invoke other agents for subtasks. The `agent` tool must be in `tools`.
+In VS Code, a coordinating agent lists allowed subagents in `agents` and must include the `agent` tool:
 
 ```yaml
-agents:
-  - planner
-  - code-reviewer
-  - "*"    # allow all agents
+tools: ["agent", "read", "search"]
+agents: ["Researcher", "Implementer"]   # ["*"] or omit = all, [] = none
 ```
 
-To hide an agent from the agents dropdown (subagent-only), set `user-invocable: false`.
-To prevent the cloud agent from auto-selecting an agent, set `disable-model-invocation: true`.
+- `user-invocable: false` hides an agent from the picker (subagent/programmatic use only).
+- `disable-model-invocation: true` stops other agents (VS Code) or the cloud agent (GitHub.com) from auto-selecting it. In VS Code, explicitly listing the agent in a coordinator's `agents` overrides this.
+- In Copilot CLI, the main agent can run any custom agent as a subagent by inference. Add `include-custom-instructions: true` if the subagent should read `AGENTS.md` / `copilot-instructions.md` / `CLAUDE.md`.
 
 ---
 
@@ -123,16 +143,19 @@ To prevent the cloud agent from auto-selecting an agent, set `disable-model-invo
 You are a [role] focused on [domain]. Your scope is limited to [specific boundaries].
 
 ## Responsibilities
+
 - [What it does]
 - [What it hands off, not handles]
 
 ## Constraints
+
 - Do not modify [out-of-scope files/systems]
 - When [situation], [action]
 ```
 
-Key principles: state scope explicitly, use imperative language, define handoff conditions, keep it under 30,000 characters.
+Key principles: state scope explicitly, use imperative language, define handoff conditions, stay well under 30,000 characters.
 
+> [!TIP]
 > For detailed principles, anti-patterns, and guidance on what NOT to include, load `references/prompt-writing-guide.md`.
 
 ---
@@ -140,33 +163,41 @@ Key principles: state scope explicitly, use imperative language, define handoff 
 ## Creating an Agent Profile: Step-by-Step
 
 ### Step 1: Plan
+
 1. Define the role and domain (one sentence)
 2. List responsibilities and what it does NOT do
-3. Choose scope: workspace, user profile, or org
-4. Identify required tools — start read-only
+3. Choose the surfaces (`target`) and scope (repository, user, org)
+4. Identify required tools, starting read-only
 
 ### Step 2: Create the File
 
-**VS Code UI (preferred):**
-1. Open Chat → Configure Chat (gear icon) → Agents → **New Agent (Workspace)** (or **New Agent (User)** for a personal agent)
-2. Enter a filename → a `.agent.md` is created in `.github/agents/`
+**VS Code:**
 
-**GitHub.com web UI (cloud agent):**
-1. Go to the agents tab at [github.com/copilot/agents](https://github.com/copilot/agents), pick the repository (and optionally branch) from the dropdown
-2. Click the Copilot icon → **Create an agent** → opens a template `my-agent.agent.md` in `.github/agents`
-3. Rename the file, configure the profile, then commit and merge it into the default branch
+1. Open the Agent Customizations editor: Chat view → **Configure Chat** (gear icon) → **Agents** (or the **Customizations** panel in the Agents window)
+2. Select **New Agent (Workspace)** or **New Agent (User)**, or run **Chat: New Custom Agent** from the Command Palette
+3. To generate one with AI, describe the agent on the editor's **Overview** page. With the **Local** harness you can also type `/create-agent` or choose **Generate Agent**
 
-**Via AI generation:**
-Type `/create-agent` in Agent mode chat (or select **Generate Agent** from the agents dropdown). Copilot generates the file from a description.
+**GitHub.com (cloud agent):**
 
-**Manually:**
-Create `.github/agents/<name>.agent.md`. Filename: only `.`, `-`, `_`, `a-zA-Z0-9`.
+1. Go to [github.com/copilot/agents](https://github.com/copilot/agents), select the repository (and optionally branch) in the prompt box
+2. Click the Copilot icon → **Create an agent** to open a `my-agent.agent.md` template in `.github/agents`
+3. For org/enterprise agents, remove the `.github/` part of the path so the file lives in the root `agents/` directory
+4. Rename, configure, commit, and merge into the default branch
+
+**Copilot CLI:**
+
+1. In interactive mode, enter `/agent` → **Create new agent**
+2. Choose **Project** (`.github/agents/`) or **User** (`~/.copilot/agents/`)
+3. Let Copilot generate the profile or fill it in manually, choose tools, then restart the CLI
+
+**Manually:** create `.github/agents/<name>.agent.md`. Filename characters: `.`, `-`, `_`, `a-z`, `A-Z`, `0-9`. Prefer lowercase with hyphens.
 
 ### Step 3: Write Frontmatter
 
 ```yaml
 ---
-description: Agent specializing in [domain] — [specific scope]
+name: api-reviewer
+description: Reviews REST API designs for correctness and security. Does not implement code.
 tools: ["read", "search"]
 ---
 ```
@@ -177,11 +208,11 @@ Follow the template above. Be specific about scope and handoff conditions.
 
 ### Step 5: Test
 
-1. Switch to the agent in VS Code Chat using the agents dropdown
+1. Select the agent: VS Code agents dropdown, GitHub.com agents panel or issue assignment, or `copilot --agent <name>` / `/agent` in the CLI
 2. Run representative prompts covering normal use and edge cases
-3. Verify scope boundaries are respected
-4. Confirm handoffs trigger correctly
-5. Check Chat Diagnostics (right-click Chat → Diagnostics) for load errors
+3. Verify scope boundaries and tool restrictions are respected
+4. Confirm handoffs and subagent delegation work where used
+5. In VS Code, check load errors in the chat customization diagnostics (right-click the Chat view → **Diagnostics**)
 
 ---
 
@@ -189,8 +220,9 @@ Follow the template above. Be specific about scope and handoff conditions.
 
 - **Least privilege for tools.** Read-only agents cannot accidentally modify files or run commands.
 - **Review shared agents.** Audit tool lists and prompts before committing to a repository.
-- **Secrets in MCP config.** Always use `${{ secrets.NAME }}` — never hardcode credentials.
-- **Organization agents.** Review org-level agents carefully — they are available to all repos in the org.
+- **Secrets in MCP config.** Use `${{ secrets.NAME }}` / `${{ vars.NAME }}` (configured as Agents secrets/variables). Never hardcode credentials.
+- **Organization and enterprise agents.** They are available to every repo in scope. Review them carefully.
+- **Added directories (CLI).** Agents under a directory added with `--add-dir` load as trusted configuration.
 
 ---
 
@@ -198,12 +230,12 @@ Follow the template above. Be specific about scope and handoff conditions.
 
 | File | When to Load |
 |---|---|
-| `references/frontmatter-reference.md` | Full property tables, model array syntax, handoffs, MCP config, Claude format |
-| `references/tools-reference.md` | Tool aliases, all config syntax patterns, built-in server list |
+| `references/frontmatter-reference.md` | Full property tables, surface compatibility, model naming, handoffs, hooks, MCP config, CLI-only fields, Claude format |
+| `references/tools-reference.md` | Tool aliases, VS Code tool sets, MCP namespacing, out-of-the-box MCP servers |
 | `references/prompt-writing-guide.md` | Detailed prompt principles, anti-patterns, output format guidance |
-| `references/workspace-agent-example.agent.md` | Full-featured workspace agent example |
-| `references/user-profile-agent-example.agent.md` | Minimal personal agent example |
-| `references/cloud-agent-with-mcp-example.agent.md` | Cloud agent with MCP config + metadata |
+| `references/workspace-agent-example.agent.md` | VS Code workspace agent with handoffs and model fallback |
+| `references/user-profile-agent-example.agent.md` | Minimal personal agent |
+| `references/cloud-agent-with-mcp-example.agent.md` | GitHub.com cloud agent with MCP config and metadata |
 
 ---
 
@@ -211,8 +243,12 @@ Follow the template above. Be specific about scope and handoff conditions.
 
 | Resource | URL |
 |---|---|
-| About custom agents | https://docs.github.com/en/copilot/concepts/agents/coding-agent/about-custom-agents |
-| Create custom agents | https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/create-custom-agents |
-| Configuration reference | https://docs.github.com/en/copilot/reference/custom-agents-configuration |
-| Custom agents in VS Code | https://code.visualstudio.com/docs/copilot/customization/custom-agents |
-| Awesome Copilot agents | https://github.com/github/awesome-copilot/tree/main/agents |
+| About custom agents | <https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-custom-agents> |
+| Create custom agents (cloud agent) | <https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/create-custom-agents> |
+| Configuration reference | <https://docs.github.com/en/copilot/reference/custom-agents-configuration> |
+| Custom agents for Copilot CLI | <https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/create-custom-agents-for-cli> |
+| Copilot CLI custom agents reference | <https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference#custom-agents-reference> |
+| Custom agents in VS Code | <https://code.visualstudio.com/docs/agent-customization/custom-agents> |
+| Subagents in VS Code | <https://code.visualstudio.com/docs/agents/run/subagents> |
+| Supported AI models | <https://docs.github.com/en/copilot/reference/ai-models/supported-models> |
+| Awesome Copilot agents | <https://github.com/github/awesome-copilot/tree/main/agents> |

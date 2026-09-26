@@ -1,52 +1,71 @@
 {
-  "_comment": "Source URLs for this skill's reference files. Run scripts/update-references.py to refresh.",
+  "_comment": "Source URLs for this skill's reference files. Run scripts/update-references.py to refresh. 'url' is the primary source; 'additional_urls' are fetched alongside it.",
   "index": "https://code.claude.com/docs/llms.txt",
   "references": {
     "references/settings-schema.md": {
-      "url": "https://code.claude.com/docs/en/settings.md",
-      "covers": "Complete settings.json schema — all top-level keys, permission settings, sandbox settings, worktree settings, global config keys, attribution settings",
+      "url": "https://code.claude.com/docs/en/settings-reference.md",
+      "additional_urls": [
+        "https://code.claude.com/docs/en/settings.md",
+        "https://code.claude.com/docs/en/managed-settings.md",
+        "https://code.claude.com/docs/en/sub-agents.md"
+      ],
+      "covers": "Every settings.json key with scope/type/default (settings-reference), settings files and precedence (settings), managed delivery and managed-only keys (managed-settings), subagent file locations (sub-agents)",
       "sections_to_extract": [
-        "Available settings (full table)",
+        "Settings index and per-category key entries",
+        "Deprecated and removed keys (Warning blocks)",
         "Global config settings",
-        "Worktree settings",
-        "Permission settings",
-        "Permission rule syntax",
-        "Sandbox settings",
-        "Attribution settings"
+        "Settings files and who they affect",
+        "Settings precedence and exceptions to managed precedence",
+        "How Claude Code combines managed sources",
+        "Keys only a managed source can set",
+        "Subagent scope table"
       ]
     },
     "references/permissions.md": {
       "url": "https://code.claude.com/docs/en/permissions.md",
-      "covers": "Permission rule syntax, permission modes, tool-specific rules (Bash wildcards, Read/Edit paths, WebFetch domains, MCP, Agent), working directories, managed settings",
+      "additional_urls": [
+        "https://code.claude.com/docs/en/permission-modes.md",
+        "https://code.claude.com/docs/en/skills.md"
+      ],
+      "covers": "Permission rule syntax, tool-specific rules (Bash wildcards, Read/Edit paths, WebFetch domains, MCP, Agent, Skill, PowerShell, Cd), working directories, workspace trust, permission modes, actions no mode auto-approves, critical paths",
       "sections_to_extract": [
-        "Permission system",
+        "Manage permissions",
         "Permission modes",
         "Permission rule syntax",
         "Tool-specific permission rules",
         "Working directories",
-        "Managed settings"
+        "Managed settings",
+        "Project allow rules and workspace trust",
+        "Actions no mode auto-approves",
+        "Critical paths"
       ]
     },
     "references/hooks.md": {
       "url": "https://code.claude.com/docs/en/hooks.md",
-      "covers": "All hook events, matcher patterns, handler types (command/http/prompt/agent), JSON input/output formats, exit codes, event-specific examples",
+      "covers": "All hook events, matcher patterns, handler types (command/http/mcp_tool/prompt/agent) and fields, JSON input/output, exit codes, decision control",
       "sections_to_extract": [
-        "All hook events",
+        "Hook lifecycle event table",
+        "Hook locations",
         "Matcher patterns",
-        "Hook handler types and fields",
-        "JSON input/output",
-        "Exit codes",
-        "Event-specific examples"
+        "Hook handler fields",
+        "Exit code 2 behavior per event",
+        "JSON output and decision control",
+        "Prompt-based hooks response schema"
       ]
     },
     "references/mcp.md": {
       "url": "https://code.claude.com/docs/en/mcp.md",
-      "covers": "MCP server configuration format, transport types (stdio/sse/http), managed MCP configuration, mcpServers fields",
+      "additional_urls": [
+        "https://code.claude.com/docs/en/managed-mcp.md"
+      ],
+      "covers": "MCP installation scopes and file locations, transport types (stdio/http/sse/ws), per-server fields, env var expansion, MCP-related settings, managed MCP configuration",
       "sections_to_extract": [
-        "mcpServers configuration",
-        "Transport types",
-        "Managed MCP configuration",
-        "MCP permission rules"
+        "Installing MCP servers",
+        "MCP installation scopes",
+        "Environment variable expansion",
+        "Authenticate with remote MCP servers",
+        "Use MCP servers from claude.ai",
+        "Require approval for a specific tool"
       ]
     }
   }

@@ -4,25 +4,24 @@ description: >
   reader, the Verifier runs the build and the tests itself — a working agent's "it's
   green" is a claim, and the Verifier is where it becomes evidence. Finds gaps, not
   just bugs. Returns PASS / FIX / ESCALATE.
-model: github-copilot/gemini-3.6-flash
-permission:
-  read: allow
-  grep: allow
-  edit: deny
-  bash:
-    "*": allow
-    "gh *": deny
-    "git *": deny
-    "* gh *": deny
-    "* git *": deny
-    "git status*": allow
-    "git diff*": allow
-    "git log*": allow
-    "git show*": allow
-    "git rev-parse*": allow
-  task: deny
-  webfetch: deny
-  websearch: deny
+model: github-copilot/gemini-3.8-flash
+permissions:
+  - { action: read, resource: "*", effect: allow }
+  - { action: grep, resource: "*", effect: allow }
+  - { action: edit, resource: "*", effect: deny }
+  - { action: shell, resource: "*", effect: allow }
+  - { action: shell, resource: "gh *", effect: deny }
+  - { action: shell, resource: "git *", effect: deny }
+  - { action: shell, resource: "* gh *", effect: deny }
+  - { action: shell, resource: "* git *", effect: deny }
+  - { action: shell, resource: "git status*", effect: allow }
+  - { action: shell, resource: "git diff*", effect: allow }
+  - { action: shell, resource: "git log*", effect: allow }
+  - { action: shell, resource: "git show*", effect: allow }
+  - { action: shell, resource: "git rev-parse*", effect: allow }
+  - { action: subagent, resource: "*", effect: deny }
+  - { action: webfetch, resource: "*", effect: deny }
+  - { action: websearch, resource: "*", effect: deny }
 mode: subagent
 hidden: false
 ---
@@ -169,7 +168,7 @@ is done.
 
 ## Model Selection Rationale
 
-**Current model:** Gemini 3.6 Flash · **Family:** Google / Gemini
+**Current model:** Gemini 3.8 Flash · **Family:** Google / Gemini
 
 Cross-family independence is the control this agent provides, and Gemini is
 cross-family from every producer in the topology without exception — the Planner,

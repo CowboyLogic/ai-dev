@@ -14,7 +14,7 @@ Workflow (for Claude):
     1. Run this script to fetch raw docs → saved to _fetched/
     2. For each fetched file, compare against the current reference file
     3. Update reference files to reflect new fields, removed fields, or changed behavior
-    4. Run scripts/validate-settings.py to confirm no breakage
+    4. Sync scripts/validate-settings.py key lists, then run it on a sample file
     5. Remove _fetched/ directory when done
 """
 import json
@@ -47,10 +47,16 @@ def fetch_url(url: str) -> str:
     except urllib.error.URLError as e:
         raise RuntimeError(f"Network error fetching {url}: {e.reason}")
 
-def save_fetched(ref_path: str, content: str, url: str) -> Path:
-    # Convert "references/hooks.md" → "_fetched/hooks.md"
+def fetched_name(ref_path: str, url: str, primary: bool) -> str:
+    # Primary:    "references/hooks.md" -> "hooks.md"
+    # Additional: "references/permissions.md" + ".../permission-modes.md" -> "permissions--permission-modes.md"
     name = Path(ref_path).name
-    out_path = FETCHED_DIR / name
+    if primary:
+        return name
+    return f"{Path(ref_path).stem}--{url.rstrip('/').rsplit('/', 1)[-1]}"
+
+def save_fetched(ref_path: str, content: str, url: str, primary: bool = True) -> Path:
+    out_path = FETCHED_DIR / fetched_name(ref_path, url, primary)
     FETCHED_DIR.mkdir(exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as f:
         f.write(f"<!-- SOURCE: {url} -->\n")
@@ -89,30 +95,31 @@ def main():
         if target and ref_path != target:
             continue
 
-        url = meta["url"]
         covers = meta.get("covers", "")
         print(f"\nFetching: {ref_path}")
-        print(f"  URL: {url}")
         print(f"  Covers: {covers[:80]}...")
 
-        try:
-            content = fetch_url(url)
-            out_path = save_fetched(ref_path, content, url)
-            size = len(content)
-            print(f"  Saved {size:,} chars -> {out_path.relative_to(SKILL_ROOT)}")
-            results.append({"ref": ref_path, "fetched": str(out_path), "url": url, "ok": True})
-        except RuntimeError as e:
-            print(f"  FAILED: {e}")
-            stale_path = FETCHED_DIR / Path(ref_path).name
-            if stale_path.exists():
-                stale_path.unlink()
-            results.append({"ref": ref_path, "url": url, "ok": False, "error": str(e)})
+        urls = [(meta["url"], True)] + [(u, False) for u in meta.get("additional_urls", [])]
+        for url, primary in urls:
+            print(f"  URL: {url}")
+            try:
+                content = fetch_url(url)
+                out_path = save_fetched(ref_path, content, url, primary)
+                size = len(content)
+                print(f"    Saved {size:,} chars -> {out_path.relative_to(SKILL_ROOT)}")
+                results.append({"ref": ref_path, "fetched": str(out_path), "url": url, "ok": True})
+            except RuntimeError as e:
+                print(f"    FAILED: {e}")
+                stale_path = FETCHED_DIR / fetched_name(ref_path, url, primary)
+                if stale_path.exists():
+                    stale_path.unlink()
+                results.append({"ref": ref_path, "url": url, "ok": False, "error": str(e)})
 
     success = sum(1 for r in results if r["ok"])
     failed = len(results) - success
 
     print(f"\n{'='*50}")
-    print(f"Fetched {success}/{len(results)} sources")
+    print(f"Fetched {success}/{len(results)} source URLs")
     if failed:
         print(f"  {failed} failed — check network/URL changes")
     if success and not failed:
@@ -120,7 +127,7 @@ def main():
         print(f"  1. Read each file in _fetched/")
         print(f"  2. Read the corresponding file in references/")
         print(f"  3. Update references/ to reflect documentation changes")
-        print(f"  4. Run: python scripts/validate-settings.py")
+        print(f"  4. Sync scripts/validate-settings.py known keys/events, then run it on a sample file")
         print(f"  5. Remove _fetched/ when complete")
         print(f"\nFetched files:")
         for r in results:

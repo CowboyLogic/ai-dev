@@ -1,46 +1,119 @@
 {
-  "_comment": "Source URLs for this skill's reference files. Run scripts/update-references.py to refresh.",
+  "_comment": "Source URLs for this skill's reference files. Run scripts/update-references.py to refresh. references/*.md cover V1; references/v2/*.md cover native V2.",
   "index": "https://opencode.ai/docs/config",
   "schema_urls": {
     "main": "https://opencode.ai/config.json",
-    "tui": "https://opencode.ai/tui.json"
+    "tui": "https://opencode.ai/tui.json",
+    "cli_v2": "https://opencode.ai/v2/cli.json"
   },
   "references": {
     "references/providers.md": {
       "urls": ["https://opencode.ai/docs/providers"],
-      "covers": "Provider configuration, model syntax, authentication, Anthropic/OpenAI/Bedrock/Vertex/Ollama setup, apiKey format, provider options"
+      "covers": "V1: provider config, model syntax, authentication, Anthropic/OpenAI/Bedrock/Vertex/Ollama setup, apiKey format, provider options"
     },
     "references/mcp.md": {
       "urls": ["https://opencode.ai/docs/mcp-servers"],
-      "covers": "mcp config structure, local/remote transport types, OAuth, environment variables, CLI commands"
+      "covers": "V1: mcp config structure, local/remote transport types, OAuth, environment variables, CLI commands"
     },
     "references/agents.md": {
       "urls": ["https://opencode.ai/docs/agents"],
-      "covers": "Built-in agents (build/plan/general/explore), custom agent fields, markdown file format, bash glob permissions"
+      "covers": "V1: built-in agents (build/plan/general/explore/scout), custom agent fields, markdown file format, bash glob permissions"
     },
     "references/permissions.md": {
       "urls": [
-        "https://opencode.ai/docs/config",
+        "https://opencode.ai/docs/permissions",
         "https://opencode.ai/config.json"
       ],
-      "covers": "Permission actions (ask/allow/deny), all tool types, bash glob patterns, global vs per-agent permissions"
+      "covers": "V1: permission actions (ask/allow/deny), all tool types, bash glob patterns, defaults, global vs per-agent permissions"
     },
     "references/tui.md": {
       "urls": [
+        "https://opencode.ai/docs/tui",
         "https://opencode.ai/tui.json",
         "https://opencode.ai/docs/keybinds",
         "https://opencode.ai/docs/themes"
       ],
-      "covers": "tui.json structure, all keybind actions, theme configuration, mouse/scroll/diff settings"
+      "covers": "V1: tui.json structure, all keybind actions, theme configuration, mouse/scroll/diff/cursor/attention settings"
     },
     "references/config-schema.md": {
       "urls": [
         "https://opencode.ai/docs/config",
         "https://opencode.ai/config.json",
         "https://opencode.ai/docs/commands",
-        "https://opencode.ai/docs/formatters"
+        "https://opencode.ai/docs/formatters",
+        "https://opencode.ai/docs/lsp",
+        "https://opencode.ai/docs/rules",
+        "https://opencode.ai/docs/skills",
+        "https://opencode.ai/docs/plugins",
+        "https://opencode.ai/docs/policies"
       ],
-      "covers": "Full opencode.json schema — all top-level fields, server, commands, instructions, formatters, compaction, skills, plugins, watcher, managed settings"
+      "covers": "V1: full opencode.json schema — top-level fields, server, commands, instructions, formatters, LSP, compaction, skills, plugins, policies, watcher, managed settings"
+    },
+    "references/v2/config-schema.md": {
+      "urls": [
+        "https://opencode.ai/v2/docs/config/",
+        "https://opencode.ai/v2/docs/commands/",
+        "https://opencode.ai/v2/docs/skills/",
+        "https://opencode.ai/v2/docs/formatters/",
+        "https://opencode.ai/v2/docs/compaction/",
+        "https://opencode.ai/v2/docs/snapshots/",
+        "https://opencode.ai/v2/docs/attachments/",
+        "https://opencode.ai/v2/docs/websearch/",
+        "https://opencode.ai/v2/docs/warming/",
+        "https://opencode.ai/v2/docs/references/",
+        "https://opencode.ai/v2/docs/instructions/",
+        "https://opencode.ai/v2/docs/network/",
+        "https://opencode.ai/v2/docs/troubleshooting/",
+        "https://opencode.ai/v2/docs/sharing/"
+      ],
+      "covers": "V2: config locations/precedence, all top-level fields, ignored V1 fields, commands, skills, formatters, compaction, media, websearch, warming, references, worktree, instructions, service env"
+    },
+    "references/v2/permissions.md": {
+      "urls": [
+        "https://opencode.ai/v2/docs/permissions/",
+        "https://opencode.ai/v2/docs/policies/",
+        "https://opencode.ai/v2/docs/tools/"
+      ],
+      "covers": "V2: ordered permissions rules, actions/resources, defaults, approvals, experimental.policies (provider.use, permission), policy precedence"
+    },
+    "references/v2/agents.md": {
+      "urls": ["https://opencode.ai/v2/docs/agents/"],
+      "covers": "V2: built-in agents, agents map and markdown format, fields (system, permissions, request, disabled), default agent, subagent control"
+    },
+    "references/v2/mcp.md": {
+      "urls": ["https://opencode.ai/v2/docs/mcp-servers/"],
+      "covers": "V2: mcp.servers, local/remote fields, snake_case OAuth, timeout object, protocol, Code Mode, tool naming, CLI"
+    },
+    "references/v2/providers.md": {
+      "urls": [
+        "https://opencode.ai/v2/docs/providers/",
+        "https://opencode.ai/v2/docs/models/",
+        "https://opencode.ai/v2/docs/cli/providers/"
+      ],
+      "covers": "V2: providers map, packages, settings/headers/body, models and variants array, model references, Bedrock/Vertex/Azure/Copilot/local runtimes, credential storage"
+    },
+    "references/v2/cli.md": {
+      "urls": [
+        "https://opencode.ai/v2/docs/cli/config/",
+        "https://opencode.ai/v2/docs/cli/keybinds/",
+        "https://opencode.ai/v2/docs/cli/theme/",
+        "https://opencode.ai/v2/docs/themes/",
+        "https://opencode.ai/v2/docs/cli/plugins/",
+        "https://opencode.ai/v2/cli.json"
+      ],
+      "covers": "V2: global cli.json settings, keybind IDs, theme selection and V2 theme format, CLI-only plugins, tui.json migration"
+    },
+    "references/v2/plugins.md": {
+      "urls": [
+        "https://opencode.ai/v2/docs/plugins/",
+        "https://opencode.ai/v2/docs/build/plugins/",
+        "https://opencode.ai/v2/docs/build/plugins/migrate-v1/"
+      ],
+      "covers": "V2: plugins config and discovery, enable/disable directives, plugin CLI, Plugin.define API, V1 hook mapping"
+    },
+    "references/v2/migration.md": {
+      "urls": ["https://opencode.ai/v2/docs/migrate-v1/"],
+      "covers": "V1 to V2: breaking changes, mixing rules, field renames for permissions/agents/commands/MCP/compaction/providers/models, file locations"
     }
   }
 }

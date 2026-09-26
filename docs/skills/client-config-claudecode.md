@@ -5,7 +5,7 @@ the Claude Code CLI reads — user settings, project settings, permissions, hook
 MCP servers, model configuration, sandbox isolation, auto mode, voice, and plugins.
 
 - **Skill name:** `client-config-claudecode`
-- **Last updated:** 2026-04-26
+- **Last updated:** 2026-09-24
 - **Source:** [skills/client-config-claudecode](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-claudecode)
 
 ---
@@ -25,14 +25,18 @@ requires, rather than injecting the full schema on every request.
 
 | Scope | File | Notes |
 |-------|------|-------|
-| User | `~/.claude/settings.json` | Primary focus |
+| User | `~/.claude/settings.json` (or `$CLAUDE_CONFIG_DIR/settings.json`) | Primary focus |
 | Local project | `.claude/settings.local.json` | Gitignored |
 | Project | `.claude/settings.json` | Committed |
-| Managed (macOS) | `/Library/Application Support/ClaudeCode/managed-settings.json` | IT-deployed |
-| Managed (Linux/WSL) | `/etc/claude-code/managed-settings.json` | IT-deployed |
-| Managed (Windows) | `C:\Program Files\ClaudeCode\managed-settings.json` | IT-deployed |
+| Command line | `--settings <file-or-json>`, `--model`, `--permission-mode` | One session |
+| Managed (macOS) | `/Library/Application Support/ClaudeCode/managed-settings.json` + `managed-settings.d/*.json` | IT-deployed |
+| Managed (Linux/WSL) | `/etc/claude-code/managed-settings.json` + `managed-settings.d/*.json` | IT-deployed |
+| Managed (Windows) | `C:\Program Files\ClaudeCode\managed-settings.json` + `managed-settings.d\*.json` | IT-deployed |
+| Managed (other) | MDM profile, `HKLM` registry, or server-managed settings | IT-deployed |
 
-**Scope precedence (highest → lowest):** managed → local project → project → user
+**Scope precedence (highest → lowest):** managed → command line → local project → project → user.
+Some keys are honored only in user or managed settings (for example `autoMode`), and
+`defaultMode` values `auto` and `bypassPermissions` are ignored in project and local files.
 
 The schema reference also covers global Claude Code state in `~/.claude.json`; the
 skill's editing workflow is centered on `settings.json` files.
@@ -110,6 +114,30 @@ The skill closes this gap entirely.
 ---
 
 ## Changelog
+
+### 2026-09-24 — v2.0 (upstream refresh)
+
+- Sources: the full key reference moved upstream to `settings-reference.md`; it is now
+  the primary source for `references/settings-schema.md`. `assets/sources.json` gains
+  `additional_urls` (settings, managed settings, subagents, permission modes, skills,
+  managed MCP).
+- `references/settings-schema.md`: rewritten against all documented keys with per-key
+  scope labels, a files-and-precedence section, and a deprecated/removed keys section.
+  Adds `modelSettings`, `maxEffortLevel`, `promptCacheTtl`, `autoCompactWindow`,
+  `enableWorkflows`, sandbox credential keys, and more. Corrects `effortLevel`,
+  `ultracode`, and `voice.autoSubmit` behavior.
+- `references/hooks.md`: adds `DirectoryAdded`, `PreModelSwitch`, `PostModelSwitch`,
+  new matcher values, handler fields (`args`, `statusMessage`, `once`), and output
+  fields; corrects `PermissionRequest` and `WorktreeRemove` blocking behavior.
+- `references/permissions.md`: adds `Skill()` rules, tool-name globs, `manual` mode
+  alias, and project/local restrictions on `auto` and `bypassPermissions`.
+- `references/mcp.md`: local-scope servers live under `projects["<path>"].mcpServers`
+  in `~/.claude.json`; adds `ws` transport, per-server `timeout`, `headersHelper`,
+  `alwaysLoad`; marks SSE deprecated.
+- Scripts: `validate-settings.py` checks keys by scope, all hook events and handler
+  types, and deprecated keys; `show-settings.py` gains `--settings` and shows managed
+  and local-scope MCP configuration.
+- Evals: new eval for project-scope `bypassPermissions` being ignored.
 
 ### 2026-04-26 — v1.0 (initial release)
 

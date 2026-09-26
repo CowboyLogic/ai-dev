@@ -52,17 +52,7 @@ The generated `about-me` profile is personal and is not meant to be committed. I
 used by the [Lane Topology](../agents/lane-topology.md) Conductor as step one of every
 session.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/about-me-skill-creator)
-
----
-
-### High-Fidelity Context Scaffolder
-
-Generate machine-optimized XML context files (`AGENTS.xml`, `ARCHITECTURE.xml`) for AI agent orchestration.
-Produces structured, information-dense context that agents consume at session start to understand a codebase
-without exploration overhead.
-
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/high-fidelity-context-scaffolder)
+[Skill Overview](about-me-skill-creator.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/about-me-skill-creator)
 
 ---
 
@@ -72,7 +62,7 @@ Write technical documentation following the Google Developer Documentation Style
 Covers voice and tone, sentence structure, code samples, cross-references, and all
 formatting conventions from Google's published standard.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/google-style-docs)
+[Skill Overview](google-style-docs.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/google-style-docs)
 
 ---
 
@@ -81,7 +71,7 @@ formatting conventions from Google's published standard.
 Write descriptive yet concise git commit messages following the Conventional Commits specification.
 Covers type selection, scope notation, subject line rules, and multi-paragraph body formatting.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/git-commit-messages)
+[Skill Overview](git-commit-messages.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/git-commit-messages)
 
 ---
 
@@ -92,7 +82,7 @@ Covers type selection, scope notation, subject line rules, and multi-paragraph b
 Build, tag, push, and manage Docker images across registries. Covers Dockerfile best practices,
 multi-stage builds, docker-compose patterns, registry authentication, and image lifecycle management.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/docker-image-management)
+[Skill Overview](docker-image-management.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/docker-image-management)
 
 ---
 
@@ -101,7 +91,7 @@ multi-stage builds, docker-compose patterns, registry authentication, and image 
 Build and maintain MkDocs documentation sites. Covers `mkdocs.yml` configuration, nav structure,
 Material theme features, build validation, and resolving common build errors and warnings.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/mkdocs-site-management)
+[Skill Overview](mkdocs-site-management.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/mkdocs-site-management)
 
 ---
 
@@ -110,7 +100,7 @@ Material theme features, build validation, and resolving common build errors and
 Validate and fix Markdown files against markdownlint rules. Covers rule reference, configuration
 options, integration with VS Code and CI, and automated fix workflows.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/markdownlint-validator)
+[Skill Overview](markdownlint-validator.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/markdownlint-validator)
 
 ---
 
@@ -118,29 +108,23 @@ options, integration with VS Code and CI, and automated fix workflows.
 
 ### Copilot Agent Creator {#copilot-agent-creator}
 
-Create custom `.agent.md` files for GitHub Copilot in VS Code. Covers frontmatter schema,
-tool aliases, model selection, skill references, and platform compatibility. Includes
+Create custom `.agent.md` files for GitHub Copilot across VS Code, the Copilot CLI, and the
+GitHub.com cloud agent. Covers frontmatter schema and per-surface compatibility, tool aliases
+and VS Code tool sets, current model selection, handoffs, hooks, and MCP servers. Includes
 working examples for workspace agents, user-profile agents, and cloud agents with MCP.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-copilot)
+[Skill Overview](agent-creator-copilot.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-copilot)
 
 ---
 
 ### Copilot Instruction Creator
 
-Create `copilot-instructions.md` files that tailor Copilot's behavior for a repository or workspace.
-Covers repository instructions, path-scoped instructions, and prompt engineering for Copilot.
+Create custom instructions that tailor Copilot's behavior at the personal, repository, and
+organization level. Covers `copilot-instructions.md`, path-specific `.instructions.md` files with
+`applyTo` and `excludeAgent` frontmatter, `AGENTS.md`/`CLAUDE.md`/`GEMINI.md` agent instructions,
+precedence, and per-surface support.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/copilot-instruction-creator)
-
----
-
-### Copilot Prompt Creator
-
-Create reusable `.prompt.md` files for GitHub Copilot based on the latest GitHub research
-into effective prompt structures.
-
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/copilot-prompt-creator)
+[Skill Overview](copilot-instruction-creator.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/copilot-instruction-creator)
 
 ---
 
@@ -148,10 +132,11 @@ into effective prompt structures.
 
 ### OpenCode Agent Creator
 
-Create custom agent definitions for the OpenCode CLI. Covers the agent configuration schema,
-model selection, tool permissions, MCP server integration, and subagent patterns.
+Create custom agent definitions for the OpenCode CLI, in native V2 format by default with V1
+still supported. Covers the agent configuration schema, V1 → V2 migration, model and variant
+selection, ordered permission rules, and subagent patterns.
 
-[View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-opencode)
+[Skill Overview](agent-creator-opencode.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-opencode)
 
 ---
 
@@ -183,9 +168,10 @@ sandbox configuration, and auto mode.
 
 ### Copilot CLI Configuration Manager
 
-Manage GitHub Copilot CLI configuration files — `config.json`, `mcp-config.json`, hooks,
-skills, and custom instructions. Covers trusted folders, tool permissions, MCP servers,
-BYOK models, and authentication.
+Manage GitHub Copilot CLI configuration files — `settings.json`, `config.json`,
+`permissions-config.json`, `mcp-config.json`, `lsp-config.json`, hooks, skills, custom agents,
+plugins, and custom instructions. Covers trusted folders, tool permissions and sandboxing,
+MCP and LSP servers, BYOK models, and authentication.
 
 [Skill Overview](client-config-copilotcli.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-copilotcli)
 
@@ -198,8 +184,9 @@ BYOK models, and authentication.
 
 ### OpenCode Configuration Manager
 
-Manage opencode configuration files — `opencode.json`, providers, agents, MCP servers,
-permissions, keybinds, themes, formatters, and custom commands.
+Manage opencode configuration files for OpenCode V2 and V1 — `opencode.json`, `cli.json`
+(V2) or `tui.json` (V1), providers, agents, MCP servers, permissions, plugins, keybinds,
+themes, formatters, and custom commands, plus V1 → V2 migration.
 
 [Skill Overview](client-config-opencode.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-opencode)
 

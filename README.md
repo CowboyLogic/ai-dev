@@ -67,8 +67,6 @@ ai-dev/
 
 ## Key Features
 
-**High-Fidelity XML Context System** — Structured directives optimized for LLM parsing with `.agents/` XML modules
-
 **Agent Skills Framework** — Reusable instruction sets for domain-specific tasks ([Skills Overview](docs/skills/index.md))
 
 **Multi-Tool Configurations** — Claude Code, OpenCode CLI, VS Code/Copilot, and MCP server integrations

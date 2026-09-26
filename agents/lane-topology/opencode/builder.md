@@ -3,25 +3,24 @@ description: >
   Implementation. Writes code in the working tree against a stated intent (DIRECT
   lane) or a Design Brief (BUILD lane), and gets it green. Does not design, does not
   decide architecture, does not review its own work. Up-ramps instead of guessing.
-model: github-copilot/gpt-5.6-terra
-permission:
-  read: allow
-  edit: allow
-  bash:
-    "*": allow
-    "gh *": deny
-    "git *": deny
-    "* gh *": deny
-    "* git *": deny
-    "git status*": allow
-    "git diff*": allow
-    "git log*": allow
-    "git show*": allow
-    "git rev-parse*": allow
-  grep: allow
-  task: deny
-  webfetch: deny
-  websearch: deny
+model: github-copilot/gpt-6-sol
+permissions:
+  - { action: read, resource: "*", effect: allow }
+  - { action: edit, resource: "*", effect: allow }
+  - { action: shell, resource: "*", effect: allow }
+  - { action: shell, resource: "gh *", effect: deny }
+  - { action: shell, resource: "git *", effect: deny }
+  - { action: shell, resource: "* gh *", effect: deny }
+  - { action: shell, resource: "* git *", effect: deny }
+  - { action: shell, resource: "git status*", effect: allow }
+  - { action: shell, resource: "git diff*", effect: allow }
+  - { action: shell, resource: "git log*", effect: allow }
+  - { action: shell, resource: "git show*", effect: allow }
+  - { action: shell, resource: "git rev-parse*", effect: allow }
+  - { action: grep, resource: "*", effect: allow }
+  - { action: subagent, resource: "*", effect: deny }
+  - { action: webfetch, resource: "*", effect: deny }
+  - { action: websearch, resource: "*", effect: deny }
 mode: subagent
 hidden: false
 ---
@@ -152,7 +151,7 @@ cycle. Two cycles without convergence escalates to the human.
 
 ## Model Selection Rationale
 
-**Current model:** GPT-5.6 Terra · **Family:** OpenAI / GPT
+**Current model:** GPT-6 Sol · **Family:** OpenAI / GPT
 
 A strong agentic coding model — the Builder runs long tool loops, edits across files,
 reads test output, and iterates to green, which is exactly what this tier is built

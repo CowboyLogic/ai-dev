@@ -1,17 +1,32 @@
 # Hooks Reference
 
-## File location
+Hooks run external commands (or HTTP calls, or auto-submitted prompts) at lifecycle points in a
+session. Copilot CLI and Copilot cloud agent share the format; differences are noted.
 
-```
-.github/hooks/NAME.json          ← project scope, any number of files (must be on default branch for cloud agent)
-~/.copilot/hooks/NAME.json       ← user scope ($COPILOT_HOME/hooks/ if COPILOT_HOME is set)
-```
+## Where hooks are loaded from (CLI)
 
-`.github/hooks/` is a folder — add as many `NAME.json` files as you want (name each after its purpose). For CLI, project hooks are loaded from the current working directory; the file must be on the default branch to work with the cloud agent. Hook config changes (either scope) are picked up on CLI start/restart, not live.
+All sources are combined; when the same event appears in several, every entry runs. Load order:
 
-Windows: example hooks need PowerShell 7.0+ (`pwsh`) on PATH — install with `winget install Microsoft.PowerShell` if missing.
+| Source | Location |
+|--------|----------|
+| Policy (admin, machine-wide) | `/etc/github-copilot/policy.d/*.json` (Linux/macOS), `C:\ProgramData\GitHub\Copilot\policy.d\*.json` or registry `HKLM\Software\Policies\GitHub\Copilot` (Windows) |
+| Repository hook files | `.github/hooks/*.json` — any number of files, name each after its purpose |
+| User hook files | `~/.copilot/hooks/*.json` (`$COPILOT_HOME/hooks/` if set; Windows `%USERPROFILE%\.copilot\hooks\`) |
+| Repository inline | `hooks` key in `.github/copilot/settings.json` or `.github/copilot/settings.local.json` (also `.claude/settings.json` / `.claude/settings.local.json`) |
+| User inline | `hooks` key in `~/.copilot/settings.json` |
+| Plugins | Each plugin's `hooks.json` or `hooks/hooks.json` |
 
-## Structure
+- Hook config changes load when the CLI starts — restart after editing.
+- Policy hooks must be root-owned and not group/world-writable (POSIX); they ignore
+  `disableAllHooks` and folder trust.
+- Repository hooks in prompt mode (`-p`) load only if the folder is trusted, `COPILOT_ALLOW_ALL` is
+  set, or `GITHUB_COPILOT_PROMPT_MODE_REPO_HOOKS=true`.
+- Cloud agent reads only `.github/hooks/*.json` from the cloned repo (must be on the default
+  branch), runs on Linux, honors only `bash` (or `command`) entries, and has a firewall-restricted
+  network.
+- Windows: the docs' example hooks need PowerShell 7+ (`pwsh`) — `winget install Microsoft.PowerShell`.
+
+## File structure
 
 ```json
 {
@@ -20,121 +35,221 @@ Windows: example hooks need PowerShell 7.0+ (`pwsh`) on PATH — install with `w
     "preToolUse": [
       {
         "type": "command",
-        "bash": "echo '$INPUT' | ./scripts/validate-tool.sh",
-        "powershell": "Write-Output '$INPUT' | .\\scripts\\validate-tool.ps1",
+        "bash": "./scripts/validate-tool.sh",
+        "powershell": "./scripts/validate-tool.ps1",
         "cwd": ".",
         "timeoutSec": 30,
-        "env": {
-          "MY_VAR": "value"
-        },
-        "matcher": "shell"
+        "env": { "LOG_LEVEL": "INFO" },
+        "matcher": "bash|edit"
       }
     ]
   }
 }
 ```
 
-**Required**: `"version": 1`
+- `"version": 1` is required.
+- A malformed item in a hook **file** is dropped and logged; siblings still load. Invalid JSON, a
+  bad `version`, or a non-array event list rejects the whole file. Inline `hooks` in
+  `settings.json` are strict — any item error rejects the whole field.
+- Optional top-level `"disableAllHooks": true` skips every hook in that file.
 
-**`matcher` field**: When set on `preToolUse` or `postToolUse` hooks, the hook only fires for tool names that fully match the pattern. Partial matches are ignored (fixed in v1.0.36).
+---
+
+## Hook entry types
+
+### `command`
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `type` | No | `"command"` (default when omitted) |
+| `bash` | One of `bash`/`powershell`/`command` (unless `exec`) | Unix shell command |
+| `powershell` | One of `bash`/`powershell`/`command` (unless `exec`) | Windows shell command |
+| `command` | One of `bash`/`powershell`/`command` (unless `exec`) | Cross-platform fallback, copied to whichever of `bash`/`powershell` is absent |
+| `exec` | Instead of the shell fields | Executable run directly, no shell (CLI only) |
+| `args` | No | Arguments for `exec` (CLI only) |
+| `cwd` | No | Working directory (relative to repo root, or absolute) |
+| `env` | No | Extra environment variables (supports variable expansion) |
+| `timeoutSec` | No | Seconds; default `30` |
+| `timeout` | No | Alias for `timeoutSec` (used only if `timeoutSec` is absent) |
+| `matcher` | No | Regex filter (see [Matchers](#matchers)) |
+
+Don't combine `exec` with `bash`/`powershell`/`command`.
+
+**Input** arrives as JSON on **stdin**. **Output** is JSON on stdout — exactly one final object.
+Progress lines are allowed before it: a single-line `{"type": "progress", "message": "...",
+"temporary": true}` is shown in the timeline and stripped from the output. Output over 10 MiB is
+truncated; unparseable output is treated as no output.
+
+### `http`
+
+Posts the input payload as JSON.
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `type` | Yes | `"http"` |
+| `url` | Yes | `https://` required for `preToolUse` and `permissionRequest`. Plain `http://` only for localhost with `COPILOT_HOOK_ALLOW_LOCALHOST=1` |
+| `headers` | No | Request headers |
+| `allowedEnvVars` | No | Env var names that may be expanded inside `headers` (forces `https://`) |
+| `timeoutSec` / `timeout` | No | Seconds; default `30` |
+
+```json
+{
+  "type": "http",
+  "url": "https://hooks.example.com/copilot",
+  "headers": { "X-Source": "copilot-cli" },
+  "timeoutSec": 10
+}
+```
+
+The docs don't show the placeholder syntax for expanding `allowedEnvVars` inside `headers`;
+verify before relying on it.
+
+### `prompt` (CLI, `sessionStart` only)
+
+Auto-submits text or a slash command at the start of a **new interactive** session (not on resume,
+not in `-p`).
+
+```json
+{ "type": "prompt", "prompt": "/chronicle standup" }
+```
 
 ---
 
 ## Hook events
 
-| Event | When it fires |
-|-------|---------------|
-| `sessionStart` | When an agent session begins |
-| `sessionEnd` | When an agent session concludes |
-| `userPromptSubmitted` | After user input is received |
-| `preToolUse` | Before a tool is executed |
-| `postToolUse` | After a tool completes execution |
-| `agentStop` | When the agent finishes responding (before returning control to the user) |
-| `errorOccurred` | When an error happens |
+| Event | Fires when | Output used |
+|-------|------------|-------------|
+| `sessionStart` | New or resumed session begins | Optional `additionalContext` |
+| `sessionEnd` | Session ends (also `/clear`, with `reason: "user_exit"`) | No |
+| `userPromptSubmitted` | User submits a prompt | `modifiedPrompt` — SDK hooks only; config-file hook output is dropped |
+| `userPromptTransformed` | Prompt transformed into model-facing content | `modifiedTransformedPrompt` |
+| `preToolUse` | Before each tool runs | Allow / deny / ask / modify args |
+| `permissionRequest` | Before the permission service runs (CLI only) | `behavior` allow/deny |
+| `postToolUse` | After a tool succeeds | `modifiedResult`, `additionalContext` |
+| `postToolUseFailure` | After a tool fails | `additionalContext` (exit `2`) |
+| `agentStop` | Main agent finishes a turn | `decision: "block"` forces another turn |
+| `subagentStart` | Subagent spawned | `additionalContext` prepended to its prompt |
+| `subagentStop` | Subagent completes | `decision`, `reason`, `modifiedResponse` |
+| `preCompact` | Context compaction begins | No |
+| `errorOccurred` | An error occurs | No |
+| `notification` | CLI system notification (async, CLI only) | Optional `additionalContext` |
+
+Event-name casing selects the payload format: camelCase (`preToolUse`) gets camelCase fields;
+PascalCase VS Code-compatible names (`SessionStart`, `SessionEnd`, `UserPromptSubmit`,
+`PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `Stop`, `SubagentStop`, `ErrorOccurred`,
+`PreCompact`, `PermissionRequest`) get snake_case fields (`tool_name`, `tool_input`,
+`hook_event_name`, ...).
+
+The built-in `general-purpose` agent does not emit `subagentStart`/`subagentStop`.
+
+### Input payloads (camelCase)
+
+Every payload includes `sessionId`, `timestamp` (epoch ms), and `cwd`. Additional fields:
+
+| Event | Extra fields |
+|-------|--------------|
+| `sessionStart` | `source` (`"startup"`, `"resume"`, `"new"`), `initialPrompt?` |
+| `sessionEnd` | `reason` (`"complete"`, `"error"`, `"abort"`, `"timeout"`, `"user_exit"`) |
+| `userPromptSubmitted` | `prompt` |
+| `userPromptTransformed` | `prompt`, `transformedPrompt` |
+| `preToolUse` | `toolName`, `toolArgs` |
+| `postToolUse` | `toolName`, `toolArgs`, `toolResult { resultType, textResultForLlm }` |
+| `postToolUseFailure` | `toolName`, `toolArgs`, `error` |
+| `agentStop` | `transcriptPath`, `stopReason`, `stop_hook_active` |
+| `subagentStart` | `transcriptPath`, `agentName`, `agentDisplayName?`, `agentDescription?` |
+| `subagentStop` | `transcriptPath`, `agentId`, `agentType`, `agentName`, `agentDisplayName?`, `response`, `stopReason` |
+| `errorOccurred` | `error { message, name, stack? }`, `errorContext`, `recoverable` |
+| `preCompact` | `transcriptPath`, `trigger` (`"manual"`/`"auto"`), `customInstructions` |
+| `notification` | `hook_event_name`, `message`, `title?`, `notification_type` |
+
+`notification_type` values: `shell_completed`, `shell_detached_completed`, `agent_completed`,
+`agent_idle`, `permission_prompt`, `elicitation_dialog`.
 
 ---
 
-## Hook command fields
+## Decision output
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `type` | Yes | `"command"` or `"http"` |
-| `bash` | command only* | Command string for Unix/Linux/macOS |
-| `powershell` | command only* | Command string for Windows PowerShell |
-| `url` | http only | URL to POST the hook payload to |
-| `headers` | http only | HTTP headers object (for auth etc.) |
-| `cwd` | No | Working directory (default: `"."`) — command type only |
-| `timeoutSec` | No | Max execution time in seconds (default: 30) |
-| `env` | No | Additional environment variables object — command type only |
-| `matcher` | No | Tool name pattern; hook only fires for fully matching tool names (`preToolUse`/`postToolUse`) |
+### `preToolUse`
 
-*For `command` type, provide both `bash` and `powershell` for cross-platform compatibility, or just one if targeting a specific OS.
+| Field | Values |
+|-------|--------|
+| `permissionDecision` | `"allow"`, `"deny"`, `"ask"` (cloud agent treats `"ask"` as deny) |
+| `permissionDecisionReason` | Required when denying; shown to the agent |
+| `modifiedArgs` | Replacement tool arguments |
 
----
+If any `preToolUse` hook denies, the tool is blocked.
 
-## Hook types
+### `permissionRequest`
 
-### `command` (run a local script)
+| Field | Values |
+|-------|--------|
+| `behavior` | `"allow"`, `"deny"` — short-circuits the normal permission flow |
+| `message` | Reason fed back when denying |
+| `interrupt` | `true` with deny stops the agent |
 
-Runs a local process. Input is passed via `$INPUT` (bash) or `$INPUT` (PowerShell).
+Doesn't run for `read` and `hook` permission kinds. A hook `allow` never pre-approves a
+sandbox-bypass request (only `deny` propagates). Useful for `-p`/CI where no prompt is possible.
 
-```json
-{
-  "type": "command",
-  "bash": "echo '$INPUT' | ./scripts/validate-tool.sh",
-  "powershell": "Write-Output '$INPUT' | .\\scripts\\validate-tool.ps1",
-  "cwd": ".",
-  "timeoutSec": 30
-}
-```
+### `postToolUse`
 
-### `http` (POST to a URL)
+`modifiedResult` (`{ resultType: "success", textResultForLlm }`) replaces the result;
+`additionalContext` is appended to the tool output (joined across hooks, capped at 10 KB).
 
-Posts the hook payload as JSON to a remote or local HTTP endpoint. Useful for webhooks, audit logging, or integrations.
+### `agentStop` / `subagentStop`
 
-```json
-{
-  "type": "http",
-  "url": "https://hooks.example.com/copilot-events",
-  "headers": {
-    "Authorization": "Bearer YOUR_TOKEN",
-    "Content-Type": "application/json"
-  },
-  "timeoutSec": 10
-}
-```
+`decision: "block"` plus `reason` forces another turn using `reason` as the prompt.
+`subagentStop` also accepts `modifiedResponse`. After 8 consecutive blocks the CLI ends the turn
+anyway — check `stop_hook_active` to self-limit.
 
 ---
 
-## Script requirements
+## Matchers
 
-Hook scripts must:
-- Be executable: `chmod +x script.sh`
-- Include a shebang: `#!/bin/bash`
-- Return valid JSON on a single line to stdout
-- Exit with appropriate status codes
+`matcher` is a regex anchored as `^(?:PATTERN)$` — it must match the full value. Invalid regexes
+skip the entry.
+
+| Event | Matched against |
+|-------|-----------------|
+| `preToolUse`, `postToolUse`, `permissionRequest` | `toolName` |
+| `subagentStart` | `agentName` |
+| `preCompact` | `trigger` |
+| `notification` | `notification_type` |
+
+Tool names: `ask_user`, `bash`, `create`, `edit`, `glob`, `grep`, `powershell`, `task`, `view`,
+`web_fetch`.
+
+PascalCase `PreToolUse` / `PermissionRequest` use Claude-style matchers: `*`, `**`, or empty
+matches everything; `Bash` or `Edit|Write` match Claude tool names (`bash`/`powershell` → `Bash`,
+`view` → `Read`, `create` → `Write`, `edit`/`apply_patch` → `Edit`, `grep` → `Grep`, `glob` →
+`Glob`, `web_fetch` → `WebFetch`, `task` → `Agent`).
+
+---
+
+## Exit codes and failure behavior
+
+| Exit | Meaning |
+|------|---------|
+| `0` | Success; stdout parsed as output |
+| `2` | Warning (stderr shown). **Deny** for `preToolUse` and `permissionRequest`. For `postToolUseFailure`, stdout becomes `additionalContext` |
+| Other non-zero | Logged, run continues — **except** `preToolUse` command hooks, which deny |
+| Timeout | Always fail-open, even for `preToolUse` and policy hooks |
+
+HTTP `preToolUse` hooks are fail-open on network errors, timeouts, and non-2xx responses.
+
+---
+
+## Disabling hooks
+
+- `"disableAllHooks": true` inside a hook file skips that file's hooks.
+- `disableAllHooks: true` in repository or user `settings.json` skips every hook from every source
+  for those sessions (CLI only); policy hooks still run.
 
 ---
 
 ## Examples
 
-### Log all tool calls
-```json
-{
-  "version": 1,
-  "hooks": {
-    "preToolUse": [
-      {
-        "type": "command",
-        "bash": "echo \"[$(date)] Tool: $TOOL_NAME\" >> ~/copilot-tool-log.txt",
-        "timeoutSec": 5
-      }
-    ]
-  }
-}
-```
+### Block destructive shell commands (`.github/hooks/guard.json`)
 
-### Block dangerous shell commands
 ```json
 {
   "version": 1,
@@ -142,6 +257,7 @@ Hook scripts must:
     "preToolUse": [
       {
         "type": "command",
+        "matcher": "bash",
         "bash": "./.github/hooks/block-dangerous.sh",
         "timeoutSec": 10
       }
@@ -152,24 +268,24 @@ Hook scripts must:
 
 ```bash
 #!/bin/bash
-# block-dangerous.sh — blocks rm -rf and DROP TABLE
+# block-dangerous.sh — input JSON arrives on stdin
 INPUT=$(cat)
 if echo "$INPUT" | grep -qE 'rm -rf|DROP TABLE'; then
-  echo '{"decision": "deny", "reason": "Destructive command blocked by hook"}'
-  exit 0
+  echo '{"permissionDecision": "deny", "permissionDecisionReason": "Destructive command blocked by hook"}'
 fi
 exit 0
 ```
 
-### Notify on session end
+### Notify when the agent stops (macOS, `~/.copilot/hooks/notify.json`)
+
 ```json
 {
   "version": 1,
   "hooks": {
-    "sessionEnd": [
+    "agentStop": [
       {
         "type": "command",
-        "bash": "osascript -e 'display notification \"Copilot session ended\" with title \"Copilot CLI\"' 2>/dev/null || true",
+        "bash": "osascript -e 'display notification \"Agent stopped\" with title \"Copilot CLI\"'",
         "timeoutSec": 5
       }
     ]
@@ -179,18 +295,17 @@ exit 0
 
 ---
 
-## Testing & debugging hooks
+## Testing and debugging
 
 ```bash
-# Test a hook script by piping sample input
-echo '{"tool": "shell", "command": "ls"}' | ./.github/hooks/my-hook.sh
+# Pipe sample input into the script
+echo '{"timestamp":1704614400000,"cwd":"/tmp","toolName":"bash","toolArgs":"{\"command\":\"ls\"}"}' \
+  | ./.github/hooks/block-dangerous.sh
 
-# Check exit code
-echo $?
-
-# Validate JSON output
-echo '{"tool": "shell"}' | ./.github/hooks/my-hook.sh | python3 -m json.tool
-
-# Enable bash debug tracing
-bash -x ./.github/hooks/my-hook.sh
+echo $?                                   # exit code
+./.github/hooks/block-dangerous.sh < sample.json | jq .   # validate output JSON
 ```
+
+Checklist when hooks don't run: file in the right directory, valid JSON (`jq . file.json`),
+`"version": 1` present, script executable (`chmod +x`) with a shebang, output is one JSON object,
+CLI restarted. Add `set -x` and write debug output to stderr.

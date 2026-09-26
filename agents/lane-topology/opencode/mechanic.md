@@ -3,24 +3,23 @@ description: >
   Trivial mechanical edits — typos, version bumps, config values, formatting,
   comments, log lines, mechanical renames. No logic changes, no control flow, no new
   dependencies. Fast and cheap by design. Stops the moment a change requires thought.
-model: github-copilot/gpt-5.6-terra
-permission:
-  read: allow
-  edit: allow
-  bash:
-    "*": allow
-    "gh *": deny
-    "git *": deny
-    "* gh *": deny
-    "* git *": deny
-    "git status*": allow
-    "git diff*": allow
-    "git log*": allow
-    "git show*": allow
-    "git rev-parse*": allow
-  task: deny
-  webfetch: deny
-  websearch: deny
+model: github-copilot/gpt-6-luna
+permissions:
+  - { action: read, resource: "*", effect: allow }
+  - { action: edit, resource: "*", effect: allow }
+  - { action: shell, resource: "*", effect: allow }
+  - { action: shell, resource: "gh *", effect: deny }
+  - { action: shell, resource: "git *", effect: deny }
+  - { action: shell, resource: "* gh *", effect: deny }
+  - { action: shell, resource: "* git *", effect: deny }
+  - { action: shell, resource: "git status*", effect: allow }
+  - { action: shell, resource: "git diff*", effect: allow }
+  - { action: shell, resource: "git log*", effect: allow }
+  - { action: shell, resource: "git show*", effect: allow }
+  - { action: shell, resource: "git rev-parse*", effect: allow }
+  - { action: subagent, resource: "*", effect: deny }
+  - { action: webfetch, resource: "*", effect: deny }
+  - { action: websearch, resource: "*", effect: deny }
 mode: subagent
 hidden: false
 ---
@@ -112,7 +111,7 @@ Builder takes it.
 
 ## Model Selection Rationale
 
-**Current model:** GPT-5.6 Terra · **Family:** OpenAI / GPT
+**Current model:** GPT-6 Luna · **Family:** OpenAI / GPT
 
 The cheapest and fastest tier available, which is the entire point. This work is
 high-frequency, low-stakes, and fully specified before the agent starts. The risk of

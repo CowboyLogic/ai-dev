@@ -1,12 +1,18 @@
-# TUI, Keybinds & Themes Reference
+# V1 TUI, Keybinds & Themes Reference
+
+> [!IMPORTANT]
+> `tui.json` is **V1 only**. OpenCode V2 replaces it with a single global `~/.config/opencode/cli.json`
+> (schema `https://opencode.ai/v2/cli.json`) that uses different keys, dotted keybind IDs, and a new theme file
+> format. V2 migrates global `tui.json` once on first start. See [v2/cli.md](v2/cli.md).
 
 ## File location
 
-```
-~/.config/opencode/tui.json
+```text
+~/.config/opencode/tui.json   # global (tui.jsonc also accepted)
+<project>/tui.json            # project-specific
 ```
 
-Schema: `https://opencode.ai/tui.json`
+`OPENCODE_TUI_CONFIG` points to a custom TUI config file. Schema: `https://opencode.ai/tui.json`
 
 ```json
 {
@@ -35,12 +41,16 @@ Schema: `https://opencode.ai/tui.json`
 | `theme` | string | UI theme identifier | `"opencode"` |
 | `mouse` | boolean | Enable mouse capture | `true` |
 | `diff_style` | `"auto"` \| `"stacked"` | `auto` adapts to terminal width; `stacked` always single-column | `"auto"` |
-| `scroll_speed` | number (min 0.001) | Scroll velocity | — |
-| `scroll_acceleration.enabled` | boolean | Enable scroll acceleration | — |
+| `scroll_speed` | number (min 0.001) | Scroll velocity; ignored when acceleration is enabled | `3` |
+| `scroll_acceleration.enabled` | boolean | macOS-style acceleration; overrides `scroll_speed` | — |
+| `cursor.style` | `block` \| `underline` \| `line` \| `default` | Input cursor shape; `default` restores the terminal cursor | `"block"` |
+| `cursor.blinking` | boolean | No effect when style is `default` | `true` |
 | `leader_timeout` | integer (ms) | How long to wait for the next key after the leader key | `2000` |
-| `attention.enabled` | boolean | Enable TUI desktop notifications/sounds | — |
-| `attention.notifications` \| `.sound` \| `.volume` (0-1) \| `.sound_pack` | — | Notification sub-options | — |
-| `attention.sounds.{default,question,permission,error,done,subagent_done}` | string | Per-event sound override | — |
+| `attention.enabled` | boolean | Enable TUI desktop notifications/sounds | `false` |
+| `attention.notifications` / `.sound` | boolean | Sub-toggles when attention is enabled | `true` |
+| `attention.volume` | number 0–1 | Default sound volume | `0.4` |
+| `attention.sound_pack` | string | Sound pack ID | `"opencode.default"` |
+| `attention.sounds.{default,question,permission,error,done,subagent_done}` | string | Per-event sound file (absolute, `file://`, or relative to `tui.json`) | — |
 | `prompt.max_height` | integer | Prompt textarea max height | — |
 | `prompt.max_width` | integer \| `"auto"` | Home prompt max width | — |
 | `plugin` | array | Plugin definitions (same format as `opencode.json`) | — |
@@ -55,15 +65,17 @@ Schema: `https://opencode.ai/tui.json`
 ## Keybinds
 
 Override any action by setting a key combo string. Key format examples:
+
 - `"ctrl+n"` — Ctrl+N
 - `"alt+left"` — Alt+Left arrow
 - `"pgup"` — Page Up
 - `"f5"` — F5
 - `"<leader>d"` — Leader key + D
 
-Set a keybind to `""` or `"none"`/`false` to disable it.
+Set a keybind to `"none"` or `false` to disable it.
 
 **Binding value forms**:
+
 ```jsonc
 { "keybinds": {
   "session_compact": "<leader>c",                              // single shortcut
@@ -71,6 +83,7 @@ Set a keybind to `""` or `"none"`/`false` to disable it.
   "input_paste": { "key": "ctrl+v", "preventDefault": false }   // advanced: key/event/preventDefault/fallthrough
 } }
 ```
+
 A string may also hold comma-separated shortcuts (`"ctrl+c,ctrl+d,<leader>q"`).
 
 ### Leader key
@@ -107,6 +120,7 @@ The leader key is `ctrl+x` by default. Override in `tui.json`:
 | `session_copy` | — | Copy session |
 | `session_move` | — | Move session |
 | `session_rename` | ctrl+r | Rename session |
+| `session_fork` | — | Fork session from a message |
 | `session_delete` | ctrl+d | Delete session |
 | `session_share` / `session_unshare` | — | Share / unshare session |
 | `session_interrupt` | escape | Interrupt current response |
@@ -270,6 +284,7 @@ The leader key is `ctrl+x` by default. Override in `tui.json`:
 ## Themes
 
 Set in `tui.json`:
+
 ```json
 { "theme": "tokyonight" }
 ```
@@ -281,6 +296,7 @@ Built-in: `opencode` (default), `system` (adapts to terminal background), `tokyo
 Requires a truecolor (24-bit) terminal; check with `echo $COLORTERM` (expect `truecolor`/`24bit`), or set `COLORTERM=truecolor`.
 
 Theme directories, later overrides earlier:
+
 1. Built-in (embedded in binary)
 2. `~/.config/opencode/themes/*.json` (or `$XDG_CONFIG_HOME/opencode/themes/`)
 3. `<project-root>/.opencode/themes/*.json`

@@ -127,20 +127,20 @@ fifteen questions isn't thorough — it's the Planner offloading its job onto yo
 
 ## The Crew
 
-Nine agents, six model tiers. Every role earns its slot on either a distinct
+Nine agents, five model tiers. Every role earns its slot on either a distinct
 cognitive job or a distinct cost tier.
 
 | Agent | Model | Job |
 |---|---|---|
 | **Conductor** | `claude-sonnet-5` | Classifies, dispatches, holds the ledger, talks to you. Nothing else. |
-| **Planner** | `claude-opus-5` | Socratic planning → design → Architecture Decisions → numbered requirements |
-| **Investigator** | `gpt-5.6-sol` | Read-only comprehension and root-cause work |
-| **Builder** | `gpt-5.6-terra` | Implementation |
-| **Mechanic** | `claude-haiku-4.5` | Trivial mechanical edits |
-| **Verifier** | `gemini-3.6-flash` | Cross-family review **+ runs the tests itself** |
-| **Adversary** | `claude-opus-5` | Security review, dispatched by risk band |
-| **Scribe** | `claude-sonnet-5` | Documentation |
-| **Researcher** | `claude-haiku-4.5` | External research |
+| **Planner** | `claude-opus-5.5` | Socratic planning → design → Architecture Decisions → numbered requirements |
+| **Investigator** | `gpt-6-sol` | Read-only comprehension and root-cause work |
+| **Builder** | `gpt-6-sol` | Implementation |
+| **Mechanic** | `gpt-6-luna` | Trivial mechanical edits |
+| **Verifier** | `gemini-3.8-flash` | Cross-family review **+ runs the tests itself** |
+| **Adversary** | `claude-opus-5.5` | Security review, dispatched by risk band |
+| **Scribe** | `gpt-6-luna` | Documentation |
+| **Researcher** | `gpt-6-luna` | External research |
 
 ### The Conductor does not do the work
 
@@ -236,7 +236,7 @@ specific git/gh verbs shipping requires allowed back in, and `merge`, `rebase`,
 `reset`, `cherry-pick`, `gh pr merge`, force-push, and path-form `git checkout`
 denied outright. That one is genuinely enforced.
 
-Of the other eight, three (`planner`, `scribe`, `researcher`) carry `bash: deny` and
+Of the other eight, three (`planner`, `scribe`, `researcher`) deny `shell` outright and
 run no shell at all — also genuinely enforced. The remaining five need open-ended
 shell to run builds and test suites, so their grant is default-*allow* with git and
 `gh` denied bare and wrapped. That stops the obvious case. It does not stop a shell
@@ -323,10 +323,10 @@ permits by design. Only the sideways flow into a reviewer has to cross a family 
 
 ## Model Sizing
 
-Six tiers, assigned by consequence and frequency — not by seniority.
+Five tiers, assigned by consequence and frequency — not by seniority.
 
 > [!NOTE]
-> **This ladder is an assertion, not a measurement.** The claim that six tiers and a
+> **This ladder is an assertion, not a measurement.** The claim that five tiers and a
 > separately-pinned executing reviewer are worth paying for is empirical, and until
 > recently nothing here produced evidence either way. The Conductor now reports a
 > dispatch count when a lane closes — `LANE COST: MECHANICAL — 2 dispatches (mechanic
@@ -338,12 +338,11 @@ Six tiers, assigned by consequence and frequency — not by seniority.
 
 | Tier | Model | Who | Why |
 |---|---|---|---|
-| Heavy reasoning | `claude-opus-5` | Planner, Adversary | Expensive to be wrong, infrequent to run |
-| Balanced reasoning | `claude-sonnet-5` | Conductor, Scribe | Constant use, moderate cognitive load |
-| Agentic coding | `gpt-5.6-terra` | Builder | Long tool loops, iterate to green |
-| Cross-family review | `gemini-3.6-flash` | Verifier | Runs on every lane — the tier is chosen for frequency, the family for independence |
-| Long-context tracing | `gpt-5.6-sol` | Investigator | Same context demand, pinned off the Verifier's family |
-| Fast and cheap | `claude-haiku-4.5` | Mechanic, Researcher | High frequency, fully specified work |
+| Heavy reasoning | `claude-opus-5.5` | Planner, Adversary | Expensive to be wrong, infrequent to run; Claude is the stronger family for planning and design |
+| Balanced reasoning | `claude-sonnet-5` | Conductor | Constant use, moderate cognitive load |
+| Coding and tracing | `gpt-6-sol` | Builder, Investigator | Long tool loops and long-context tracing — both pinned off the Verifier's family |
+| Cross-family review | `gemini-3.8-flash` | Verifier | Runs on every lane — the tier is chosen for frequency, the family for independence |
+| Fast and cheap | `gpt-6-luna` | Mechanic, Scribe, Researcher | High frequency, fully specified work |
 
 Two of these are worth calling out because they invert the obvious choice:
 
@@ -462,13 +461,16 @@ agents.
 
 > [!IMPORTANT]
 > **The two formats are not interchangeable at the frontmatter level.** OpenCode's
-> `model`, `permission`, `mode`, and `hidden` properties have no equivalent in
+> `model`, `permissions`, `mode`, and `hidden` properties have no equivalent in
 > Copilot's agent schema — each format carries its own translated frontmatter, and
 > only the body (the prompt) is shared between them.
 >
-> Subagents in `opencode/` ship `hidden: false` so you can `@`-mention them to
-> confirm the roster loaded. `hidden` controls user selection only — it does not
-> affect the Conductor's ability to dispatch them, so either value is safe.
+> Subagents in `opencode/` ship `hidden: false`, and under OpenCode V2 they must:
+> V2's `hidden: true` removes an agent from the subagent catalog the Conductor
+> dispatches from, not just from user selection. It also lets you `@`-mention them to
+> confirm the roster loaded. The `opencode/` frontmatter is native V2 (an ordered
+> `permissions` rule list); V2 still reads V1 files, but do not point a V1 client at
+> these.
 
 ```bash
 git clone https://github.com/CowboyLogic/ai-dev ~/src/ai-dev
@@ -482,7 +484,7 @@ directory. Do not replace the directory itself — OpenCode keeps its own state 
 ```bash
 mkdir -p ~/.config/opencode
 ln -sfn ~/src/ai-dev/harness/opencode-lane/opencode.jsonc  ~/.config/opencode/opencode.jsonc
-ln -sfn ~/src/ai-dev/harness/opencode-lane/guardrails.md   ~/.config/opencode/guardrails.md
+ln -sfn ~/src/ai-dev/harness/opencode-lane/guardrails.md   ~/.config/opencode/AGENTS.md
 ln -sfn ~/src/ai-dev/harness/opencode-lane/commands        ~/.config/opencode/commands
 ln -sfn ~/src/ai-dev/agents/lane-topology/opencode         ~/.config/opencode/agents
 ```
@@ -495,7 +497,7 @@ New-Item -ItemType SymbolicLink -Force `
   -Path "$env:USERPROFILE\.config\opencode\opencode.jsonc" `
   -Target "$env:USERPROFILE\src\ai-dev\harness\opencode-lane\opencode.jsonc"
 New-Item -ItemType SymbolicLink -Force `
-  -Path "$env:USERPROFILE\.config\opencode\guardrails.md" `
+  -Path "$env:USERPROFILE\.config\opencode\AGENTS.md" `
   -Target "$env:USERPROFILE\src\ai-dev\harness\opencode-lane\guardrails.md"
 New-Item -ItemType Junction -Force `
   -Path "$env:USERPROFILE\.config\opencode\commands" `
@@ -506,7 +508,9 @@ New-Item -ItemType Junction -Force `
 ```
 
 The agents directory is `agents/` — **plural**. `default_agent` is `conductor`, which
-resolves to `agents/conductor.md`.
+resolves to `agents/conductor.md`. `guardrails.md` is linked as the global
+`~/.config/opencode/AGENTS.md` because OpenCode V2 loads `AGENTS.md` on every session
+but does not load the `instructions` field.
 
 ### Verify before you trust it
 

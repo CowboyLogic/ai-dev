@@ -3,15 +3,15 @@ description: >
   Documentation. Writes docs that describe what the code actually does, not what it
   was supposed to do. Runs at the close of the BUILD lane or on demand. Reads the
   implementation before writing a word about it.
-model: github-copilot/gpt-5.6-luna
-permission:
-  read: allow
-  edit: allow
-  grep: allow
-  bash: deny
-  task: deny
-  webfetch: deny
-  websearch: deny
+model: github-copilot/gpt-6-luna
+permissions:
+  - { action: read, resource: "*", effect: allow }
+  - { action: edit, resource: "*", effect: allow }
+  - { action: grep, resource: "*", effect: allow }
+  - { action: shell, resource: "*", effect: deny }
+  - { action: subagent, resource: "*", effect: deny }
+  - { action: webfetch, resource: "*", effect: deny }
+  - { action: websearch, resource: "*", effect: deny }
 mode: subagent
 hidden: false
 ---
@@ -87,7 +87,7 @@ claims the code does not support. On `FIX`, the Scribe corrects in one cycle.
 
 ## Model Selection Rationale
 
-**Current model:** GPT-5.6 Luna · **Family:** OpenAI / GPT
+**Current model:** GPT-6 Luna · **Family:** OpenAI / GPT
 
 Documentation requires accurate comprehension of a full implementation plus the
 judgment to decide what a reader actually needs — real reasoning, but not the heaviest

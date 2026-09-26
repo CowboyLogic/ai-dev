@@ -1,5 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  // Native OpenCode V2 configuration.
 
   // Harness config for the Lane Topology (agents/lane-topology/opencode).
   // Kept separate from harness/opencode/ so the Matrix topology setup is untouched.
@@ -13,24 +14,23 @@
   // Agent identifiers come from FILENAMES — there is no `name:` frontmatter property.
   "default_agent": "conductor",
 
-  // The harness keeps guardrails beside this config so the setup works across
-  // users and operating systems when the directory is copied or symlinked.
-  "instructions": [
-    "guardrails.md"
-  ],
+  // Guardrails are NOT loaded from here. V2 accepts `instructions` but never loads
+  // its entries, so guardrails.md is deployed as the global instruction file:
+  //   ln -sfn <repo>/harness/opencode-lane/guardrails.md ~/.config/opencode/AGENTS.md
 
   // The lane-override slash commands (/change, /plan, /find, /build, /revert,
   // /handoff) are defined individually in commands/ rather than inline here —
   // see commands/*.md, loaded automatically by OpenCode.
 
   "mcp": {
-    "github": {
-      "type": "remote",
-      "url": "https://api.githubcopilot.com/mcp/",
-      "enabled": true,
-      "oauth": false,
-      "headers": {
-        "Authorization": "Bearer {env:GITHUB_TOKEN_CLIENT}"
+    "servers": {
+      "github": {
+        "type": "remote",
+        "url": "https://api.githubcopilot.com/mcp/",
+        "oauth": false,
+        "headers": {
+          "Authorization": "Bearer {env:GITHUB_TOKEN_CLIENT}"
+        }
       }
     }
   }

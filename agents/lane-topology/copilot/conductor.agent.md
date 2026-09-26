@@ -6,7 +6,7 @@ description: >
   PASS in a lane that produced a diff, it also commits, pushes, and opens the pull
   request — it never merges.
 tools: ["read", "edit", "agent", "execute"]
-model: Claude Sonnet 4.6 (copilot)
+model: Claude Sonnet 5 (copilot)
 agents:
   - adversary
   - builder
@@ -668,7 +668,7 @@ recommends, and a specific question. Not a status dump — a decision request.
 
 ## Model Selection Rationale
 
-**Current model:** Claude Sonnet 4.6 · **Family:** Anthropic / Claude
+**Current model:** Claude Sonnet 5 · **Family:** Anthropic / Claude
 
 The Conductor is invoked on every turn and holds the longest-lived context in the
 system, so it must be fast and cheap enough to run constantly. Its actual cognitive

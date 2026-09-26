@@ -4,7 +4,7 @@ description: >
   compatibility, error messages, vendor documentation. Returns findings with sources.
   Does not decide anything and does not touch the codebase.
 tools: ["read", "search", "web", "edit"]
-model: GPT-5.6 Luna (copilot)
+model: GPT-6 Luna (copilot)
 user-invocable: false
 ---
 
@@ -106,7 +106,7 @@ is a different agent's job and the Conductor sequences it.
 
 ## Model Selection Rationale
 
-**Current model:** GPT-5.6 Luna · **Family:** OpenAI / GPT
+**Current model:** GPT-6 Luna · **Family:** OpenAI / GPT
 
 The cheapest tier, matched to the task: retrieval and summarization against sources
 that are already authoritative. There is no synthesis or judgment here — the
@@ -118,6 +118,5 @@ The one real risk on a light model is uncritical source acceptance, which is why
 protocol is explicit about primary sources, dates, and versions, and why `CONFIDENCE`
 is a required field.
 
-> `gemini-3-flash-preview` is a reasonable alternate pin — comparable cost, larger
-> context for long documentation pages, and a different family for independent
-> fact-finding.
+> `gemini-3.8-flash` is an alternate pin when a different family for independent
+> fact-finding matters more than cost — it costs several times more than GPT-6 Luna.

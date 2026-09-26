@@ -1,7 +1,7 @@
 [
   {
     "id": "add-mcp-remote-oauth",
-    "prompt": "Add a remote MCP server named 'sentry' to my opencode.json. It should connect to https://mcp.sentry.io/mcp, use OAuth authentication, and have a 10-second timeout. Show me the exact JSON to add.",
+    "prompt": "I'm still on OpenCode V1. Add a remote MCP server named 'sentry' to my opencode.json. It should connect to https://mcp.sentry.io/mcp, use OAuth authentication, and have a 10-second timeout. Show me the exact JSON to add.",
     "assertions": [
       { "id": "correct-type-remote", "description": "Sets type to 'remote'" },
       { "id": "correct-url", "description": "Uses url field with https://mcp.sentry.io/mcp" },
@@ -13,7 +13,7 @@
   },
   {
     "id": "configure-gitlab-duo-provider",
-    "prompt": "I want to use GitLab Duo as an AI provider in opencode. How do I configure it? I'm using a self-hosted GitLab instance at https://gitlab.mycompany.com. Include the environment variable setup.",
+    "prompt": "I'm on OpenCode V1. I want to use GitLab Duo as an AI provider in opencode. How do I configure it? I'm using a self-hosted GitLab instance at https://gitlab.mycompany.com. Include the environment variable setup.",
     "assertions": [
       { "id": "identifies-gitlab-provider", "description": "Names the provider as 'gitlab' or equivalent" },
       { "id": "mentions-gitlab-token", "description": "References GITLAB_TOKEN environment variable" },
@@ -24,7 +24,7 @@
   },
   {
     "id": "custom-agent-read-only",
-    "prompt": "Create a custom opencode agent called 'auditor' that: is a subagent, uses claude-sonnet-4-5, has read-only permissions (can read files but cannot edit or run bash), and has a temperature of 0.1. Show me both the JSON config and the equivalent markdown agent file.",
+    "prompt": "My opencode.json uses the V1 format. Create a custom opencode agent called 'auditor' that: is a subagent, uses claude-sonnet-4-5, has read-only permissions (can read files but cannot edit or run bash), and has a temperature of 0.1. Show me both the JSON config and the equivalent markdown agent file.",
     "assertions": [
       { "id": "correct-mode-subagent", "description": "Sets mode to 'subagent'" },
       { "id": "correct-model", "description": "Sets model to anthropic/claude-sonnet-4-5 or similar" },
@@ -38,13 +38,49 @@
   },
   {
     "id": "keybind-leader-and-disable",
-    "prompt": "How do I change the leader key in opencode from the default to ctrl+space? Also, how do I disable the session_fork keybind entirely? Which config file do these go in?",
+    "prompt": "I'm running OpenCode V1. How do I change the leader key in opencode from the default to ctrl+space? Also, how do I disable the session_fork keybind entirely? Which config file do these go in?",
     "assertions": [
       { "id": "correct-file-tui-json", "description": "Identifies tui.json (not opencode.json) as the target file" },
       { "id": "correct-file-path", "description": "Gives correct path ~/.config/opencode/tui.json" },
       { "id": "leader-key-syntax", "description": "Shows keybinds.leader: 'ctrl+space' or equivalent" },
-      { "id": "disable-empty-string", "description": "Shows setting session_fork to empty string '' or 'none' to disable" },
+      { "id": "disable-empty-string", "description": "Shows setting session_fork to 'none' or false to disable" },
       { "id": "keybinds-object", "description": "Shows both changes nested inside a 'keybinds' object" }
+    ]
+  },
+  {
+    "id": "v2-mcp-remote-oauth",
+    "prompt": "Add a remote MCP server named 'sentry' to my project's opencode.jsonc (new config, nothing there yet). It should connect to https://mcp.sentry.dev/mcp, use OAuth with a pre-registered client ID from the SENTRY_CLIENT_ID environment variable, and allow tool calls up to 2 minutes. Show the exact JSONC.",
+    "assertions": [
+      { "id": "v2-servers-nesting", "description": "Nests the entry under mcp.servers.sentry (not directly under mcp)" },
+      { "id": "v2-type-remote", "description": "Sets type to 'remote' and url to https://mcp.sentry.dev/mcp" },
+      { "id": "v2-snake-case-oauth", "description": "Uses oauth.client_id (snake_case), not clientId" },
+      { "id": "v2-env-substitution", "description": "Uses {env:SENTRY_CLIENT_ID} for the client ID" },
+      { "id": "v2-timeout-object", "description": "Sets timeout as an object with execution: 120000 (not a bare number)" },
+      { "id": "v2-no-enabled", "description": "Does not use an 'enabled' field (V2 uses 'disabled' if anything)" }
+    ]
+  },
+  {
+    "id": "v2-reviewer-agent-permissions",
+    "prompt": "Using the native OpenCode V2 config format, create a 'reviewer' subagent in opencode.jsonc that uses anthropic/claude-sonnet-4-5 with the 'high' variant, cannot edit files or run shell commands, and uses temperature 0.1. Also make the build agent ask before any 'git push'. Show the JSONC.",
+    "assertions": [
+      { "id": "v2-agents-key", "description": "Uses the plural 'agents' map, not 'agent'" },
+      { "id": "v2-mode-subagent", "description": "Sets mode: 'subagent' on reviewer" },
+      { "id": "v2-model-variant", "description": "Sets model to 'anthropic/claude-sonnet-4-5#high' (variant joined with #), not a separate variant field" },
+      { "id": "v2-permissions-array", "description": "Uses a 'permissions' array of {action, resource, effect} rules" },
+      { "id": "v2-edit-shell-deny", "description": "Denies action 'edit' and action 'shell' (not 'bash') for reviewer" },
+      { "id": "v2-temperature-request-body", "description": "Puts temperature under request.body, not as a top-level agent field" },
+      { "id": "v2-git-push-ask", "description": "Adds { action: 'shell', resource: 'git push *', effect: 'ask' } under agents.build.permissions" }
+    ]
+  },
+  {
+    "id": "v2-cli-json-keybind-theme",
+    "prompt": "I'm on OpenCode V2. Change my leader key to ctrl+space, disable the session fork keybind, and switch to the catppuccin theme locked to dark mode. Which file, and what JSON?",
+    "assertions": [
+      { "id": "v2-cli-json-file", "description": "Targets ~/.config/opencode/cli.json (not tui.json or opencode.json)" },
+      { "id": "v2-no-project-file", "description": "Does not suggest a project-local cli.json" },
+      { "id": "v2-leader", "description": "Sets keybinds.leader to 'ctrl+space'" },
+      { "id": "v2-dotted-id", "description": "Disables 'session.fork' (dotted ID) with 'none' or false" },
+      { "id": "v2-theme-object", "description": "Sets theme as an object: { name: 'catppuccin', mode: 'dark' }" }
     ]
   }
 ]

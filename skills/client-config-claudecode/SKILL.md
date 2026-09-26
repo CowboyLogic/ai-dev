@@ -11,12 +11,16 @@ You help the user manage `~/.claude/settings.json` — their user-level Claude C
 
 | Scope | File | Shared? |
 |-------|------|---------|
-| Managed (macOS) | `/Library/Application Support/ClaudeCode/managed-settings.json` | IT-deployed |
-| Managed (Linux/WSL) | `/etc/claude-code/managed-settings.json` | IT-deployed |
-| Managed (Windows) | `C:\Program Files\ClaudeCode\managed-settings.json` | IT-deployed |
-| Local project | `.claude/settings.local.json` | No (gitignored) |
+| Managed (macOS) | `/Library/Application Support/ClaudeCode/managed-settings.json` (+ `managed-settings.d/*.json`) | IT-deployed |
+| Managed (Linux/WSL) | `/etc/claude-code/managed-settings.json` (+ `managed-settings.d/*.json`) | IT-deployed |
+| Managed (Windows) | `C:\Program Files\ClaudeCode\managed-settings.json` (+ `managed-settings.d\*.json`) | IT-deployed |
+| Managed (other) | MDM profile / `HKLM` registry, or server-managed settings from the claude.ai console | IT-deployed |
+| Command line | `--settings <file-or-json>`, `--model`, `--permission-mode`, … | One session |
+| Local project | `.claude/settings.local.json` (at the git repo root) | No (gitignored) |
 | Project | `.claude/settings.json` | Yes (git) |
-| **User** | **`~/.claude/settings.json`** | No |
+| **User** | **`~/.claude/settings.json`** (or `$CLAUDE_CONFIG_DIR/settings.json`) | No |
+
+Array settings such as `permissions.allow` merge across files; scalars take the highest-precedence value. Some keys are *user or managed* only (ignored in project/local files) — e.g. `autoMode`, `modelPicker`, `vimInsertModeRemaps`; `permissions.defaultMode` values `auto` and `bypassPermissions` are also ignored in project/local files. See `references/settings-schema.md` §Settings files and precedence.
 
 **This skill focuses on the User scope**: `~/.claude/settings.json`
 
@@ -32,14 +36,18 @@ You help the user manage `~/.claude/settings.json` — their user-level Claude C
 | Task | Reference file to read |
 |------|------------------------|
 | Add/remove allow, deny, ask rules | `references/permissions.md` |
-| Configure hooks (PreToolUse, PostToolUse, etc.) | `references/hooks.md` |
+| Configure hooks (PreToolUse, PostToolUse, PreModelSwitch, etc.) | `references/hooks.md` |
 | Add/configure MCP servers | `references/mcp.md` |
-| Model, effort, thinking, output style | `references/settings-schema.md` §Model |
+| Model, effort (`effortLevel`/`modelSettings`/`maxEffortLevel`), thinking, output style, prompt cache | `references/settings-schema.md` §Model |
 | Sandbox filesystem/network isolation | `references/settings-schema.md` §Sandbox |
 | Auto mode classifier | `references/settings-schema.md` §AutoMode |
-| Plugins (enable/disable, marketplaces) | `references/settings-schema.md` §Plugins |
-| Subagent files (user or project scope) | `references/settings-schema.md` §Subagents |
-| Environment variables, attribution, misc | `references/settings-schema.md` §Misc |
+| Status line, theme, time format, UI toggles | `references/settings-schema.md` §UI |
+| Memory, compaction, workflows, update channel | `references/settings-schema.md` §Memory |
+| Plugins & skills (enable/disable, marketplaces, sync) | `references/settings-schema.md` §Plugins |
+| Subagent files, cross-session messaging | `references/settings-schema.md` §Subagents |
+| Environment variables, auth helpers, notifications | `references/settings-schema.md` §Environment |
+| Attribution, worktrees, enterprise/managed keys | `references/settings-schema.md` §Attribution / §Worktree / §Misc |
+| Deprecated or removed keys | `references/settings-schema.md` §Deprecated |
 | Unknown / full schema lookup | `references/settings-schema.md` |
 
 ## Common quick edits (no reference needed)
@@ -50,19 +58,22 @@ You help the user manage `~/.claude/settings.json` — their user-level Claude C
 
 // Default permission mode
 { "permissions": { "defaultMode": "acceptEdits" } }
-// valid: "default" | "acceptEdits" | "plan" | "auto" | "dontAsk" | "bypassPermissions"
+// valid: "default" (alias "manual") | "acceptEdits" | "plan" | "auto" | "dontAsk" | "bypassPermissions"
+// "auto" and "bypassPermissions" only take effect from user/managed/--settings, not project/local
 
 // Response language
 { "language": "spanish" }
 
-// Effort level
+// Effort level — default for models with no saved level
 { "effortLevel": "high" }  // "low" | "medium" | "high" | "xhigh"
+// /effort (v2.1.251+) saves per model instead; Opus 5.5+ ignore effortLevel in user settings:
+{ "modelSettings": { "claude-sonnet-4-6": { "effortLevel": "high" } } }
 
 // Show thinking summaries
 { "showThinkingSummaries": true }
 
-// Voice dictation (voiceEnabled is deprecated)
-{ "voice": { "enabled": true, "mode": "tap", "autoSubmit": true } }
+// Voice dictation (voiceEnabled is deprecated); autoSubmit applies in "hold" mode only
+{ "voice": { "enabled": true, "mode": "hold", "autoSubmit": true } }
 
 // Disable all hooks (emergency)
 { "disableAllHooks": true }
@@ -72,8 +83,8 @@ You help the user manage `~/.claude/settings.json` — their user-level Claude C
 
 For complex operations, use the helper scripts in `scripts/`:
 
-- `scripts/show-settings.py` — pretty-print current settings across all scopes
-- `scripts/validate-settings.py` — validate JSON structure and flag bad values
+- `scripts/show-settings.py [--json] [--settings PATH]` — pretty-print current settings across scopes (read-only)
+- `scripts/validate-settings.py [path]` — validate JSON structure, flag bad values, unknown/deprecated keys, and user-or-managed keys placed in project files (read-only)
 - `scripts/update-references.py` — fetch latest upstream docs (used during self-update)
 
 Run with: `python scripts/<script>.py` from the skill directory, or with absolute paths.
@@ -82,7 +93,7 @@ Run with: `python scripts/<script>.py` from the skill directory, or with absolut
 
 When the user asks you to **update**, **refresh**, or **sync** this skill with the latest Claude Code documentation, follow these steps:
 
-1. **Fetch** — run `python scripts/update-references.py --all` (requires network access). This fetches each configured reference URL in `assets/sources.json` and saves raw content to `_fetched/`.
+1. **Fetch** — run `python scripts/update-references.py --all` (requires network access). This fetches each configured reference URL (plus its `additional_urls`) in `assets/sources.json` and saves raw content to `_fetched/`. Also scan `https://code.claude.com/docs/llms.txt` for new pages that belong in `sources.json`.
 
 2. **Confirm success** — if the script exits nonzero, resolve the reported failures and rerun it. Do not use a partial `_fetched/` set as source material.
 
@@ -90,7 +101,7 @@ When the user asks you to **update**, **refresh**, or **sync** this skill with t
 
 4. **Update** — rewrite each `references/*.md` file to reflect what changed. Preserve the existing structure and token-efficient style; add/remove/correct only what differs from the source.
 
-5. **Validate** — run `python scripts/validate-settings.py` to confirm the schema knowledge is still coherent.
+5. **Sync scripts** — update the known keys, enums, hook events, and deprecated-key lists in `scripts/validate-settings.py` (and field notes in `scripts/show-settings.py`) to match, then run `python scripts/validate-settings.py <sample-file>` against a scratch sample, not the user's live settings.
 
 6. **Clean up** — delete the `_fetched/` directory.
 
@@ -102,10 +113,10 @@ See `assets/sources.json` for the full manifest. Key URLs:
 
 | Reference file | Source URL |
 |----------------|-----------|
-| `references/settings-schema.md` | `https://code.claude.com/docs/en/settings.md` |
-| `references/permissions.md` | `https://code.claude.com/docs/en/permissions.md` |
+| `references/settings-schema.md` | `https://code.claude.com/docs/en/settings-reference.md` (+ `settings.md`, `managed-settings.md`, `sub-agents.md`) |
+| `references/permissions.md` | `https://code.claude.com/docs/en/permissions.md` (+ `permission-modes.md`, `skills.md`) |
 | `references/hooks.md` | `https://code.claude.com/docs/en/hooks.md` |
-| `references/mcp.md` | `https://code.claude.com/docs/en/mcp.md` |
+| `references/mcp.md` | `https://code.claude.com/docs/en/mcp.md` (+ `managed-mcp.md`) |
 | Doc index | `https://code.claude.com/docs/llms.txt` |
 
 ## Safety rules

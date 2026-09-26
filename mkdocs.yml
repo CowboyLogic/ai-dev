@@ -91,6 +91,15 @@ nav:
   - Skills:
       - Overview: skills/index.md
       - Federated Agent Broker: skills/federated-agent-broker.md
+      - About-Me Skill Creator: skills/about-me-skill-creator.md
+      - Google Style Docs: skills/google-style-docs.md
+      - Git Commit Messages: skills/git-commit-messages.md
+      - Docker Image Management: skills/docker-image-management.md
+      - MkDocs Site Management: skills/mkdocs-site-management.md
+      - Markdownlint Validator: skills/markdownlint-validator.md
+      - Copilot Agent Creator: skills/agent-creator-copilot.md
+      - Copilot Instruction Creator: skills/copilot-instruction-creator.md
+      - OpenCode Agent Creator: skills/agent-creator-opencode.md
       - Claude Code Settings Manager: skills/client-config-claudecode.md
       - Copilot CLI Configuration Manager: skills/client-config-copilotcli.md
       - OpenCode Configuration Manager: skills/client-config-opencode.md
@@ -101,19 +110,19 @@ nav:
           - Configuration Guide: tools/opencode/configuration.md
           - Sample Configs: tools/opencode/samples.md
           - Agent SubAgent Config:
-              - API Agent: tools/opencode/agent-subagent-config/agent/api.md
-              - Architect Agent: tools/opencode/agent-subagent-config/agent/architect.md
-              - Cloud Agent: tools/opencode/agent-subagent-config/agent/cloud.md
-              - Data Agent: tools/opencode/agent-subagent-config/agent/data.md
-              - Database Agent: tools/opencode/agent-subagent-config/agent/database.md
-              - DevOps Agent: tools/opencode/agent-subagent-config/agent/devops.md
-              - Documentation Agent: tools/opencode/agent-subagent-config/agent/documentation.md
-              - Performance Agent: tools/opencode/agent-subagent-config/agent/performance.md
-              - Research Agent: tools/opencode/agent-subagent-config/agent/research.md
-              - Reviewer Agent: tools/opencode/agent-subagent-config/agent/reviewer.md
-              - Security Agent: tools/opencode/agent-subagent-config/agent/security.md
-              - Testing Agent: tools/opencode/agent-subagent-config/agent/testing.md
-              - UX/UI Agent: tools/opencode/agent-subagent-config/agent/uxui.md
+              - API Agent: tools/opencode/agent-subagent-config/agents/api.md
+              - Architect Agent: tools/opencode/agent-subagent-config/agents/architect.md
+              - Cloud Agent: tools/opencode/agent-subagent-config/agents/cloud.md
+              - Data Agent: tools/opencode/agent-subagent-config/agents/data.md
+              - Database Agent: tools/opencode/agent-subagent-config/agents/database.md
+              - DevOps Agent: tools/opencode/agent-subagent-config/agents/devops.md
+              - Documentation Agent: tools/opencode/agent-subagent-config/agents/documentation.md
+              - Performance Agent: tools/opencode/agent-subagent-config/agents/performance.md
+              - Research Agent: tools/opencode/agent-subagent-config/agents/research.md
+              - Reviewer Agent: tools/opencode/agent-subagent-config/agents/reviewer.md
+              - Security Agent: tools/opencode/agent-subagent-config/agents/security.md
+              - Testing Agent: tools/opencode/agent-subagent-config/agents/testing.md
+              - UX/UI Agent: tools/opencode/agent-subagent-config/agents/uxui.md
           - Standard Config:
               - AGENTS: tools/opencode/standard-config/AGENTS.md
       - Visual Studio Code:

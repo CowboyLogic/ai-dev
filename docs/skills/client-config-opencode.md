@@ -1,11 +1,12 @@
 # OpenCode Configuration Manager
 
-Manage all opencode configuration files from a single skill. Covers the full surface
-of `opencode.json` and `tui.json` — providers, MCP servers, agents, permissions, keybinds,
-themes, formatters, commands, instructions, compaction, LSP, and enterprise settings.
+Manage all opencode configuration files from a single skill, for both OpenCode V2 and V1.
+Covers the full surface of `opencode.json` plus the terminal client config (`cli.json` in V2,
+`tui.json` in V1) — providers, MCP servers, agents, permissions, plugins, keybinds, themes,
+formatters, commands, instructions, compaction, and enterprise settings.
 
 - **Skill name:** `client-config-opencode`
-- **Last updated:** 2026-04-26
+- **Last updated:** 2026-09-24
 - **Source:** [skills/client-config-opencode](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-opencode)
 
 ---
@@ -18,18 +19,29 @@ details (such as timeout units), the baseline fabricates configurations that loo
 but are structurally wrong or use incorrect identifiers. The skill loads targeted reference
 material only for the config area the task requires.
 
+**Format selection:** native V2 is the default for new configuration. The skill reads the
+existing file first and keeps a V1-shaped file in V1 unless asked to migrate. V2 reads V1
+config, and V1 and V2 fields may coexist at the top level, but each individual agent,
+provider, command, or model entry must stay in one format.
+
+> [!WARNING]
+> There is no published V2 schema for `opencode.json` yet. `https://opencode.ai/config.json`
+> still describes V1 and rejects unknown keys, so editors may flag valid V2 fields. Only
+> `https://opencode.ai/v2/cli.json` exists for the V2 terminal client.
+
 **Config files covered:**
 
 | File | Scope | What it controls |
 |------|-------|-----------------|
 | `~/.config/opencode/opencode.json` | Global | Providers, MCP, agents, permissions, commands, formatters, compaction, server, LSP |
 | `opencode.json` (project root) | Project | Same as global — merges with global config |
-| `~/.config/opencode/tui.json` | Global | Theme, keybinds, mouse, diff style, plugins |
+| `~/.config/opencode/cli.json` | Global | V2 terminal client — theme, keybinds, CLI plugins (auto-migrated from `tui.json`) |
+| `~/.config/opencode/tui.json` | Global | V1 terminal client — theme, keybinds, mouse, diff style, plugins |
 | `~/.config/opencode/agents/<name>.md` | Global | Custom agent definitions (markdown format) |
 | `.opencode/agents/<name>.md` | Project | Project-scoped custom agents |
 | `~/.config/opencode/commands/<name>.md` | Global | Custom slash command definitions |
 | `.opencode/commands/<name>.md` | Project | Project-scoped custom commands |
-| `~/.config/opencode/skills/` | Global | Skill directories referenced by `skills.paths` |
+| `~/.config/opencode/skills/` | Global | Skill directories (`skills` array in V2, `skills.paths` in V1) |
 | `.opencode/skills/` | Project | Project-scoped skill directories |
 | `~/.local/share/opencode/auth.json` | Global | OAuth credentials (CLI-managed, not hand-edited) |
 
@@ -108,6 +120,24 @@ non-discriminating and should be replaced in a future iteration.
 ---
 
 ## Changelog
+
+### 2026-09-24 — v2.0 (OpenCode V2 support)
+
+- `SKILL.md`: rewritten with a format-selection step (read first; no file → V2; V1-shaped
+  file stays V1), a V1/V2 detection signals table, and side-by-side file and task maps.
+- New `references/v2/`: `config-schema.md`, `permissions.md` (ordered `permissions` rules),
+  `agents.md`, `mcp.md` (`mcp.servers`, snake_case OAuth, split timeouts), `providers.md`,
+  `cli.md` (`cli.json` and a `tui.json` → `cli.json` key map), `plugins.md` (new
+  `Plugin.define` API), and `migration.md`.
+- V1 references refreshed and labelled V1. Corrections: `server` settings nest under a
+  `server` object; Anthropic Pro/Max login is no longer supported; formatters and LSP are
+  off unless configured and use a `$FILE` placeholder; the `task` permission governs
+  subagent launches; keybinds are disabled with `"none"` or `false`.
+- `sources.json`: V2 doc URLs, the `v2/cli.json` schema, and additional V1 pages.
+- `scripts/show-config.py`: JSONC parsing, `.opencode/opencode.json(c)` and `cli.json`
+  support, and V1/V2/mixed format detection.
+- `evals/evals.json`: existing cases pinned to V1; three V2 cases added (MCP OAuth,
+  reviewer agent permissions, `cli.json` keybinds).
 
 ### 2026-04-26 — v1.0 (initial release)
 

@@ -5,7 +5,7 @@ description: >
   green" is a claim, and the Verifier is where it becomes evidence. Finds gaps, not
   just bugs. Returns PASS / FIX / ESCALATE.
 tools: ["read", "search", "execute"]
-model: Gemini 3.6 Flash (copilot)
+model: Gemini 3.8 Flash (copilot)
 user-invocable: false
 ---
 
@@ -151,7 +151,7 @@ is done.
 
 ## Model Selection Rationale
 
-**Current model:** Gemini 3.6 Flash · **Family:** Google / Gemini
+**Current model:** Gemini 3.8 Flash · **Family:** Google / Gemini
 
 Cross-family independence is the control this agent provides, and Gemini is
 cross-family from every producer in the topology without exception — the Planner,

@@ -5,7 +5,7 @@ description: >
   are made. Invoke when defining what something does, how it feels, and what
   the user encounters at every step.
 tools: ["read", "edit"]
-model: Claude Opus 4.8 (copilot)
+model: Claude Opus 5.5 (copilot)
 user-invocable: false
 ---
 
@@ -65,7 +65,7 @@ design stage. It is now Claude Opus to ensure Ghost (Gemini) can satisfy the
 cross-family review requirement across all agents. The reasoning capability is
 equivalent; the cross-family coverage is better.
 
-**Current model:** Claude Opus 4.8
+**Current model:** Claude Opus 5.5
 **Family:** Anthropic / Claude
 
 ## Constraints
