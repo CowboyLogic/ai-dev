@@ -17,6 +17,7 @@ import os
 from pathlib import Path
 import queue
 import re
+import select
 import shlex
 import signal
 import stat
@@ -37,7 +38,7 @@ except ImportError:  # Windows does not provide POSIX advisory file locks.
 
 
 SERVER_NAME = "federated-agent-broker"
-SERVER_VERSION = "0.3.0"
+SERVER_VERSION = "0.3.1"
 MAX_LEAN_RECEIPT_CHARS = 20_000
 RECEIPT_ID_PATTERN = re.compile(r"^del_[0-9a-f]{16}$")
 TASK_CLASSES = (
@@ -151,6 +152,7 @@ DEPRECATED_TOOL_ALIASES = {
     "copilot_implement": "delegate_implement",
 }
 _stdin_closed = False
+_stdin_end_reason: str | None = None
 
 
 def _tool_schema(
@@ -862,6 +864,7 @@ def _run_bounded_process(
         process: subprocess.Popen[bytes] = subprocess.Popen(
             command,
             cwd=workspace,
+            stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             start_new_session=True,
@@ -985,7 +988,7 @@ def _git_snapshot(workspace: Path) -> dict[str, str] | None:
     try:
         result = subprocess.run(
             ["git", "-C", str(workspace), "status", "--porcelain=v1", "-z", "--untracked-files=all"],
-            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=15, check=False,
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=15, check=False,
         )
     except (OSError, subprocess.TimeoutExpired):
         return None
@@ -1048,7 +1051,7 @@ def _write_full_receipt(receipt: dict[str, Any]) -> None:
 @lru_cache(maxsize=8)
 def _provider_version(binary: tuple[str, ...]) -> str:
     try:
-        completed = subprocess.run([*binary, "--version"], text=True, stdout=subprocess.PIPE,
+        completed = subprocess.run([*binary, "--version"], text=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE, timeout=10, check=False)
         return (completed.stdout.strip() or completed.stderr.strip() or "unavailable").splitlines()[0]
     except (OSError, subprocess.TimeoutExpired):
@@ -1202,6 +1205,8 @@ def run_delegation(request: DelegationRequest, *, rpc_id: Any = None) -> dict[st
             receipt["sessionLogPath"] = str(Path.home() / ".copilot" / "session-state" / session_id / "events.jsonl")
         if result.termination:
             receipt["status"] = result.termination
+            if result.termination == "interrupted" and _stdin_end_reason:
+                receipt["limitations"].append(f"Broker input ended ({_stdin_end_reason}); the worker was stopped.")
         elif result.timed_out:
             receipt["status"] = "timed_out"
         elif result.exit_code != 0:
@@ -1255,6 +1260,7 @@ def broker_status() -> dict[str, Any]:
         completed = subprocess.run(
             [*binary, "--version"],
             text=True,
+            stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             timeout=10,
@@ -1410,13 +1416,44 @@ def _cancel_request(request_id: Any) -> None:
         _terminate_process_group(active.process)
 
 
-def _read_stdin(messages: queue.Queue[Any]) -> None:
-    global _stdin_closed
+def _stdin_lines() -> Iterator[bytes | str]:
+    """Yield raw input lines; end only on a real end-of-file.
+
+    Every child gets its own stdin, but the MCP pipe can still be switched to O_NONBLOCK by
+    anything sharing it. Python's line iterator reports EAGAIN as end-of-file, which once
+    stopped the broker mid-delegation, so the pipe is read with select and os.read instead.
+    """
     try:
-        for raw_line in sys.stdin:
+        descriptor = sys.stdin.fileno()
+    except (AttributeError, OSError, ValueError):
+        yield from sys.stdin
+        return
+    pending = b""
+    while True:
+        select.select([descriptor], [], [])
+        try:
+            chunk = os.read(descriptor, 65536)
+        except (BlockingIOError, InterruptedError):
+            continue
+        if not chunk:
+            if pending:
+                yield pending
+            return
+        pending += chunk
+        *lines, pending = pending.split(b"\n")
+        yield from lines
+
+
+def _read_stdin(messages: queue.Queue[Any]) -> None:
+    global _stdin_closed, _stdin_end_reason
+    reason = "eof"
+    try:
+        for raw_line in _stdin_lines():
+            if not raw_line.strip():
+                continue
             try:
                 message = json.loads(raw_line)
-            except json.JSONDecodeError:
+            except ValueError:
                 message = {"jsonrpc": "2.0", "id": None, "method": None}
             if isinstance(message, dict) and message.get("method") == "notifications/cancelled":
                 params = message.get("params")
@@ -1425,16 +1462,22 @@ def _read_stdin(messages: queue.Queue[Any]) -> None:
                     _cancel_request(params.get("requestId"))
                 continue
             messages.put(message)
+    except BaseException as error:
+        reason = f"exception:{type(error).__name__}"
+        raise
     finally:
+        print(f"{SERVER_NAME}: stdin reader stopped ({reason})", file=sys.stderr, flush=True)
         with _children_lock:
             _stdin_closed = True
+            _stdin_end_reason = reason
         _terminate_registered("interrupted")
         messages.put(None)
 
 
 def serve() -> None:
-    global _stdin_closed
+    global _stdin_closed, _stdin_end_reason
     _stdin_closed = False
+    _stdin_end_reason = None
     _cancelled_requests.clear()
     server = McpServer()
     messages: queue.Queue[Any] = queue.Queue()

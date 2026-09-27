@@ -55,7 +55,7 @@ by default; `FEDERATED_BROKER_RECEIPT_KEEP` changes the limit.
 | Field | Meaning |
 |---|---|
 | `requestId` | Unique identifier for this broker invocation. |
-| `status` | `completed`, `completed_no_response`, `failed`, `timed_out`, `cancelled`, or `interrupted`. `completed_no_response` means Copilot exited successfully without an extractable final assistant message. |
+| `status` | `completed`, `completed_no_response`, `failed`, `timed_out`, `cancelled`, or `interrupted`. `completed_no_response` means Copilot exited successfully without an extractable final assistant message. `interrupted` means the broker itself was stopped (its input closed or it received a signal); when its input closed, a limitation line says why. |
 | `authority` | `read-only` or `scoped-write`. |
 | `model`, `profile` | The selected Copilot execution settings. Other settings remain in the full receipt. |
 | `writablePaths` | The exact paths granted to the worker. |

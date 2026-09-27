@@ -747,6 +747,86 @@ class CopilotBrokerTests(unittest.TestCase):
             self._wait_for_status("interrupted")
             self._assert_worker_gone(pid_file)
 
+    def test_every_child_process_gets_explicit_stdin(self) -> None:
+        import ast
+        tree = ast.parse(Path(broker.__file__).read_text())
+        calls = [node for node in ast.walk(tree) if isinstance(node, ast.Call)
+                 and isinstance(node.func, ast.Attribute) and node.func.attr in {"Popen", "run"}
+                 and isinstance(node.func.value, ast.Name) and node.func.value.id == "subprocess"]
+        self.assertGreaterEqual(len(calls), 4)
+        for call in calls:
+            self.assertIn("stdin", {keyword.arg for keyword in call.keywords},
+                          f"subprocess call on line {call.lineno} inherits the MCP stdin")
+
+    def test_reader_survives_nonblocking_stdin(self) -> None:
+        import fcntl
+        import io
+        import queue
+        import threading
+        self.addCleanup(setattr, broker, "_stdin_closed", False)
+        self.addCleanup(setattr, broker, "_stdin_end_reason", None)
+        read_fd, write_fd = os.pipe()
+        fcntl.fcntl(read_fd, fcntl.F_SETFL, fcntl.fcntl(read_fd, fcntl.F_GETFL) | os.O_NONBLOCK)
+        stream = os.fdopen(read_fd, "r")
+        self.addCleanup(stream.close)
+        messages: queue.Queue[object] = queue.Queue()
+        with patch.object(sys, "stdin", stream), patch.object(sys, "stderr", io.StringIO()):
+            thread = threading.Thread(target=broker._read_stdin, args=(messages,), daemon=True)
+            thread.start()
+            time.sleep(0.5)
+            self.assertTrue(thread.is_alive(), "reader treated an empty non-blocking pipe as end-of-file")
+            os.write(write_fd, b'{"jsonrpc": "2.0", "id": 5, "method": "ping"}\n')
+            self.assertEqual(messages.get(timeout=2), {"jsonrpc": "2.0", "id": 5, "method": "ping"})
+            self.assertTrue(thread.is_alive())
+            os.close(write_fd)
+            self.assertIsNone(messages.get(timeout=2))
+            thread.join(2)
+        self.assertEqual(broker._stdin_end_reason, "eof")
+
+    def test_worker_setting_nonblocking_stdin_does_not_stop_the_broker(self) -> None:
+        import threading
+        with tempfile.TemporaryDirectory() as workspace:
+            worker = Path(self.state.name, "nonblocking_worker.py")
+            pid_file = Path(self.state.name, "worker.pid")
+            worker.write_text(
+                "import fcntl, os, sys, time\n"
+                "from pathlib import Path\n"
+                "if '--version' in sys.argv:\n    print('fake 1.0')\n    sys.exit(0)\n"
+                "fcntl.fcntl(0, fcntl.F_SETFL, fcntl.fcntl(0, fcntl.F_GETFL) | os.O_NONBLOCK)\n"
+                f"Path({str(pid_file)!r}).write_text(str(os.getpid()))\n"
+                "time.sleep(1.5)\n"
+                "print('''{\"type\":\"assistant.message\",\"content\":\"done\"}''')\n"
+            )
+            environment = os.environ.copy()
+            environment["FEDERATED_BROKER_COPILOT_BIN"] = f"{sys.executable} {worker}"
+            process = subprocess.Popen(
+                [sys.executable, str(Path(broker.__file__))], stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=environment,
+            )
+            watchdog = threading.Timer(20, process.kill)
+            watchdog.start()
+            self.addCleanup(watchdog.cancel)
+            assert process.stdin is not None and process.stdout is not None and process.stderr is not None
+            for stream in (process.stdin, process.stdout, process.stderr):
+                self.addCleanup(stream.close)
+            process.stdin.write(json.dumps({"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {
+                "name": "delegate_research", "arguments": {"task": "Wait", "workspace": workspace}}}) + "\n")
+            process.stdin.flush()
+            deadline = time.monotonic() + 10
+            while not pid_file.exists() and time.monotonic() < deadline:
+                time.sleep(0.02)
+            self.assertTrue(pid_file.exists(), "worker did not start")
+            process.stdin.write(json.dumps({"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {
+                "name": "broker_status", "arguments": {}}}) + "\n")
+            process.stdin.flush()
+            responses = {message["id"]: message for message in
+                         (json.loads(process.stdout.readline()) for _ in range(2))}
+            process.stdin.close()
+            process.wait(timeout=10)
+            lean = json.loads(responses[1]["result"]["content"][0]["text"])
+            self.assertEqual(lean["status"], "completed")
+            self.assertIn("result", responses[2])
+
     def test_unexpected_exception_gets_one_json_rpc_error(self) -> None:
         import io
         with tempfile.TemporaryDirectory() as workspace:
