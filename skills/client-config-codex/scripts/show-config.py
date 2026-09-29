@@ -52,10 +52,10 @@ SECRET_MARKERS = ("KEY", "TOKEN", "SECRET", "PASSWORD", "AUTH", "CREDENTIAL")
 # Keys whose value names an environment variable rather than holding a credential.
 ENV_NAME_SUFFIXES = ("_env_var", "_env_vars", "env_key", "env_http_headers")
 # Maps whose values are credentials regardless of key name (e.g. an "Authorization" header).
-SECRET_MAPS = ("env", "http_headers")
+SECRET_MAPS = ("env", "http_headers", "headers")
 TOKEN_VALUE = re.compile(r"^(sk-|ghp_|github_pat_|xox[abp]-|Bearer\s)", re.I)
 URL_VALUE = re.compile(r"^[a-z][a-z0-9+.-]*://", re.I)
-PROJECT_ROOT_MARKERS = (".git", ".hg", ".sl")
+PROJECT_ROOT_MARKERS = (".git",)  # Codex default; override with project_root_markers in config
 
 
 def load_toml(path):
