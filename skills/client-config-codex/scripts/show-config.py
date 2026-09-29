@@ -15,10 +15,14 @@ import re
 import sys
 import tomllib
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 
 CODEX_HOME = Path(os.environ.get("CODEX_HOME", Path.home() / ".codex"))
 CONFIG_FILE = CODEX_HOME / "config.toml"
-SYSTEM_DIR = Path("/etc/codex")  # Unix; Windows uses %ProgramData%\OpenAI\Codex
+if os.name == "nt":
+    SYSTEM_DIR = Path(os.environ.get("ProgramData", r"C:\ProgramData")) / "OpenAI" / "Codex"
+else:
+    SYSTEM_DIR = Path("/etc/codex")
 SYSTEM_CONFIG_FILE = SYSTEM_DIR / "config.toml"
 REQUIREMENTS_FILE = SYSTEM_DIR / "requirements.toml"
 AUTH_FILE = CODEX_HOME / "auth.json"
@@ -28,7 +32,7 @@ AGENTS_DIR = CODEX_HOME / "agents"
 SKILLS_DIRS = [Path.home() / ".agents" / "skills", CODEX_HOME / "skills"]
 GLOBAL_INSTRUCTIONS = [CODEX_HOME / "AGENTS.override.md", CODEX_HOME / "AGENTS.md"]
 
-AUTH_VARS = ["CODEX_API_KEY", "OPENAI_API_KEY"]
+AUTH_VARS = ["CODEX_ACCESS_TOKEN", "CODEX_API_KEY", "OPENAI_API_KEY"]
 OTHER_VARS = [
     "CODEX_HOME",
     "CODEX_SQLITE_HOME",
@@ -38,6 +42,10 @@ OTHER_VARS = [
     "CODEX_CA_CERTIFICATE",
     "SSL_CERT_FILE",
     "HTTPS_PROXY",
+    "https_proxy",
+    "HTTP_PROXY",
+    "http_proxy",
+    "ALL_PROXY",
     "NO_PROXY",
 ]
 SECRET_MARKERS = ("KEY", "TOKEN", "SECRET", "PASSWORD", "AUTH", "CREDENTIAL")
@@ -46,6 +54,8 @@ ENV_NAME_SUFFIXES = ("_env_var", "_env_vars", "env_key", "env_http_headers")
 # Maps whose values are credentials regardless of key name (e.g. an "Authorization" header).
 SECRET_MAPS = ("env", "http_headers")
 TOKEN_VALUE = re.compile(r"^(sk-|ghp_|github_pat_|xox[abp]-|Bearer\s)", re.I)
+URL_VALUE = re.compile(r"^[a-z][a-z0-9+.-]*://", re.I)
+PROJECT_ROOT_MARKERS = (".git", ".hg", ".sl")
 
 
 def load_toml(path):
@@ -70,8 +80,27 @@ def load_json(path):
         return {}
 
 
+def scrub_url(value):
+    """Drop URL userinfo and query/fragment, which can carry credentials; keep scheme, host, path."""
+    try:
+        parts = urlsplit(value)
+        host = parts.hostname or ""
+        if parts.port:
+            host = f"{host}:{parts.port}"
+        cleaned = urlunsplit((parts.scheme, host, parts.path, "", ""))
+    except ValueError:
+        return "***"
+    if cleaned != value:
+        cleaned += "  (credentials/query stripped)"
+    return cleaned
+
+
 def mask(name, value):
     value = str(value)
+    if URL_VALUE.match(value):
+        return scrub_url(value)
+    if "@" in value and "/" not in value.split("@", 1)[0]:
+        value = value.split("@", 1)[1]  # user:password@host[:port] without a scheme
     if any(marker in name.upper() for marker in SECRET_MARKERS):
         return value[:4] + "..." if len(value) > 4 else "***"
     return value
@@ -86,6 +115,8 @@ def redact(value, key="", in_secret_map=False):
     if isinstance(value, list):
         return [redact(v, key, in_secret_map) for v in value]
     if isinstance(value, str):
+        if URL_VALUE.match(value):
+            return scrub_url(value)
         names_env_var = key.lower().endswith(ENV_NAME_SUFFIXES)
         if in_secret_map or TOKEN_VALUE.match(value):
             return "***"
@@ -127,7 +158,7 @@ def describe_mcp(servers):
         if not isinstance(cfg, dict):
             continue
         transport = "http" if "url" in cfg else "stdio"
-        endpoint = cfg.get("url", cfg.get("command", "?"))
+        endpoint = scrub_url(cfg["url"]) if "url" in cfg else cfg.get("command", "?")
         flags = []
         if cfg.get("enabled") is False:
             flags.append("disabled")
@@ -256,22 +287,33 @@ def main():
             preview = path.read_text(encoding="utf-8").strip().replace("\n", " ")
             print(f"  Preview: {preview[:120]}...")
 
-    # --- project config files ---
+    # --- project config files: every layer from the project root down to cwd ---
     cwd = Path.cwd()
-    project_files = [
-        (cwd / ".codex" / "config.toml", "Project config"),
-        (cwd / ".codex" / "hooks.json", "Project hooks"),
-        (cwd / ".codex" / "agents", "Project agents"),
-        (cwd / ".codex" / "rules", "Project rules"),
-        (cwd / ".agents" / "skills", "Project skills"),
-        (cwd / "AGENTS.md", "AGENTS.md"),
-        (cwd / "AGENTS.override.md", "AGENTS.override.md"),
-    ]
-    if any(path.exists() for path, _ in project_files):
-        section(f"PROJECT CONFIG (in {cwd})")
-        for path, label in project_files:
-            if not path.exists():
-                continue
+    markers = config.get("project_root_markers", PROJECT_ROOT_MARKERS)
+    root = next((d for d in (cwd, *cwd.parents) if any((d / m).exists() for m in markers)), cwd)
+    chain = [cwd]
+    while chain[-1] != root:
+        chain.append(chain[-1].parent)
+    chain.reverse()
+    printed_header = False
+    for directory in chain:
+        project_files = [
+            (directory / ".codex" / "config.toml", "Project config"),
+            (directory / ".codex" / "hooks.json", "Project hooks"),
+            (directory / ".codex" / "agents", "Project agents"),
+            (directory / ".codex" / "rules", "Project rules"),
+            (directory / ".agents" / "skills", "Project skills"),
+            (directory / "AGENTS.md", "AGENTS.md"),
+            (directory / "AGENTS.override.md", "AGENTS.override.md"),
+        ]
+        found = [(path, label) for path, label in project_files if path.exists()]
+        if not found:
+            continue
+        if not printed_header:
+            section(f"PROJECT CONFIG (root {root} down to {cwd})")
+            printed_header = True
+        print(f"  -- {directory}")
+        for path, label in found:
             if path.is_dir():
                 print(f"  {label}: {len(list(path.iterdir()))} item(s) in {path}")
             else:
