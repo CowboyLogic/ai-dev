@@ -62,8 +62,10 @@ Opening a PR is therefore the start of the review loop, not the end of the task:
 
 1. **Submit** the PR, or push new commits to the existing PR branch.
 2. **Wait 2–3 minutes**, then check the PR for Copilot review comments. If no Copilot
-   review has landed on the latest commit yet, keep waiting and re-check before
-   concluding there is nothing to address.
+   review has landed on the latest commit yet, keep re-checking before concluding there
+   is nothing to address — but **never wait more than 10 minutes in total** for a
+   review. If none has arrived by then, stop waiting, report the PR link, and say that
+   the Copilot review is still pending. Do not report the PR as clean.
 3. **Evaluate every finding** on its merits. Do not apply a suggestion blindly, and do
    not dismiss one without checking it against the code.
    - **Valid finding** — fix it, commit, and push to the same branch (new commit only;
