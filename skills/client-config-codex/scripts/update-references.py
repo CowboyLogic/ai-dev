@@ -122,10 +122,19 @@ def main():
 
     success = sum(1 for r in results if r["ok"])
     failed = len(results) - success
+    if failed:
+        # A partial set must not be usable: discard everything this run staged.
+        for r in results:
+            if r.get("fetched"):
+                Path(r["fetched"]).unlink(missing_ok=True)
+                r["ok"] = False
+        if FETCHED_DIR.exists() and not any(FETCHED_DIR.iterdir()):
+            FETCHED_DIR.rmdir()
+        success = 0
     print(f"\n{'='*50}")
     print(f"Fetched {success}/{len(results)} reference(s)")
     if failed:
-        print(f"  {failed} incomplete — no stale or partial staged file remains")
+        print(f"  {failed} incomplete — staged files from this run were discarded")
     if success and not failed:
         print(f"\nNext steps for Claude:")
         print(f"  1. Read each file in _fetched/")
