@@ -25,7 +25,10 @@ class CopilotBrokerTests(unittest.TestCase):
     def setUp(self) -> None:
         self.state = tempfile.TemporaryDirectory()
         self.addCleanup(self.state.cleanup)
-        environment = patch.dict(os.environ, {"FEDERATED_BROKER_STATE_DIR": self.state.name})
+        environment = patch.dict(os.environ, {
+            "FEDERATED_BROKER_STATE_DIR": self.state.name,
+            "FEDERATED_BROKER_ALLOWED_ROOTS": str(Path(tempfile.gettempdir()).resolve()),
+        })
         environment.start()
         self.addCleanup(environment.stop)
 
@@ -237,7 +240,7 @@ class CopilotBrokerTests(unittest.TestCase):
             ]
             self.assertEqual(
                 permissions,
-                ["read", "write(tests/test_broker.py)"],
+                ["read", f"write({Path(temporary_directory).resolve() / 'tests/test_broker.py'})"],
             )
             self.assertIn("view,create,edit,apply_patch", command)
             self.assertNotIn("shell", command)
@@ -419,6 +422,7 @@ class CopilotBrokerTests(unittest.TestCase):
             with patch.object(broker, "_run_bounded_process", return_value=result) as run_process:
                 broker._read_working_diff(request)
             self.assertIn("HEAD", run_process.call_args.args[0])
+            self.assertIn("--no-textconv", run_process.call_args.args[0])
 
     def test_bounded_process_output_does_not_exceed_its_receipt_limit(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -441,8 +445,23 @@ class CopilotBrokerTests(unittest.TestCase):
                 del os.environ["FEDERATED_BROKER_COPILOT_BIN"]
             else:
                 os.environ["FEDERATED_BROKER_COPILOT_BIN"] = old_binary
-        self.assertEqual(status["copilotCommand"], [])
+        self.assertIsNone(status["copilotExecutable"])
         self.assertIn("not valid shell syntax", status["error"])
+
+    def test_status_and_receipt_omit_configured_binary_arguments(self) -> None:
+        with tempfile.TemporaryDirectory() as workspace:
+            version = subprocess.CompletedProcess([], 0, "fake 1.0\n", "")
+            with patch.dict(os.environ, {"FEDERATED_BROKER_COPILOT_BIN": "copilot --token secret-value"}), \
+                    patch.object(broker.subprocess, "run", return_value=version):
+                status = broker.broker_status()
+                request = broker.parse_request("research", {"task": "Inspect", "workspace": workspace})
+                result = broker.ProcessResult(0, "", "", False, False, False)
+                with patch.object(broker, "_run_bounded_process", return_value=result):
+                    receipt = broker.run_delegation(request)
+                full = broker.broker_receipt(receipt["requestId"])
+        self.assertEqual(status["copilotExecutable"], "copilot")
+        self.assertNotIn("secret-value", json.dumps(status))
+        self.assertNotIn("secret-value", json.dumps(full))
 
     def test_initialize_rejects_an_unsupported_protocol_version(self) -> None:
         response = broker.McpServer().handle_request(
@@ -493,6 +512,31 @@ class CopilotBrokerTests(unittest.TestCase):
                 with self.assertRaisesRegex(broker.BrokerError, "outside FEDERATED"):
                     broker.parse_request("research", {"task": "Check", "workspace": str(outside)})
                 self.assertEqual(broker.parse_request("research", {"task": "Check", "workspace": str(allowed)}).workspace, allowed.resolve())
+            with patch.dict(os.environ, {"FEDERATED_BROKER_ALLOWED_ROOTS": "", "CLAUDE_PROJECT_DIR": str(allowed)}):
+                with self.assertRaisesRegex(broker.BrokerError, "outside CLAUDE_PROJECT_DIR"):
+                    broker.parse_request("research", {"task": "Check", "workspace": str(outside)})
+                self.assertEqual(broker.parse_request("research", {"task": "Check"}).workspace, allowed.resolve())
+            with patch.dict(os.environ, {"FEDERATED_BROKER_ALLOWED_ROOTS": "", "CLAUDE_PROJECT_DIR": ""}):
+                with self.assertRaisesRegex(broker.BrokerError, "trusted workspace roots"):
+                    broker.parse_request("research", {"task": "Check", "workspace": str(allowed)})
+
+    def test_implementation_rejects_in_workspace_aliases(self) -> None:
+        with tempfile.TemporaryDirectory() as workspace:
+            root = Path(workspace)
+            (root / "real.py").write_text("x = 1\n")
+            (root / "src").mkdir()
+            (root / "alias.py").symlink_to(root / "real.py")
+            (root / "linked").symlink_to(root / "src", target_is_directory=True)
+            (root / ".git").mkdir()
+            (root / "config-alias").symlink_to(root / ".git")
+            os.link(root / "real.py", root / "hard.py")
+            cases = {
+                "alias.py": "symlink", "linked/new.py": "symlink",
+                "config-alias/config": "symlink", "real.py": "hard-linked", "hard.py": "hard-linked",
+            }
+            for path, message in cases.items():
+                with self.subTest(path=path), self.assertRaisesRegex(broker.BrokerError, message):
+                    broker.parse_request("implement", {"task": "Change", "workspace": workspace, "writable_paths": [path]})
 
     def test_receipt_id_rejected_before_filesystem_access_and_retention(self) -> None:
         with patch.object(broker, "_state_directory", side_effect=AssertionError("filesystem touched")):

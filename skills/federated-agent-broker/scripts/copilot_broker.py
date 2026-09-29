@@ -38,7 +38,7 @@ except ImportError:  # Windows does not provide POSIX advisory file locks.
 
 
 SERVER_NAME = "federated-agent-broker"
-SERVER_VERSION = "0.3.1"
+SERVER_VERSION = "0.4.0"
 MAX_LEAN_RECEIPT_CHARS = 20_000
 RECEIPT_ID_PATTERN = re.compile(r"^del_[0-9a-f]{16}$")
 TASK_CLASSES = (
@@ -73,6 +73,7 @@ SUPPORTED_EFFORTS = {"none", "minimal", "low", "medium", "high", "xhigh", "max"}
 SUPPORTED_CONTEXTS = {"default", "long_context"}
 SUPPORTED_PROTOCOL_VERSIONS = {"2025-03-26", "2025-06-18", "2025-11-25"}
 MODEL_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
+PERMISSION_SYNTAX_CHARACTERS = ",()\r\n"
 
 
 class BrokerError(ValueError):
@@ -449,6 +450,17 @@ def _relative_paths(
     return tuple(dict.fromkeys(result))
 
 
+def _trusted_roots() -> tuple[str, list[Path]]:
+    """Return the configured workspace roots: explicit allowed roots, else the Claude project."""
+    allowed = [root for root in os.environ.get("FEDERATED_BROKER_ALLOWED_ROOTS", "").split(":") if root]
+    if allowed:
+        return "FEDERATED_BROKER_ALLOWED_ROOTS", [Path(root).expanduser().resolve() for root in allowed]
+    project = os.environ.get("CLAUDE_PROJECT_DIR", "")
+    if project:
+        return "CLAUDE_PROJECT_DIR", [Path(project).expanduser().resolve()]
+    return "", []
+
+
 def _workspace(arguments: dict[str, Any]) -> Path:
     configured = _as_string(arguments, "workspace", os.environ.get("CLAUDE_PROJECT_DIR", ""))
     if not configured:
@@ -458,9 +470,11 @@ def _workspace(arguments: dict[str, Any]) -> Path:
         raise BrokerError(f"workspace is not an existing directory: {path}")
     if path == Path("/") or path == Path.home().resolve():
         raise BrokerError("workspace cannot be the filesystem root or home directory")
-    allowed = os.environ.get("FEDERATED_BROKER_ALLOWED_ROOTS", "")
-    if allowed and not any(path.is_relative_to(Path(root).expanduser().resolve()) for root in allowed.split(":") if root):
-        raise BrokerError("workspace is outside FEDERATED_BROKER_ALLOWED_ROOTS")
+    source, roots = _trusted_roots()
+    if not roots:
+        raise BrokerError("set FEDERATED_BROKER_ALLOWED_ROOTS or CLAUDE_PROJECT_DIR to define trusted workspace roots")
+    if not any(path.is_relative_to(root) for root in roots):
+        raise BrokerError(f"workspace is outside {source}")
     state = _state_path()
     if state.is_relative_to(path):
         raise BrokerError("broker state directory must be outside the workspace")
@@ -518,15 +532,25 @@ def parse_request(mode: str, arguments: Any) -> DelegationRequest:
         raise BrokerError("writable_paths is available only for implementation")
     if len(writable_paths) > 25:
         raise BrokerError("writable_paths may include at most 25 files")
+    if writable_paths and any(character in str(workspace) for character in PERMISSION_SYNTAX_CHARACTERS):
+        raise BrokerError("implementation workspace path cannot contain permission-syntax characters")
     for relative_path in writable_paths:
         candidate = (workspace / relative_path).resolve(strict=False)
         try:
             candidate.relative_to(workspace)
         except ValueError as error:
             raise BrokerError("writable_paths entries must resolve within the workspace") from error
+        # An alias would let an exact-file grant modify a different file than the one named.
+        literal = workspace
+        for part in Path(relative_path).parts:
+            literal = literal / part
+            if literal.is_symlink():
+                raise BrokerError(f"writable_paths entries cannot traverse or name a symlink: {relative_path}")
         if candidate.is_dir():
             raise BrokerError("writable_paths entries must name files, not existing directories")
-        if any(character in relative_path for character in ",()\r\n"):
+        if candidate.is_file() and candidate.stat().st_nlink > 1:
+            raise BrokerError(f"writable_paths entries cannot name a hard-linked file: {relative_path}")
+        if any(character in relative_path for character in PERMISSION_SYNTAX_CHARACTERS):
             raise BrokerError("writable_paths entries cannot contain permission-syntax characters")
 
     return DelegationRequest(
@@ -547,7 +571,7 @@ def parse_request(mode: str, arguments: Any) -> DelegationRequest:
 
 
 def _read_working_diff(request: DelegationRequest) -> str:
-    command = ["git", "-C", str(request.workspace), "diff", "--no-ext-diff", "HEAD", "--"]
+    command = ["git", "-C", str(request.workspace), "diff", "--no-ext-diff", "--no-textconv", "HEAD", "--"]
     command.extend(request.paths)
     try:
         result = _run_bounded_process(command, request.workspace, 15, MAX_DIFF_CHARS)
@@ -623,13 +647,19 @@ def _copilot_base_command(request: DelegationRequest, prompt: str) -> list[str]:
         command.extend(["--available-tools", "view", "--allow-tool", "read"])
     else:
         command.extend(["--available-tools", "view,create,edit,apply_patch"])
-        for allowed_tool in ["read", *(f"write({path})" for path in request.writable_paths)]:
+        # Copilot matches a relative write(PATH) by trailing components anywhere in the tree;
+        # an absolute path scopes the grant to exactly one file.
+        writes = (f"write({request.workspace / path})" for path in request.writable_paths)
+        for allowed_tool in ["read", *writes]:
             command.extend(["--allow-tool", allowed_tool])
     return command
 
 
-def _redacted_command(command: list[str]) -> list[str]:
+def _redacted_command(command: list[str], binary_length: int = 1) -> list[str]:
+    """Omit the prompt and any configured binary arguments, which may carry credentials."""
     redacted = command.copy()
+    for index in range(1, min(binary_length, len(redacted))):
+        redacted[index] = "[argument omitted]"
     try:
         redacted[redacted.index("-p") + 1] = "[delegation prompt omitted]"
     except (ValueError, IndexError):
@@ -1170,7 +1200,7 @@ def run_delegation(request: DelegationRequest, *, rpc_id: Any = None) -> dict[st
         "effort": request.effort, "context": request.context, "maxAiCredits": request.max_ai_credits,
         "status": "failed", "exitCode": None, "durationSeconds": 0.0,
         "paths": list(request.paths), "writablePaths": list(request.writable_paths),
-        "command": _redacted_command(command), "events": [], "textOutput": "", "stderr": "",
+        "command": _redacted_command(command, len(_copilot_binary())), "events": [], "textOutput": "", "stderr": "",
         "outputCompacted": False, "finalResponseAvailable": False, "finalResponse": "",
         "sessionId": None, "sessionLogPath": None, "filesChanged": [],
         "undeclaredChanges": [] if request.mode != "implement" else None,
@@ -1292,7 +1322,7 @@ def broker_status() -> dict[str, Any]:
     return {
         "server": SERVER_NAME,
         "version": SERVER_VERSION,
-        "copilotCommand": binary,
+        "copilotExecutable": binary[0] if binary else None,
         "copilotVersion": version,
         "accountLabel": os.environ.get("FEDERATED_BROKER_ACCOUNT_LABEL", "unlabeled"),
         "error": error,

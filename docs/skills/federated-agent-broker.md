@@ -208,10 +208,13 @@ more than 30 credits. Check Copilot's reported usage when cost control matters.
   and process groups to prevent overlapping writes and timeout descendants.
 - The broker persists bounded full receipts and a metadata-only usage log outside
   the workspace. `FEDERATED_BROKER_RECEIPT_KEEP` controls receipt retention.
-- Set `FEDERATED_BROKER_ALLOWED_ROOTS` to colon-separated parent directories to
-  limit every delegation mode. Home and filesystem-root workspaces are rejected.
-- Implementation rejects known execution surfaces, including Git hooks, agent
-  settings, CI workflows, and shell environment files. Package manifests remain
+- Every delegation mode needs a workspace within a trusted root:
+  `FEDERATED_BROKER_ALLOWED_ROOTS` (colon-separated parent directories) when set,
+  otherwise `CLAUDE_PROJECT_DIR`. With neither set, delegation is refused. Home and
+  filesystem-root workspaces are rejected.
+- Implementation rejects known execution surfaces, including Git metadata and hooks,
+  agent settings, CI workflows, and shell environment files. It also rejects
+  symlinked and hard-linked writable paths. Package manifests remain
   writable, so scripts they define are an accepted residual risk.
 - `FEDERATED_BROKER_ACCOUNT_LABEL` is an unverified label for the active account;
   it does not select an account. `FEDERATED_BROKER_HOST` labels the calling host.

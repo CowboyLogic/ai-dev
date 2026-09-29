@@ -109,10 +109,14 @@ declarative and unverified; the broker does not select or validate the active
 Copilot account. `usageObserved` stays null until a verified CLI usage signal is
 available.
 
-Implementation rejects home or filesystem-root workspaces and known execution
-surfaces such as Git hooks, host settings, CI workflows, and shell environment
-files. Set colon-separated `FEDERATED_BROKER_ALLOWED_ROOTS` to limit all modes to
-specific parent directories. Package manifests remain writable because ordinary
+Every mode rejects home or filesystem-root workspaces and requires the workspace to
+sit within a trusted root: colon-separated `FEDERATED_BROKER_ALLOWED_ROOTS` when
+set, otherwise `CLAUDE_PROJECT_DIR`. With neither set, delegation is refused. Set
+`FEDERATED_BROKER_ALLOWED_ROOTS` to delegate into a Git worktree outside the
+project directory. Implementation rejects known execution surfaces such as Git
+metadata and hooks, host settings, CI workflows, and shell environment files, and
+rejects writable paths that are symlinks, traverse a symlink, or name a hard-linked
+file, so each grant covers exactly the file it names. Package manifests remain writable because ordinary
 implementation tasks edit them; their install or test scripts remain a residual
 execution risk. A Git workspace lets the broker report status changes outside
 declared paths as `undeclaredChanges`; a non-Git workspace reports that check as

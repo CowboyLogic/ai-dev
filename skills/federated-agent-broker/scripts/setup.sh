@@ -66,9 +66,11 @@ command -v "${PYTHON_BIN}" >/dev/null 2>&1 || fail "Python interpreter not found
 "${PYTHON_BIN}" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)' \
   || fail "${PYTHON_BIN} must be Python 3.10 or later"
 
-POLICY_PATH="${CONFIG_DIR}/policy.json"
 [[ -n "${CONFIG_DIR}" ]] || fail "--config-dir cannot be empty"
 mkdir -p "${CONFIG_DIR}"
+# The MCP server may start from any working directory, so register an absolute policy path.
+CONFIG_DIR="$(cd "${CONFIG_DIR}" && pwd -P)"
+POLICY_PATH="${CONFIG_DIR}/policy.json"
 
 if [[ -e "${POLICY_PATH}" ]]; then
   [[ -f "${POLICY_PATH}" ]] || fail "policy path exists but is not a regular file: ${POLICY_PATH}"

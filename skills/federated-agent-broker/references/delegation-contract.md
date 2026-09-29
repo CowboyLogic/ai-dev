@@ -11,7 +11,7 @@ criteria, relevant evidence, and the precise question that Copilot should answer
 
 | Field | Applies to | Meaning |
 |---|---|---|
-| `workspace` | All tools | Existing directory to give Copilot as its working directory. It defaults to `CLAUDE_PROJECT_DIR`. |
+| `workspace` | All tools | Existing directory to give Copilot as its working directory. It defaults to `CLAUDE_PROJECT_DIR` and must sit within a trusted root. |
 | `task_class` | All delegation tools | Optional enum: `codebase-research`, `failure-diagnosis`, `diff-review`, `plan-review`, `mechanical-refactor`, `test-generation`, or `other`. Omitted values log as `unclassified`. |
 | `paths` | All tools | Optional relative files or directories that frame the task. The broker rejects absolute paths, parent traversal, and globs. |
 | `profile` | All tools | Named execution policy. It defaults to the configured profile for the delegation mode. |
@@ -26,8 +26,10 @@ criteria, relevant evidence, and the precise question that Copilot should answer
 
 `delegate_research` and `delegate_review` receive only Copilot's `read` tool.
 `delegate_implement` receives `read` and an exact `write(PATH)` permission for each
-declared writable file. Writable paths cannot contain the punctuation used by
-Copilot's permission syntax. It cannot run shell commands, including test commands,
+declared writable file. The broker passes each `PATH` as an absolute path, because
+Copilot matches a relative `write(PATH)` against any file whose trailing path
+components match. Writable paths and the implementation workspace cannot contain
+the punctuation used by Copilot's permission syntax. It cannot run shell commands, including test commands,
 because repository-controlled test hooks could write beyond its file scope. The parent
 agent runs verification after inspecting the delegated diff. Copilot does not receive
 blanket shell, write, URL, temporary-directory, remote-control, commit, push, or
@@ -37,11 +39,14 @@ The implementation tool holds an advisory lock for its workspace while Copilot r
 Use a separate Git worktree for larger work or when another agent needs to modify the
 same repository concurrently.
 
-The broker rejects home and filesystem-root workspaces. If
-`FEDERATED_BROKER_ALLOWED_ROOTS` is set to colon-separated directories, all modes
-must use a workspace within one of them. Implementation also rejects known
+The broker rejects home and filesystem-root workspaces. Every mode must use a
+workspace within a trusted root: the colon-separated directories in
+`FEDERATED_BROKER_ALLOWED_ROOTS` when set, otherwise `CLAUDE_PROJECT_DIR`. If
+neither is set, the broker refuses the delegation. Implementation also rejects known
 execution surfaces: `.git`, host configuration directories, CI workflows,
-shell environment files, and agent instruction files. Package manifests remain
+shell environment files, and agent instruction files. It rejects writable paths that
+are symlinks, pass through a symlinked directory, or name a hard-linked file, so a
+grant cannot reach a different file than the one it names. Package manifests remain
 writable for ordinary implementation work and retain script execution risk.
 
 ## Receipt fields
