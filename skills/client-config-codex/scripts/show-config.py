@@ -30,7 +30,7 @@ HOOKS_FILE = CODEX_HOME / "hooks.json"
 RULES_DIR = CODEX_HOME / "rules"
 AGENTS_DIR = CODEX_HOME / "agents"
 SKILLS_DIRS = [Path.home() / ".agents" / "skills", CODEX_HOME / "skills"]
-GLOBAL_INSTRUCTIONS = [CODEX_HOME / "AGENTS.override.md", CODEX_HOME / "AGENTS.md"]
+INSTRUCTION_NAMES = ("AGENTS.override.md", "AGENTS.md")
 
 AUTH_VARS = ["CODEX_ACCESS_TOKEN", "CODEX_API_KEY", "OPENAI_API_KEY"]
 OTHER_VARS = [
@@ -191,6 +191,19 @@ def show_config(path, as_json):
     return config or {}
 
 
+def active_instruction_file(directory, extra_names=()):
+    """Codex reads at most one instruction file per directory: the first non-empty of
+    AGENTS.override.md, AGENTS.md, then project_doc_fallback_filenames, in that order."""
+    for name in (*INSTRUCTION_NAMES, *extra_names):
+        path = directory / name
+        try:
+            if path.is_file() and path.stat().st_size > 0:
+                return path
+        except OSError:
+            continue
+    return None
+
+
 def list_dir(path, pattern, label):
     items = sorted(path.glob(pattern)) if path.exists() else []
     if not items:
@@ -278,18 +291,17 @@ def main():
     list_dir(AGENTS_DIR, "**/*.toml", "agent files")
 
     section("GLOBAL INSTRUCTIONS")
-    found = [p for p in GLOBAL_INSTRUCTIONS if p.exists()]
-    if not found:
-        print("  (no AGENTS.md or AGENTS.override.md in CODEX_HOME)")
-    for path in found:
-        print(f"  {path} ({path.stat().st_size} bytes)")
-        if not as_json:
-            preview = path.read_text(encoding="utf-8").strip().replace("\n", " ")
-            print(f"  Preview: {preview[:120]}...")
+    active = active_instruction_file(CODEX_HOME)
+    if active:
+        # Contents are deliberately not previewed: instruction files can hold pasted secrets.
+        print(f"  {active} ({active.stat().st_size} bytes, active)")
+    else:
+        print("  (no non-empty AGENTS.override.md or AGENTS.md in CODEX_HOME)")
 
     # --- project config files: every layer from the project root down to cwd ---
     cwd = Path.cwd()
     markers = config.get("project_root_markers", PROJECT_ROOT_MARKERS)
+    fallbacks = tuple(config.get("project_doc_fallback_filenames", []))
     root = next((d for d in (cwd, *cwd.parents) if any((d / m).exists() for m in markers)), cwd)
     chain = [cwd]
     while chain[-1] != root:
@@ -303,9 +315,10 @@ def main():
             (directory / ".codex" / "agents", "Project agents"),
             (directory / ".codex" / "rules", "Project rules"),
             (directory / ".agents" / "skills", "Project skills"),
-            (directory / "AGENTS.md", "AGENTS.md"),
-            (directory / "AGENTS.override.md", "AGENTS.override.md"),
         ]
+        instructions = active_instruction_file(directory, fallbacks)
+        if instructions:
+            project_files.append((instructions, "Instructions (active file)"))
         found = [(path, label) for path, label in project_files if path.exists()]
         if not found:
             continue
