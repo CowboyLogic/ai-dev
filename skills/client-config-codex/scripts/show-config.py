@@ -69,7 +69,8 @@ TOKEN_PATTERN = re.compile(
 # `--api-key VALUE`, `--token=VALUE`, `password: VALUE` inside one string.
 ARG_SECRET = re.compile(
     r"((?:--?[\w-]*(?:token|key|secret|passw(?:or)?d|auth|credential)[\w-]*(?:=|\s+))"
-    r"|(?:\b(?:token|api[_-]?key|secret|password|authorization)\s*[:=]\s*))\S+",
+    r"|(?:\b(?:token|api[_-]?key|secret|password|authorization)\s*[:=]\s*))"
+    r"(?:(?:basic|bearer|digest|token)\s+)?\S+",  # optional auth scheme word, then the credential
     re.I,
 )
 SECRET_FLAG = re.compile(r"^--?[\w-]*(token|key|secret|passw(or)?d|auth|credential)[\w-]*$", re.I)
@@ -153,13 +154,13 @@ def redact(value, key="", in_secret_map=False):
             prev = item if isinstance(item, str) else ""
         return out
     if isinstance(value, str):
-        if URL_VALUE.match(value):
-            return scrub_url(value)
         names_env_var = key.lower().endswith(ENV_NAME_SUFFIXES)
         if in_secret_map:
             return "***"
         if not names_env_var and any(marker in key.upper() for marker in SECRET_MARKERS):
-            return "***"
+            return "***"  # checked before the URL branch: a URL under a secret-named key is a secret
+        if URL_VALUE.match(value):
+            return scrub_url(value)
         return scrub_text(value)
     return value
 
