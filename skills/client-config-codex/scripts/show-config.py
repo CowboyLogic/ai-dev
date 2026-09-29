@@ -25,6 +25,9 @@ else:
     SYSTEM_DIR = Path("/etc/codex")
 SYSTEM_CONFIG_FILE = SYSTEM_DIR / "config.toml"
 REQUIREMENTS_FILE = SYSTEM_DIR / "requirements.toml"
+# Legacy managed defaults: /etc/codex on Unix, CODEX_HOME on Windows. They override user config
+# and even CLI flags, so a diagnostic that omits them can miss the file controlling a value.
+MANAGED_CONFIG_FILE = (CODEX_HOME if os.name == "nt" else SYSTEM_DIR) / "managed_config.toml"
 AUTH_FILE = CODEX_HOME / "auth.json"
 HOOKS_FILE = CODEX_HOME / "hooks.json"
 RULES_DIR = CODEX_HOME / "rules"
@@ -52,7 +55,7 @@ SECRET_MARKERS = ("KEY", "TOKEN", "SECRET", "PASSWORD", "AUTH", "CREDENTIAL")
 # Keys whose value names an environment variable rather than holding a credential.
 ENV_NAME_SUFFIXES = ("_env_var", "_env_vars", "env_key", "env_http_headers")
 # Maps whose values are credentials regardless of key name (e.g. an "Authorization" header).
-SECRET_MAPS = ("env", "http_headers", "headers")
+SECRET_MAPS = ("env", "http_headers", "headers", "set")  # "set" = shell_environment_policy.set
 TOKEN_VALUE = re.compile(r"^(sk-|ghp_|github_pat_|xox[abp]-|Bearer\s)", re.I)
 URL_VALUE = re.compile(r"^[a-z][a-z0-9+.-]*://", re.I)
 PROJECT_ROOT_MARKERS = (".git",)  # Codex default; override with project_root_markers in config
@@ -270,6 +273,9 @@ def main():
 
     section(f"SYSTEM CONFIG ({SYSTEM_CONFIG_FILE})")
     show_config(SYSTEM_CONFIG_FILE, as_json)
+
+    section(f"LEGACY MANAGED DEFAULTS ({MANAGED_CONFIG_FILE})")
+    show_config(MANAGED_CONFIG_FILE, as_json)
 
     section(f"ADMIN REQUIREMENTS ({REQUIREMENTS_FILE})")
     show_config(REQUIREMENTS_FILE, as_json)

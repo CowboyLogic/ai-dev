@@ -112,12 +112,12 @@ Run with: `python scripts/<script>.py` (`show-config.py` needs Python 3.11+).
 
 When the user asks to **update**, **refresh**, or **sync** this skill:
 
-1. Run `python scripts/update-references.py --all` → fetches each configured reference source to `_fetched/`
-2. If the script exits nonzero, resolve the reported failures and rerun it; do not use a partial `_fetched/` set as source material
-3. Read each `_fetched/` file alongside its corresponding `references/` file
+1. Run `python scripts/update-references.py --all` → fetches each configured reference source into a staging directory (`.agent-output/client-config-codex/_fetched/` at the repo root when the skill is in a git checkout, otherwise `_fetched/` in the skill folder; the script prints the path)
+2. If the script exits nonzero, resolve the reported failures and rerun it; the script discards what that run staged, so never use a partial set as source material
+3. Read each staged file alongside its corresponding `references/` file
 4. Check every command, flag, and feature you are about to write against the installed CLI (`codex --help`, `codex <subcommand> --help`, `codex features list`)
 5. Update `references/` files to reflect documentation changes
-6. Delete `_fetched/` and report what changed
+6. Delete the staging directory and report what changed
 
 Source URLs are in `sources.json`.
 
