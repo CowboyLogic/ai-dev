@@ -32,6 +32,7 @@ Agent Skills are structured collections of instructions, templates, examples, an
 
 - **[Claude Code Agent Creator](agent-creator-claudecode/README.md)** - Create and troubleshoot custom subagents for Claude Code, with a complete frontmatter reference and validator
 - **[OpenCode Agent Creator](agent-creator-opencode/README.md)** - Create custom agents for the OpenCode CLI (V2 native, V1 supported)
+- **[Codex Agent Creator](agent-creator-codex/README.md)** - Create and troubleshoot custom subagents for OpenAI Codex (TOML files), with a config reference and validator
 
 ### AI Client Configuration Skills
 
