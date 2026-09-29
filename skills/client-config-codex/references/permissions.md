@@ -130,7 +130,7 @@ writable_roots = ["/Users/YOU/.pyenv/shims"]
 network_access = true
 ```
 
-Prefer a narrow `writable_root` or a Rules entry over widening the mode.
+Prefer a narrow `writable_roots` entry or a Rules entry over widening the mode.
 
 ### Protected paths
 

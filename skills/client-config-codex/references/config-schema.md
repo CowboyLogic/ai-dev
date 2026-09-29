@@ -26,7 +26,7 @@ Default `~/.codex`. Override the root with `CODEX_HOME`; the directory must alre
 | `history.jsonl` | Session transcripts when history persistence is on | No |
 | `log/` | Logs (`log_dir` overrides); `codex-tui.log` appears only when `log_dir` is set explicitly | No |
 | `themes/` | Custom `.tmTheme` syntax themes | Yes |
-| `skills/` | User skills | Yes |
+| `skills/` | Bundled system skills under `.system/`, not a documented user scan location; put your own skills in `~/.agents/skills` (see `references/skills.md`) | No |
 
 `sqlite_home` or `CODEX_SQLITE_HOME` relocates the SQLite state files that also live here.
 
