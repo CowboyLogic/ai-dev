@@ -60,7 +60,27 @@ SECRET_MARKERS = ("KEY", "TOKEN", "SECRET", "PASSWORD", "AUTH", "CREDENTIAL")
 ENV_NAME_SUFFIXES = ("_env_var", "_env_vars", "env_key", "env_http_headers")
 # Maps whose values are credentials regardless of key name (e.g. an "Authorization" header).
 SECRET_MAPS = ("env", "http_headers", "headers", "set")  # "set" = shell_environment_policy.set
-TOKEN_VALUE = re.compile(r"^(sk-|ghp_|github_pat_|xox[abp]-|Bearer\s)", re.I)
+# Token shapes are matched anywhere in a string: argv-style values such as `--token=sk-...` or
+# `Authorization: Bearer ...` embed them mid-string.
+TOKEN_PATTERN = re.compile(
+    r"(sk-[A-Za-z0-9_-]{8,}|gh[opsur]_[A-Za-z0-9]{8,}|github_pat_[A-Za-z0-9_]{8,}|xox[abp]-[A-Za-z0-9-]{8,}|Bearer\s+\S+)",
+    re.I,
+)
+# `--api-key VALUE`, `--token=VALUE`, `password: VALUE` inside one string.
+ARG_SECRET = re.compile(
+    r"((?:--?[\w-]*(?:token|key|secret|passw(?:or)?d|auth|credential)[\w-]*(?:=|\s+))"
+    r"|(?:\b(?:token|api[_-]?key|secret|password|authorization)\s*[:=]\s*))\S+",
+    re.I,
+)
+SECRET_FLAG = re.compile(r"^--?[\w-]*(token|key|secret|passw(or)?d|auth|credential)[\w-]*$", re.I)
+
+
+def scrub_text(text):
+    """Mask token-shaped substrings and secret-looking argv/header values anywhere in a string."""
+    text = TOKEN_PATTERN.sub("***", text)
+    return ARG_SECRET.sub(lambda m: m.group(1) + "***", text)
+
+
 PROXY_NAME = re.compile(r"^(https?|all)_proxy$", re.I)  # not NO_PROXY, which is a host list
 URL_VALUE = re.compile(r"^[a-z][a-z0-9+.-]*://", re.I)
 DISCOVERY_KEYS = ("project_root_markers", "project_doc_fallback_filenames")
@@ -113,7 +133,7 @@ def mask(name, value):
         return scrub_url("http://" + value).removeprefix("http://")
     if any(marker in name.upper() for marker in SECRET_MARKERS):
         return value[:4] + "..." if len(value) > 4 else "***"
-    return value
+    return scrub_text(value)
 
 
 def redact(value, key="", in_secret_map=False):
@@ -123,15 +143,24 @@ def redact(value, key="", in_secret_map=False):
             k: redact(v, k, in_secret_map or k.lower() in SECRET_MAPS) for k, v in value.items()
         }
     if isinstance(value, list):
-        return [redact(v, key, in_secret_map) for v in value]
+        out, prev = [], ""
+        for item in value:
+            # `["--api-key", "VALUE"]`: the value follows its flag as a separate element.
+            if isinstance(item, str) and SECRET_FLAG.match(prev) and not item.startswith("-"):
+                out.append("***")
+            else:
+                out.append(redact(item, key, in_secret_map))
+            prev = item if isinstance(item, str) else ""
+        return out
     if isinstance(value, str):
         if URL_VALUE.match(value):
             return scrub_url(value)
         names_env_var = key.lower().endswith(ENV_NAME_SUFFIXES)
-        if in_secret_map or TOKEN_VALUE.match(value):
+        if in_secret_map:
             return "***"
         if not names_env_var and any(marker in key.upper() for marker in SECRET_MARKERS):
             return "***"
+        return scrub_text(value)
     return value
 
 
@@ -216,15 +245,38 @@ def active_instruction_file(directory, extra_names=()):
     return None
 
 
-def trust_level(config, *paths):
-    """trust_level recorded under [projects."<path>"] for the first path that has an entry."""
-    # Codex lowercases trust keys on Windows; normcase is a no-op elsewhere.
-    projects = {os.path.normcase(str(k)): v for k, v in config.get("projects", {}).items()}
-    for path in paths:
-        entry = projects.get(os.path.normcase(str(path)))
-        if isinstance(entry, dict) and entry.get("trust_level"):
-            return entry["trust_level"]
+def effective_projects(*layers):
+    """Merge [projects."<path>"] tables (system, user, managed; later wins). Codex lowercases
+    trust keys on Windows; normcase is a no-op elsewhere."""
+    merged = {}
+    for layer in layers:
+        for key, entry in layer.get("projects", {}).items():
+            if isinstance(entry, dict) and entry.get("trust_level"):
+                merged[os.path.normcase(str(key))] = entry["trust_level"]
+    return merged
+
+
+def trust_for(projects, candidates):
+    """trust_level of the first candidate path (nearest first) that has an entry."""
+    for path in candidates:
+        level = projects.get(os.path.normcase(str(path)))
+        if level:
+            return level
     return None
+
+
+def primary_checkout_root(directory):
+    """For a linked git worktree (.git is a file), the root of the primary checkout; else None."""
+    git = directory / ".git"
+    try:
+        if not git.is_file():
+            return None
+        gitdir = Path(git.read_text(encoding="utf-8").split("gitdir:", 1)[1].strip())
+        gitdir = gitdir if gitdir.is_absolute() else directory / gitdir
+        common = (gitdir / (gitdir / "commondir").read_text(encoding="utf-8").strip()).resolve()
+        return common.parent if common.name == ".git" else None
+    except (OSError, IndexError):
+        return None
 
 
 def list_dir(path, pattern, label):
@@ -340,10 +392,25 @@ def main():
     while chain[-1] != root:
         chain.append(chain[-1].parent)
     chain.reverse()
-    trust = trust_level(config, root, cwd)
-    trusted = trust == "trusted"
+    projects = effective_projects(system_config, config, managed_config)
+    primary = primary_checkout_root(root)  # linked worktree: trust and hooks also come from here
+    primary_trust = trust_for(projects, [primary]) if primary else None
     printed_header = False
+
+    def project_header():
+        section(f"PROJECT CONFIG (root {root} down to {cwd})")
+        print("  Trust is resolved per directory: project .codex/ layers are INACTIVE unless trusted.")
+        if primary:
+            print(f"  Linked worktree of {primary} (primary checkout trust: {primary_trust or 'not set'})")
+
+    def trust_of(directory):
+        """Nearest [projects] entry from this directory up to the root, then the primary checkout."""
+        within = [d for d in (directory, *directory.parents) if d == root or root in d.parents]
+        return trust_for(projects, within) or primary_trust
+
     for directory in chain:
+        trust = trust_of(directory)
+        trusted = trust == "trusted"
         project_files = [
             (directory / ".codex" / "config.toml", "Project config"),
             (directory / ".codex" / "hooks.json", "Project hooks"),
@@ -358,11 +425,9 @@ def main():
         if not found:
             continue
         if not printed_header:
-            section(f"PROJECT CONFIG (root {root} down to {cwd})")
-            print(f"  project trust_level: {trust or 'not set'}"
-                  + ("" if trusted else "  -> project .codex/ layers below are INACTIVE"))
+            project_header()
             printed_header = True
-        print(f"  -- {directory}")
+        print(f"  -- {directory}  (trust_level: {trust or 'not set'})")
         for path, label in found:
             gated = path.relative_to(directory).parts[0] == ".codex"  # instructions and .agents/skills are not trust-gated
             inactive = gated and not trusted
@@ -376,6 +441,15 @@ def main():
                 if path.name == "config.toml" and not inactive:
                     project_config = show_config(path, as_json)
                     describe_mcp(project_config.get("mcp_servers", {}))
+
+    if primary and primary != root:
+        primary_hooks = primary / ".codex" / "hooks.json"
+        if primary_hooks.exists():
+            if not printed_header:
+                project_header()
+            state = "" if primary_trust == "trusted" else "  [INACTIVE: primary checkout not trusted]"
+            print(f"  -- Primary checkout hooks (for a linked worktree, hooks may come from this layer; not verified): "
+                  f"{primary_hooks}{state}")
 
     # --- env vars ---
     section("ENVIRONMENT VARIABLES")
