@@ -1,19 +1,32 @@
 # Codex Agent Troubleshooting
 
-Start with the validator: `python scripts/validate-agent.py <path>`. It catches every
-file-level cause below.
+Start with the validator: `python scripts/validate-agent.py <path>`. It catches the file-level
+causes below, except project trust.
 
 ## Agent does not load
 
-| Symptom | Cause | Fix |
+Codex does not abort on a bad agent file. It prints
+`warning: Ignoring malformed agent role definition: <reason>` at session start and continues
+without that agent. Messages below were observed on codex-cli 0.158.0; run `codex exec "hi"`
+in the project to see them without spending a real task.
+
+| Symptom (warning text, abridged) | Cause | Fix |
 |---|---|---|
-| Config error naming the file | TOML does not parse | Check quotes, `"""` pairing, and that arrays and tables are closed |
-| Error: must define a non-empty `name` | `name` missing or `""` | Add it |
-| Error: must define a description | `description` missing | Add it |
-| Error: must define `developer_instructions` / cannot be blank | Missing or empty string | Add real instructions. Whitespace-only counts as blank |
-| Error: unknown field | A key Codex does not recognize, often a Claude Code or Copilot field (`tools`, `permissionMode`, `disallowedTools`) or a camelCase key | Rename to the `snake_case` Codex key or delete it |
-| Error: `config_file` must point to an existing file | `[agents.<name>]` path is wrong | Fix the path, relative to the config file that declares it |
-| New file not picked up | Session started before the file existed | Start a new session |
+| `failed to parse agent role file ...: TOML parse error` | TOML does not parse | Check quotes, `"""` pairing, and that arrays and tables are closed |
+| `must define a non-empty 'name'` | `name` missing or `""` | Add it |
+| `agent role 'x' must define a description` | `description` missing | Add it |
+| `must define 'developer_instructions'` or `cannot be blank` | Missing, empty, or whitespace-only | Add real instructions |
+| `unknown field 'key'` | A key Codex does not recognize, often a camelCase key or a Claude Code / Copilot field | Rename to the `snake_case` Codex key or delete it |
+| `data did not match any variant of untagged enum WebSearchToolConfigInput` | `tools = [...]` written as a list. `tools` is a table in Codex, and there is no tool allowlist | Delete it; use `sandbox_mode` and `mcp_servers.<id>.enabled_tools` |
+| `unknown variant 'x', expected one of 'read-only', ...` | Invalid `sandbox_mode` | Use `read-only`, `workspace-write`, or `danger-full-access` |
+| `duplicate agent role name 'x' discovered in <dir>` | Two files in one directory share a `name` | Rename one. The duplicate is dropped |
+| `agents.x.config_file must point to an existing file at <path>` | `[agents.x]` path is wrong | Fix the path. It resolves relative to the config file that declares it |
+| No warning, project agent absent | The project is not trusted; project-scope agents load only for trusted projects | Trust the project (`[projects."<path>"] trust_level = "trusted"`) |
+| Fatal `Error loading config.toml: invalid type: integer, expected struct AgentRoleToml` | An unknown scalar key under `[agents]` (for example `max_thread = 3`) is parsed as a role table | Fix the key name. Known keys: `enabled`, `max_concurrent_threads_per_session`, `max_threads`, `max_depth`, `job_max_runtime_seconds`, `default_subagent_model`, `default_subagent_reasoning_effort`, `interrupt_message` |
+| Agent absent after adding the file | Session started before the file existed | Start a new session |
+
+Not caught at load, so a bad value here produces no warning: an unrecognized
+`model_reasoning_effort`, and a `name` that differs from the filename.
 
 ## Agent loads but is never used
 

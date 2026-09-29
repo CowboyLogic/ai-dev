@@ -65,7 +65,8 @@ and avoid proposing fixes. Prefer fast search over broad scans.
 url = "https://developers.openai.com/mcp"
 ```
 
-Required fields (Codex rejects a file that omits or blanks any of them):
+Required fields. A file that omits or blanks any of them is **ignored with a warning**, not
+rejected loudly (see [Load Failures](#load-failures)):
 
 | Field | Purpose |
 |---|---|
@@ -84,8 +85,8 @@ Rules that avoid load failures:
    consistently and match the filename to it (`pr_explorer.toml`).
 3. Top-level keys go **before** any `[table]` header. A key placed after `[mcp_servers.x]`
    belongs to that table, not to the agent.
-4. Field names are `snake_case`. Do not carry over `disallowedTools`, `tools`, or
-   `permissionMode`; Codex has no such keys.
+4. Field names are `snake_case`, and unknown keys make the whole file invalid. Do not carry
+   over `disallowedTools`, `tools`, or `permissionMode`; Codex has no such keys.
 
 ---
 
@@ -93,16 +94,17 @@ Rules that avoid load failures:
 
 | Scope | Location |
 |---|---|
-| Project | `.codex/agents/` |
-| Personal | `~/.codex/agents/` |
+| Project | `.codex/agents/` (loaded **only when the project is trusted**) |
+| Personal | `~/.codex/agents/` (`$CODEX_HOME/agents/`) |
 | Config table | `[agents.<name>]` in `config.toml`, with `config_file` pointing at a TOML layer |
 
 Built-in agents `default`, `worker`, and `explorer` can be overridden by defining a custom
 agent with the same name.
 
 > [!NOTE]
-> The public docs do not state precedence when the same `name` exists in both scopes.
-> Keep names unique rather than relying on an order you cannot verify.
+> Two files with the same `name` in one directory: Codex warns and drops the duplicate.
+> The same `name` in project and personal scope raises no warning, and the winner could not
+> be observed without a model call. Keep names unique across scopes.
 
 ---
 
@@ -185,9 +187,14 @@ default_subagent_model = "gpt-6-luna"
 default_subagent_reasoning_effort = "medium"
 ```
 
-`agents.max_threads` is the legacy alias for `max_concurrent_threads_per_session`. Codex
-0.158's binary also contains `agents.max_depth` and `agents.job_max_runtime_seconds`, but the
-public config reference does not document them; verify before depending on either.
+`agents.max_threads` is the legacy alias for `max_concurrent_threads_per_session`.
+`agents.max_depth` and `agents.job_max_runtime_seconds` are accepted by Codex 0.158.0 but
+absent from the public config reference, so their exact semantics are undocumented.
+
+> [!WARNING]
+> Under `[agents]`, any key Codex does not know is parsed as a role table. A typo such as
+> `max_thread = 3` is a **fatal** startup error (`Error loading config.toml: invalid type:
+> integer, expected struct AgentRoleToml`), unlike a bad agent file, which is only skipped.
 
 ---
 
@@ -237,10 +244,35 @@ and match the filename.
 
 ### Step 4: Test
 
-1. Restart Codex, or open a new session, so the file is picked up.
+1. Start a new session so the file is picked up. Load warnings print at session start; a
+   non-interactive `codex exec "hi"` shows them without spending a real task.
 2. Ask for the agent by name: "Use `pr_explorer` to trace how login is handled."
 3. Confirm the model, effort, and sandbox it actually got, using the session's agent view.
 4. Give it a task it should refuse or cannot complete and confirm the restrictions hold.
+
+---
+
+## Load Failures
+
+Codex does **not** stop on a bad agent file. It prints
+`warning: Ignoring malformed agent role definition: <reason>` and carries on without that
+agent, so the agent is simply missing. Verified against codex-cli 0.158.0:
+
+| Defect | Codex message (abridged) |
+|---|---|
+| TOML syntax error | `failed to parse agent role file ...: TOML parse error at line N` |
+| Unknown or camelCase key | `failed to deserialize agent role file ...: unknown field 'key'` |
+| `tools = [...]` list | `data did not match any variant of untagged enum WebSearchToolConfigInput` (`tools` is a table in Codex) |
+| Bad `sandbox_mode` | `unknown variant 'root', expected one of 'read-only', 'workspace-write', 'danger-full-access'` |
+| Missing `name` | `must define a non-empty 'name'` |
+| Missing `description` | `agent role 'x' must define a description` |
+| Missing or blank `developer_instructions` | `must define 'developer_instructions'` / `cannot be blank` |
+| Same `name` twice in one directory | `duplicate agent role name 'x' discovered in <dir>` |
+| `[agents.x].config_file` missing | `agents.x.config_file must point to an existing file at <path>` |
+
+Not checked at load: an unrecognized `model_reasoning_effort` value, and a `name` that differs
+from the filename. A project-scope file in an **untrusted** project is skipped without any
+warning. Run the validator, then confirm with `codex exec "hi"`.
 
 ---
 
@@ -250,7 +282,8 @@ Load `references/troubleshooting.md` for the full symptom-to-cause table. Most c
 
 | Symptom | Likely cause |
 |---|---|
-| Agent not found or config error at startup | TOML does not parse, or `name`, `description`, or `developer_instructions` is missing or blank |
+| Agent missing, with a `Ignoring malformed agent role definition` warning at start | Bad TOML, unknown key, or missing or blank `name`, `description`, or `developer_instructions` |
+| Project agent missing, no warning | The project is not trusted; project-scope agents load only for trusted projects |
 | Agent never spawned | Nothing asked for delegation, or `description` is vague. Name the agent in the request or `AGENTS.md` |
 | Wrong model or effort | `agents.default_subagent_*` or an explicit spawn value outranks the file |
 | Agent wrote files despite `read-only` | Parent runtime policy (`--yolo`, `/permissions`) overrode the layer |

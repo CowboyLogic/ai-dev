@@ -1,12 +1,14 @@
 # Codex Agent Configuration Reference
 
 Sources: <https://developers.openai.com/codex/subagents> and
-<https://developers.openai.com/codex/config-reference>, cross-checked against the strings in
-`codex-cli` 0.158.0. Re-verify against the current docs when the CLI version moves on.
+<https://developers.openai.com/codex/config-reference>, plus load behavior observed by running
+`codex exec` against test agent files on codex-cli 0.158.0. Re-verify when the CLI version
+moves on.
 
 ## Agent file fields
 
-One agent per `.toml` file in `.codex/agents/` (project) or `~/.codex/agents/` (personal).
+One agent per `.toml` file in `.codex/agents/` (project, trusted projects only) or
+`~/.codex/agents/` (personal, i.e. `$CODEX_HOME/agents/`). Unknown keys make the file invalid.
 
 ### Required
 
@@ -25,8 +27,8 @@ docs name explicitly:
 |---|---|---|
 | `nickname_candidates` | array of strings | Display nicknames for spawned instances of the role |
 | `model` | string | Overrides the parent's model |
-| `model_reasoning_effort` | string | `low`, `medium`, `high`, `xhigh`, `max`, `ultra`. Availability depends on the model |
-| `sandbox_mode` | string | `read-only`, `workspace-write`, `danger-full-access` |
+| `model_reasoning_effort` | string | `low`, `medium`, `high`, `xhigh`, `max`, `ultra`. Availability depends on the model. An unrecognized value is not rejected at load |
+| `sandbox_mode` | string | `read-only`, `workspace-write`, `danger-full-access`. Any other value is rejected at load |
 | `mcp_servers` | table | `[mcp_servers.<id>]` tables scoped to the agent layer |
 | `skills.config` | table | Per-skill enablement overrides |
 
@@ -57,8 +59,13 @@ runtime overrides apply. Test any you add.
 | `agents.default_subagent_reasoning_effort` | string | Default effort for spawned agents |
 | `agents.interrupt_message` | boolean | Record a message in agent context when a turn is interrupted. Default `true` |
 
-`agents.max_depth` and `agents.job_max_runtime_seconds` exist as strings in the 0.158.0
-binary but are absent from the public reference. Treat them as unverified.
+`agents.max_depth` and `agents.job_max_runtime_seconds` are absent from the public
+reference but are accepted by codex-cli 0.158.0 (integer values load without error, as does
+`agents.max_threads`). Their exact semantics are undocumented.
+
+Any other key under `[agents]` is parsed as a role table. An unknown scalar such as
+`max_thread = 3` fails config loading with
+`invalid type: integer, expected struct AgentRoleToml`, which is fatal for the whole session.
 
 ## `[agents.<name>]` role tables
 
