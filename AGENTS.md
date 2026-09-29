@@ -74,15 +74,18 @@ Opening a PR is therefore the start of the review loop, not the end of the task:
      (what you checked and why no change is needed).
 4. **Resolve every thread** once it is handled, valid or not. A thread left open blocks
    the merge even when the finding was wrong.
-5. **Repeat from step 1** — each push triggers a fresh Copilot review that can raise
-   new findings. The loop ends when Copilot's review of the latest commit leaves no
-   comments and no threads on the PR remain unresolved.
+5. **Repeat from step 1 after every push** — each push triggers a fresh Copilot review
+   that can raise new findings. The loop ends when Copilot has reviewed the latest
+   commit, raised nothing new, and no review thread on the PR is unresolved. Resolving
+   a thread does not delete its comment, and an all-invalid round pushes nothing, so
+   end on thread state, not on the absence of comments.
 
 List and resolve review threads with `gh api graphql`:
 
 ```bash
 # List review threads with their resolution state
-gh api graphql -F owner='{owner}' -F repo='{repo}' -F pr=<number> -f query='
+gh api graphql -F owner='{owner}' -F repo='{repo}' \
+  -F pr="$(gh pr view --json number --jq .number)" -f query='
   query($owner: String!, $repo: String!, $pr: Int!) {
     repository(owner: $owner, name: $repo) {
       pullRequest(number: $pr) {
@@ -97,8 +100,8 @@ gh api graphql -F owner='{owner}' -F repo='{repo}' -F pr=<number> -f query='
     }
   }'
 
-# Resolve one thread by its id
-gh api graphql -f threadId=<thread-id> -f query='
+# Resolve one thread — replace the quoted id with one from the listing above
+gh api graphql -f threadId='PRRT_xxxxxxxx' -f query='
   mutation($threadId: ID!) {
     resolveReviewThread(input: { threadId: $threadId }) { thread { isResolved } }
   }'
@@ -222,8 +225,8 @@ instead.
 - **Opening a PR** (`gh pr create`) is the normal end of a task that produced a diff.
   If the branch already has an open PR, the push updates it — do not open a second.
 - **After opening or updating a PR**, run the [Copilot review loop](#copilot-review-loop):
-  wait, address valid findings, resolve every thread, and repeat until Copilot leaves
-  no comments.
+  wait, address valid findings, resolve every thread, and repeat until Copilot's review
+  of the latest commit raises nothing new and no thread is left unresolved.
 - **Merging** is a human action. No agent merges, ever.
 - **Force-push, rebase, reset, and history rewrites** are never permitted, with or
   without a request. If one is genuinely needed, a human does it outside an agent
