@@ -51,7 +51,58 @@ Four hard limits, and they are absolute:
    past a failing hook. A hook that blocks the commit is telling you something.
 
 Report the PR link when the work is done. For a task that produced a diff, that link
-is what "finished" means.
+— on a PR that has cleared the [Copilot review loop](#copilot-review-loop) — is what
+"finished" means.
+
+### Copilot review loop
+
+This repository has automatic GitHub Copilot code review enabled. Every PR gets a
+Copilot review without being asked, and **unresolved review threads block merging**.
+Opening a PR is therefore the start of the review loop, not the end of the task:
+
+1. **Submit** the PR, or push new commits to the existing PR branch.
+2. **Wait 2–3 minutes**, then check the PR for Copilot review comments. If no Copilot
+   review has landed on the latest commit yet, keep waiting and re-check before
+   concluding there is nothing to address.
+3. **Evaluate every finding** on its merits. Do not apply a suggestion blindly, and do
+   not dismiss one without checking it against the code.
+   - **Valid finding** — fix it, commit, and push to the same branch (new commit only;
+     the no-amend, no-rebase, no-force-push limits above still apply).
+   - **Invalid or inapplicable finding** — reply on the thread with a short reason
+     (what you checked and why no change is needed).
+4. **Resolve every thread** once it is handled, valid or not. A thread left open blocks
+   the merge even when the finding was wrong.
+5. **Repeat from step 1** — each push triggers a fresh Copilot review that can raise
+   new findings. The loop ends when Copilot's review of the latest commit leaves no
+   comments and no threads on the PR remain unresolved.
+
+List and resolve review threads with `gh api graphql`:
+
+```bash
+# List review threads with their resolution state
+gh api graphql -F owner='{owner}' -F repo='{repo}' -F pr=<number> -f query='
+  query($owner: String!, $repo: String!, $pr: Int!) {
+    repository(owner: $owner, name: $repo) {
+      pullRequest(number: $pr) {
+        reviewThreads(first: 100) {
+          nodes {
+            id
+            isResolved
+            comments(first: 1) { nodes { author { login } path line body } }
+          }
+        }
+      }
+    }
+  }'
+
+# Resolve one thread by its id
+gh api graphql -f threadId=<thread-id> -f query='
+  mutation($threadId: ID!) {
+    resolveReviewThread(input: { threadId: $threadId }) { thread { isResolved } }
+  }'
+```
+
+Merging stays a human action: the loop gets the PR to a mergeable state, and stops there.
 
 ### Agent-generated output goes in `.agent-output/`
 
@@ -168,6 +219,9 @@ instead.
   No approval step.
 - **Opening a PR** (`gh pr create`) is the normal end of a task that produced a diff.
   If the branch already has an open PR, the push updates it — do not open a second.
+- **After opening or updating a PR**, run the [Copilot review loop](#copilot-review-loop):
+  wait, address valid findings, resolve every thread, and repeat until Copilot leaves
+  no comments.
 - **Merging** is a human action. No agent merges, ever.
 - **Force-push, rebase, reset, and history rewrites** are never permitted, with or
   without a request. If one is genuinely needed, a human does it outside an agent
@@ -275,6 +329,8 @@ types; schema version is `"1"`.
 - Do not commit or push from `main` or `master` — branch first, before editing.
 - Do not merge, rebase, reset, cherry-pick, or force-push. Ever.
 - Do not `git add -A` or `git add .` — stage the files the work actually changed.
+- Do not treat a freshly opened PR as finished — run the Copilot review loop and leave
+  no unresolved review threads.
 - Do not write temporary or generated files anywhere other than `.agent-output/`.
 - Do not edit `site/` (build output).
 - Do not add features, refactors, or abstractions beyond what the user requests.
