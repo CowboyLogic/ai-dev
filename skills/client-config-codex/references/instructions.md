@@ -19,6 +19,12 @@ Codex, or start a new session, after editing an instruction file or the config k
 
 Empty files are skipped. Codex stops adding files once the size limit is reached.
 
+> [!NOTE]
+> Project trust gates the project `.codex/` layers (config, hooks, rules), not instruction files. On
+> 0.158.0, `codex debug prompt-input` still showed a project `AGENTS.md` (and the global one) with
+> the project's `trust_level` unset, `"untrusted"`, and `"trusted"`. Verify with that command on
+> your build rather than assuming either behavior.
+
 `CODEX_HOME` moves the global scope. `CODEX_HOME=$(pwd)/.codex codex ...` loads that directory's
 `AGENTS.md` as the global file. Check `echo $CODEX_HOME` when the wrong global guidance appears.
 
