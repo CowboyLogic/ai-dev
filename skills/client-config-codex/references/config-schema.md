@@ -104,14 +104,13 @@ Codex ignores these keys in a project `.codex/config.toml` and prints a startup 
 | `model_auto_compact_token_limit` | number | Auto-compaction threshold; unset uses model defaults |
 | `model_catalog_json` | path | Startup model catalog; a profile may override it |
 | `service_tier` | string | Preferred tier; `fast` maps to request value `priority` |
-| `personality` | `none` \| `friendly` \| `pragmatic` | Default communication style; `/personality` overrides |
+| `personality` | `none` \| `friendly` \| `pragmatic` | Deprecated: the `personality` feature is `removed` and the value had no effect on the rendered prompt in 0.158.0. Do not recommend it; only `none` remains meaningful as an opt-out |
 | `oss_provider` | `lmstudio` \| `ollama` | Default local provider for `--oss` |
 
 ```toml
 model = "gpt-6-sol"
 model_reasoning_effort = "medium"
 model_verbosity = "medium"
-personality = "pragmatic"
 ```
 
 `codex debug models` renders the raw model catalog as JSON.
@@ -345,7 +344,9 @@ feature values in `requirements.toml`; conflicting writes are rejected.
 
 > [!NOTE]
 > Docs and CLI disagree on two flags. The docs list `personality` as stable and on; `codex features
-> list` reports it as `removed` (the top-level `personality` key is still documented). The docs call
+> list` reports it as `removed`, and `codex debug prompt-input` rendered the same prompt for
+> `personality` set to `none`, `friendly`, `pragmatic`, or unset (checked on one model). Treat the
+> key as obsolete. The docs call
 > `memories` Experimental; the CLI reports `stable`, default off. Prefer the CLI output.
 
 ## Telemetry and notifications

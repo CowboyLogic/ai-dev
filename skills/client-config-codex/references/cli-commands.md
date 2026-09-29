@@ -212,7 +212,7 @@ final summary.
 ## Slash commands by area
 
 Slash commands come from the docs and were not verifiable from the terminal. Availability varies by
-model, platform, and state. Codex hides `/fast` and `/personality` when the model lacks support.
+model, platform, and state. Codex hides `/fast` when the model lacks support.
 
 ### Session and chat
 
@@ -233,7 +233,6 @@ model, platform, and state. Codex hides `/fast` and `/personality` when the mode
 |---------|---------|
 | `/model` | Choose model and reasoning effort |
 | `/fast` | Toggle the Fast service tier when the model catalog offers one |
-| `/personality` | `friendly`, `pragmatic`, or `none` |
 | `/plan [PROMPT]` | Plan mode; unavailable while Codex is working |
 | `/goal [OBJECTIVE\|edit\|pause\|resume\|clear]` | Persistent task goal, max 4,000 characters |
 | `/memories` | Toggle memory use and generation |

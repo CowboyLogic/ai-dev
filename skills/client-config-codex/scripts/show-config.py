@@ -296,8 +296,8 @@ def show_skills(directory):
         if fm is None:
             print(f"    [{skill_dir.name}]  (could not read SKILL.md)")
             continue
-        desc = (fm.get("description") or "?")[:60]
-        print(f"    [{skill_dir.name}]  name={fm.get('name', '?')}  desc={desc}...")
+        # Descriptions are free-form text and can hold pasted secrets, so only the name is shown.
+        print(f"    [{skill_dir.name}]  name={fm.get('name', '?')}")
 
 
 def show_hooks(path):
@@ -336,6 +336,11 @@ def main():
     section("PROFILES, PROVIDERS, PLUGINS")
     profile_files = sorted(p.name.removesuffix(".config.toml") for p in CODEX_HOME.glob("*.config.toml"))
     print(f"  profile files (--profile): {', '.join(profile_files) or '(none)'}")
+    for name in profile_files:
+        profile_path = CODEX_HOME / f"{name}.config.toml"
+        print(f"\n  -- profile {name} ({profile_path})")
+        show_config(profile_path, as_json)
+
     print(f"  model_providers: {', '.join(config.get('model_providers', {})) or '(none)'}")
     plugins = config.get("plugins", {})
     enabled = [n for n, v in plugins.items() if isinstance(v, dict) and v.get("enabled")]
