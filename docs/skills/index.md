@@ -130,6 +130,17 @@ precedence, and per-surface support.
 
 ## AI Platform Skills
 
+### Claude Code Agent Creator
+
+Create and troubleshoot custom subagents for Claude Code. Covers every frontmatter field with
+allowed values and version requirements, the conditions under which Claude Code silently skips
+a file or ignores a field, tool and permission behavior, hooks, MCP servers, memory, and
+worktree isolation. Includes a validator script and symptom-to-cause troubleshooting tables.
+
+[Skill Overview](agent-creator-claudecode.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-claudecode)
+
+---
+
 ### OpenCode Agent Creator
 
 Create custom agent definitions for the OpenCode CLI, in native V2 format by default with V1

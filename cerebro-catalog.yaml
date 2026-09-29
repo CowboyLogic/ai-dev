@@ -50,6 +50,12 @@ artifacts:
     type: skill
     source: skills/copilot-instruction-creator
     tags: [skills, copilot, instructions]
+  - id: agent-creator-claudecode
+    name: Claude Code Agent Creator
+    description: Create and troubleshoot custom subagents for Claude Code, with a complete frontmatter reference and validator
+    type: skill
+    source: skills/agent-creator-claudecode
+    tags: [skills, claude-code, agents]
   - id: agent-creator-opencode
     name: OpenCode Agent Creator
     description: Create custom agent definitions for the OpenCode CLI (V2 native, V1 supported)
