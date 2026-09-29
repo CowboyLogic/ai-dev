@@ -6,14 +6,15 @@ for Claude to use when refreshing the skill's reference files.
 Usage:
     python update-references.py [--ref references/mcp.md] [--all]
 
-Fetches upstream docs -> saves to _fetched/ staging directory.
-Claude then reads _fetched/ content and updates references/ files accordingly.
+Fetches upstream docs -> saves to a staging directory: <repo>/.agent-output/client-config-codex/_fetched/
+when the skill is in a git checkout, otherwise _fetched/ inside the skill folder.
+Claude then reads the staged content and updates references/ files accordingly.
 
 Workflow (for Claude):
     1. Run this script -> content saved to _fetched/
     2. For each fetched file, compare against the current reference file
     3. Update reference files to reflect new/changed/removed info
-    4. Remove _fetched/ when done
+    4. Remove the staging directory when done
 """
 import json
 import sys
@@ -24,7 +25,18 @@ from datetime import datetime, timezone
 
 SKILL_ROOT = Path(__file__).parent.parent
 SOURCES_FILE = SKILL_ROOT / "sources.json"
-FETCHED_DIR = SKILL_ROOT / "_fetched"
+
+
+def staging_dir() -> Path:
+    """Stage downloads under the repo-root .agent-output/ (gitignored scratch space) when this
+    skill sits in a git checkout; otherwise fall back to _fetched/ inside the skill folder."""
+    for parent in SKILL_ROOT.parents:
+        if (parent / ".git").exists():
+            return parent / ".agent-output" / SKILL_ROOT.name / "_fetched"
+    return SKILL_ROOT / "_fetched"
+
+
+FETCHED_DIR = staging_dir()
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; codex-skill-updater/1.0)",
@@ -45,11 +57,13 @@ def fetch_url(url: str) -> str:
         raise RuntimeError(f"HTTP {e.code} fetching {url}: {e.reason}")
     except urllib.error.URLError as e:
         raise RuntimeError(f"Network error fetching {url}: {e.reason}")
+    except OSError as e:  # includes TimeoutError raised while reading the response body
+        raise RuntimeError(f"Network error fetching {url}: {e}")
 
 def save_fetched(ref_path: str, contents: list, urls: list) -> Path:
     name = Path(ref_path).name
     out_path = FETCHED_DIR / name
-    FETCHED_DIR.mkdir(exist_ok=True)
+    FETCHED_DIR.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as f:
         f.write(f"<!-- FETCHED: {datetime.now(timezone.utc).isoformat()} -->\n\n")
         for url, content in zip(urls, contents):
@@ -112,7 +126,7 @@ def main():
         if all_ok:
             out_path = save_fetched(ref_path, fetched_contents, fetched_urls)
             total = sum(len(c) for c in fetched_contents)
-            print(f"  Saved {total:,} chars -> {out_path.relative_to(SKILL_ROOT)}")
+            print(f"  Saved {total:,} chars -> {out_path}")
             results.append({"ref": ref_path, "fetched": str(out_path), "ok": True})
         else:
             stale_path = FETCHED_DIR / Path(ref_path).name
@@ -137,10 +151,10 @@ def main():
         print(f"  {failed} incomplete — staged files from this run were discarded")
     if success and not failed:
         print(f"\nNext steps for Claude:")
-        print(f"  1. Read each file in _fetched/")
+        print(f"  1. Read each file in {FETCHED_DIR}")
         print(f"  2. Read the corresponding file in references/")
         print(f"  3. Update references/ to reflect documentation changes")
-        print(f"  4. Remove _fetched/ when complete")
+        print(f"  4. Remove {FETCHED_DIR} when complete")
         print(f"\nFetched files:")
         for r in results:
             if r.get("fetched"):
