@@ -5,8 +5,9 @@ Usage:
     validate-agent.py <file-or-directory> [...] [--strict]
 
 Checks that each file parses as TOML, has non-blank `name`, `description`, and
-`developer_instructions`, uses known snake_case keys, has valid enum values, and that names are
-unique across the scanned set. Uses only the standard library (Python 3.11+).
+`developer_instructions`, uses known snake_case keys, and that names are unique across the
+scanned set. Directories are scanned recursively, as Codex does. Warns on keys Codex accepts
+but ignores in a role file. Uses only the standard library (Python 3.11+).
 Exit status is 1 when any error is found (or any warning with --strict).
 
 Field list and load rules verified September 2026 by running `codex exec` against test files
@@ -27,16 +28,26 @@ except ImportError:  # pragma: no cover
     sys.exit("Python 3.11+ is required (tomllib)")
 
 REQUIRED = ("name", "description", "developer_instructions")
-# Keys documented for agent files, plus common config.toml keys that layers may carry.
-KNOWN_KEYS = set(REQUIRED) | {
-    "nickname_candidates", "model", "model_reasoning_effort", "sandbox_mode",
-    "mcp_servers", "skills", "approval_policy", "model_verbosity", "web_search",
-    "personality", "model_provider", "model_reasoning_summary", "features",
-    "shell_environment_policy", "sandbox_workspace_write", "tools",
+# Keys Codex applies from a role file (codex-rs/core/src/agent/role.rs, rust-v0.158.0).
+APPLIED_KEYS = set(REQUIRED) | {
+    "nickname_candidates", "model", "model_reasoning_effort", "model_reasoning_summary",
+    "model_verbosity", "personality", "service_tier", "features", "skills",
 }
+# Valid config.toml keys that parse in a role file but are dropped when the role is applied:
+# the child inherits the parent's sandbox, approvals, and MCP servers.
+IGNORED_KEYS = {
+    "sandbox_mode": "the child uses the parent session's sandbox; start the parent with --sandbox",
+    "approval_policy": "the child uses the parent session's approval policy",
+    "mcp_servers": "the child uses the parent's MCP servers; configure them in the parent config",
+    "web_search": "not applied to roles; set it on the parent",
+    "model_provider": "not applied to roles",
+    "shell_environment_policy": "not applied to roles",
+    "sandbox_workspace_write": "not applied to roles",
+    "tools": None,  # handled below: a table is valid config, a list is a foreign field
+}
+KNOWN_KEYS = APPLIED_KEYS | set(IGNORED_KEYS)
+DISABLE_ONLY_FEATURES = {"shell_tool", "apps", "plugins", "memory_tool", "request_permissions_tool"}
 SANDBOX_MODES = {"read-only", "workspace-write", "danger-full-access"}
-EFFORTS = {"low", "medium", "high", "xhigh", "max", "ultra"}
-APPROVAL_POLICIES = {"on-request", "never"}
 # Fields from other agent tools that Codex does not have.
 FOREIGN = {
     "tools": "Codex has no tool allowlist; use sandbox_mode and mcp_servers.enabled_tools",
@@ -113,6 +124,9 @@ def validate_file(path: Path, names: dict[str, Path], res: Result) -> None:
         if key == "tools" and not isinstance(data[key], dict):
             res.error(path, f"`tools`: {FOREIGN['tools']}")
             continue
+        if IGNORED_KEYS.get(key):
+            res.warn(path, f"`{key}` is ignored in a role file: {IGNORED_KEYS[key]}")
+            continue
         if key in KNOWN_KEYS:
             continue
         if key in FOREIGN:
@@ -123,34 +137,17 @@ def validate_file(path: Path, names: dict[str, Path], res: Result) -> None:
     sandbox = data.get("sandbox_mode")
     if sandbox is not None and sandbox not in SANDBOX_MODES:
         res.error(path, f"sandbox_mode `{sandbox}` not one of {sorted(SANDBOX_MODES)}")
-    if sandbox == "danger-full-access":
-        res.warn(path, "sandbox_mode is danger-full-access; avoid in shared agent files")
 
-    effort = data.get("model_reasoning_effort")
-    if effort is not None and effort not in EFFORTS:
-        res.warn(path, f"model_reasoning_effort `{effort}` not one of {sorted(EFFORTS)} "
-                       "(Codex does not reject it at load; the model may)")
-
-    approval = data.get("approval_policy")
-    if isinstance(approval, str) and approval not in APPROVAL_POLICIES:
-        res.warn(path, f"approval_policy `{approval}` is not one of {sorted(APPROVAL_POLICIES)}")
+    features = data.get("features")
+    if isinstance(features, dict):
+        for fname, on in features.items():
+            if on is True or fname not in DISABLE_ONLY_FEATURES:
+                res.warn(path, f"features.{fname} = {str(on).lower()} has no effect in a role file; "
+                               f"roles can only disable {sorted(DISABLE_ONLY_FEATURES)}")
 
     nick = data.get("nickname_candidates")
     if nick is not None and not (isinstance(nick, list) and all(isinstance(n, str) for n in nick)):
         res.error(path, "nickname_candidates must be an array of strings")
-
-    servers = data.get("mcp_servers")
-    if servers is not None and not isinstance(servers, dict):
-        res.error(path, "mcp_servers must be a table of [mcp_servers.<id>] tables")
-    elif isinstance(servers, dict):
-        for sid, cfg in servers.items():
-            if not isinstance(cfg, dict):
-                res.error(path, f"mcp_servers.{sid} must be a table")
-                continue
-            for k, v in cfg.items():
-                if k.lower().endswith(("token", "secret", "password")) and isinstance(v, str):
-                    res.error(path, f"mcp_servers.{sid}.{k} looks like a hardcoded secret; "
-                                    "use bearer_token_env_var or another env-based field")
 
     body = data.get("developer_instructions")
     if isinstance(body, str) and 0 < len(body.strip()) < 40:
@@ -159,7 +156,7 @@ def validate_file(path: Path, names: dict[str, Path], res: Result) -> None:
 
 def collect(target: Path) -> list[Path]:
     if target.is_dir():
-        return sorted(target.glob("*.toml"))
+        return sorted(target.rglob("*.toml"))
     return [target]
 
 

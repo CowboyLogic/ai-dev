@@ -18,35 +18,28 @@ One agent per `.toml` file in `.codex/agents/` (project, trusted projects only) 
 | `description` | string | Human-facing guidance on when Codex should use it |
 | `developer_instructions` | string | Core behavior. Blank is rejected |
 
-### Optional
+### What Codex applies from a role file
 
-The docs describe agent files as accepting other supported `config.toml` keys. Those the
-docs name explicitly:
+Verified in `codex-rs/core/src/agent/role.rs` at tag `rust-v0.158.0`, which describes the
+mechanism as "bounded agent-role overrides": roles "may customize the child or reduce its
+capabilities, but never replace the parent session's authority."
 
-| Field | Type | Notes |
+| Field | Type | Effect |
 |---|---|---|
-| `nickname_candidates` | array of strings | Display nicknames for spawned instances of the role |
-| `model` | string | Overrides the parent's model |
-| `model_reasoning_effort` | string | `low`, `medium`, `high`, `xhigh`, `max`, `ultra`. Availability depends on the model. An unrecognized value is not rejected at load |
-| `sandbox_mode` | string | `read-only`, `workspace-write`, `danger-full-access`. Any other value is rejected at load |
-| `mcp_servers` | table | `[mcp_servers.<id>]` tables scoped to the agent layer |
-| `skills.config` | table | Per-skill enablement overrides |
+| `developer_instructions` | string | Applied (required for standalone files) |
+| `model` | string | Applied; locked, and outranks spawn-time and `[agents]` values |
+| `model_reasoning_effort` | string | Applied and locked. Any non-empty string parses; the model decides what it accepts |
+| `model_reasoning_summary`, `model_verbosity`, `personality`, `service_tier` | typed enums / string | Applied |
+| `features.<name> = false` | boolean | Applied only for `shell_tool`, `apps`, `plugins`, `memory_tool`, `request_permissions_tool` |
+| `skills.config` (`enabled = false`), `skills.bundled.enabled = false`, `skills.include_instructions = false` | tables | Applied as disables only. Cannot enable skills |
+| `nickname_candidates` | array of strings | Display nicknames for spawned instances |
 
-Other `config.toml` keys (for example `approval_policy`, `model_verbosity`, `web_search`) can
-in principle be set in a layer, but each behaves per its own documentation and parent
-runtime overrides apply. Test any you add.
+### Accepted but ignored
 
-### `mcp_servers.<id>` fields
-
-| Field | Notes |
-|---|---|
-| `url` | Streamable HTTP server endpoint |
-| `command`, `args` | Local stdio server |
-| `enabled` | Turn a server off without deleting it |
-| `enabled_tools` / `disabled_tools` | Allowlist / denylist of tool names |
-| `default_tools_approval_mode` | Approval behavior for the server's tools |
-| `bearer_token_env_var` | Name of an environment variable holding the token |
-| `startup_timeout_sec` | How long to wait for the server to start |
+These parse (an invalid `sandbox_mode` still yields a load warning) and then have **no
+effect** on the child, which inherits the parent's live sandbox, approval, and MCP
+configuration: `sandbox_mode`, `approval_policy`, `mcp_servers`, `web_search`, and any
+`features.<name> = true`. Configure them on the parent session.
 
 ## `[agents]` table in `config.toml`
 
@@ -59,9 +52,10 @@ runtime overrides apply. Test any you add.
 | `agents.default_subagent_reasoning_effort` | string | Default effort for spawned agents |
 | `agents.interrupt_message` | boolean | Record a message in agent context when a turn is interrupted. Default `true` |
 
-`agents.max_depth` and `agents.job_max_runtime_seconds` are absent from the public
-reference but are accepted by codex-cli 0.158.0 (integer values load without error, as does
-`agents.max_threads`). Their exact semantics are undocumented.
+`agents.max_depth` limits nesting for V1 agent threads and is ignored by V2.
+`agents.job_max_runtime_seconds` is a removed setting kept as a no-op for compatibility
+(`config_toml.rs`: "Removed agent-job setting retained as a no-op"). Both are absent from the
+public reference and accepted without error in 0.158.0, as is `agents.max_threads`.
 
 Any other key under `[agents]` is parsed as a role table. An unknown scalar such as
 `max_thread = 3` fails config loading with
@@ -84,7 +78,9 @@ nickname_candidates = ["Atlas", "Delta"]
 | `agents.<name>.config_file` | Path to the TOML layer for the role. Must point to an existing file, or Codex reports an error |
 | `agents.<name>.nickname_candidates` | Optional display names |
 
-The layer file referenced by `config_file` still needs `developer_instructions`.
+A layer file referenced by `config_file` does not have to define `developer_instructions`;
+that requirement applies only to standalone files discovered in an `agents/` directory. The
+same bounded-override rules apply to it.
 
 ## Built-in agents
 
@@ -98,17 +94,21 @@ Define a custom agent with the same `name` to override one.
 
 ## Model and effort resolution
 
-1. Explicit value at spawn time
-2. `[agents]` `default_subagent_model` / `default_subagent_reasoning_effort`
-3. The agent file's value
-4. The model's built-in default when only `model` is set
+1. Explicit value at spawn time, then `[agents]` `default_subagent_model` /
+   `default_subagent_reasoning_effort`, form the starting configuration.
+2. The role file's `model` and `model_reasoning_effort` are applied **after** that and win.
+   The spawn UI tells the model these settings "cannot be changed".
+
+A role that sets neither field takes the spawn-time value, then the `[agents]` default, then
+the parent's.
 
 ## Sandbox and approval inheritance
 
-- Spawned agents inherit the parent's sandbox policy and permission mode.
-- `--yolo` and live `/permissions` changes apply to child agents even when the file says
-  otherwise.
-- `approval_policy` values: `on-request`, `never`, or a `{ granular = { ... } }` table.
+- Spawned agents copy the parent's live sandbox policy, approval mode, and MCP servers. A
+  role file cannot change them.
+- `--yolo` and live `/permissions` changes on the parent apply to child agents.
+- `approval_policy` values on the parent: `on-request` (alias `on-failure`), `untrusted`,
+  `never`, or a `{ granular = { ... } }` table.
 - Approval prompts from inactive threads surface in the interactive CLI. Press `o` to inspect.
 
 ## How agents get invoked

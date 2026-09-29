@@ -1,6 +1,6 @@
 ---
 name: agent-creator-codex
-description: Guide for creating custom subagents for OpenAI Codex (standalone TOML files in .codex/agents/ or ~/.codex/agents/, each with name, description, and developer_instructions). Use this skill whenever a user wants to build, configure, review, or modify a Codex agent, choose fields (model, model_reasoning_effort, sandbox_mode, mcp_servers, skills.config, nickname_candidates), tune the [agents] table in config.toml (concurrency, default subagent model), or troubleshoot a Codex agent that is not found, never spawned, on the wrong model, or blocked by sandbox and approvals. ALWAYS load this skill before writing or debugging Codex agent files.
+description: Guide for creating custom subagents for OpenAI Codex (standalone TOML files in .codex/agents/ or ~/.codex/agents/, each with name, description, and developer_instructions). Use this skill whenever a user wants to build, configure, review, or modify a Codex agent, choose fields (model, model_reasoning_effort, developer_instructions, and the other keys a role file can actually set), tune the [agents] table in config.toml (concurrency, default subagent model), or troubleshoot a Codex agent that is not found, never spawned, on the wrong model, or unexpectedly writing files or missing MCP servers. ALWAYS load this skill before writing or debugging Codex agent files.
 license: MIT
 ---
 
@@ -12,6 +12,11 @@ Copilot agents there is no Markdown body: the system prompt is the `developer_in
 string inside the TOML.
 
 > [!IMPORTANT]
+> A role file customizes the child; it never replaces the parent session's authority.
+> Codex applies only a **bounded set** of keys from it (see [What a Role File Can Set](#what-a-role-file-can-set)).
+> `sandbox_mode`, `approval_policy`, and `mcp_servers` parse without error but are
+> **ignored**. The child runs under the parent session's sandbox, approvals, and MCP servers.
+>
 > Codex only delegates when asked. It never spawns a subagent on its own initiative unless
 > the prompt, an applicable `AGENTS.md`, or a skill requests delegation. An agent file that
 > loads correctly can still sit unused. See [Invocation](#invocation).
@@ -25,7 +30,7 @@ Official docs: <https://developers.openai.com/codex/subagents> (redirects to
 ## When to Use This Skill
 
 - Creating a new Codex agent file
-- Choosing or fixing fields, especially `model`, `sandbox_mode`, and `mcp_servers`
+- Choosing or fixing fields, and knowing which ones Codex actually applies
 - Setting spawn limits and defaults in the `[agents]` table of `config.toml`
 - Diagnosing an agent that is not found, never delegated to, or running with the wrong model
   or permissions
@@ -55,14 +60,10 @@ name = "pr_explorer"
 description = "Read-only codebase explorer for evidence gathering. Use before proposing changes."
 model = "gpt-6-luna"
 model_reasoning_effort = "high"
-sandbox_mode = "read-only"
 developer_instructions = """
 Stay in exploration mode. Trace real execution paths, cite files and symbols,
-and avoid proposing fixes. Prefer fast search over broad scans.
+and avoid proposing fixes. You never edit files. Prefer fast search over broad scans.
 """
-
-[mcp_servers.openaiDeveloperDocs]
-url = "https://developers.openai.com/mcp"
 ```
 
 Required fields. A file that omits or blanks any of them is **ignored with a warning**, not
@@ -74,19 +75,37 @@ rejected loudly (see [Load Failures](#load-failures)):
 | `description` | Guidance shown when Codex chooses an agent: what it does and when to use it |
 | `developer_instructions` | The agent's system-prompt-level instructions. Must not be blank |
 
-Everything else is optional and is any other `config.toml` key applied as a layer over the
-parent session. Load `references/config-reference.md` for the full field list, allowed
-values, and the `[agents]` table.
+Everything else is optional. Load `references/config-reference.md` for the full field list
+and the `[agents]` table.
 
 Rules that avoid load failures:
 
 1. Valid TOML. Use `"""` multi-line strings for `developer_instructions`.
-2. Keep `name` unique across project and personal scope. Use `snake_case` or `kebab-case`
+2. Keep `name` unique across project and personal scope (files are discovered recursively). Use `snake_case` or `kebab-case`
    consistently and match the filename to it (`pr_explorer.toml`).
-3. Top-level keys go **before** any `[table]` header. A key placed after `[mcp_servers.x]`
+3. Top-level keys go **before** any `[table]` header. A key placed after a `[table]` header
    belongs to that table, not to the agent.
 4. Field names are `snake_case`, and unknown keys make the whole file invalid. Do not carry
    over `disallowedTools`, `tools`, or `permissionMode`; Codex has no such keys.
+
+---
+
+## What a Role File Can Set
+
+Verified in the Codex source at tag `rust-v0.158.0` (`codex-rs/core/src/agent/role.rs`,
+described there as "bounded agent-role overrides"):
+
+| Key | Effect on the spawned agent |
+|---|---|
+| `developer_instructions` | Replaces the role's instructions |
+| `model`, `model_reasoning_effort` | Applied, and locked: the spawn UI tells the model these "cannot be changed" |
+| `model_reasoning_summary`, `model_verbosity`, `personality`, `service_tier` | Applied |
+| `features.<name> = false` | Disables only `shell_tool`, `apps`, `plugins`, `memory_tool`, `request_permissions_tool` |
+| `skills.config` entries with `enabled = false`, `skills.bundled.enabled = false`, `skills.include_instructions = false` | Disables inherited skills. Cannot enable anything |
+
+Every other key, including `sandbox_mode`, `approval_policy`, `mcp_servers`, `web_search`,
+and `features.<name> = true`, is dropped. The file still loads, so nothing warns you.
+Configure sandbox, approvals, and MCP servers on the **parent** session or its config.
 
 ---
 
@@ -115,53 +134,36 @@ model = "gpt-6-luna"
 model_reasoning_effort = "high"   # low | medium | high | xhigh | max | ultra (model dependent)
 ```
 
-Resolution order, first match wins:
-
-1. An explicit value given at spawn time
-2. `agents.default_subagent_model` / `agents.default_subagent_reasoning_effort` in `config.toml`
-3. The value in the agent file
-4. The model's built-in default (when only `model` is set)
-
-Note that step 2 outranks the agent file. A `default_subagent_model` in `config.toml`
-overrides `model` in every agent file that does not get an explicit spawn value. If an agent
-runs on the "wrong" model, check `[agents]` before the agent file.
+Precedence: the role file's `model` and `model_reasoning_effort` are applied **after** the
+spawn-time and `[agents]` values, so they win over an explicit spawn value and over
+`agents.default_subagent_model` / `agents.default_subagent_reasoning_effort`. Those defaults
+only apply to roles that do not set the field. If an agent runs on an unexpected model, the
+usual causes are a different role being spawned, the role file failing to load (check the
+startup warnings), or the model or effort being rejected by the account.
 
 Valid model names and effort levels depend on the account and Codex build. Run
 `codex debug models` to list the catalog.
 
 ---
 
-## Sandbox and Approvals
+## Sandbox, Approvals, and MCP
 
-```toml
-sandbox_mode = "read-only"   # read-only | workspace-write | danger-full-access
-```
+A role file **cannot** set any of these. Codex copies the parent's live runtime policy onto
+the child, so:
 
-- Subagents **inherit the parent's sandbox policy and approval mode**.
-- Runtime overrides win over the file. `--yolo` and a live `/permissions` change apply to
-  spawned agents even when the agent file sets a stricter `sandbox_mode`.
-- Do not rely on `sandbox_mode = "read-only"` as a hard guarantee for a role. It is a default
-  for that layer, not a lock. If a role must never write, also say so in
-  `developer_instructions` and run the parent session with a matching policy.
+- The child inherits the parent's sandbox policy, approval mode, and MCP servers.
+- `--yolo` and `/permissions` changes on the parent apply to spawned agents.
+- `sandbox_mode` in a role file parses (an invalid value still produces a load warning) and
+  then has no effect. A "read-only" reviewer is read-only only if the parent session is.
+- MCP servers a role needs must be configured in the parent's `config.toml`. List them as a
+  prerequisite in the agent's documentation, and name them in `developer_instructions`.
+- To keep a role from writing, say so in `developer_instructions` and start the parent
+  read-only (`codex --sandbox read-only`). To keep it from running commands at all, set
+  `features.shell_tool = false` in the role file.
 - In interactive CLI sessions, approval requests from inactive agent threads can surface in
   the main view. Press `o` to inspect the request before approving.
 
-Apply least privilege: start `read-only`, and use `workspace-write` only for roles that edit.
-Avoid `danger-full-access` in any shared agent file.
-
----
-
-## MCP Servers and Skills
-
-```toml
-[mcp_servers.docs]
-url = "https://example.com/mcp"
-enabled_tools = ["search", "fetch"]   # optional allowlist
-```
-
-Servers defined in an agent file are scoped to that agent's layer. Use `enabled_tools` /
-`disabled_tools` to narrow a server. Do not hardcode tokens; use `bearer_token_env_var` or
-another environment-based field. `skills.config` applies per-skill enablement overrides.
+Avoid `danger-full-access` on any parent session that spawns agents you did not write.
 
 ---
 
@@ -188,8 +190,9 @@ default_subagent_reasoning_effort = "medium"
 ```
 
 `agents.max_threads` is the legacy alias for `max_concurrent_threads_per_session`.
-`agents.max_depth` and `agents.job_max_runtime_seconds` are accepted by Codex 0.158.0 but
-absent from the public config reference, so their exact semantics are undocumented.
+`agents.max_depth` limits nesting for V1 agent threads and is ignored by V2.
+`agents.job_max_runtime_seconds` is a removed setting kept as a no-op. Neither is in the
+public config reference; both are accepted without error in 0.158.0.
 
 > [!WARNING]
 > Under `[agents]`, any key Codex does not know is parsed as a role table. A typo such as
@@ -221,8 +224,8 @@ writer. Load `references/agent-examples.md` for complete files.
 
 1. One sentence for the role, and what it does **not** do.
 2. Scope: project (`.codex/agents/`, committed for the team) or personal (`~/.codex/agents/`).
-3. Sandbox first (`read-only` unless it must edit), then model and effort. Cheaper model and
-   lower effort for read-heavy exploration; stronger for design and review.
+3. Model and effort (cheaper and lower for read-heavy exploration; stronger for design and
+   review), then what the **parent** session must provide: sandbox policy and MCP servers.
 
 ### Step 2: Write the File
 
@@ -247,7 +250,7 @@ and match the filename.
 1. Start a new session so the file is picked up. Load warnings print at session start; a
    non-interactive `codex exec "hi"` shows them without spending a real task.
 2. Ask for the agent by name: "Use `pr_explorer` to trace how login is handled."
-3. Confirm the model, effort, and sandbox it actually got, using the session's agent view.
+3. Confirm the model and effort it actually got, using the session's agent view.
 4. Give it a task it should refuse or cannot complete and confirm the restrictions hold.
 
 ---
@@ -285,20 +288,22 @@ Load `references/troubleshooting.md` for the full symptom-to-cause table. Most c
 | Agent missing, with a `Ignoring malformed agent role definition` warning at start | Bad TOML, unknown key, or missing or blank `name`, `description`, or `developer_instructions` |
 | Project agent missing, no warning | The project is not trusted; project-scope agents load only for trusted projects |
 | Agent never spawned | Nothing asked for delegation, or `description` is vague. Name the agent in the request or `AGENTS.md` |
-| Wrong model or effort | `agents.default_subagent_*` or an explicit spawn value outranks the file |
-| Agent wrote files despite `read-only` | Parent runtime policy (`--yolo`, `/permissions`) overrode the layer |
-| MCP server missing | Key placed after a `[table]` header, server disabled, or tool not in `enabled_tools` |
+| Wrong model or effort | A different role was spawned, the role file failed to load, or the account rejected the model. The role file outranks spawn values and `[agents]` defaults |
+| Agent wrote files despite `sandbox_mode = "read-only"` | Role files cannot set the sandbox; the child uses the parent's policy. Start the parent read-only |
+| MCP server missing | `mcp_servers` in a role file is ignored. Configure the server in the parent's `config.toml` |
 
 ---
 
 ## Security Considerations
 
-- **Least privilege.** Default to `sandbox_mode = "read-only"`.
-- **A file setting is not a lock.** Parent runtime overrides win, so enforce hard limits at
-  the session level.
-- **Project agents run with the user's authority.** Review `mcp_servers` and any command in an
-  agent file you did not write before trusting the repository.
-- **Secrets.** Use environment-variable fields, never literal tokens, in `mcp_servers`.
+- **Least privilege lives on the parent.** Start the parent session read-only unless the task edits. A role file cannot restrict or widen it.
+- **Role files cannot widen authority.** They can only add instructions, pick a model, and
+  disable features. Sandbox, approvals, and MCP servers always come from the parent.
+- **Project agents are instructions the repository author controls.** They load only in
+  trusted projects. Read `developer_instructions` in any agent file you did not write before
+  trusting the repository, since the parent's authority is what the agent will use.
+- **Secrets.** Keep MCP tokens in the parent config as environment-variable references, never
+  in agent files or their instructions.
 
 ---
 
