@@ -251,7 +251,8 @@ and match the filename.
    non-interactive `codex exec "hi"` shows them without spending a real task.
 2. Ask for the agent by name: "Use `pr_explorer` to trace how login is handled."
 3. Confirm the model and effort it actually got, using the session's agent view.
-4. Give it a task it should refuse or cannot complete and confirm the restrictions hold.
+4. Give it a task it should refuse and confirm both the parent's sandbox and the role's
+   instructions hold.
 
 ---
 
@@ -296,7 +297,7 @@ Load `references/troubleshooting.md` for the full symptom-to-cause table. Most c
 
 ## Security Considerations
 
-- **Least privilege lives on the parent.** Start the parent session read-only unless the task edits. A role file cannot restrict or widen it.
+- **Least privilege lives on the parent.** Start the parent session read-only unless the task edits. A role file cannot restrict or widen the sandbox.
 - **Role files cannot widen authority.** They can only add instructions, pick a model, and
   disable features. Sandbox, approvals, and MCP servers always come from the parent.
 - **Project agents are instructions the repository author controls.** They load only in

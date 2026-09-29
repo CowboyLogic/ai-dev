@@ -53,7 +53,7 @@ It cannot know which models your account can use; run `codex debug models`.
 
 | Use | When |
 |---|---|
-| **Custom agent** | Isolated context, a different model, or a narrower sandbox for a side task |
+| **Custom agent** | Isolated context, a different model, custom instructions, or fewer capabilities (such as no shell tool) for a side task. It does not change the sandbox |
 | **`AGENTS.md`** | Instructions every session in a repository should follow |
 | **Skill** | A reusable procedure loaded on demand |
 | **Built-in agent** | Parallel work that needs no custom behavior |

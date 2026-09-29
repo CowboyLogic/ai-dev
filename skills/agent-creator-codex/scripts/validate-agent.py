@@ -50,10 +50,11 @@ DISABLE_ONLY_FEATURES = {"shell_tool", "apps", "plugins", "memory_tool", "reques
 SANDBOX_MODES = {"read-only", "workspace-write", "danger-full-access"}
 # Fields from other agent tools that Codex does not have.
 FOREIGN = {
-    "tools": "Codex has no tool allowlist; use sandbox_mode and mcp_servers.enabled_tools",
+    "tools": "Codex has no tool allowlist; restrict tools on the parent session (--sandbox, MCP config), "
+             "or disable features in the role with [features] shell_tool = false",
     "disallowedTools": "Claude Code field; Codex has no equivalent",
-    "permissionMode": "Claude Code field; use sandbox_mode",
-    "permission": "OpenCode field; use sandbox_mode",
+    "permissionMode": "Claude Code field; set the sandbox on the parent session (--sandbox)",
+    "permission": "OpenCode field; set the sandbox on the parent session (--sandbox)",
     "mode": "OpenCode field",
     "temperature": "OpenCode field",
     "tools_list": "not a Codex field",

@@ -17,7 +17,7 @@ in the project to see them without spending a real task.
 | `agent role 'x' must define a description` | `description` missing | Add it |
 | `must define 'developer_instructions'` or `cannot be blank` | Missing, empty, or whitespace-only | Add real instructions |
 | `unknown field 'key'` | A key Codex does not recognize, often a camelCase key or a Claude Code / Copilot field | Rename to the `snake_case` Codex key or delete it |
-| `data did not match any variant of untagged enum WebSearchToolConfigInput` | `tools = [...]` written as a list. `tools` is a table in Codex, and there is no tool allowlist | Delete it; use `sandbox_mode` and `mcp_servers.<id>.enabled_tools` |
+| `data did not match any variant of untagged enum WebSearchToolConfigInput` | `tools = [...]` written as a list. `tools` is a table in Codex, and there is no tool allowlist | Delete it. To restrict what the agent can do, set the sandbox on the parent session (`codex --sandbox read-only`) and configure MCP servers and their `enabled_tools` in the parent's `config.toml`; a role file can only disable features such as `features.shell_tool = false` |
 | `unknown variant 'x', expected one of 'read-only', ...` | Invalid `sandbox_mode` | Use `read-only`, `workspace-write`, or `danger-full-access` |
 | `duplicate agent role name 'x' discovered in <dir>` | Two files in one directory share a `name` | Rename one. The duplicate is dropped |
 | `agents.x.config_file must point to an existing file at <path>` | `[agents.x]` path is wrong | Fix the path. It resolves relative to the config file that declares it |
