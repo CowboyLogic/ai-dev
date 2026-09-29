@@ -35,7 +35,23 @@ detailed reference material only when the task needs it.
 
 ---
 
-## Get the skill
+## Install
+
+### Using `npx skills` (recommended — works across all agents)
+
+```bash
+# Install globally for all detected agents
+npx skills add CowboyLogic/ai-dev --skill agent-creator-codex -g
+
+# Install for Codex only
+npx skills add CowboyLogic/ai-dev --skill agent-creator-codex --agent codex -g
+```
+
+### Verify installation
+
+```bash
+npx skills ls -g
+```
 
 The skill, its references, examples, and validator live in the repository:
 [skills/agent-creator-codex](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-codex).

@@ -149,10 +149,13 @@ skill-name/
 ```
 
 `docs/skills/` holds the catalog page (`index.md`) and one lightweight overview page per
-skill (`docs/skills/<skill-name>.md`). An overview page says what the skill does and
-links to the skill folder in the GitHub repo. It **must not** embed code, commands,
-reference-file contents, or any other skill content: it is **not** the authoritative
-source, and anything copied into it goes stale. Point to `skills/<skill-name>/` instead.
+skill (`docs/skills/<skill-name>.md`). An overview page gives a reader enough to decide
+whether to use the skill (what it does, what it covers, where it applies) and how to
+install it, and links to the skill folder in the GitHub repo. Install and verify commands
+belong on the page. It **must not** embed skill content: instruction text, reference-file
+contents, examples, or usage of the skill's scripts. It is **not** the authoritative
+source, and anything copied from the skill goes stale. Point to `skills/<skill-name>/`
+instead.
 
 ---
 
@@ -198,9 +201,9 @@ source, and anything copied into it goes stale. Point to `skills/<skill-name>/` 
 ### Adding a new skill
 
 1. Create `skills/<name>/` at the repo root with at minimum `SKILL.md` (YAML frontmatter required).
-2. Create the lightweight overview page `docs/skills/<name>.md` (what the skill does, plus a
-   link to `skills/<name>/` in the GitHub repo; no embedded code) and add it to the
-   `nav:` tree in `mkdocs.yml`.
+2. Create the lightweight overview page `docs/skills/<name>.md` (what the skill does, how to
+   install it, and a link to `skills/<name>/` in the GitHub repo; no embedded skill content)
+   and add it to the `nav:` tree in `mkdocs.yml`.
 3. Update the `docs/skills/index.md` catalog with a description and GitHub link for the new skill.
 4. Add the skill to `skills/README.md` and `cerebro-catalog.yaml`.
 5. Run `python scripts/validate_artifact_sync.py`.
