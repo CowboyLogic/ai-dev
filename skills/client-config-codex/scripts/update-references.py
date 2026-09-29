@@ -81,7 +81,13 @@ def main():
     with open(SOURCES_FILE) as f:
         sources = json.load(f)
 
-    refs = sources.get("references", {})
+    refs = dict(sources.get("references", {}))
+    if sources.get("index") and "--ref" not in sys.argv:
+        # A full refresh also stages the upstream docs index so new pages can be spotted.
+        refs = {"index/llms-index.md": {
+            "urls": [sources["index"]],
+            "covers": "upstream docs index; compare against sources.json for pages not yet covered",
+        }, **refs}
 
     args = sys.argv[1:]
     target = None
