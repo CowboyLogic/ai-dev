@@ -3,7 +3,14 @@
 Model names below are placeholders. Substitute a model from `codex debug models` that your
 account can use.
 
+> [!IMPORTANT]
+> A role file cannot set the sandbox, approvals, or MCP servers. Those come from the parent
+> session, so each example states its requirement in the prose rather than in the TOML.
+
 ## Read-only reviewer
+
+Run the parent session read-only (`codex --sandbox read-only`) so the reviewer cannot write.
+The file below only asks it not to.
 
 `.codex/agents/code_reviewer.toml`
 
@@ -12,7 +19,6 @@ name = "code_reviewer"
 description = "Read-only reviewer for correctness and security. Use after any code change, before opening a PR."
 model = "gpt-6-luna"
 model_reasoning_effort = "high"
-sandbox_mode = "read-only"
 developer_instructions = """
 You are a code reviewer. You never edit files.
 
@@ -30,13 +36,14 @@ line. Do not propose rewrites longer than five lines.
 
 ## Implementer
 
+Needs a parent session that can write (`workspace-write`). The role file cannot grant it.
+
 `.codex/agents/implementer.toml`
 
 ```toml
 name = "implementer"
 description = "Implements one well-specified change with tests. Use only when the delegation message includes acceptance criteria."
 model_reasoning_effort = "medium"
-sandbox_mode = "workspace-write"
 developer_instructions = """
 You implement exactly the change described in the delegation message and nothing else.
 
@@ -52,24 +59,41 @@ Return: files changed, test command and result, and anything you deliberately le
 """
 ```
 
-## Read-only agent with an MCP server
+## Agent that depends on an MCP server
+
+The role file cannot define the server. Configure it in the parent's `config.toml`:
+
+```toml
+[mcp_servers.openaiDeveloperDocs]
+url = "https://developers.openai.com/mcp"
+```
+
+Then the role names it as a prerequisite in its instructions.
 
 `.codex/agents/docs_researcher.toml`
 
 ```toml
 name = "docs_researcher"
-description = "Looks up API behavior in the OpenAI developer docs. Use when a task depends on exact API or Codex behavior."
-sandbox_mode = "read-only"
+description = "Looks up API behavior in the OpenAI developer docs. Use when a task depends on exact API or Codex behavior. Requires the openaiDeveloperDocs MCP server on the parent session."
 developer_instructions = """
-Answer only from the documentation tools. Quote the relevant passage and cite the page.
-If the docs do not say, answer "not documented" rather than inferring.
+Answer only from the openaiDeveloperDocs tools. Quote the relevant passage and cite the page.
+If the docs do not say, or the server is unavailable, answer "not documented" rather than
+inferring. Never edit files.
 """
-
-[mcp_servers.openaiDeveloperDocs]
-url = "https://developers.openai.com/mcp"
 ```
 
-Note that `[mcp_servers.*]` comes after all top-level keys.
+## Disabling capabilities
+
+A role can switch capabilities off, never on:
+
+```toml
+name = "analyst"
+description = "Reads and reasons only. Use for analysis that must not run commands."
+developer_instructions = "Analyze the material in the delegation message. Return findings only."
+
+[features]
+shell_tool = false
+```
 
 ## Role declared in `config.toml`
 
@@ -90,7 +114,6 @@ config_file = "agents/reviewer.toml"
 ```toml
 name = "reviewer"
 description = "Reviews diffs for correctness and security."
-sandbox_mode = "read-only"
 developer_instructions = "Review the diff named in the delegation message. Return findings only."
 ```
 

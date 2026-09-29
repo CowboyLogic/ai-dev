@@ -39,28 +39,29 @@ Not caught at load, so a bad value here produces no warning: an unrecognized
 
 ## Wrong model or reasoning effort
 
+A role file's `model` and `model_reasoning_effort` are applied after spawn-time and `[agents]`
+values and win over them. So `default_subagent_*` cannot be the cause when the role sets the
+field.
+
 | Symptom | Cause | Fix |
 |---|---|---|
-| Agent file says model A, session shows B | `agents.default_subagent_model` (or an explicit spawn value) outranks the file | Remove the default or spawn with an explicit model |
-| `model_reasoning_effort` ignored | Same outranking with `default_subagent_reasoning_effort`, or the model does not support that level | Check `[agents]`; run `codex debug models` for supported levels |
+| Different model than the file says | A different role was spawned (for example built-in `worker`), or the role file failed to load | Check the startup warnings; name the agent explicitly |
 | Model name rejected | Not available to the account or Codex build | Pick from `codex debug models` |
+| Effort seems ignored | The chosen model does not support that level | `codex debug models` lists supported levels |
+| Role sets no model and inherits an unexpected one | It takes the spawn value, then `[agents].default_subagent_*`, then the parent's | Set `model` in the role file |
 
-## Sandbox and approvals
+## Sandbox, approvals, and MCP
+
+A role file cannot set any of these; the child inherits the parent's live policy.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| Agent edits files despite `read-only` | Parent runtime policy (`--yolo`, `/permissions`) applies to children | Restore the parent's policy; do not treat the file as a lock |
-| Agent blocked on a command | Inherited approval policy requires approval | Approve from the thread (`o` to inspect), or adjust the parent `approval_policy` |
+| Agent edits files though the file says `sandbox_mode = "read-only"` | `sandbox_mode` in a role file is ignored | Start the parent read-only (`codex --sandbox read-only`) |
+| Agent cannot write though the file says `workspace-write` | Same: the parent is read-only | Start the parent with `workspace-write` |
+| Agent blocked on a command | Inherited approval policy requires approval | Approve from the thread (`o` to inspect), or change the parent's approval policy |
 | Approval prompt seems to hang | The request is from an inactive agent thread | Look for the pending approval in the CLI and inspect it |
-
-## MCP servers
-
-| Symptom | Cause | Fix |
-|---|---|---|
-| Server not available to the agent | `[mcp_servers.x]` declared, then top-level keys written after it, so they landed in the wrong table | Move all top-level keys above every table header |
-| Tool missing | Not in `enabled_tools`, or listed in `disabled_tools` | Fix the lists |
-| Server fails to start | Bad `command`, or `startup_timeout_sec` too short | Test the command manually; raise the timeout |
-| Auth failure | Token env var not set in the Codex process | Export it before launching Codex |
+| MCP server missing in the agent | `mcp_servers` in a role file is ignored | Configure the server in the parent's `config.toml` |
+| `features.<name> = true` has no effect | Roles can only disable a feature, and only `shell_tool`, `apps`, `plugins`, `memory_tool`, `request_permissions_tool` | Enable it on the parent |
 
 ## Instructions ignored
 
