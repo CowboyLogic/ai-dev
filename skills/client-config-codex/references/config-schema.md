@@ -38,6 +38,7 @@ Scopes outside `CODEX_HOME`:
 | `/etc/codex/config.toml` | System configuration defaults (Unix) |
 | `/etc/codex/requirements.toml` | System admin-enforced requirements (Unix) |
 | `/etc/codex/managed_config.toml` | Legacy managed defaults (Unix only) |
+| `%ProgramData%\OpenAI\Codex\config.toml` | System configuration defaults (Windows; not verified here, macOS build only) |
 | `%ProgramData%\OpenAI\Codex\requirements.toml` | System requirements (Windows) |
 
 Rules:
@@ -65,7 +66,7 @@ Highest first:
 3. Profile file `~/.codex/<name>.config.toml` (`--profile`)
 4. User `~/.codex/config.toml`
 5. Cloud-managed `config.toml` defaults (signed-in workspace)
-6. System `/etc/codex/config.toml` (Unix)
+6. System `/etc/codex/config.toml` (Unix) or `%ProgramData%\OpenAI\Codex\config.toml` (Windows)
 7. Built-in defaults
 
 Rules:

@@ -115,6 +115,8 @@ def scrub_url(value):
     try:
         parts = urlsplit(value)
         host = parts.hostname or ""
+        if ":" in host:
+            host = f"[{host}]"  # hostname strips the brackets from IPv6 literals
         if parts.port:
             host = f"{host}:{parts.port}"
         cleaned = urlunsplit((parts.scheme, host, "", "", ""))
@@ -198,7 +200,7 @@ def describe_mcp(servers):
         if not isinstance(cfg, dict):
             continue
         transport = "http" if "url" in cfg else "stdio"
-        endpoint = scrub_url(cfg["url"]) if "url" in cfg else cfg.get("command", "?")
+        endpoint = scrub_url(cfg["url"]) if "url" in cfg else scrub_text(str(cfg.get("command", "?")))
         flags = []
         if cfg.get("enabled") is False:
             flags.append("disabled")
