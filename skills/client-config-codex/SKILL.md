@@ -21,7 +21,7 @@ every path below that starts with `~/.codex`.
 |------|------|-------|
 | User config (model, sandbox, approvals, MCP, plugins, hooks, features, providers, project trust) | `~/.codex/config.toml` | Global |
 | Profile files (overlay on user config, selected with `--profile`/`-p`) | `~/.codex/<name>.config.toml` | Global |
-| Project config (same keys, applied only when the project is trusted) | `<repo>/.codex/config.toml` | Project |
+| Project config (project-allowed keys only, see `references/config-schema.md` §Precedence; applied only when the project is trusted) | `<repo>/.codex/config.toml` | Project |
 | System config | `/etc/codex/config.toml` (Unix) | Machine |
 | Admin-enforced requirements | `/etc/codex/requirements.toml` (Unix) | Machine, users cannot override |
 | Credentials | `~/.codex/auth.json` or the OS keyring | Global, **never read or print** |
@@ -34,7 +34,7 @@ every path below that starts with `~/.codex`.
 | Global instructions | `~/.codex/AGENTS.md`, `~/.codex/AGENTS.override.md` | Global |
 | Project instructions | `AGENTS.md`, `AGENTS.override.md` from repo root down to the working directory | Project |
 
-Codex config is **TOML**, not JSON. `hooks.json` is the one JSON file.
+Editable Codex config is **TOML**, not JSON, and `hooks.json` is the only editable JSON file. `auth.json` is JSON credential state that you never inspect or edit.
 
 ## Workflow
 
