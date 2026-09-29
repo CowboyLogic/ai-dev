@@ -63,6 +63,42 @@ TOOL_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(\(.*\))?$")
 CASE_INSENSITIVE = {f.lower(): f for f in KNOWN_FIELDS}
 
 
+def tool_base(entry: str) -> str:
+    """Tool name without a specifier: 'Bash(git push *)' -> 'Bash'."""
+    return entry.split("(", 1)[0].strip()
+
+
+def is_removed(entry: str, denied: list[str]) -> bool:
+    """True if a disallowedTools entry removes this tools entry.
+
+    A specifier removes the whole tool, and an MCP server pattern removes every tool
+    from that server (mcp__* removes every MCP tool).
+    """
+    base = tool_base(entry)
+    for deny in denied:
+        dbase = tool_base(deny)
+        if dbase == base:
+            return True
+        if dbase == "mcp__*" and base.startswith("mcp__"):
+            return True
+        if dbase.startswith("mcp__"):
+            server = dbase[:-3] if dbase.endswith("__*") else dbase
+            if base == server or base.startswith(server + "__"):
+                return True
+    return False
+
+
+def check_enum(field: str, value: object, allowed: set[str], rep: Report) -> bool:
+    """Report a non-string or out-of-range value. Returns True when valid."""
+    if not isinstance(value, str):
+        rep.error(f"{field}: must be one of {sorted(allowed)}, got {value!r}")
+        return False
+    if value not in allowed:
+        rep.error(f"{field}: '{value}' invalid; use one of {sorted(allowed)}")
+        return False
+    return True
+
+
 class Report:
     def __init__(self) -> None:
         self.errors: list[str] = []
@@ -162,8 +198,12 @@ def validate(path: Path, plugin: bool) -> Report:
     # --- required fields and name rules -------------------------------------------
     name = data.get("name")
     if name is None:
-        rep.error("no 'name': Claude Code treats this file as documentation, not an agent"
-                  + (" (a plugin agent would load under its filename)" if plugin else ""))
+        if plugin:
+            rep.warn("no 'name': a plugin agent still loads, under its filename, but "
+                     "an explicit name is clearer")
+        else:
+            rep.error("no 'name': Claude Code treats this file as documentation, not "
+                      "an agent")
     elif not isinstance(name, str) or not name.strip():
         rep.error("name: must be a non-empty string")
     else:
@@ -211,10 +251,10 @@ def validate(path: Path, plugin: bool) -> Report:
         check_tools("disallowedTools", data["disallowedTools"], rep)
     t, d = tool_list(data.get("tools")), tool_list(data.get("disallowedTools"))
     if t and d:
-        both = sorted(set(t) & set(d))
-        if both:
-            rep.warn(f"tools listed in both tools and disallowedTools are removed: {both}")
-        if not set(t) - set(d):
+        removed = [e for e in t if is_removed(e, d)]
+        if removed:
+            rep.warn(f"tools entries removed by disallowedTools: {removed}")
+        if len(removed) == len(t):
             rep.error("disallowedTools removes every entry in tools: the agent launches "
                       "with no tools")
     if t:
@@ -242,15 +282,15 @@ def validate(path: Path, plugin: bool) -> Report:
 
     pm = data.get("permissionMode")
     if pm is not None:
-        if pm not in PERMISSION_MODES:
-            rep.error(f"permissionMode: '{pm}' invalid; use one of {sorted(PERMISSION_MODES)}")
+        if not check_enum("permissionMode", pm, PERMISSION_MODES, rep):
+            pass
         elif pm == "manual":
             rep.warn("permissionMode 'manual' alias needs Claude Code v2.1.200+; 'default' "
                      "works everywhere")
         elif pm == "bypassPermissions":
             rep.warn("permissionMode bypassPermissions only takes effect when the parent "
                      "session is already in that mode; avoid it in shared agent files")
-        if pm in PERMISSION_MODES and pm != "bypassPermissions":
+        if isinstance(pm, str) and pm in PERMISSION_MODES and pm != "bypassPermissions":
             rep.warn("permissionMode is overridden when the parent session is in auto, "
                      "acceptEdits, or bypassPermissions (the agent uses the parent's mode)")
 
@@ -263,20 +303,20 @@ def validate(path: Path, plugin: bool) -> Report:
             rep.error(f"{field}: must be true or false (unquoted)")
 
     mem = data.get("memory")
-    if mem is not None and mem not in MEMORY_SCOPES:
-        rep.error(f"memory: '{mem}' invalid; use one of {sorted(MEMORY_SCOPES)}")
+    if mem is not None:
+        check_enum("memory", mem, MEMORY_SCOPES, rep)
 
     eff = data.get("effort")
-    if eff is not None and eff not in EFFORTS:
-        rep.error(f"effort: '{eff}' invalid; use one of {sorted(EFFORTS)}")
+    if eff is not None:
+        check_enum("effort", eff, EFFORTS, rep)
 
     iso = data.get("isolation")
-    if iso is not None and iso != "worktree":
-        rep.error(f"isolation: '{iso}' invalid; the only value is 'worktree'")
+    if iso is not None:
+        check_enum("isolation", iso, {"worktree"}, rep)
 
     col = data.get("color")
-    if col is not None and col not in COLORS:
-        rep.error(f"color: '{col}' invalid; use one of {sorted(COLORS)}")
+    if col is not None:
+        check_enum("color", col, COLORS, rep)
 
     skills = data.get("skills")
     if skills is not None and not (isinstance(skills, list) and all(isinstance(s, str) for s in skills)):
@@ -368,7 +408,12 @@ def main() -> int:
         return 0
     seen: dict[str, Path] = {}
     for f in files:
-        rep = validate(f, args.plugin)
+        try:
+            rep = validate(f, args.plugin)
+        except Exception as exc:  # keep scanning; report the file instead of a traceback
+            rep = Report()
+            rep.error(f"validator failed on this file ({type(exc).__name__}: {exc}); "
+                      "check the frontmatter types")
         # duplicate-name detection across the scanned set
         try:
             fm, _, _ = split_frontmatter(f.read_text(encoding="utf-8"))

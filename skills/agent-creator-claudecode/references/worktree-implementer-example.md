@@ -23,7 +23,7 @@ hooks:
     - matcher: "Bash"
       hooks:
         - type: command
-          command: "./scripts/block-destructive-git.sh"
+          command: "./scripts/allow-listed-bash.sh"
 ---
 
 You are an implementer. You receive a specification and acceptance criteria and produce
@@ -53,21 +53,41 @@ commands you ran to verify and their results, and anything you could not verify.
 ## The hook script
 
 The hook receives the tool call as JSON on stdin. Exit code 2 blocks the call and returns
-stderr to the agent.
+stderr to the agent. It is an **allowlist**: a denylist regex such as `git push` is trivially
+bypassed (`git -C . push`, `/usr/bin/git push`, `g=push; git $g`), so anything not
+explicitly permitted is blocked.
 
 ```bash
 #!/usr/bin/env bash
-# scripts/block-destructive-git.sh
+# scripts/allow-listed-bash.sh
 cmd=$(jq -r '.tool_input.command // ""')
-if echo "$cmd" | grep -Eq 'git (push|merge|rebase|reset)|--force'; then
-  echo "Blocked: this agent may only commit." >&2
+
+# Only single simple commands pass: no chaining, pipes, substitution, redirection,
+# escapes, or newlines.
+if [[ "$cmd" =~ [\;\&\|\`\$\(\)\<\>\\] || "$cmd" == *$'\n'* ]]; then
+  echo "Blocked: shell operators and substitutions are not allowed." >&2
   exit 2
 fi
-exit 0
+
+# Then the command must start with a permitted form.
+if [[ "$cmd" =~ ^(git\ (status|diff|log|show|add|commit)|npm\ (test|run\ lint)|pytest|ls)($|\ ) ]]; then
+  exit 0
+fi
+
+echo "Blocked: command is not on the allowlist." >&2
+exit 2
 ```
 
 Make it executable (`chmod +x`) and keep it in the repository so the hook travels with the
-agent.
+agent. Adjust the permitted forms to the project's test and lint commands.
+
+> [!WARNING]
+> A hook is a guardrail, not a sandbox. The allowlist above still permits flags that do more
+> than the base command (`git diff --output=<file>` writes a file, `git commit --amend`
+> rewrites a commit), and it rejects any commit message containing `;` or `(`. If the agent
+> must never run a class of command, remove `Bash` from `tools` and give it purpose-built
+> tools, or enforce the rule outside the agent: `permissions.deny` rules are also
+> pattern-based, so pair them with the OS-level sandbox for anything that must hold.
 
 ## Notes
 
@@ -78,6 +98,6 @@ agent.
 | `disallowedTools` plus `tools` | `disallowedTools` applies first; here it is redundant with the allowlist and shown only to illustrate ordering. Remove it in a real file |
 | `memory: project` | Enables Read, Write, and Edit on `.claude/agent-memory/implementer/`. Requires auto memory on, and the body tells the agent to use it |
 | `skills` | Full skill text is injected at startup; it costs tokens every invocation. The skill must not set `disable-model-invocation: true` |
-| Frontmatter hook | Runs only while this agent is active. Project-level, so it is skipped until the folder is trusted; the agent still runs without it. A hook cannot restrict Bash when the file is a plugin agent |
-| Hook instead of `disallowedTools: Bash(git push *)` | A specifier there would remove all of Bash |
+| Frontmatter hook | Runs only while this agent is active. Project-level, so it is skipped until the folder is trusted; the agent still runs without it. Plugin agents ignore `hooks` entirely |
+| Allowlist hook instead of `disallowedTools: Bash(git push *)` | A specifier there would remove all of Bash, and a denylist of destructive commands is easy to bypass |
 | `maxTurns: 40` | Bounds a runaway; partial output can be resumed |
