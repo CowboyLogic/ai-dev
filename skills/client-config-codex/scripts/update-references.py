@@ -124,7 +124,13 @@ def main():
                 all_ok = False
 
         if all_ok:
-            out_path = save_fetched(ref_path, fetched_contents, fetched_urls)
+            try:
+                out_path = save_fetched(ref_path, fetched_contents, fetched_urls)
+            except OSError as e:  # full disk, permissions: fail this ref so cleanup discards the run
+                print(f"     FAILED: could not write staged file: {e}")
+                all_ok = False
+
+        if all_ok:
             total = sum(len(c) for c in fetched_contents)
             print(f"  Saved {total:,} chars -> {out_path}")
             results.append({"ref": ref_path, "fetched": str(out_path), "ok": True})

@@ -32,7 +32,11 @@ AUTH_FILE = CODEX_HOME / "auth.json"
 HOOKS_FILE = CODEX_HOME / "hooks.json"
 RULES_DIR = CODEX_HOME / "rules"
 AGENTS_DIR = CODEX_HOME / "agents"
-SKILLS_DIRS = [Path.home() / ".agents" / "skills", CODEX_HOME / "skills"]
+SKILLS_DIRS = [
+    ("USER SKILLS", Path.home() / ".agents" / "skills"),
+    ("ADMIN SKILLS", SYSTEM_DIR / "skills"),
+    ("CODEX_HOME SKILLS (bundled system skills live under .system/)", CODEX_HOME / "skills"),
+]
 INSTRUCTION_NAMES = ("AGENTS.override.md", "AGENTS.md")
 
 AUTH_VARS = ["CODEX_ACCESS_TOKEN", "CODEX_API_KEY", "OPENAI_API_KEY"]
@@ -289,8 +293,8 @@ def main():
     section(f"RULES ({RULES_DIR})")
     list_dir(RULES_DIR, "*.rules", "rules files")
 
-    for skills_dir in SKILLS_DIRS:
-        section(f"USER SKILLS ({skills_dir})")
+    for label, skills_dir in SKILLS_DIRS:
+        section(f"{label} ({skills_dir})")
         show_skills(skills_dir)
 
     section(f"USER CUSTOM AGENTS ({AGENTS_DIR})")
