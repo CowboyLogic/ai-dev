@@ -90,7 +90,7 @@ ai-dev/
 │   └── <skill-name>/        # Each skill: SKILL.md + README + references/
 ├── docs/                    # MkDocs source — PUBLICATION ONLY, not directives
 │   ├── agents/              # Agent catalog pages (links to agents/ at root)
-│   ├── skills/              # Skills catalog page (links to skills/ at root)
+│   ├── skills/              # Skills catalog (index.md) + one lightweight overview page per skill
 │   ├── tools/               # Claude Code, OpenCode, VS Code configuration guides
 │   └── mcp/                 # MCP server documentation
 ├── agent-output/            # Legacy output folder — gitignored
@@ -148,9 +148,11 @@ skill-name/
 └── assets/        # Templates and other bundled resources, when provided
 ```
 
-`docs/skills/` contains only a lightweight catalog page that describes each skill
-and links to the GitHub repo. It is **not** the authoritative source and does not
-embed skill content.
+`docs/skills/` holds the catalog page (`index.md`) and one lightweight overview page per
+skill (`docs/skills/<skill-name>.md`). An overview page says what the skill does and
+links to the skill folder in the GitHub repo. It **must not** embed code, commands,
+reference-file contents, or any other skill content: it is **not** the authoritative
+source, and anything copied into it goes stale. Point to `skills/<skill-name>/` instead.
 
 ---
 
@@ -196,11 +198,12 @@ embed skill content.
 ### Adding a new skill
 
 1. Create `skills/<name>/` at the repo root with at minimum `SKILL.md` (YAML frontmatter required).
-2. Update the `docs/skills/index.md` catalog with a description and GitHub link for the new skill.
-3. Add the skill to `skills/README.md` and `cerebro-catalog.yaml`.
-4. Run `python scripts/validate_artifact_sync.py`.
-
-No `mkdocs.yml` nav changes are needed — the catalog page is already in the nav.
+2. Create the lightweight overview page `docs/skills/<name>.md` (what the skill does, plus a
+   link to `skills/<name>/` in the GitHub repo; no embedded code) and add it to the
+   `nav:` tree in `mkdocs.yml`.
+3. Update the `docs/skills/index.md` catalog with a description and GitHub link for the new skill.
+4. Add the skill to `skills/README.md` and `cerebro-catalog.yaml`.
+5. Run `python scripts/validate_artifact_sync.py`.
 
 ### Adding a new agent
 
