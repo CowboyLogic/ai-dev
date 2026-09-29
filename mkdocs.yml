@@ -98,6 +98,7 @@ nav:
       - Markdownlint Validator: skills/markdownlint-validator.md
       - Copilot Agent Creator: skills/agent-creator-copilot.md
       - Copilot Instruction Creator: skills/copilot-instruction-creator.md
+      - Claude Code Agent Creator: skills/agent-creator-claudecode.md
       - OpenCode Agent Creator: skills/agent-creator-opencode.md
       - Claude Code Settings Manager: skills/client-config-claudecode.md
       - Copilot CLI Configuration Manager: skills/client-config-copilotcli.md

@@ -87,5 +87,6 @@ npx skills ls -g
 
 - [OpenCode Configuration Manager](client-config-opencode.md) — the rest of `opencode.json`
 - [Copilot Agent Creator](agent-creator-copilot.md) — the equivalent skill for GitHub Copilot
+- [Claude Code Agent Creator](agent-creator-claudecode.md) — the equivalent skill for Claude Code
 - [Matrix Topology](../agents/matrix-topology.md) and [Lane Topology](../agents/lane-topology.md)
   — multi-agent systems built on OpenCode agents

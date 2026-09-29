@@ -94,4 +94,5 @@ npx skills ls -g
 
 - [Copilot Instruction Creator](copilot-instruction-creator.md) — repository, path, and
   personal instructions rather than agent personas
+- [Claude Code Agent Creator](agent-creator-claudecode.md) — the equivalent skill for Claude Code
 - [OpenCode Agent Creator](agent-creator-opencode.md) — the equivalent skill for OpenCode
