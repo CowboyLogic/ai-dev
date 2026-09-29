@@ -37,7 +37,7 @@ Scopes outside `CODEX_HOME`:
 | `<repo>/.codex/config.toml`, `<repo>/.codex/hooks.json` | Project overrides; loaded only when the project is trusted |
 | `/etc/codex/config.toml` | System configuration defaults (Unix) |
 | `/etc/codex/requirements.toml` | System admin-enforced requirements (Unix) |
-| `/etc/codex/managed_config.toml` | Legacy managed defaults (Unix); `~/.codex/managed_config.toml` on Windows |
+| `/etc/codex/managed_config.toml` | Legacy managed defaults (Unix only) |
 | `%ProgramData%\OpenAI\Codex\requirements.toml` | System requirements (Windows) |
 
 Rules:
@@ -230,7 +230,8 @@ trust_level = "trusted"   # or "untrusted"
 ```
 
 - `trusted`: project `.codex/` layers load (config, hooks, rules).
-- `untrusted`: project `.codex/` layers are skipped. With no explicit `approval_policy`, Codex derives
+- `untrusted`: project `.codex/` layers are skipped, and so is the project `AGENTS.md` chain (global
+  instructions still load; verified on 0.158.0, see `references/instructions.md`). With no explicit `approval_policy`, Codex derives
   stricter approvals; setting `approval_policy = "on-request"` explicitly overrides that.
 - Quote the path key. Trust entries belong in user config, not project config.
 - Admins keep `untrusted` in `allowed_approval_policies` to permit the derived behavior; it does not
@@ -431,8 +432,10 @@ requirements file or macOS MDM; Codex ignores them in cloud-managed requirements
 
 ### managed_config.toml and MDM defaults
 
-- Path: `/etc/codex/managed_config.toml` (Unix) or `~/.codex/managed_config.toml` (Windows). A missing
-  file skips the layer.
+- Path: `/etc/codex/managed_config.toml` (Unix only). A missing file skips the layer. The docs list
+  `~/.codex/managed_config.toml` for Windows, but 0.158.0 is reported to ignore it there and warn;
+  use `%ProgramData%\OpenAI\Codex\requirements.toml` or `config.toml` on Windows. Not verified here
+  (macOS build only).
 - macOS MDM: domain `com.openai.codex`, base64 TOML in `config_toml_base64` (defaults) or
   `requirements_toml_base64` (requirements), pushed with Jamf Pro, Fleet, or Kandji. Keep secrets out
   of the payload.
