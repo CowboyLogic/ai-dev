@@ -177,6 +177,17 @@ sandbox configuration, and auto mode.
 
 ---
 
+### Codex Configuration Manager
+
+Manage OpenAI Codex CLI configuration — `config.toml` and the project `.codex/` layer,
+sandbox and approval settings, permission profiles and rules, MCP servers, hooks, skills,
+plugins, model providers, and `AGENTS.md`. Covers project trust, profiles, authentication,
+and admin-enforced `requirements.toml`.
+
+[Skill Overview](client-config-codex.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-codex)
+
+---
+
 ### Copilot CLI Configuration Manager
 
 Manage GitHub Copilot CLI configuration files — `settings.json`, `config.json`,
