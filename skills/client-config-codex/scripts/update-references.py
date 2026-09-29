@@ -48,11 +48,12 @@ def fetch_url(url: str) -> str:
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             content = resp.read()
-            charset = "utf-8"
-            ct = resp.headers.get("Content-Type", "")
-            if "charset=" in ct:
-                charset = ct.split("charset=")[-1].split(";")[0].strip()
-            return content.decode(charset, errors="replace")
+            # get_content_charset() strips quotes (charset="utf-8") that a manual split would keep.
+            charset = resp.headers.get_content_charset() or "utf-8"
+            try:
+                return content.decode(charset, errors="replace")
+            except LookupError:
+                raise RuntimeError(f"Unknown charset {charset!r} fetching {url}")
     except urllib.error.HTTPError as e:
         raise RuntimeError(f"HTTP {e.code} fetching {url}: {e.reason}")
     except urllib.error.URLError as e:
