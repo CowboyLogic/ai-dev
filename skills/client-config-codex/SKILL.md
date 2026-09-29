@@ -22,8 +22,8 @@ every path below that starts with `~/.codex`.
 | User config (model, sandbox, approvals, MCP, plugins, hooks, features, providers, project trust) | `~/.codex/config.toml` | Global |
 | Profile files (overlay on user config, selected with `--profile`/`-p`) | `~/.codex/<name>.config.toml` | Global |
 | Project config (project-allowed keys only, see `references/config-schema.md` §Precedence; applied only when the project is trusted) | `<repo>/.codex/config.toml` | Project |
-| System config | `/etc/codex/config.toml` (Unix) | Machine |
-| Admin-enforced requirements | `/etc/codex/requirements.toml` (Unix) | Machine, users cannot override |
+| System config | `/etc/codex/config.toml` (Unix), `%ProgramData%\OpenAI\Codex\config.toml` (Windows) | Machine |
+| Admin-enforced requirements | `/etc/codex/requirements.toml` (Unix), `%ProgramData%\OpenAI\Codex\requirements.toml` (Windows) | Machine, users cannot override |
 | Credentials | `~/.codex/auth.json` or the OS keyring | Global, **never read or print** |
 | Hooks | `~/.codex/hooks.json`, `<repo>/.codex/hooks.json`, or `[hooks]` in `config.toml` | Global / Project |
 | Rules (command allow/prompt/forbid) | `~/.codex/rules/*.rules`, `<repo>/.codex/rules/*.rules` | Global / Project |
