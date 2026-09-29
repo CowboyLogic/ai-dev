@@ -130,6 +130,17 @@ precedence, and per-surface support.
 
 ## AI Platform Skills
 
+### Claude Code Agent Creator
+
+Create and troubleshoot custom subagents for Claude Code. Covers every frontmatter field with
+allowed values and version requirements, the conditions under which Claude Code silently skips
+a file or ignores a field, tool and permission behavior, hooks, MCP servers, memory, and
+worktree isolation. Includes a validator script and symptom-to-cause troubleshooting tables.
+
+[Skill Overview](agent-creator-claudecode.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-claudecode)
+
+---
+
 ### OpenCode Agent Creator
 
 Create custom agent definitions for the OpenCode CLI, in native V2 format by default with V1
@@ -137,6 +148,17 @@ still supported. Covers the agent configuration schema, V1 → V2 migration, mod
 selection, ordered permission rules, and subagent patterns.
 
 [Skill Overview](agent-creator-opencode.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-opencode)
+
+---
+
+### Codex Agent Creator
+
+Create and troubleshoot custom subagents for OpenAI Codex, defined as standalone TOML files.
+Covers the required fields, model and sandbox settings, the `[agents]` table in `config.toml`,
+how delegation is triggered, and why parent runtime settings override an agent file. Includes a
+validator script and symptom-to-cause troubleshooting tables.
+
+[Skill Overview](agent-creator-codex.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-codex)
 
 ---
 
@@ -163,6 +185,17 @@ sandbox configuration, and auto mode.
 
 > [!NOTE]
 > When using a newer Claude model for configuring Claude Code, this skill has marginal value.
+
+---
+
+### Codex Configuration Manager
+
+Manage OpenAI Codex CLI configuration — `config.toml` and the project `.codex/` layer,
+sandbox and approval settings, permission profiles and rules, MCP servers, hooks, skills,
+plugins, model providers, and `AGENTS.md`. Covers project trust, profiles, authentication,
+and admin-enforced `requirements.toml`.
+
+[Skill Overview](client-config-codex.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-codex)
 
 ---
 

@@ -51,7 +51,63 @@ Four hard limits, and they are absolute:
    past a failing hook. A hook that blocks the commit is telling you something.
 
 Report the PR link when the work is done. For a task that produced a diff, that link
-is what "finished" means.
+— on a PR that has cleared the [Copilot review loop](#copilot-review-loop) — is what
+"finished" means.
+
+### Copilot review loop
+
+This repository has automatic GitHub Copilot code review enabled. Every PR gets a
+Copilot review without being asked, and **unresolved review threads block merging**.
+Opening a PR is therefore the start of the review loop, not the end of the task:
+
+1. **Submit** the PR, or push new commits to the existing PR branch.
+2. **Wait 2–3 minutes**, then check the PR for Copilot review comments. If no Copilot
+   review has landed on the latest commit yet, keep re-checking before concluding there
+   is nothing to address — but **never wait more than 10 minutes in total** for a
+   review. If none has arrived by then, stop waiting, report the PR link, and say that
+   the Copilot review is still pending. Do not report the PR as clean.
+3. **Evaluate every finding** on its merits. Do not apply a suggestion blindly, and do
+   not dismiss one without checking it against the code.
+   - **Valid finding** — fix it, commit, and push to the same branch (new commit only;
+     the no-amend, no-rebase, no-force-push limits above still apply).
+   - **Invalid or inapplicable finding** — reply on the thread with a short reason
+     (what you checked and why no change is needed).
+4. **Resolve every thread** once it is handled, valid or not. A thread left open blocks
+   the merge even when the finding was wrong.
+5. **Repeat from step 1 after every push** — each push triggers a fresh Copilot review
+   that can raise new findings. The loop ends when Copilot has reviewed the latest
+   commit and no review thread on the PR is unresolved. Resolving a thread does not
+   delete its comment, and an all-invalid round pushes nothing (so no re-review
+   follows), so end on thread state, not on the absence of comments.
+
+List and resolve review threads with `gh api graphql`:
+
+```bash
+# List review threads with their resolution state
+gh api graphql -F owner='{owner}' -F repo='{repo}' \
+  -F pr="$(gh pr view --json number --jq .number)" -f query='
+  query($owner: String!, $repo: String!, $pr: Int!) {
+    repository(owner: $owner, name: $repo) {
+      pullRequest(number: $pr) {
+        reviewThreads(first: 100) {
+          nodes {
+            id
+            isResolved
+            comments(first: 1) { nodes { author { login } path line body } }
+          }
+        }
+      }
+    }
+  }'
+
+# Resolve one thread — replace the quoted id with one from the listing above
+gh api graphql -f threadId='PRRT_xxxxxxxx' -f query='
+  mutation($threadId: ID!) {
+    resolveReviewThread(input: { threadId: $threadId }) { thread { isResolved } }
+  }'
+```
+
+Merging stays a human action: the loop gets the PR to a mergeable state, and stops there.
 
 ### Agent-generated output goes in `.agent-output/`
 
@@ -90,7 +146,7 @@ ai-dev/
 │   └── <skill-name>/        # Each skill: SKILL.md + README + references/
 ├── docs/                    # MkDocs source — PUBLICATION ONLY, not directives
 │   ├── agents/              # Agent catalog pages (links to agents/ at root)
-│   ├── skills/              # Skills catalog page (links to skills/ at root)
+│   ├── skills/              # Skills catalog (index.md) + one lightweight overview page per skill
 │   ├── tools/               # Claude Code, OpenCode, VS Code configuration guides
 │   └── mcp/                 # MCP server documentation
 ├── agent-output/            # Legacy output folder — gitignored
@@ -148,9 +204,14 @@ skill-name/
 └── assets/        # Templates and other bundled resources, when provided
 ```
 
-`docs/skills/` contains only a lightweight catalog page that describes each skill
-and links to the GitHub repo. It is **not** the authoritative source and does not
-embed skill content.
+`docs/skills/` holds the catalog page (`index.md`) and one lightweight overview page per
+skill (`docs/skills/<skill-name>.md`). An overview page gives a reader enough to decide
+whether to use the skill (what it does, what it covers, where it applies) and how to
+install it, and links to the skill folder in the GitHub repo. Install and verify commands
+belong on the page. It **must not** embed skill content: instruction text, reference-file
+contents, examples, or usage of the skill's scripts. It is **not** the authoritative
+source, and anything copied from the skill goes stale. Point to `skills/<skill-name>/`
+instead.
 
 ---
 
@@ -163,6 +224,9 @@ embed skill content.
   No approval step.
 - **Opening a PR** (`gh pr create`) is the normal end of a task that produced a diff.
   If the branch already has an open PR, the push updates it — do not open a second.
+- **After opening or updating a PR**, run the [Copilot review loop](#copilot-review-loop):
+  wait, address valid findings, resolve every thread, and repeat until the latest
+  commit has been reviewed and no thread is left unresolved.
 - **Merging** is a human action. No agent merges, ever.
 - **Force-push, rebase, reset, and history rewrites** are never permitted, with or
   without a request. If one is genuinely needed, a human does it outside an agent
@@ -196,11 +260,12 @@ embed skill content.
 ### Adding a new skill
 
 1. Create `skills/<name>/` at the repo root with at minimum `SKILL.md` (YAML frontmatter required).
-2. Update the `docs/skills/index.md` catalog with a description and GitHub link for the new skill.
-3. Add the skill to `skills/README.md` and `cerebro-catalog.yaml`.
-4. Run `python scripts/validate_artifact_sync.py`.
-
-No `mkdocs.yml` nav changes are needed — the catalog page is already in the nav.
+2. Create the lightweight overview page `docs/skills/<name>.md` (what the skill does, how to
+   install it, and a link to `skills/<name>/` in the GitHub repo; no embedded skill content)
+   and add it to the `nav:` tree in `mkdocs.yml`.
+3. Update the `docs/skills/index.md` catalog with a description and GitHub link for the new skill.
+4. Add the skill to `skills/README.md` and `cerebro-catalog.yaml`.
+5. Run `python scripts/validate_artifact_sync.py`.
 
 ### Adding a new agent
 
@@ -269,6 +334,8 @@ types; schema version is `"1"`.
 - Do not commit or push from `main` or `master` — branch first, before editing.
 - Do not merge, rebase, reset, cherry-pick, or force-push. Ever.
 - Do not `git add -A` or `git add .` — stage the files the work actually changed.
+- Do not treat a freshly opened PR as finished — run the Copilot review loop and leave
+  no unresolved review threads.
 - Do not write temporary or generated files anywhere other than `.agent-output/`.
 - Do not edit `site/` (build output).
 - Do not add features, refactors, or abstractions beyond what the user requests.

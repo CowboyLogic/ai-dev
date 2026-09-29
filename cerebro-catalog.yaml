@@ -50,12 +50,24 @@ artifacts:
     type: skill
     source: skills/copilot-instruction-creator
     tags: [skills, copilot, instructions]
+  - id: agent-creator-claudecode
+    name: Claude Code Agent Creator
+    description: Create and troubleshoot custom subagents for Claude Code, with a complete frontmatter reference and validator
+    type: skill
+    source: skills/agent-creator-claudecode
+    tags: [skills, claude-code, agents]
   - id: agent-creator-opencode
     name: OpenCode Agent Creator
     description: Create custom agent definitions for the OpenCode CLI (V2 native, V1 supported)
     type: skill
     source: skills/agent-creator-opencode
     tags: [skills, opencode, agents]
+  - id: agent-creator-codex
+    name: Codex Agent Creator
+    description: Create and troubleshoot custom subagents for OpenAI Codex (TOML files), with a config reference and validator
+    type: skill
+    source: skills/agent-creator-codex
+    tags: [skills, codex, agents]
   - id: federated-agent-broker
     name: Federated Agent Broker
     description: Delegate bounded coding tasks from Claude Code to GitHub Copilot CLI through a local MCP broker
@@ -68,6 +80,12 @@ artifacts:
     type: skill
     source: skills/client-config-claudecode
     tags: [skills, claude-code, configuration]
+  - id: client-config-codex
+    name: Codex Configuration Manager
+    description: Manage OpenAI Codex CLI configuration files including config.toml, sandbox and approvals, rules, MCP servers, hooks, skills, plugins, and AGENTS.md
+    type: skill
+    source: skills/client-config-codex
+    tags: [skills, codex, configuration]
   - id: client-config-copilotcli
     name: Copilot CLI Configuration Manager
     description: Manage GitHub Copilot CLI configuration files including settings.json, permissions, MCP and LSP servers, hooks, agents, plugins, and custom instructions
