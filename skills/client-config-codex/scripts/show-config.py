@@ -62,6 +62,7 @@ ENV_NAME_SUFFIXES = ("_env_var", "_env_vars", "env_key", "env_http_headers")
 SECRET_MAPS = ("env", "http_headers", "headers", "set")  # "set" = shell_environment_policy.set
 TOKEN_VALUE = re.compile(r"^(sk-|ghp_|github_pat_|xox[abp]-|Bearer\s)", re.I)
 URL_VALUE = re.compile(r"^[a-z][a-z0-9+.-]*://", re.I)
+DISCOVERY_KEYS = ("project_root_markers", "project_doc_fallback_filenames")
 PROJECT_ROOT_MARKERS = (".git",)  # Codex default; override with project_root_markers in config
 
 
@@ -211,6 +212,16 @@ def active_instruction_file(directory, extra_names=()):
     return None
 
 
+def trust_level(config, *paths):
+    """trust_level recorded under [projects."<path>"] for the first path that has an entry."""
+    projects = config.get("projects", {})
+    for path in paths:
+        entry = projects.get(str(path))
+        if isinstance(entry, dict) and entry.get("trust_level"):
+            return entry["trust_level"]
+    return None
+
+
 def list_dir(path, pattern, label):
     items = sorted(path.glob(pattern)) if path.exists() else []
     if not items:
@@ -276,10 +287,10 @@ def main():
         print(f"    {name}")
 
     section(f"SYSTEM CONFIG ({SYSTEM_CONFIG_FILE})")
-    show_config(SYSTEM_CONFIG_FILE, as_json)
+    system_config = show_config(SYSTEM_CONFIG_FILE, as_json)
 
     section(f"LEGACY MANAGED DEFAULTS ({MANAGED_CONFIG_FILE})")
-    show_config(MANAGED_CONFIG_FILE, as_json)
+    managed_config = show_config(MANAGED_CONFIG_FILE, as_json)
 
     section(f"ADMIN REQUIREMENTS ({REQUIREMENTS_FILE})")
     show_config(REQUIREMENTS_FILE, as_json)
@@ -309,14 +320,21 @@ def main():
         print("  (no non-empty AGENTS.override.md or AGENTS.md in CODEX_HOME)")
 
     # --- project config files: every layer from the project root down to cwd ---
-    cwd = Path.cwd()
-    markers = config.get("project_root_markers", PROJECT_ROOT_MARKERS)
-    fallbacks = tuple(config.get("project_doc_fallback_filenames", []))
+    cwd = Path.cwd().resolve()
+    # Discovery settings come from the merged system, user, and legacy managed layers
+    # (later wins), not from the user file alone.
+    discovery = {}
+    for layer in (system_config, config, managed_config):
+        discovery.update({k: v for k, v in layer.items() if k in DISCOVERY_KEYS})
+    markers = discovery.get("project_root_markers", PROJECT_ROOT_MARKERS)
+    fallbacks = tuple(discovery.get("project_doc_fallback_filenames", []))
     root = next((d for d in (cwd, *cwd.parents) if any((d / m).exists() for m in markers)), cwd)
     chain = [cwd]
     while chain[-1] != root:
         chain.append(chain[-1].parent)
     chain.reverse()
+    trust = trust_level(config, root, cwd)
+    trusted = trust == "trusted"
     printed_header = False
     for directory in chain:
         project_files = [
@@ -334,14 +352,19 @@ def main():
             continue
         if not printed_header:
             section(f"PROJECT CONFIG (root {root} down to {cwd})")
+            print(f"  project trust_level: {trust or 'not set'}"
+                  + ("" if trusted else "  -> project .codex/ layers below are INACTIVE"))
             printed_header = True
         print(f"  -- {directory}")
         for path, label in found:
+            gated = path.relative_to(directory).parts[0] == ".codex"  # instructions and .agents/skills are not trust-gated
+            inactive = gated and not trusted
+            tag = "  [INACTIVE: project not trusted, Codex skips it]" if inactive else ""
             if path.is_dir():
-                print(f"  {label}: {len(list(path.iterdir()))} item(s) in {path}")
+                print(f"  {label}: {len(list(path.iterdir()))} item(s) in {path}{tag}")
             else:
-                print(f"  {label}: {path} ({path.stat().st_size} bytes)")
-                if path.name == "config.toml":
+                print(f"  {label}: {path} ({path.stat().st_size} bytes){tag}")
+                if path.name == "config.toml" and not inactive:
                     project_config = show_config(path, as_json)
                     describe_mcp(project_config.get("mcp_servers", {}))
 
