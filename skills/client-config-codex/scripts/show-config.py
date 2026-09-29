@@ -61,6 +61,7 @@ ENV_NAME_SUFFIXES = ("_env_var", "_env_vars", "env_key", "env_http_headers")
 # Maps whose values are credentials regardless of key name (e.g. an "Authorization" header).
 SECRET_MAPS = ("env", "http_headers", "headers", "set")  # "set" = shell_environment_policy.set
 TOKEN_VALUE = re.compile(r"^(sk-|ghp_|github_pat_|xox[abp]-|Bearer\s)", re.I)
+PROXY_NAME = re.compile(r"^(https?|all)_proxy$", re.I)  # not NO_PROXY, which is a host list
 URL_VALUE = re.compile(r"^[a-z][a-z0-9+.-]*://", re.I)
 DISCOVERY_KEYS = ("project_root_markers", "project_doc_fallback_filenames")
 PROJECT_ROOT_MARKERS = (".git",)  # Codex default; override with project_root_markers in config
@@ -107,8 +108,9 @@ def mask(name, value):
     value = str(value)
     if URL_VALUE.match(value):
         return scrub_url(value)
-    if "@" in value and "/" not in value.split("@", 1)[0]:
-        value = value.split("@", 1)[1]  # user:password@host[:port] without a scheme
+    if PROXY_NAME.match(name) or ("@" in value and "/" not in value.split("@", 1)[0]):
+        # Scheme-less user:password@host[:port]/path forms: scrub like a URL, then drop the scheme.
+        return scrub_url("http://" + value).removeprefix("http://")
     if any(marker in name.upper() for marker in SECRET_MARKERS):
         return value[:4] + "..." if len(value) > 4 else "***"
     return value
@@ -214,9 +216,10 @@ def active_instruction_file(directory, extra_names=()):
 
 def trust_level(config, *paths):
     """trust_level recorded under [projects."<path>"] for the first path that has an entry."""
-    projects = config.get("projects", {})
+    # Codex lowercases trust keys on Windows; normcase is a no-op elsewhere.
+    projects = {os.path.normcase(str(k)): v for k, v in config.get("projects", {}).items()}
     for path in paths:
-        entry = projects.get(str(path))
+        entry = projects.get(os.path.normcase(str(path)))
         if isinstance(entry, dict) and entry.get("trust_level"):
             return entry["trust_level"]
     return None
