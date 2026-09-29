@@ -37,6 +37,7 @@ Agent Skills are structured collections of instructions, templates, examples, an
 ### AI Client Configuration Skills
 
 - **[Claude Code Settings Manager](client-config-claudecode/SKILL.md)** - Manage and maintain `~/.claude/settings.json` and all Claude Code configuration files
+- **[Codex Configuration Manager](client-config-codex/SKILL.md)** - Manage OpenAI Codex CLI configuration files including `config.toml`, sandbox and approvals, rules, MCP servers, hooks, skills, plugins, and `AGENTS.md`
 - **[Copilot CLI Configuration Manager](client-config-copilotcli/SKILL.md)** - Manage GitHub Copilot CLI configuration files including `settings.json`, permissions, MCP and LSP servers, hooks, agents, plugins, and custom instructions
 - **[OpenCode Configuration Manager](client-config-opencode/SKILL.md)** - Manage opencode V2 and V1 configuration files including `opencode.json`, `cli.json`, providers, agents, MCP servers, and permissions
 

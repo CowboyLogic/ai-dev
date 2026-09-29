@@ -74,6 +74,12 @@ artifacts:
     type: skill
     source: skills/client-config-claudecode
     tags: [skills, claude-code, configuration]
+  - id: client-config-codex
+    name: Codex Configuration Manager
+    description: Manage OpenAI Codex CLI configuration files including config.toml, sandbox and approvals, rules, MCP servers, hooks, skills, plugins, and AGENTS.md
+    type: skill
+    source: skills/client-config-codex
+    tags: [skills, codex, configuration]
   - id: client-config-copilotcli
     name: Copilot CLI Configuration Manager
     description: Manage GitHub Copilot CLI configuration files including settings.json, permissions, MCP and LSP servers, hooks, agents, plugins, and custom instructions

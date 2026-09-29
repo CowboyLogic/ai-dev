@@ -25,5 +25,6 @@ agent-output/
 
 # ignore evaluation workspace trees
 skills/client-config-claudecode-workspace/
+skills/client-config-codex-workspace/
 skills/client-config-copilotcli-workspace/
 skills/client-config-opencode-workspace/
