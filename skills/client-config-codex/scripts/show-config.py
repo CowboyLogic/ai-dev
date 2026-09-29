@@ -81,17 +81,17 @@ def load_json(path):
 
 
 def scrub_url(value):
-    """Drop URL userinfo and query/fragment, which can carry credentials; keep scheme, host, path."""
+    """Keep only scheme, host, and port: userinfo, path, query, and fragment can all carry credentials."""
     try:
         parts = urlsplit(value)
         host = parts.hostname or ""
         if parts.port:
             host = f"{host}:{parts.port}"
-        cleaned = urlunsplit((parts.scheme, host, parts.path, "", ""))
+        cleaned = urlunsplit((parts.scheme, host, "", "", ""))
     except ValueError:
         return "***"
-    if cleaned != value:
-        cleaned += "  (credentials/query stripped)"
+    if cleaned != value.rstrip("/"):
+        cleaned += "/...  (path and credentials hidden)"
     return cleaned
 
 
