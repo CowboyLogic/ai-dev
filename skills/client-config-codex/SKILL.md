@@ -34,7 +34,7 @@ every path below that starts with `~/.codex`.
 | Global instructions | `~/.codex/AGENTS.md`, `~/.codex/AGENTS.override.md` | Global |
 | Project instructions | `AGENTS.md`, `AGENTS.override.md` from repo root down to the working directory | Project |
 
-Editable Codex config is **TOML**, not JSON, and `hooks.json` is the only editable JSON file. `auth.json` is JSON credential state that you never inspect or edit.
+Codex config is **TOML**, not JSON. JSON appears only in `hooks.json`, plugin files (`.codex-plugin/plugin.json`, a plugin's `.mcp.json`, `.agents/plugins/marketplace.json`), and `auth.json`, which is credential state that you never inspect or edit.
 
 ## Workflow
 
