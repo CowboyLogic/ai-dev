@@ -9,8 +9,8 @@ Checks that each file parses as TOML, has non-blank `name`, `description`, and
 unique across the scanned set. Uses only the standard library (Python 3.11+).
 Exit status is 1 when any error is found (or any warning with --strict).
 
-Field list last verified September 2026 against
-https://developers.openai.com/codex/subagents and codex-cli 0.158.0.
+Field list and load rules verified September 2026 by running `codex exec` against test files
+on codex-cli 0.158.0, plus https://developers.openai.com/codex/subagents.
 """
 
 from __future__ import annotations
@@ -128,7 +128,8 @@ def validate_file(path: Path, names: dict[str, Path], res: Result) -> None:
 
     effort = data.get("model_reasoning_effort")
     if effort is not None and effort not in EFFORTS:
-        res.error(path, f"model_reasoning_effort `{effort}` not one of {sorted(EFFORTS)}")
+        res.warn(path, f"model_reasoning_effort `{effort}` not one of {sorted(EFFORTS)} "
+                       "(Codex does not reject it at load; the model may)")
 
     approval = data.get("approval_policy")
     if isinstance(approval, str) and approval not in APPROVAL_POLICIES:
