@@ -100,6 +100,7 @@ nav:
       - Copilot Instruction Creator: skills/copilot-instruction-creator.md
       - Claude Code Agent Creator: skills/agent-creator-claudecode.md
       - OpenCode Agent Creator: skills/agent-creator-opencode.md
+      - Codex Agent Creator: skills/agent-creator-codex.md
       - Claude Code Settings Manager: skills/client-config-claudecode.md
       - Copilot CLI Configuration Manager: skills/client-config-copilotcli.md
       - OpenCode Configuration Manager: skills/client-config-opencode.md

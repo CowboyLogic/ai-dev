@@ -62,6 +62,12 @@ artifacts:
     type: skill
     source: skills/agent-creator-opencode
     tags: [skills, opencode, agents]
+  - id: agent-creator-codex
+    name: Codex Agent Creator
+    description: Create and troubleshoot custom subagents for OpenAI Codex (TOML files), with a config reference and validator
+    type: skill
+    source: skills/agent-creator-codex
+    tags: [skills, codex, agents]
   - id: client-config-claudecode
     name: Claude Code Settings Manager
     description: Manage and maintain ~/.claude/settings.json and Claude Code configuration files

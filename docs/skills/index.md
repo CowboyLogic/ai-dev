@@ -151,6 +151,17 @@ selection, ordered permission rules, and subagent patterns.
 
 ---
 
+### Codex Agent Creator
+
+Create and troubleshoot custom subagents for OpenAI Codex, defined as standalone TOML files.
+Covers the required fields, model and sandbox settings, the `[agents]` table in `config.toml`,
+how delegation is triggered, and why parent runtime settings override an agent file. Includes a
+validator script and symptom-to-cause troubleshooting tables.
+
+[Skill Overview](agent-creator-codex.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-codex)
+
+---
+
 ## AI Client Configuration Skills
 
 ### Claude Code Settings Manager
