@@ -25,9 +25,9 @@ else:
     SYSTEM_DIR = Path("/etc/codex")
 SYSTEM_CONFIG_FILE = SYSTEM_DIR / "config.toml"
 REQUIREMENTS_FILE = SYSTEM_DIR / "requirements.toml"
-# Legacy managed defaults: /etc/codex on Unix, CODEX_HOME on Windows. They override user config
-# and even CLI flags, so a diagnostic that omits them can miss the file controlling a value.
-MANAGED_CONFIG_FILE = (CODEX_HOME if os.name == "nt" else SYSTEM_DIR) / "managed_config.toml"
+# Legacy managed defaults (Unix only) override user config and even CLI flags, so a diagnostic
+# that omits them can miss the file controlling a value.
+MANAGED_CONFIG_FILE = None if os.name == "nt" else SYSTEM_DIR / "managed_config.toml"  # Unix only; see references/config-schema.md
 AUTH_FILE = CODEX_HOME / "auth.json"
 HOOKS_FILE = CODEX_HOME / "hooks.json"
 RULES_DIR = CODEX_HOME / "rules"
@@ -204,7 +204,9 @@ def show_config(path, as_json):
 def active_instruction_file(directory, extra_names=()):
     """Codex reads at most one instruction file per directory: the first non-empty of
     AGENTS.override.md, AGENTS.md, then project_doc_fallback_filenames, in that order."""
-    for name in (*INSTRUCTION_NAMES, *extra_names):
+    # Codex ignores fallback entries that are not plain filenames (paths, "..", absolute paths).
+    plain = [n for n in extra_names if isinstance(n, str) and n not in ("", ".", "..") and Path(n).name == n and "\\" not in n]
+    for name in (*INSTRUCTION_NAMES, *plain):
         path = directory / name
         try:
             if path.is_file() and path.stat().st_size > 0:
@@ -292,8 +294,10 @@ def main():
     section(f"SYSTEM CONFIG ({SYSTEM_CONFIG_FILE})")
     system_config = show_config(SYSTEM_CONFIG_FILE, as_json)
 
-    section(f"LEGACY MANAGED DEFAULTS ({MANAGED_CONFIG_FILE})")
-    managed_config = show_config(MANAGED_CONFIG_FILE, as_json)
+    managed_config = {}
+    if MANAGED_CONFIG_FILE:
+        section(f"LEGACY MANAGED DEFAULTS ({MANAGED_CONFIG_FILE})")
+        managed_config = show_config(MANAGED_CONFIG_FILE, as_json)
 
     section(f"ADMIN REQUIREMENTS ({REQUIREMENTS_FILE})")
     show_config(REQUIREMENTS_FILE, as_json)
@@ -362,7 +366,9 @@ def main():
         for path, label in found:
             gated = path.relative_to(directory).parts[0] == ".codex"  # instructions and .agents/skills are not trust-gated
             inactive = gated and not trusted
-            tag = "  [INACTIVE: project not trusted, Codex skips it]" if inactive else ""
+            skipped = trust == "untrusted" and path == instructions  # explicit untrusted skips project AGENTS.md
+            tag = "  [INACTIVE: project not trusted, Codex skips it]" if inactive else (
+                "  [SKIPPED: project is explicitly untrusted]" if skipped else "")
             if path.is_dir():
                 print(f"  {label}: {len(list(path.iterdir()))} item(s) in {path}{tag}")
             else:

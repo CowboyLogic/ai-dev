@@ -19,11 +19,12 @@ Codex, or start a new session, after editing an instruction file or the config k
 
 Empty files are skipped. Codex stops adding files once the size limit is reached.
 
-> [!NOTE]
-> Project trust gates the project `.codex/` layers (config, hooks, rules), not instruction files. On
-> 0.158.0, `codex debug prompt-input` still showed a project `AGENTS.md` (and the global one) with
-> the project's `trust_level` unset, `"untrusted"`, and `"trusted"`. Verify with that command on
-> your build rather than assuming either behavior.
+> [!WARNING]
+> An explicit `trust_level = "untrusted"` for the project skips the whole project `AGENTS.md` chain;
+> only the global file loads. Verified on 0.158.0 in a real git repository with
+> `codex debug prompt-input`: unset and `"trusted"` loaded the project `AGENTS.md`, `"untrusted"`
+> (keyed by the repo root or by the working directory) did not. A project with no entry still loads
+> it. Trust keys must match a real project path; an empty `.git` directory is not a repository.
 
 `CODEX_HOME` moves the global scope. `CODEX_HOME=$(pwd)/.codex codex ...` loads that directory's
 `AGENTS.md` as the global file. Check `echo $CODEX_HOME` when the wrong global guidance appears.
