@@ -90,6 +90,7 @@ nav:
       - Matrix Topology: agents/matrix-topology.md
   - Skills:
       - Overview: skills/index.md
+      - Federated Agent Broker: skills/federated-agent-broker.md
       - About-Me Skill Creator: skills/about-me-skill-creator.md
       - Google Style Docs: skills/google-style-docs.md
       - Git Commit Messages: skills/git-commit-messages.md

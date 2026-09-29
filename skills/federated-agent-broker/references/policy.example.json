@@ -1,0 +1,31 @@
+{
+  "defaultProfile": "economy",
+  "modeProfiles": {
+    "research": "economy",
+    "review": "review",
+    "implement": "implementation"
+  },
+  "profiles": {
+    "economy": {
+      "model": "auto",
+      "effort": "minimal",
+      "context": "default",
+      "maxAiCredits": 30,
+      "timeoutSeconds": 180
+    },
+    "review": {
+      "model": "auto",
+      "effort": "medium",
+      "context": "default",
+      "maxAiCredits": 30,
+      "timeoutSeconds": 300
+    },
+    "implementation": {
+      "model": "auto",
+      "effort": "high",
+      "context": "long_context",
+      "maxAiCredits": 30,
+      "timeoutSeconds": 600
+    }
+  }
+}
