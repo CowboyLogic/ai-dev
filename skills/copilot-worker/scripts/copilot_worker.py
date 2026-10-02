@@ -10,6 +10,7 @@ import os
 import re
 import secrets
 import shlex
+import shutil
 import signal
 import subprocess
 import sys
@@ -31,7 +32,8 @@ DENY_TOOLS = (
 )
 EFFORTS = ("none", "minimal", "low", "medium", "high", "xhigh", "max")
 RUN_ID_PATTERN = re.compile(r"^\d{8}-\d{6}-[0-9a-f]{4}$")
-MAX_DIFF_CHARS = 200_000
+# The prompt is one argument, and Linux limits a single argument to 131072 bytes.
+MAX_DIFF_BYTES = 100_000
 MIN_CREDITS = 30
 KILL_GRACE_SECONDS = 10
 FOOTER = (
@@ -57,7 +59,10 @@ def copilot_bin() -> list[str]:
 
 
 def git(args: list[str], cwd: Path) -> str:
-    done = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True)
+    # A diff can carry bytes that are not UTF-8; replace them instead of failing.
+    done = subprocess.run(
+        ["git", *args], cwd=cwd, capture_output=True, encoding="utf-8", errors="replace"
+    )
     if done.returncode != 0:
         raise WorkerError(f"git {' '.join(args)} failed: {done.stderr.strip()}")
     # Keep leading whitespace: porcelain status lines can start with a space.
@@ -75,8 +80,10 @@ def build_prompt(mode: str, task: str, root: Path) -> str:
     prompt = task.strip() + FOOTER
     if mode == "review":
         diff = git(["diff", "HEAD"], root)
-        if len(diff) > MAX_DIFF_CHARS:
-            diff = diff[:MAX_DIFF_CHARS] + "\n[diff truncated by copilot-worker]"
+        encoded = diff.encode("utf-8")
+        if len(encoded) > MAX_DIFF_BYTES:
+            diff = encoded[:MAX_DIFF_BYTES].decode("utf-8", errors="ignore")
+            diff += "\n[diff truncated by copilot-worker]"
         prompt += "\n\nWorking-tree diff against HEAD:\n\n" + (diff or "[no tracked changes]")
     return prompt
 
@@ -159,16 +166,18 @@ def copilot_version() -> str:
 
 
 def _kill_group(process: subprocess.Popen[bytes]) -> None:
-    for signum in (signal.SIGTERM, signal.SIGKILL):
-        try:
-            os.killpg(process.pid, signum)
-        except ProcessLookupError:
-            return
-        try:
-            process.wait(timeout=KILL_GRACE_SECONDS)
-            return
-        except subprocess.TimeoutExpired:
-            continue
+    """SIGTERM the worker's process group, then SIGKILL whatever is left of it."""
+    try:
+        os.killpg(process.pid, signal.SIGTERM)
+        process.wait(timeout=KILL_GRACE_SECONDS)
+    except (ProcessLookupError, PermissionError, subprocess.TimeoutExpired):
+        pass
+    # The leader exiting does not mean the group is gone: a child may ignore SIGTERM.
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except (ProcessLookupError, PermissionError):
+        pass
+    process.wait()
 
 
 def run_copilot(command: list[str], run_dir: Path, timeout: int) -> tuple[int | None, str]:
@@ -176,6 +185,13 @@ def run_copilot(command: list[str], run_dir: Path, timeout: int) -> tuple[int | 
 
     def on_signal(signum: int, _frame: Any) -> None:
         raise _Terminated(signum)
+
+    def stop_worker() -> None:
+        # A second signal during the kill must not abort it and lose the result.
+        for name in previous:
+            signal.signal(name, signal.SIG_IGN)
+        if process is not None:
+            _kill_group(process)
 
     process: subprocess.Popen[bytes] | None = None
     previous = {name: signal.signal(name, on_signal) for name in (signal.SIGTERM, signal.SIGINT)}
@@ -189,11 +205,10 @@ def run_copilot(command: list[str], run_dir: Path, timeout: int) -> tuple[int | 
             code = process.wait(timeout=timeout)
         return (code, "exit") if code >= 0 else (None, f"signal:{-code}")
     except subprocess.TimeoutExpired:
-        _kill_group(process)
+        stop_worker()
         return None, "timeout"
     except _Terminated as stop:
-        if process is not None:
-            _kill_group(process)
+        stop_worker()
         return None, f"signal:{stop.signum}"
     finally:
         for name, handler in previous.items():
@@ -267,10 +282,14 @@ def execute_run(
     else:
         status = "failed"
 
-    changed: dict[str, list[str]] = {"uncommitted": [], "commits": []}
+    changed: dict[str, list[str]] | None = {"uncommitted": [], "commits": []}
     if mode == "implement":
-        changed["uncommitted"] = git(["status", "--porcelain"], workspace).splitlines()
-        changed["commits"] = git(["log", "--oneline", f"{base}..HEAD"], workspace).splitlines()
+        try:
+            changed["uncommitted"] = git(["status", "--porcelain"], workspace).splitlines()
+            changed["commits"] = git(["log", "--oneline", f"{base}..HEAD"], workspace).splitlines()
+        except (WorkerError, OSError):
+            # The worker damaged its own worktree. Still record the run so clean can find it.
+            changed = None
 
     result = {
         "runId": run_id,
@@ -309,7 +328,10 @@ def print_summary(result: dict[str, Any]) -> None:
     changed = result["changedFiles"]
     print(f"workspace: {result['workspace']}")
     print(f"branch: {result['branch']}")
-    print(f"changes: {len(changed['uncommitted'])} uncommitted, {len(changed['commits'])} commits")
+    if changed is None:
+        print("changes: unavailable; the worktree is no longer a Git checkout")
+        return
+    print(f"changes:{len(changed['uncommitted'])} uncommitted, {len(changed['commits'])} commits")
     lines = changed["uncommitted"] + changed["commits"]
     for line in lines[:8]:
         print(f"  {line}")
@@ -346,7 +368,11 @@ def cmd_clean(args: argparse.Namespace, cwd: Path) -> int:
     workspace = state_home() / "worktrees" / f"{root.name}-{run_id}"
     branch = f"copilot/{run_id}"
     if workspace.exists():
-        git(["worktree", "remove", "--force", str(workspace)], root)
+        try:
+            git(["worktree", "remove", "--force", str(workspace)], root)
+        except WorkerError:
+            # Git refuses a worktree it no longer recognizes; the path is ours, so remove it.
+            shutil.rmtree(workspace, ignore_errors=True)
     git(["worktree", "prune"], root)
     if git(["branch", "--list", branch], root):
         git(["branch", "-D", branch], root)
