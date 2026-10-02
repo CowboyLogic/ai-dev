@@ -47,7 +47,7 @@ is in context on every turn:
 
 ```markdown
 Codebase research, code review, and implementation that touches more than a file or two
-go through the `copilot-worker` skill. Load it before reading more than one or two files.
+go through the `copilot-worker` skill. Load it before reading three or more files.
 ```
 
 ## Models
