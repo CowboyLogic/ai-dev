@@ -92,3 +92,9 @@ artifacts:
     type: skill
     source: skills/client-config-opencode
     tags: [skills, opencode, configuration]
+  - id: copilot-worker
+    name: Copilot Worker
+    description: Run GitHub Copilot CLI as a research, review, or implementation worker from Claude Code
+    type: skill
+    source: skills/copilot-worker
+    tags: [skills, orchestration, copilot, claude-code]

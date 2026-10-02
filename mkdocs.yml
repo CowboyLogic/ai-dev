@@ -105,6 +105,7 @@ nav:
       - Codex Configuration Manager: skills/client-config-codex.md
       - Copilot CLI Configuration Manager: skills/client-config-copilotcli.md
       - OpenCode Configuration Manager: skills/client-config-opencode.md
+      - Copilot Worker: skills/copilot-worker.md
   - Tools:
       - Overview: tools/index.md
       - OpenCode:
