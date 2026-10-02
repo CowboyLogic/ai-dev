@@ -330,6 +330,56 @@ def cmd_run(args: argparse.Namespace, cwd: Path) -> int:
     return 0 if result["status"] == "completed" else 1
 
 
+def cmd_clean(args: argparse.Namespace, cwd: Path) -> int:
+    run_id = args.run_id
+    if not RUN_ID_PATTERN.match(run_id):
+        raise WorkerError(f"not a run ID: {run_id!r}")
+    result_path = state_home() / "runs" / run_id / "result.json"
+    if not result_path.exists():
+        raise WorkerError(f"no such run: {run_id}")
+    result = json.loads(result_path.read_text(encoding="utf-8"))
+    if result["mode"] != "implement":
+        print(f"{run_id}: read-only run, nothing to clean")
+        return 0
+    # Build both names from the validated run ID, never from the stored result.
+    root = Path(result["repoRoot"])
+    workspace = state_home() / "worktrees" / f"{root.name}-{run_id}"
+    branch = f"copilot/{run_id}"
+    if workspace.exists():
+        git(["worktree", "remove", "--force", str(workspace)], root)
+    git(["worktree", "prune"], root)
+    if git(["branch", "--list", branch], root):
+        git(["branch", "-D", branch], root)
+    print(f"{run_id}: removed worktree and branch {branch}")
+    return 0
+
+
+def cmd_check(args: argparse.Namespace, cwd: Path) -> int:
+    ok = True
+    version = copilot_version()
+    if version == "unknown":
+        print("copilot: NOT FOUND")
+        ok = False
+    else:
+        print(f"copilot: {version}")
+    try:
+        print(f"repository: {repo_root(cwd)}")
+    except WorkerError:
+        print("repository: NOT A GIT REPOSITORY")
+        ok = False
+    if not ok or not args.live:
+        return 0 if ok else 1
+    for model in sorted(set(DEFAULT_MODELS.values())):
+        result = execute_run(
+            mode="research", task="Reply with the single word: ok", cwd=cwd,
+            model=model, timeout=120,
+        )
+        passed = result["status"] == "completed"
+        print(f"model {model}: {'ok' if passed else result['status']} ({result['runDir']})")
+        ok = ok and passed
+    return 0 if ok else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -341,6 +391,12 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--max-ai-credits", type=int)
     run.add_argument("--timeout", type=int)
     run.set_defaults(handler=cmd_run)
+    clean = commands.add_parser("clean", help="remove a run's worktree and branch")
+    clean.add_argument("run_id")
+    clean.set_defaults(handler=cmd_clean)
+    check = commands.add_parser("check", help="verify the copilot binary and repository")
+    check.add_argument("--live", action="store_true", help="also probe each default model")
+    check.set_defaults(handler=cmd_check)
     return parser
 
 

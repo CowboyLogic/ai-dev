@@ -377,5 +377,86 @@ class RunTests(WorkerTestCase):
         self.assertEqual(result["terminationReason"], f"signal:{int(signal.SIGTERM)}")
 
 
+class CleanAndCheckTests(WorkerTestCase):
+    def main(self, *args: str, cwd: Path | None = None) -> tuple[int, str, str]:
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            code = worker.main(list(args), cwd=cwd or self.repo)
+        return code, stdout.getvalue(), stderr.getvalue()
+
+    def implement(self) -> dict:
+        return worker.execute_run(mode="implement", task="Do the task.", cwd=self.repo)
+
+    def test_clean_removes_the_worktree_and_branch_but_keeps_the_run(self) -> None:
+        result = self.implement()
+        code, _, _ = self.main("clean", result["runId"])
+        self.assertEqual(code, 0)
+        self.assertFalse(Path(result["workspace"]).exists())
+        self.assertEqual(self.git("branch", "--list", result["branch"]), "")
+        self.assertNotIn(result["workspace"], self.git("worktree", "list"))
+        self.assertTrue((Path(result["runDir"]) / "result.json").exists())
+        self.assertEqual(self.git("rev-parse", "--abbrev-ref", "HEAD"), "main")
+
+    def test_clean_twice_succeeds(self) -> None:
+        result = self.implement()
+        self.assertEqual(self.main("clean", result["runId"])[0], 0)
+        self.assertEqual(self.main("clean", result["runId"])[0], 0)
+
+    def test_clean_succeeds_after_the_worktree_was_deleted_by_hand(self) -> None:
+        result = self.implement()
+        subprocess.run(["rm", "-rf", result["workspace"]], check=True)
+        self.assertEqual(self.main("clean", result["runId"])[0], 0)
+        self.assertEqual(self.git("branch", "--list", result["branch"]), "")
+
+    def test_clean_rejects_a_malformed_run_id(self) -> None:
+        for bad in ("main", "../x", "20261001-120000-zzzz", ""):
+            code, _, stderr = self.main("clean", bad)
+            self.assertEqual(code, 2)
+            self.assertIn("error:", stderr)
+
+    def test_clean_rejects_an_unknown_run(self) -> None:
+        code, _, stderr = self.main("clean", "20200101-000000-abcd")
+        self.assertEqual(code, 2)
+        self.assertIn("no such run", stderr)
+
+    def test_clean_of_a_read_only_run_does_nothing(self) -> None:
+        result = worker.execute_run(mode="research", task="Look.", cwd=self.repo)
+        code, stdout, _ = self.main("clean", result["runId"])
+        self.assertEqual(code, 0)
+        self.assertIn("nothing to clean", stdout)
+
+    def test_check_reports_the_version_and_repository(self) -> None:
+        code, stdout, _ = self.main("check")
+        self.assertEqual(code, 0)
+        self.assertIn("GitHub Copilot CLI 0.0.0-fake", stdout)
+        self.assertIn(str(self.repo), stdout)
+        self.assertEqual(self.calls(), [])
+
+    def test_check_fails_when_the_binary_is_missing(self) -> None:
+        os.environ["COPILOT_WORKER_BIN"] = str(self.home / "no-such-copilot")
+        code, stdout, _ = self.main("check")
+        self.assertEqual(code, 1)
+        self.assertIn("copilot: NOT FOUND", stdout)
+
+    def test_check_fails_outside_a_repository(self) -> None:
+        code, stdout, _ = self.main("check", cwd=self.repo.parent)
+        self.assertEqual(code, 1)
+        self.assertIn("repository: NOT A GIT REPOSITORY", stdout)
+
+    def test_check_live_probes_each_distinct_default_model_once(self) -> None:
+        code, stdout, _ = self.main("check", "--live")
+        self.assertEqual(code, 0)
+        models = [call[call.index("--model") + 1] for call in self.calls()]
+        self.assertEqual(sorted(models), ["gpt-6-luna", "gpt-6.1-sol"])
+        self.assertIn("model gpt-6-luna: ok", stdout)
+        self.assertIn("model gpt-6.1-sol: ok", stdout)
+
+    def test_check_live_fails_when_a_model_is_rejected(self) -> None:
+        self.behavior("fail")
+        code, stdout, _ = self.main("check", "--live")
+        self.assertEqual(code, 1)
+        self.assertIn("model gpt-6-luna: failed", stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
