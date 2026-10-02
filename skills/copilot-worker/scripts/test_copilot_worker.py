@@ -190,6 +190,11 @@ class CommandTests(WorkerTestCase):
              "bash,read_bash,stop_bash,list_bash"],
         )
 
+    def test_file_tools_are_kept_out_of_the_system_temp_directory(self) -> None:
+        # Copilot's file tools can otherwise read the temp directory as well as the workspace.
+        for mode in worker.MODES:
+            self.assertIn("--disallow-temp-dir", self.command(mode))
+
     def test_read_only_command_exposes_only_the_view_tool(self) -> None:
         for mode in ("research", "review"):
             command = self.command(mode)
