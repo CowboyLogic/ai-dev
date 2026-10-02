@@ -175,6 +175,8 @@ def _kill_group(process: subprocess.Popen[bytes]) -> None:
 
 
 def _kill_stragglers(process: subprocess.Popen[bytes]) -> None:
+    # Reaches the worker's own process group only. A process that moved to a new session
+    # is not contained; SKILL.md states that limit.
     try:
         os.killpg(process.pid, signal.SIGKILL)
     except (ProcessLookupError, PermissionError):
