@@ -54,7 +54,7 @@ if "--allow-all-tools" in args:
     with open(os.path.join(workspace, "worker_output.txt"), "w") as handle:
         handle.write("written by worker\n")
 with open(args[args.index("--usage-output-file") + 1], "w") as handle:
-    json.dump({"premiumRequests": 1}, handle)
+    json.dump({"totalNanoAiu": 1000000000}, handle)
 if behavior != "silent":
     print(json.dumps({"type": "assistant.message", "data": {"content": "worker final answer"}}))
 '''
@@ -227,7 +227,7 @@ class RunTests(WorkerTestCase):
         self.assertEqual(result["copilotVersion"], "GitHub Copilot CLI 0.0.0-fake")
         self.assertRegex(result["runId"], worker.RUN_ID_PATTERN)
         self.assertEqual((run_dir / "response.md").read_text(), "worker final answer")
-        self.assertEqual(json.loads((run_dir / "usage.json").read_text()), {"premiumRequests": 1})
+        self.assertEqual(json.loads((run_dir / "usage.json").read_text()), {"totalNanoAiu": 1000000000})
         self.assertTrue((run_dir / "task.md").read_text().startswith("Do the task."))
         self.assertEqual(json.loads((run_dir / "result.json").read_text()), result)
 
