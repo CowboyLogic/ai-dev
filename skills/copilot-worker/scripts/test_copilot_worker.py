@@ -44,20 +44,26 @@ if log:
         handle.write(json.dumps(args) + "\n")
 with open(os.environ["FAKE_COPILOT_PID"], "w") as handle:
     handle.write(str(os.getpid()))
+with open(os.environ["FAKE_COPILOT_STDIN"], "w") as handle:
+    handle.write(sys.stdin.read())
 behavior = os.environ.get("FAKE_COPILOT_BEHAVIOR", "ok")
 if behavior == "stubborn":
     signal.signal(signal.SIGTERM, signal.SIG_IGN)
     time.sleep(60)
-if behavior == "grandchild":
+if behavior in ("grandchild", "lingering"):
     # A child that ignores SIGTERM and outlives this process, like a watch-mode test runner.
+    child_pid = os.environ["FAKE_COPILOT_CHILD_PID"]
     subprocess.Popen([
         sys.executable, "-c",
         "import os, signal, sys, time\n"
         "signal.signal(signal.SIGTERM, signal.SIG_IGN)\n"
         "open(sys.argv[1], 'w').write(str(os.getpid()))\n"
         "time.sleep(60)\n",
-        os.environ["FAKE_COPILOT_CHILD_PID"],
+        child_pid,
     ])
+    while not (os.path.exists(child_pid) and os.path.getsize(child_pid)):
+        time.sleep(0.02)
+if behavior == "grandchild":
     time.sleep(60)
 if behavior == "wreck":
     os.remove(os.path.join(args[args.index("-C") + 1], ".git"))
@@ -97,6 +103,7 @@ class WorkerTestCase(unittest.TestCase):
             "COPILOT_WORKER_BIN": f"{shlex.quote(sys.executable)} {shlex.quote(str(fake))}",
             "FAKE_COPILOT_ARGV": str(self.argv_log),
             "FAKE_COPILOT_PID": str(self.pid_file),
+            "FAKE_COPILOT_STDIN": str(base / "stdin.txt"),
             "FAKE_COPILOT_CHILD_PID": str(self.child_pid_file),
             "FAKE_COPILOT_BEHAVIOR": "ok",
         }
@@ -143,7 +150,6 @@ class CommandTests(WorkerTestCase):
         options = {
             "mode": mode,
             "workspace": self.repo,
-            "prompt": "do the thing",
             "model": worker.DEFAULT_MODELS[mode],
             "effort": None,
             "credits": 30,
@@ -185,10 +191,16 @@ class CommandTests(WorkerTestCase):
         command = self.command("implement", effort="high")
         self.assertEqual(command[command.index("--reasoning-effort") + 1], "high")
 
-    def test_prompt_starting_with_a_dash_stays_one_argument(self) -> None:
-        prompt = "- fix the \"quoted\" thing\n- then the 'other' thing"
-        command = self.command("research", prompt=prompt)
-        self.assertIn(f"--prompt={prompt}", command)
+    def test_task_reaches_the_worker_on_stdin_and_never_in_argv(self) -> None:
+        # Argv is visible to other local users through the process list; stdin is not.
+        task = "- fix the \"quoted\" thing\n- then the 'other' thing"
+        result = worker.execute_run(mode="research", task=task, cwd=self.repo)
+        sent = (Path(result["runDir"]) / "task.md").read_text()
+        self.assertTrue(sent.startswith(task))
+        self.assertEqual(Path(os.environ["FAKE_COPILOT_STDIN"]).read_text(), sent)
+        for argument in self.calls()[-1]:
+            self.assertNotIn("quoted", argument)
+            self.assertFalse(argument.startswith(("-p", "--prompt")), argument)
 
     def test_review_prompt_attaches_the_working_diff(self) -> None:
         (self.repo / "README.md").write_text("changed\n", encoding="utf-8")
@@ -200,7 +212,7 @@ class CommandTests(WorkerTestCase):
         self.assertIn("[no tracked changes]", prompt)
 
     def test_review_prompt_truncates_a_large_diff(self) -> None:
-        # Multi-byte text: the cap must hold in bytes, under Linux's 131072-byte argument limit.
+        # Multi-byte text: the cap must hold in bytes, not characters.
         (self.repo / "README.md").write_text("é" * 150_000 + "\n", encoding="utf-8")
         prompt = worker.build_prompt("review", "Review this.", self.repo)
         self.assertIn("[diff truncated by copilot-worker]", prompt)
@@ -350,6 +362,13 @@ class RunTests(WorkerTestCase):
         self.assert_process_gone(self.pid_file)
         self.assert_process_gone(self.child_pid_file)
 
+    def test_a_process_the_worker_leaves_running_is_killed_on_normal_exit(self) -> None:
+        # Otherwise it could keep changing the worktree after result.json says the run is over.
+        self.behavior("lingering")
+        result = self.run_mode("implement")
+        self.assertEqual(result["status"], "completed")
+        self.assert_process_gone(self.child_pid_file)
+
     def test_second_signal_during_the_kill_still_writes_a_result(self) -> None:
         # A stubborn worker keeps the script in its kill grace period when signal two lands.
         self.behavior("stubborn")
@@ -440,6 +459,7 @@ class RunTests(WorkerTestCase):
             stdin=subprocess.PIPE,
         )
         process.stdin.close()
+        process.stdin = None  # Python 3.9's communicate() would flush the closed pipe.
         process.communicate(timeout=30)
         self.assertEqual(process.returncode, 0)
         self.assertEqual(self.results()[0]["status"], "completed")
