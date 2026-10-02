@@ -30,6 +30,13 @@ DENY_TOOLS = (
     "shell(gh:*)",
     "shell(sudo)",
 )
+# The only tools an implement worker sees. --allow-all-tools pre-approves whatever is
+# visible, so MCP, web, subagent, and skill tools are left out: the deny list above only
+# matches shell commands and could not stop them.
+IMPLEMENT_TOOLS = (
+    "view", "rg", "glob", "create", "edit", "apply_patch",
+    "bash", "read_bash", "stop_bash", "list_bash",
+)
 EFFORTS = ("none", "minimal", "low", "medium", "high", "xhigh", "max")
 RUN_ID_PATTERN = re.compile(r"^\d{8}-\d{6}-[0-9a-f]{4}$")
 # Keeps an attached review diff to a size the worker can read alongside the files.
@@ -112,7 +119,7 @@ def build_command(
     if effort:
         command += ["--reasoning-effort", effort]
     if mode == "implement":
-        command.append("--allow-all-tools")
+        command += [f"--available-tools={','.join(IMPLEMENT_TOOLS)}", "--allow-all-tools"]
         command += [f"--deny-tool={pattern}" for pattern in DENY_TOOLS]
     else:
         command += ["--available-tools=view", "--allow-tool=read"]
@@ -341,7 +348,7 @@ def print_summary(result: dict[str, Any]) -> None:
     if changed is None:
         print("changes: unavailable; the worktree is no longer a Git checkout")
         return
-    print(f"changes:{len(changed['uncommitted'])} uncommitted, {len(changed['commits'])} commits")
+    print(f"changes: {len(changed['uncommitted'])} uncommitted, {len(changed['commits'])} commits")
     lines = changed["uncommitted"] + changed["commits"]
     for line in lines[:8]:
         print(f"  {line}")

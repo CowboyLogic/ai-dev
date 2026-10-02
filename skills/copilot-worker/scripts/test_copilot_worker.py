@@ -179,6 +179,17 @@ class CommandTests(WorkerTestCase):
             for flag in ("--allow-all-paths", "--allow-all-urls", "--allow-all", "--yolo"):
                 self.assertNotIn(flag, command)
 
+    def test_implement_command_exposes_only_built_in_file_and_shell_tools(self) -> None:
+        # --allow-all-tools would otherwise pre-approve any configured MCP server's tools,
+        # which the shell deny list cannot see.
+        command = self.command("implement")
+        exposed = [arg for arg in command if arg.startswith("--available-tools=")]
+        self.assertEqual(
+            exposed,
+            ["--available-tools=view,rg,glob,create,edit,apply_patch,"
+             "bash,read_bash,stop_bash,list_bash"],
+        )
+
     def test_read_only_command_exposes_only_the_view_tool(self) -> None:
         for mode in ("research", "review"):
             command = self.command(mode)
@@ -321,6 +332,14 @@ class RunTests(WorkerTestCase):
         self.assertEqual(self.git("rev-parse", "--abbrev-ref", "HEAD"), "main")
         self.assertEqual(self.git("rev-parse", "HEAD"), head)
         self.assertEqual(self.git("status", "--porcelain"), "")
+
+    def test_implement_summary_reports_the_change_counts(self) -> None:
+        result = self.run_mode("implement")
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            worker.print_summary(result)
+        self.assertIn("changes: 1 uncommitted, 0 commits\n", stdout.getvalue())
+        self.assertIn("  ?? worker_output.txt\n", stdout.getvalue())
 
     def test_implement_warns_when_the_live_checkout_is_dirty(self) -> None:
         (self.repo / "README.md").write_text("uncommitted\n", encoding="utf-8")
