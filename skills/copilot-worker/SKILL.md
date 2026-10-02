@@ -1,6 +1,6 @@
 ---
 name: copilot-worker
-description: Run GitHub Copilot CLI as a worker from Claude Code. Use when Claude Code should hand a bounded research, review, or implementation task to Copilot to save Claude tokens, and then verify the result itself.
+description: Delegate work to GitHub Copilot CLI instead of doing it yourself, to save Claude tokens. Use this BEFORE starting any codebase research or investigation ("look into", "find out how", "where is", "why does"), any code review of a diff or files, or any implementation task that touches more than a file or two. Also use when the user says "use Copilot", "delegate", "hand off", or "worker". You plan the task and verify the result; Copilot does the bulk work.
 ---
 
 # Copilot Worker
@@ -11,6 +11,17 @@ You plan, verify, and own Git. Copilot does the bulk work.
 The script is `scripts/copilot_worker.py` in this skill's directory. It needs Python 3.9
 or later and uses only the standard library. Below, `WORKER` stands for
 `python3 <this skill's directory>/scripts/copilot_worker.py`.
+
+## When to delegate
+
+Delegate by default. Research, review, and implementation go to the worker unless one
+of these applies:
+
+- You can answer or finish it in a couple of tool calls. A hand-off costs more than a
+  quick lookup or a one-line edit.
+- The task needs this conversation's context and you cannot put that context in a task
+  file.
+- The user asked you to do it yourself.
 
 ## Modes
 
