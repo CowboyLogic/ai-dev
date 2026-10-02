@@ -38,6 +38,18 @@ python3 ~/.claude/skills/copilot-worker/scripts/copilot_worker.py check --live
 `check` confirms the binary and repository. `--live` also sends one small prompt to each
 default model, which uses Copilot credits.
 
+## Make delegation reliable
+
+A skill description is only a hint, and an agent's standing guidance to do small jobs
+itself usually wins over it. If you want delegation to happen consistently in a
+repository, add a line like this to that repository's `CLAUDE.md` or `AGENTS.md`, which
+is in context on every turn:
+
+```markdown
+Codebase research, code review, and implementation that touches more than a file or two
+go through the `copilot-worker` skill. Load it before reading more than one or two files.
+```
+
 ## Models
 
 | Mode | Default model |
