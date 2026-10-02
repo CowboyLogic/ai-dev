@@ -1,6 +1,6 @@
 ---
 name: copilot-worker
-description: Delegate work to GitHub Copilot CLI instead of doing it yourself, to save Claude tokens. Use this BEFORE starting any codebase research or investigation ("look into", "find out how", "where is", "why does"), any code review of a diff or files, or any implementation task that touches more than a file or two. Also use when the user says "use Copilot", "delegate", "hand off", or "worker". You plan the task and verify the result; Copilot does the bulk work.
+description: Delegate work to GitHub Copilot CLI instead of doing it yourself, to save Claude tokens. Use this BEFORE reading more than one or two files to answer a question about a codebase ("look into", "find out how", "where is", "why does", "explain how X works", "does the code do Y", "give me an overview", "summarize"), before any code review of a diff or files, and before any implementation task that touches more than a file or two. Also use when the user says "use Copilot", "delegate", "hand off", or "worker". You plan the task and verify the result; Copilot does the bulk work.
 ---
 
 # Copilot Worker
@@ -17,8 +17,10 @@ or later and uses only the standard library. Below, `WORKER` stands for
 Delegate by default. Research, review, and implementation go to the worker unless one
 of these applies:
 
-- You can answer or finish it in a couple of tool calls. A hand-off costs more than a
-  quick lookup or a one-line edit.
+- The answer is already in your context, or needs at most one file you have not read
+  (roughly 200 lines). Judge by how much you would have to read, not by how many tool
+  calls it takes: a directory listing plus one long file is already past that.
+- The change is a one-line edit in a file you have already read.
 - The task needs this conversation's context and you cannot put that context in a task
   file.
 - The user asked you to do it yourself.
