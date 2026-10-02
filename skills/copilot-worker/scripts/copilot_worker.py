@@ -32,7 +32,7 @@ DENY_TOOLS = (
 )
 EFFORTS = ("none", "minimal", "low", "medium", "high", "xhigh", "max")
 RUN_ID_PATTERN = re.compile(r"^\d{8}-\d{6}-[0-9a-f]{4}$")
-# The prompt is one argument, and Linux limits a single argument to 131072 bytes.
+# Keeps an attached review diff to a size the worker can read alongside the files.
 MAX_DIFF_BYTES = 100_000
 MIN_CREDITS = 30
 KILL_GRACE_SECONDS = 10
@@ -92,7 +92,6 @@ def build_command(
     *,
     mode: str,
     workspace: Path,
-    prompt: str,
     model: str,
     effort: str | None,
     credits: int,
@@ -101,8 +100,6 @@ def build_command(
     command = [
         *copilot_bin(),
         "-C", str(workspace),
-        # The equals form keeps a prompt that starts with "-" from being read as an option.
-        f"--prompt={prompt}",
         "--output-format", "json",
         "--no-ask-user",
         "--no-remote",
@@ -173,11 +170,15 @@ def _kill_group(process: subprocess.Popen[bytes]) -> None:
     except (ProcessLookupError, PermissionError, subprocess.TimeoutExpired):
         pass
     # The leader exiting does not mean the group is gone: a child may ignore SIGTERM.
+    _kill_stragglers(process)
+    process.wait()
+
+
+def _kill_stragglers(process: subprocess.Popen[bytes]) -> None:
     try:
         os.killpg(process.pid, signal.SIGKILL)
     except (ProcessLookupError, PermissionError):
         pass
-    process.wait()
 
 
 def run_copilot(command: list[str], run_dir: Path, timeout: int) -> tuple[int | None, str]:
@@ -196,13 +197,17 @@ def run_copilot(command: list[str], run_dir: Path, timeout: int) -> tuple[int | 
     process: subprocess.Popen[bytes] | None = None
     previous = {name: signal.signal(name, on_signal) for name in (signal.SIGTERM, signal.SIGINT)}
     try:
-        with open(run_dir / "events.jsonl", "wb") as out, open(run_dir / "stderr.log", "wb") as err:
-            # Own session and no stdin: the worker outlives the caller's connection.
+        with open(run_dir / "task.md", "rb") as task, \
+                open(run_dir / "events.jsonl", "wb") as out, \
+                open(run_dir / "stderr.log", "wb") as err:
+            # Own session, and the prompt on stdin from a file: the worker outlives the
+            # caller's connection, and the task never appears in the process list.
             process = subprocess.Popen(
-                command, stdin=subprocess.DEVNULL, stdout=out, stderr=err,
-                start_new_session=True,
+                command, stdin=task, stdout=out, stderr=err, start_new_session=True,
             )
             code = process.wait(timeout=timeout)
+            # Anything the worker left running must not outlive the run it belongs to.
+            _kill_stragglers(process)
         return (code, "exit") if code >= 0 else (None, f"signal:{-code}")
     except subprocess.TimeoutExpired:
         stop_worker()
@@ -263,7 +268,7 @@ def execute_run(
 
     (run_dir / "task.md").write_text(prompt, encoding="utf-8")
     command = build_command(
-        mode=mode, workspace=workspace, prompt=prompt, model=model, effort=effort,
+        mode=mode, workspace=workspace, model=model, effort=effort,
         credits=credits, usage_file=run_dir / "usage.json",
     )
     started_at, clock = utc_now(), time.monotonic()
