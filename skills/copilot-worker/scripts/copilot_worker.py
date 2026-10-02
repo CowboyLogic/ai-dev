@@ -112,6 +112,7 @@ def build_command(
         "--no-remote",
         "--no-remote-export",
         "--disable-builtin-mcps",
+        "--disallow-temp-dir",
         "--model", model,
         "--max-ai-credits", str(credits),
         "--usage-output-file", str(usage_file),
