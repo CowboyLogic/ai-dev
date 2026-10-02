@@ -13,6 +13,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
 from unittest.mock import patch
@@ -31,7 +32,7 @@ RECORDED_EVENT = json.dumps({
 })
 
 FAKE_COPILOT = r'''
-import json, os, sys, time
+import json, os, signal, subprocess, sys, time
 
 args = sys.argv[1:]
 if args == ["--version"]:
@@ -41,7 +42,25 @@ log = os.environ.get("FAKE_COPILOT_ARGV")
 if log:
     with open(log, "a") as handle:
         handle.write(json.dumps(args) + "\n")
+with open(os.environ["FAKE_COPILOT_PID"], "w") as handle:
+    handle.write(str(os.getpid()))
 behavior = os.environ.get("FAKE_COPILOT_BEHAVIOR", "ok")
+if behavior == "stubborn":
+    signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    time.sleep(60)
+if behavior == "grandchild":
+    # A child that ignores SIGTERM and outlives this process, like a watch-mode test runner.
+    subprocess.Popen([
+        sys.executable, "-c",
+        "import os, signal, sys, time\n"
+        "signal.signal(signal.SIGTERM, signal.SIG_IGN)\n"
+        "open(sys.argv[1], 'w').write(str(os.getpid()))\n"
+        "time.sleep(60)\n",
+        os.environ["FAKE_COPILOT_CHILD_PID"],
+    ])
+    time.sleep(60)
+if behavior == "wreck":
+    os.remove(os.path.join(args[args.index("-C") + 1], ".git"))
 if behavior == "sleep":
     time.sleep(60)
 if behavior == "slow":
@@ -71,10 +90,14 @@ class WorkerTestCase(unittest.TestCase):
         fake = base / "fake_copilot.py"
         fake.write_text(FAKE_COPILOT, encoding="utf-8")
         self.argv_log = base / "argv.jsonl"
+        self.pid_file = base / "worker.pid"
+        self.child_pid_file = base / "grandchild.pid"
         self.env = {
             "COPILOT_WORKER_HOME": str(self.home),
             "COPILOT_WORKER_BIN": f"{shlex.quote(sys.executable)} {shlex.quote(str(fake))}",
             "FAKE_COPILOT_ARGV": str(self.argv_log),
+            "FAKE_COPILOT_PID": str(self.pid_file),
+            "FAKE_COPILOT_CHILD_PID": str(self.child_pid_file),
             "FAKE_COPILOT_BEHAVIOR": "ok",
         }
         patcher = patch.dict(os.environ, self.env)
@@ -96,6 +119,18 @@ class WorkerTestCase(unittest.TestCase):
 
     def behavior(self, name: str) -> None:
         os.environ["FAKE_COPILOT_BEHAVIOR"] = name
+
+    def assert_process_gone(self, pid_file: Path) -> None:
+        pid = int(pid_file.read_text())
+        deadline = time.monotonic() + 3
+        while time.monotonic() < deadline:
+            try:
+                os.kill(pid, 0)
+            except ProcessLookupError:
+                return
+            time.sleep(0.05)
+        os.kill(pid, signal.SIGKILL)
+        self.fail(f"process {pid} from {pid_file.name} is still running")
 
     def calls(self) -> list[list[str]]:
         if not self.argv_log.exists():
@@ -165,10 +200,16 @@ class CommandTests(WorkerTestCase):
         self.assertIn("[no tracked changes]", prompt)
 
     def test_review_prompt_truncates_a_large_diff(self) -> None:
-        (self.repo / "README.md").write_text("x" * 300_000 + "\n", encoding="utf-8")
+        # Multi-byte text: the cap must hold in bytes, under Linux's 131072-byte argument limit.
+        (self.repo / "README.md").write_text("é" * 150_000 + "\n", encoding="utf-8")
         prompt = worker.build_prompt("review", "Review this.", self.repo)
         self.assertIn("[diff truncated by copilot-worker]", prompt)
-        self.assertLess(len(prompt), 205_000)
+        self.assertLess(len(prompt.encode("utf-8")), 131_072)
+
+    def test_review_prompt_survives_non_utf8_bytes_in_the_diff(self) -> None:
+        (self.repo / "README.md").write_bytes(b"caf\xe9 latin-1\n")
+        prompt = worker.build_prompt("review", "Review this.", self.repo)
+        self.assertIn("latin-1", prompt)
 
     def test_research_prompt_has_no_diff(self) -> None:
         (self.repo / "README.md").write_text("changed\n", encoding="utf-8")
@@ -293,6 +334,56 @@ class RunTests(WorkerTestCase):
         self.assertEqual(result["status"], "timed_out")
         self.assertEqual(result["terminationReason"], "timeout")
         self.assertIsNone(result["exitCode"])
+        self.assert_process_gone(self.pid_file)
+
+    def test_timeout_also_kills_a_grandchild_that_ignores_sigterm(self) -> None:
+        self.behavior("grandchild")
+        result = self.run_mode("research", timeout=2)
+        self.assertEqual(result["status"], "timed_out")
+        self.assert_process_gone(self.pid_file)
+        self.assert_process_gone(self.child_pid_file)
+
+    def test_second_signal_during_the_kill_still_writes_a_result(self) -> None:
+        # A stubborn worker keeps the script in its kill grace period when signal two lands.
+        self.behavior("stubborn")
+
+        def signal_twice() -> None:
+            deadline = time.monotonic() + 10
+            while not self.pid_file.exists() and time.monotonic() < deadline:
+                time.sleep(0.05)
+            time.sleep(0.2)
+            os.kill(os.getpid(), signal.SIGTERM)
+            time.sleep(0.3)
+            os.kill(os.getpid(), signal.SIGTERM)
+
+        sender = threading.Thread(target=signal_twice)
+        with patch.object(worker, "KILL_GRACE_SECONDS", 1):
+            sender.start()
+            try:
+                result = self.run_mode("research")
+            finally:
+                sender.join()
+        self.assertEqual(result["terminationReason"], f"signal:{int(signal.SIGTERM)}")
+        self.assertEqual(result["status"], "failed")
+        self.assertTrue((Path(result["runDir"]) / "result.json").exists())
+        self.assert_process_gone(self.pid_file)
+
+    def test_result_is_written_when_the_worker_destroys_its_worktree(self) -> None:
+        self.behavior("wreck")
+        result = self.run_mode("implement")
+        self.assertEqual(result["status"], "completed")
+        self.assertIsNone(result["changedFiles"])
+        self.assertTrue((Path(result["runDir"]) / "result.json").exists())
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            worker.print_summary(result)
+            # The run is still recorded, so clean can find and remove what is left.
+            code = worker.main(["clean", result["runId"]], cwd=self.repo)
+        self.assertEqual(code, 0)
+        self.assertIn("changes: unavailable", stdout.getvalue())
+        self.assertFalse(Path(result["workspace"]).exists())
+        self.assertEqual(self.git("branch", "--list", result["branch"]), "")
+        self.assertNotIn(result["workspace"], self.git("worktree", "list"))
 
     def test_missing_binary_is_recorded_as_a_spawn_error(self) -> None:
         os.environ["COPILOT_WORKER_BIN"] = str(self.home / "no-such-copilot")
@@ -375,6 +466,7 @@ class RunTests(WorkerTestCase):
         result = self.results()[0]
         self.assertEqual(result["status"], "failed")
         self.assertEqual(result["terminationReason"], f"signal:{int(signal.SIGTERM)}")
+        self.assert_process_gone(self.pid_file)
 
 
 class CleanAndCheckTests(WorkerTestCase):
