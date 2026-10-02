@@ -103,6 +103,10 @@ If `changedFiles` is `null`, the worker damaged its own worktree. Discard the ru
 > except `git push`, `git remote`, `git worktree`, `gh`, and `sudo`. That deny list
 > guards against accidents. It does not confine the worker to its worktree.
 
+- When a run ends, the script kills the worker's process group. A process that detached
+  into its own session (a daemon, or anything started with `setsid` or `nohup`-style
+  detachment) is outside that group and survives. If a task could start one, check for
+  it before trusting the worktree's contents.
 - The worktree starts from `HEAD`. An `implement` worker does not see uncommitted
   changes in the live checkout; the script warns when there are any.
 - `research` and `review` read the live checkout, so they do see uncommitted changes.
