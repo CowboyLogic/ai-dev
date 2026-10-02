@@ -112,8 +112,11 @@ If `changedFiles` is `null`, the worker damaged its own worktree. Discard the ru
 - `research` and `review` read the live checkout, so they do see uncommitted changes.
   `review` attaches `git diff HEAD`, which leaves out untracked files. Name those files
   in the task.
-- The user's own Copilot hooks in `~/.copilot/hooks/` run inside the worker. The worker
-  also loads the user's Copilot skills and the repository's custom instructions.
+- An `implement` worker sees only file, search, and shell tools. MCP servers, web fetch,
+  subagents, and Copilot skills are not available to it, so a task must not depend on
+  them.
+- The user's own Copilot hooks in `~/.copilot/hooks/` run inside the worker, and the
+  repository's custom instructions (such as `AGENTS.md`) still load.
 - `review` attaches at most 100,000 bytes of diff and says so when it truncates. For a
   larger change, review it in parts by naming files in the task.
 - `--max-ai-credits` is a soft cap with a minimum of 30. A response can exceed it.
