@@ -192,5 +192,190 @@ class CommandTests(WorkerTestCase):
         self.assertEqual(worker.extract_response('{"type":"session.start"}\n'), "")
 
 
+class RunTests(WorkerTestCase):
+    def run_mode(self, mode: str, **options: object) -> dict:
+        return worker.execute_run(mode=mode, task="Do the task.", cwd=self.repo, **options)
+
+    def cli(self, *args: str, **popen: object) -> subprocess.Popen:
+        return subprocess.Popen(
+            [sys.executable, str(SCRIPT), *args],
+            cwd=self.repo, env={**os.environ}, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, text=True, **popen,
+        )
+
+    def task_file(self, text: str = "Do the task.") -> str:
+        path = self.repo.parent / "task.md"
+        path.write_text(text, encoding="utf-8")
+        return str(path)
+
+    def results(self) -> list[dict]:
+        return [
+            json.loads(path.read_text())
+            for path in sorted((self.home / "runs").glob("*/result.json"))
+        ]
+
+    def test_research_run_completes_in_the_live_checkout(self) -> None:
+        result = self.run_mode("research")
+        run_dir = Path(result["runDir"])
+        self.assertEqual(result["status"], "completed")
+        self.assertEqual(result["terminationReason"], "exit")
+        self.assertEqual(result["exitCode"], 0)
+        self.assertEqual(result["workspace"], str(self.repo))
+        self.assertIsNone(result["branch"])
+        self.assertIsNone(result["baseCommit"])
+        self.assertEqual(result["changedFiles"], {"uncommitted": [], "commits": []})
+        self.assertEqual(result["copilotVersion"], "GitHub Copilot CLI 0.0.0-fake")
+        self.assertRegex(result["runId"], worker.RUN_ID_PATTERN)
+        self.assertEqual((run_dir / "response.md").read_text(), "worker final answer")
+        self.assertEqual(json.loads((run_dir / "usage.json").read_text()), {"premiumRequests": 1})
+        self.assertTrue((run_dir / "task.md").read_text().startswith("Do the task."))
+        self.assertEqual(json.loads((run_dir / "result.json").read_text()), result)
+
+    def test_each_mode_uses_its_default_model_and_limits(self) -> None:
+        for mode in worker.MODES:
+            result = self.run_mode(mode)
+            call = self.calls()[-1]
+            self.assertEqual(call[call.index("--model") + 1], worker.DEFAULT_MODELS[mode])
+            self.assertEqual(result["maxAiCredits"], worker.DEFAULT_CREDITS[mode])
+            self.assertEqual(result["timeoutSeconds"], worker.DEFAULT_TIMEOUTS[mode])
+
+    def test_model_override_replaces_the_default(self) -> None:
+        result = self.run_mode("research", model="gpt-5-mini")
+        call = self.calls()[-1]
+        self.assertEqual(call[call.index("--model") + 1], "gpt-5-mini")
+        self.assertEqual(result["model"], "gpt-5-mini")
+
+    def test_implement_runs_in_a_worktree_and_leaves_the_live_checkout_alone(self) -> None:
+        head = self.git("rev-parse", "HEAD")
+        result = self.run_mode("implement")
+        workspace = Path(result["workspace"])
+        self.assertEqual(result["status"], "completed")
+        self.assertEqual(workspace.parent, self.home / "worktrees")
+        self.assertEqual(result["branch"], f"copilot/{result['runId']}")
+        self.assertEqual(result["baseCommit"], head)
+        self.assertTrue((workspace / "worker_output.txt").exists())
+        self.assertEqual(result["changedFiles"]["uncommitted"], ["?? worker_output.txt"])
+        self.assertEqual(result["changedFiles"]["commits"], [])
+        # Invariants 1 and 6: nothing changed in the live checkout or on its branch.
+        self.assertFalse((self.repo / "worker_output.txt").exists())
+        self.assertEqual(self.git("rev-parse", "--abbrev-ref", "HEAD"), "main")
+        self.assertEqual(self.git("rev-parse", "HEAD"), head)
+        self.assertEqual(self.git("status", "--porcelain"), "")
+
+    def test_implement_warns_when_the_live_checkout_is_dirty(self) -> None:
+        (self.repo / "README.md").write_text("uncommitted\n", encoding="utf-8")
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            result = self.run_mode("implement")
+        self.assertEqual(result["status"], "completed")
+        self.assertIn("uncommitted changes", stderr.getvalue())
+        self.assertEqual(
+            (Path(result["workspace"]) / "README.md").read_text(), "hello\n"
+        )
+
+    def test_exit_zero_without_a_message_is_completed_no_response(self) -> None:
+        self.behavior("silent")
+        self.assertEqual(self.run_mode("research")["status"], "completed_no_response")
+
+    def test_non_zero_exit_is_failed_and_keeps_stderr(self) -> None:
+        self.behavior("fail")
+        result = self.run_mode("research")
+        self.assertEqual(result["status"], "failed")
+        self.assertEqual(result["exitCode"], 1)
+        self.assertEqual(result["terminationReason"], "exit")
+        self.assertIn("model rejected", (Path(result["runDir"]) / "stderr.log").read_text())
+
+    def test_timeout_kills_the_worker_and_records_the_reason(self) -> None:
+        self.behavior("sleep")
+        started = time.monotonic()
+        result = self.run_mode("research", timeout=1)
+        self.assertLess(time.monotonic() - started, 15)
+        self.assertEqual(result["status"], "timed_out")
+        self.assertEqual(result["terminationReason"], "timeout")
+        self.assertIsNone(result["exitCode"])
+
+    def test_missing_binary_is_recorded_as_a_spawn_error(self) -> None:
+        os.environ["COPILOT_WORKER_BIN"] = str(self.home / "no-such-copilot")
+        result = self.run_mode("research")
+        self.assertEqual(result["status"], "failed")
+        self.assertEqual(result["terminationReason"], "spawn_error")
+        self.assertEqual(result["copilotVersion"], "unknown")
+        self.assertTrue((Path(result["runDir"]) / "result.json").exists())
+
+    def test_invalid_requests_are_rejected_before_anything_runs(self) -> None:
+        with self.assertRaises(worker.WorkerError):
+            worker.execute_run(mode="research", task="  \n", cwd=self.repo)
+        with self.assertRaises(worker.WorkerError):
+            self.run_mode("research", credits=29)
+        with self.assertRaises(worker.WorkerError):
+            self.run_mode("research", timeout=0)
+        with self.assertRaises(worker.WorkerError):
+            worker.execute_run(mode="research", task="x", cwd=self.repo.parent)
+        self.assertEqual(self.calls(), [])
+
+    def test_cli_run_exits_zero_and_prints_a_short_summary(self) -> None:
+        process = self.cli("run", "--mode", "research", "--task-file", self.task_file())
+        stdout, _ = process.communicate(timeout=30)
+        self.assertEqual(process.returncode, 0)
+        self.assertIn("status: completed", stdout)
+        self.assertLessEqual(len(stdout.splitlines()), 20)
+
+    def test_cli_run_exits_one_when_the_worker_fails(self) -> None:
+        self.behavior("fail")
+        process = self.cli("run", "--mode", "research", "--task-file", self.task_file())
+        stdout, _ = process.communicate(timeout=30)
+        self.assertEqual(process.returncode, 1)
+        self.assertIn("status: failed", stdout)
+
+    def test_cli_run_exits_two_for_an_empty_task_file(self) -> None:
+        process = self.cli("run", "--mode", "research", "--task-file", self.task_file(""))
+        _, stderr = process.communicate(timeout=30)
+        self.assertEqual(process.returncode, 2)
+        self.assertIn("error:", stderr)
+        self.assertNotIn("Traceback", stderr)
+
+    def test_run_completes_after_the_callers_stdin_closes(self) -> None:
+        # Invariant 4: the broker died here; this script must not.
+        self.behavior("slow")
+        process = self.cli(
+            "run", "--mode", "research", "--task-file", self.task_file(),
+            stdin=subprocess.PIPE,
+        )
+        process.stdin.close()
+        process.communicate(timeout=30)
+        self.assertEqual(process.returncode, 0)
+        self.assertEqual(self.results()[0]["status"], "completed")
+
+    def test_two_runs_overlap_instead_of_queueing(self) -> None:
+        # Invariant 7.
+        self.behavior("slow")
+        task = self.task_file()
+        first = self.cli("run", "--mode", "research", "--task-file", task)
+        second = self.cli("run", "--mode", "implement", "--task-file", task)
+        for process in (first, second):
+            process.communicate(timeout=30)
+            self.assertEqual(process.returncode, 0)
+        one, two = self.results()
+        self.assertNotEqual(one["runId"], two["runId"])
+        self.assertLess(one["startedAt"], two["endedAt"])
+        self.assertLess(two["startedAt"], one["endedAt"])
+
+    def test_sigterm_kills_the_worker_and_still_writes_a_result(self) -> None:
+        # Invariant 5.
+        self.behavior("sleep")
+        process = self.cli("run", "--mode", "research", "--task-file", self.task_file())
+        deadline = time.monotonic() + 10
+        while not list((self.home / "runs").glob("*/events.jsonl")):
+            self.assertLess(time.monotonic(), deadline, "worker never started")
+            time.sleep(0.05)
+        time.sleep(0.3)
+        process.send_signal(signal.SIGTERM)
+        process.communicate(timeout=30)
+        self.assertEqual(process.returncode, 1)
+        result = self.results()[0]
+        self.assertEqual(result["status"], "failed")
+        self.assertEqual(result["terminationReason"], f"signal:{int(signal.SIGTERM)}")
+
+
 if __name__ == "__main__":
     unittest.main()

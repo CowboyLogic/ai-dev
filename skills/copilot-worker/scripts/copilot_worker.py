@@ -130,3 +130,230 @@ def extract_response(events_text: str) -> str:
         if isinstance(content, str) and content.strip():
             response = content
     return response
+
+
+class _Terminated(Exception):
+    def __init__(self, signum: int) -> None:
+        super().__init__(signum)
+        self.signum = signum
+
+
+def new_run_id() -> str:
+    stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d-%H%M%S")
+    return f"{stamp}-{secrets.token_hex(2)}"
+
+
+def utc_now() -> str:
+    return datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+
+
+def copilot_version() -> str:
+    try:
+        done = subprocess.run(
+            [*copilot_bin(), "--version"], capture_output=True, text=True, timeout=30
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return "unknown"
+    lines = done.stdout.strip().splitlines()
+    return lines[0] if done.returncode == 0 and lines else "unknown"
+
+
+def _kill_group(process: subprocess.Popen[bytes]) -> None:
+    for signum in (signal.SIGTERM, signal.SIGKILL):
+        try:
+            os.killpg(process.pid, signum)
+        except ProcessLookupError:
+            return
+        try:
+            process.wait(timeout=KILL_GRACE_SECONDS)
+            return
+        except subprocess.TimeoutExpired:
+            continue
+
+
+def run_copilot(command: list[str], run_dir: Path, timeout: int) -> tuple[int | None, str]:
+    """Run the worker to completion. Return (exit code, termination reason)."""
+
+    def on_signal(signum: int, _frame: Any) -> None:
+        raise _Terminated(signum)
+
+    process: subprocess.Popen[bytes] | None = None
+    previous = {name: signal.signal(name, on_signal) for name in (signal.SIGTERM, signal.SIGINT)}
+    try:
+        with open(run_dir / "events.jsonl", "wb") as out, open(run_dir / "stderr.log", "wb") as err:
+            # Own session and no stdin: the worker outlives the caller's connection.
+            process = subprocess.Popen(
+                command, stdin=subprocess.DEVNULL, stdout=out, stderr=err,
+                start_new_session=True,
+            )
+            code = process.wait(timeout=timeout)
+        return (code, "exit") if code >= 0 else (None, f"signal:{-code}")
+    except subprocess.TimeoutExpired:
+        _kill_group(process)
+        return None, "timeout"
+    except _Terminated as stop:
+        if process is not None:
+            _kill_group(process)
+        return None, f"signal:{stop.signum}"
+    finally:
+        for name, handler in previous.items():
+            signal.signal(name, handler)
+
+
+def execute_run(
+    *,
+    mode: str,
+    task: str,
+    cwd: Path,
+    model: str | None = None,
+    effort: str | None = None,
+    credits: int | None = None,
+    timeout: int | None = None,
+) -> dict[str, Any]:
+    if mode not in MODES:
+        raise WorkerError(f"unknown mode: {mode}")
+    if not task.strip():
+        raise WorkerError("the task is empty")
+    if effort is not None and effort not in EFFORTS:
+        raise WorkerError(f"unknown effort: {effort}")
+    model = model or DEFAULT_MODELS[mode]
+    credits = DEFAULT_CREDITS[mode] if credits is None else credits
+    timeout = DEFAULT_TIMEOUTS[mode] if timeout is None else timeout
+    if credits < MIN_CREDITS:
+        raise WorkerError(f"--max-ai-credits must be at least {MIN_CREDITS}")
+    if timeout <= 0:
+        raise WorkerError("--timeout must be greater than 0")
+    root = repo_root(cwd)
+    prompt = build_prompt(mode, task, root)
+
+    run_id = new_run_id()
+    run_dir = state_home() / "runs" / run_id
+    run_dir.mkdir(parents=True)
+    workspace, branch, base = root, None, None
+    if mode == "implement":
+        base = git(["rev-parse", "HEAD"], root)
+        if git(["status", "--porcelain"], root):
+            print(
+                "warning: the checkout has uncommitted changes; the worker starts from "
+                "HEAD and will not see them",
+                file=sys.stderr,
+            )
+        branch = f"copilot/{run_id}"
+        workspace = state_home() / "worktrees" / f"{root.name}-{run_id}"
+        workspace.parent.mkdir(parents=True, exist_ok=True)
+        git(["worktree", "add", str(workspace), "-b", branch, "HEAD"], root)
+
+    (run_dir / "task.md").write_text(prompt, encoding="utf-8")
+    command = build_command(
+        mode=mode, workspace=workspace, prompt=prompt, model=model, effort=effort,
+        credits=credits, usage_file=run_dir / "usage.json",
+    )
+    started_at, clock = utc_now(), time.monotonic()
+    try:
+        exit_code, reason = run_copilot(command, run_dir, timeout)
+    except OSError as error:
+        (run_dir / "stderr.log").write_text(f"could not start copilot: {error}\n", encoding="utf-8")
+        exit_code, reason = None, "spawn_error"
+    duration = round(time.monotonic() - clock, 3)
+
+    events_path = run_dir / "events.jsonl"
+    events = events_path.read_text(encoding="utf-8", errors="replace") if events_path.exists() else ""
+    response = extract_response(events)
+    (run_dir / "response.md").write_text(response, encoding="utf-8")
+    if reason == "timeout":
+        status = "timed_out"
+    elif reason == "exit" and exit_code == 0:
+        status = "completed" if response else "completed_no_response"
+    else:
+        status = "failed"
+
+    changed: dict[str, list[str]] = {"uncommitted": [], "commits": []}
+    if mode == "implement":
+        changed["uncommitted"] = git(["status", "--porcelain"], workspace).splitlines()
+        changed["commits"] = git(["log", "--oneline", f"{base}..HEAD"], workspace).splitlines()
+
+    result = {
+        "runId": run_id,
+        "mode": mode,
+        "model": model,
+        "effort": effort,
+        "status": status,
+        "terminationReason": reason,
+        "exitCode": exit_code,
+        "startedAt": started_at,
+        "endedAt": utc_now(),
+        "durationSeconds": duration,
+        "timeoutSeconds": timeout,
+        "maxAiCredits": credits,
+        "repoRoot": str(root),
+        "runDir": str(run_dir),
+        "workspace": str(workspace),
+        "branch": branch,
+        "baseCommit": base,
+        "changedFiles": changed,
+        "copilotVersion": copilot_version(),
+    }
+    (run_dir / "result.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    return result
+
+
+def print_summary(result: dict[str, Any]) -> None:
+    print(f"status: {result['status']}")
+    print(f"run: {result['runId']}")
+    print(f"runDir: {result['runDir']}")
+    print(f"model: {result['model']}")
+    print(f"duration: {result['durationSeconds']}s")
+    print(f"termination: {result['terminationReason']}")
+    if result["mode"] != "implement":
+        return
+    changed = result["changedFiles"]
+    print(f"workspace: {result['workspace']}")
+    print(f"branch: {result['branch']}")
+    print(f"changes: {len(changed['uncommitted'])} uncommitted, {len(changed['commits'])} commits")
+    lines = changed["uncommitted"] + changed["commits"]
+    for line in lines[:8]:
+        print(f"  {line}")
+    if len(lines) > 8:
+        print(f"  ... {len(lines) - 8} more; see result.json")
+
+
+def cmd_run(args: argparse.Namespace, cwd: Path) -> int:
+    try:
+        task = Path(args.task_file).read_text(encoding="utf-8")
+    except OSError as error:
+        raise WorkerError(f"cannot read the task file: {error}") from error
+    result = execute_run(
+        mode=args.mode, task=task, cwd=cwd, model=args.model, effort=args.effort,
+        credits=args.max_ai_credits, timeout=args.timeout,
+    )
+    print_summary(result)
+    return 0 if result["status"] == "completed" else 1
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    commands = parser.add_subparsers(dest="command", required=True)
+    run = commands.add_parser("run", help="run one delegation and exit")
+    run.add_argument("--mode", required=True, choices=MODES)
+    run.add_argument("--task-file", required=True)
+    run.add_argument("--model")
+    run.add_argument("--effort", choices=EFFORTS)
+    run.add_argument("--max-ai-credits", type=int)
+    run.add_argument("--timeout", type=int)
+    run.set_defaults(handler=cmd_run)
+    return parser
+
+
+def main(argv: list[str] | None = None, cwd: Path | None = None) -> int:
+    # A hangup of the caller's terminal must not end a run.
+    signal.signal(signal.SIGHUP, signal.SIG_IGN)
+    args = build_parser().parse_args(argv)
+    try:
+        return args.handler(args, cwd or Path.cwd())
+    except WorkerError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())
