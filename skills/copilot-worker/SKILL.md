@@ -80,7 +80,9 @@ If `changedFiles` is `null`, the worker damaged its own worktree. Discard the ru
    - commit any uncommitted files in the worktree, staging them by name
    - in the live checkout, run `git merge --squash copilot/<run-id>` and commit
    - run `WORKER clean <run-id>`
-4. If the work is not good, run `WORKER clean <run-id>`. Nothing reached your branch.
+4. If the work is not good, run `WORKER clean <run-id>`. The worker's edits stayed in
+   its worktree; check `git status` in the live checkout if its shell commands could
+   have reached outside.
    Then delegate again with a sharper task, or do the work yourself.
 
 ## Limits

@@ -242,6 +242,9 @@ def execute_run(
     prompt = build_prompt(mode, task, root)
 
     run_id = new_run_id()
+    # Tasks, diffs, responses, and worktrees are private: keep the state root owner-only.
+    state_home().mkdir(parents=True, exist_ok=True)
+    os.chmod(state_home(), 0o700)
     run_dir = state_home() / "runs" / run_id
     run_dir.mkdir(parents=True)
     workspace, branch, base = root, None, None

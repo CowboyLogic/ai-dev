@@ -7,8 +7,8 @@ to the Copilot subscription instead of Claude tokens.
 ## What it does
 
 - **Research** and **review** run read-only in the current checkout.
-- **Implementation** runs in a throwaway Git worktree on its own branch, so a bad run
-  never touches the branch you are on.
+- **Implementation** runs in a throwaway Git worktree on its own branch, which keeps the
+  worker's edits off the branch you are on.
 - Each run is a separate process that Claude Code starts in the background. There is no
   server to install and no time limit imposed by the client.
 - Each run leaves a directory with the task, the worker's final message, usage, and a
@@ -54,8 +54,9 @@ The defaults are the `DEFAULT_MODELS` constant in
 
 > [!WARNING]
 > An implementation worker has full shell access apart from a short deny list
-> (`git push`, `git remote`, `git worktree`, `gh`, `sudo`). The worktree protects your
-> branch from a bad change. It is not a sandbox.
+> (`git push`, `git remote`, `git worktree`, `gh`, `sudo`). The worktree isolates the
+> worker's normal edits. It is not a sandbox: a shell command can still reach files
+> outside it, including your live checkout.
 
 See [SKILL.md](SKILL.md) for the full workflow and limits.
 
