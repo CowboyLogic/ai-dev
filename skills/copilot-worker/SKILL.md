@@ -80,6 +80,11 @@ rejects the request before starting a worker. An `implement` run leaves its work
 branch in place whatever the status, so run `WORKER clean <run-id>` after a failed or
 timed-out run too.
 
+A run is also `failed` when the worker left the worktree on a different branch
+(`currentBranch` differs from `branch` in `result.json`). Its commits are then not on
+`copilot/<run-id>`, so do not merge that branch. Inspect the worktree, and delete the
+worker's own branch yourself after `WORKER clean <run-id>`.
+
 If `changedFiles` is `null`, the worker damaged its own worktree. Discard the run with
 `WORKER clean <run-id>`.
 

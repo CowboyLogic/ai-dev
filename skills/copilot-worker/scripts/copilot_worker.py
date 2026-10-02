@@ -45,7 +45,8 @@ MIN_CREDITS = 30
 KILL_GRACE_SECONDS = 10
 FOOTER = (
     "\n\n---\nWorker rules: stay inside the current working directory. Do not push, "
-    "do not open pull requests, and do not change Git remotes. Finish with a short "
+    "do not open pull requests, do not change Git remotes, and do not switch, create, or "
+    "rename branches. Finish with a short "
     "summary of what you did and anything left undone."
 )
 
@@ -301,13 +302,18 @@ def execute_run(
         status = "failed"
 
     changed: dict[str, list[str]] | None = {"uncommitted": [], "commits": []}
+    current_branch = None
     if mode == "implement":
         try:
+            current_branch = git(["rev-parse", "--abbrev-ref", "HEAD"], workspace)
             changed["uncommitted"] = git(["status", "--porcelain"], workspace).splitlines()
             changed["commits"] = git(["log", "--oneline", f"{base}..HEAD"], workspace).splitlines()
         except (WorkerError, OSError):
             # The worker damaged its own worktree. Still record the run so clean can find it.
             changed = None
+        if changed is not None and current_branch != branch:
+            # The worker's commits are not on the branch the caller is told to merge.
+            status = "failed"
 
     result = {
         "runId": run_id,
@@ -326,6 +332,7 @@ def execute_run(
         "runDir": str(run_dir),
         "workspace": str(workspace),
         "branch": branch,
+        "currentBranch": current_branch,
         "baseCommit": base,
         "changedFiles": changed,
         "copilotVersion": copilot_version(),
@@ -349,6 +356,11 @@ def print_summary(result: dict[str, Any]) -> None:
     if changed is None:
         print("changes: unavailable; the worktree is no longer a Git checkout")
         return
+    if result["currentBranch"] != result["branch"]:
+        print(
+            f"branch changed: the worker left the worktree on {result['currentBranch']!r}; "
+            f"{result['branch']} does not hold its commits"
+        )
     print(f"changes: {len(changed['uncommitted'])} uncommitted, {len(changed['commits'])} commits")
     lines = changed["uncommitted"] + changed["commits"]
     for line in lines[:8]:

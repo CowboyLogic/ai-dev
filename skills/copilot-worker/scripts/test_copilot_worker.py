@@ -65,6 +65,11 @@ if behavior in ("grandchild", "lingering"):
         time.sleep(0.02)
 if behavior == "grandchild":
     time.sleep(60)
+if behavior == "switch":
+    subprocess.run(
+        ["git", "checkout", "-q", "-b", "worker-own-branch"],
+        cwd=args[args.index("-C") + 1], check=True,
+    )
 if behavior == "wreck":
     os.remove(os.path.join(args[args.index("-C") + 1], ".git"))
 if behavior == "sleep":
@@ -337,6 +342,23 @@ class RunTests(WorkerTestCase):
         self.assertEqual(self.git("rev-parse", "--abbrev-ref", "HEAD"), "main")
         self.assertEqual(self.git("rev-parse", "HEAD"), head)
         self.assertEqual(self.git("status", "--porcelain"), "")
+
+    def test_a_worker_that_switches_branch_fails_the_run(self) -> None:
+        # Its commits would be on the other branch, so merging copilot/<run-id> would miss them.
+        self.behavior("switch")
+        result = self.run_mode("implement")
+        self.assertEqual(result["status"], "failed")
+        self.assertEqual(result["currentBranch"], "worker-own-branch")
+        self.assertEqual(result["branch"], f"copilot/{result['runId']}")
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            worker.print_summary(result)
+        self.assertIn("worker-own-branch", stdout.getvalue())
+
+    def test_an_implement_run_records_that_it_stayed_on_its_branch(self) -> None:
+        result = self.run_mode("implement")
+        self.assertEqual(result["status"], "completed")
+        self.assertEqual(result["currentBranch"], result["branch"])
 
     def test_implement_summary_reports_the_change_counts(self) -> None:
         result = self.run_mode("implement")
