@@ -1,6 +1,6 @@
 ---
 name: copilot-worker
-description: Delegate work to GitHub Copilot CLI instead of doing it yourself, to save Claude tokens. Use this BEFORE reading more than one or two files to answer a question about a codebase ("look into", "find out how", "where is", "why does", "explain how X works", "does the code do Y", "give me an overview", "summarize"), before any code review of a diff or files, and before any implementation task that touches more than a file or two. Also use when the user says "use Copilot", "delegate", "hand off", or "worker". You plan the task and verify the result; Copilot does the bulk work.
+description: Delegate work to GitHub Copilot CLI instead of doing it yourself, to save Claude tokens. Use this BEFORE reading three or more files (roughly 500 lines or more) to answer a question about a codebase ("look into", "find out how", "where is", "why does", "explain how X works", "does the code do Y", "give me an overview", "summarize"), before any code review of a diff or files, and before any implementation task that touches more than a file or two. Also use when the user says "use Copilot", "delegate", "hand off", or "worker". You plan the task and verify the result; Copilot does the bulk work.
 ---
 
 # Copilot Worker
@@ -17,10 +17,15 @@ or later and uses only the standard library. Below, `WORKER` stands for
 Delegate by default. Research, review, and implementation go to the worker unless one
 of these applies:
 
-- The answer is already in your context, or needs at most one file you have not read
-  (roughly 200 lines). Judge by how much you would have to read, not by how many tool
-  calls it takes: a directory listing plus one long file is already past that.
+- The answer is already in your context, or needs fewer than three files you have not
+  read (under roughly 500 lines). Judge by how much you would have to read, not by how
+  many tool calls it takes.
 - The change is a one-line edit in a file you have already read.
+
+Delegation pays when the worker reads or writes far more than you need to check: a sweep
+across many files, or an implementation you can verify by its diff and tests. A narrow
+question about one module is the worst case, because checking the answer costs about as
+much as finding it. Do those yourself.
 - The task needs this conversation's context and you cannot put that context in a task
   file.
 - The user asked you to do it yourself.
@@ -48,6 +53,7 @@ small prompt to each default model.
    - the objective, in one or two sentences
    - acceptance criteria the worker can check
    - the relevant paths
+   - for `research` and `review`, a requirement that every claim cite `file:line`
    - for `implement`, the exact test command
 2. Keep an `implement` task small: one coherent change across a handful of files.
    Split anything larger into several delegations.
@@ -89,6 +95,20 @@ worker's own branch yourself after `WORKER clean <run-id>`.
 
 If `changedFiles` is `null`, the worker damaged its own worktree. Discard the run with
 `WORKER clean <run-id>`.
+
+## Verify research and review results
+
+Verify by spot-check. Re-reading what the worker read throws away what the delegation
+saved.
+
+1. Read only the cited line ranges, not the whole files.
+2. Check every claim your answer will depend on, and a sample of the rest.
+3. If a citation is wrong or missing, widen the check for that claim only. If several
+   are wrong, discard the result and do the work yourself.
+4. Tell the user which claims you checked and which you are relaying unchecked.
+
+A spot-check is weaker than doing the work. When the answer must be certain, such as a
+security or data-loss question, do not delegate it.
 
 ## Verify and bring implementation work over
 
