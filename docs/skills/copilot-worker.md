@@ -28,7 +28,8 @@ implementation, reconnaissance, or an independent review done on Copilot capacit
 
 > [!WARNING]
 > An implementation worker has full shell access apart from a short deny list. The
-> worktree protects your branch from a bad change. It is not a sandbox.
+> worktree isolates the worker's normal edits. It is not a sandbox: a shell command can
+> still reach files outside it, including your live checkout.
 
 It requires GitHub Copilot CLI 1.0.89 or later, Git, Python 3.9 or later, and macOS
 or Linux.

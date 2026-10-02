@@ -272,6 +272,13 @@ class RunTests(WorkerTestCase):
         self.assertTrue((run_dir / "task.md").read_text().startswith("Do the task."))
         self.assertEqual(json.loads((run_dir / "result.json").read_text()), result)
 
+    def test_state_directory_is_private_to_the_owner(self) -> None:
+        # Task text, diffs, responses, and worktrees live here; other users must not read them.
+        previous = os.umask(0o022)
+        self.addCleanup(os.umask, previous)
+        self.run_mode("implement")
+        self.assertEqual(self.home.stat().st_mode & 0o077, 0)
+
     def test_each_mode_uses_its_default_model_and_limits(self) -> None:
         for mode in worker.MODES:
             result = self.run_mode(mode)
