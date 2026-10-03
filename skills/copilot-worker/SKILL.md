@@ -137,11 +137,12 @@ security or data-loss question, do not delegate it.
 > The worker's shell is not sandboxed. The script approves or rejects every permission
 > request itself. Its file tools can only read and write inside its workspace, and a
 > deny list rejects shell commands that run `gh`, `sudo`, `git push`, `git remote`,
-> `git worktree`, `git send-pack`, a git alias, or `git config remote.*`, including
-> through common wrappers such as `env`, `xargs`, `bash -c`, and `$(...)`. The deny list
-> guards against accidents, not against a hostile worker: code passed to an interpreter
-> (`python -c`, a script file) can still run anything, and an allowed shell command can
-> reach outside the worktree.
+> `git worktree`, `git send-pack`, a git alias, or `git config remote.*`, when they are
+> written plainly or behind a common wrapper such as `env`, `xargs`, `bash -c`, or
+> `$(...)`. The deny list guards against accidents, not against a hostile worker. It is
+> not exhaustive: unusual shell syntax can get past it, and it is not extended to cover
+> deliberate evasion. Code passed to an interpreter (`python -c`, a script file) can
+> still run anything, and an allowed shell command can reach outside the worktree.
 
 - When a run ends, the script kills the worker's process group. A process that detached
   into its own session (a daemon, or anything started with `setsid` or `nohup`-style

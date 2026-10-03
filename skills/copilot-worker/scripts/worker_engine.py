@@ -203,13 +203,62 @@ def _denied_words(words: list[str], depth: int, aliases: frozenset[str]) -> str 
     return None
 
 
+def _split_commands(text: str) -> list[str]:
+    """Split on separators the shell would act on, leaving quoted text whole.
+
+    This keeps a payload such as bash -c 'echo ok; git push' in one piece, so that the
+    recursive check sees it intact. Inside double quotes only $( and a backtick still
+    start a command.
+    """
+    segments: list[str] = []
+    current: list[str] = []
+    quote = ""
+    index = 0
+
+    def cut() -> None:
+        segments.append("".join(current))
+        current.clear()
+
+    while index < len(text):
+        char, pair = text[index], text[index:index + 2]
+        if char == "\\" and quote != "'" and len(pair) == 2:
+            current.append(pair)
+            index += 2
+            continue
+        if quote == "'":
+            quote = "" if char == "'" else quote
+        elif quote == '"':
+            if char == '"':
+                quote = ""
+            elif pair == "$(" or char == "`":
+                cut()
+                index += len(pair) if pair == "$(" else 1
+                continue
+        elif char in "'\"":
+            quote = char
+        elif pair in ("||", "&&", "$("):
+            cut()
+            index += 2
+            continue
+        elif char in ";|&\n(){}`":
+            cut()
+            index += 1
+            continue
+        current.append(char)
+        index += 1
+    cut()
+    return segments
+
+
 def _denied_command(text: str, aliases: frozenset[str], depth: int = 0) -> str | None:
     if depth > _MAX_DEPTH:
         return "a command nested too deeply to check"
     # The shell removes a backslash-newline pair before it splits words, so a command
     # continued across lines is still one command.
     text = text.replace("\\\n", "")
-    for segment in _SEPARATORS.split(text):
+    # Both splits: the quote-aware one sees a quoted payload whole, and the plain one still
+    # sees a command that unbalanced quotes would otherwise swallow.
+    for segment in (*_split_commands(text), *_SEPARATORS.split(text)):
         denied = _denied_words(_words(segment), depth, aliases)
         if denied:
             return denied
