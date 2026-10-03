@@ -5,7 +5,7 @@ a bounded research, review, or implementation task to Copilot, and verifies the 
 itself. The bulk work is billed to the Copilot subscription instead of Claude tokens.
 
 - **Skill name:** `copilot-worker`
-- **Last updated:** 2026-10-02
+- **Last updated:** 2026-10-03
 - **Source:** [skills/copilot-worker](https://github.com/CowboyLogic/ai-dev/tree/main/skills/copilot-worker)
 
 ---
@@ -38,6 +38,9 @@ implementation, reconnaissance, or an independent review done on Copilot capacit
 
 It requires `uv`, a GitHub Copilot login, Git, and macOS or Linux. `uv` provides
 Python 3.11 or later and the SDK on first run.
+
+> [!WARNING]
+> Windows is not supported, including Git Bash. WSL has not been tested.
 
 ---
 
