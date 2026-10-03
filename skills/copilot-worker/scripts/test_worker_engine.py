@@ -104,5 +104,108 @@ class PolicyTests(unittest.TestCase):
             self.assertFalse(engine.decide(kind, {}, self.workspace, "implement")[0], kind)
 
 
+class PermissionRequestShell:
+    def __init__(self, full_command_text=None, command_segments=(), commands=()):
+        self.full_command_text = full_command_text
+        self.command_segments = list(command_segments)
+        self.commands = list(commands)
+
+
+class PermissionRequestWrite:
+    def __init__(self, resolved_path=None, file_name=None):
+        self.resolved_path = resolved_path
+        self.file_name = file_name
+
+
+class PermissionRequestRead:
+    def __init__(self, resolved_path=None, path=None):
+        self.resolved_path = resolved_path
+        self.path = path
+
+
+class PermissionRequestMcp:
+    pass
+
+
+class Part:
+    def __init__(self, full_command_text=None, identifier=None):
+        self.full_command_text = full_command_text
+        self.identifier = identifier
+
+
+class HelperTests(unittest.TestCase):
+    config = {
+        "mode": "implement", "model": "gpt-6.1-sol", "effort": None, "credits": 60,
+        "timeout": 1800, "workspace": "/w", "copilotHome": "/home/state/copilot-home",
+    }
+
+    def test_request_kinds_map_from_sdk_class_names(self) -> None:
+        self.assertEqual(engine.request_kind(PermissionRequestShell()), "shell")
+        self.assertEqual(engine.request_kind(PermissionRequestWrite()), "write")
+        self.assertEqual(engine.request_kind(PermissionRequestRead()), "read")
+        self.assertEqual(engine.request_kind(PermissionRequestMcp()), "mcp")
+
+    def test_shell_fields_collect_every_command_text_the_sdk_offers(self) -> None:
+        request = PermissionRequestShell(
+            "git status && gh pr list",
+            command_segments=[Part("git status"), Part(None, "gh pr list")],
+            commands=[Part(identifier="git status")],
+        )
+        segments = engine.request_fields(request)["segments"]
+        for text in ("git status && gh pr list", "git status", "gh pr list"):
+            self.assertIn(text, segments)
+
+    def test_path_fields_prefer_the_resolved_path(self) -> None:
+        self.assertEqual(engine.request_fields(PermissionRequestWrite("/w/a", "a"))["path"], "/w/a")
+        self.assertEqual(engine.request_fields(PermissionRequestWrite(None, "a"))["path"], "a")
+        self.assertEqual(engine.request_fields(PermissionRequestRead(None, "/w/b"))["path"], "/w/b")
+
+    def test_tools_per_mode(self) -> None:
+        self.assertEqual(engine.TOOLS["research"], ("view", "rg", "glob"))
+        self.assertEqual(engine.TOOLS["review"], ("view", "rg", "glob"))
+        self.assertEqual(
+            engine.TOOLS["implement"],
+            ("view", "rg", "glob", "create", "edit", "apply_patch",
+             "bash", "read_bash", "stop_bash", "list_bash"),
+        )
+
+    def test_session_options(self) -> None:
+        options = engine.session_options(self.config)
+        self.assertEqual(options["model"], "gpt-6.1-sol")
+        self.assertEqual(options["working_directory"], "/w")
+        self.assertEqual(options["session_limits"], {"max_ai_credits": 60})
+        self.assertEqual(options["available_tools"], engine.TOOLS["implement"])
+        self.assertIs(options["enable_skills"], False)
+        self.assertNotIn("reasoning_effort", options)
+        with_effort = engine.session_options({**self.config, "effort": "high"})
+        self.assertEqual(with_effort["reasoning_effort"], "high")
+
+    def test_client_uses_the_isolated_copilot_home(self) -> None:
+        options = engine.client_options(self.config)
+        self.assertEqual(options["base_directory"], "/home/state/copilot-home")
+        self.assertEqual(options["working_directory"], "/w")
+
+    def test_send_never_uses_the_sdk_default_sixty_second_timeout(self) -> None:
+        self.assertGreater(engine.send_options(self.config)["timeout"], self.config["timeout"])
+        self.assertGreater(engine.send_options({**self.config, "timeout": 30})["timeout"], 60)
+
+    def test_usage_is_summed_across_model_calls(self) -> None:
+        usage = engine.summarize_usage([
+            {"totalNanoAiu": 1_500_000_000, "inputTokens": 10, "outputTokens": 2,
+             "cacheReadTokens": 100, "cacheWriteTokens": 5, "model": "gpt-6.1-sol"},
+            {"totalNanoAiu": 500_000_000, "inputTokens": 3, "outputTokens": 1,
+             "cacheReadTokens": 0, "cacheWriteTokens": 0, "model": "gpt-6.1-sol"},
+        ])
+        self.assertEqual(usage["aiCredits"], 2.0)
+        self.assertEqual(usage["totalNanoAiu"], 2_000_000_000)
+        self.assertEqual(usage["inputTokens"], 13)
+        self.assertEqual(usage["outputTokens"], 3)
+        self.assertEqual(usage["cacheReadTokens"], 100)
+        self.assertEqual(usage["modelCalls"], 2)
+
+    def test_usage_of_a_run_with_no_model_calls_is_zero(self) -> None:
+        self.assertEqual(engine.summarize_usage([])["aiCredits"], 0)
+
+
 if __name__ == "__main__":
     unittest.main()
