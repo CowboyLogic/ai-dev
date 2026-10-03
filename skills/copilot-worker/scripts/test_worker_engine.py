@@ -5,9 +5,11 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 
 sys.path.insert(0, str(Path(__file__).parent))
 import worker_engine as engine  # noqa: E402
@@ -90,6 +92,33 @@ class PolicyTests(unittest.TestCase):
         for command in ("FOO=push git --config-env=alias.p=FOO p", "git --config-env alias.p=FOO p"):
             self.assertFalse(self.shell(command)[0], command)
         self.assertTrue(self.shell("git --config-env=core.pager=PAGER log")[0])
+
+    def test_configuring_a_git_alias_is_denied(self) -> None:
+        for command in (
+            "git config alias.p push", "git config --global alias.p push", "git config --add alias.p push",
+            "git -C sub config alias.p 'push origin main'",
+        ):
+            self.assertFalse(self.shell(command)[0], command)
+
+    def test_a_subcommand_that_is_a_configured_alias_is_denied(self) -> None:
+        aliases = frozenset({"p", "ship"})
+        for command in ("git p origin main", "git -C sub ship", "git P origin main", "env git p"):
+            allowed, reason = engine.decide(
+                "shell", {"segments": [command]}, self.workspace, "implement", aliases)
+            self.assertFalse(allowed, command)
+            self.assertIn("git alias", reason)
+        self.assertTrue(engine.decide(
+            "shell", {"segments": ["git status"]}, self.workspace, "implement", aliases)[0])
+
+    def test_configured_aliases_are_read_from_the_repository_config(self) -> None:
+        subprocess.run(["git", "init", "-q", self.workspace], check=True)
+        subprocess.run(["git", "-C", self.workspace, "config", "alias.p", "push"], check=True)
+        self.assertIn("p", engine.configured_aliases(self.workspace))
+
+    def test_configured_aliases_is_empty_outside_a_repository(self) -> None:
+        env = {"GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_SYSTEM": os.devnull}
+        with unittest.mock.patch.dict(os.environ, env):
+            self.assertEqual(engine.configured_aliases(self.workspace), frozenset())
 
     def test_commands_carried_in_wrapper_option_values_are_checked(self) -> None:
         for command in (
