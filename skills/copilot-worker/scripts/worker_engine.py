@@ -20,28 +20,41 @@ READ_TOOLS = ("view", "rg", "glob")
 TOOLS = {
     "research": READ_TOOLS,
     "review": READ_TOOLS,
-    "implement": (
-        *READ_TOOLS, "create", "edit", "apply_patch",
-        "bash", "read_bash", "stop_bash", "list_bash",
-    ),
+    "implement": (*READ_TOOLS, "apply_patch", "bash", "read_bash", "stop_bash", "list_bash"),
 }
 # The supervisor enforces the real timeout. This margin keeps the SDK's own wait,
 # which defaults to 60 seconds, from ending a run first.
 SEND_TIMEOUT_MARGIN = 60
 
-# Commands a worker may never run, as leading words after wrappers are removed.
-DENIED_COMMANDS = (
-    ("gh",),
-    ("sudo",),
-    ("git", "push"),
-    ("git", "remote"),
-    ("git", "worktree"),
-)
-_WRAPPERS = {"env", "command", "exec", "nohup", "time"}
+# An accident guard, not a sandbox: an interpreter given code (python -c, a script
+# file, a variable holding a command name) can still run anything.
+DENIED_PROGRAMS = {"gh", "sudo", "doas"}
+DENIED_GIT_SUBCOMMANDS = {"push", "remote", "worktree", "send-pack"}
+_SHELLS = {"sh", "bash", "zsh", "dash", "ksh", "fish"}
+# Programs that run another command, with their options that take a separate value and
+# the number of plain arguments that come before the command they run.
+_WRAPPERS = {
+    "env": ({"-u", "-P", "-S", "-C", "--unset", "--chdir", "--split-string"}, 0),
+    "command": (set(), 0),
+    "exec": ({"-a"}, 0),
+    "nohup": (set(), 0),
+    "time": (set(), 0),
+    "nice": ({"-n"}, 0),
+    "timeout": ({"-s", "-k", "--signal", "--kill-after"}, 1),
+    "xargs": ({"-I", "-n", "-L", "-P", "-d", "-E", "-s", "-a"}, 0),
+    "stdbuf": (set(), 0),
+    "caffeinate": ({"-t", "-w"}, 0),
+    "script": (set(), 1),
+}
 _ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
-_SEPARATORS = re.compile(r"\|\||&&|[;|&\n]")
+_REDIRECT = re.compile(r"^\d*(>>?|<<?|&>|>&)")
+_BARE_REDIRECT = re.compile(r"^\d*(>>?|<<?|&>|>&)$")
+# Command separators, plus grouping and substitution, so "(gh ...)", "{ gh ...; }",
+# "$(gh ...)" and "`gh ...`" are each checked as a command of their own.
+_SEPARATORS = re.compile(r"\|\||&&|\$\(|[;|&\n(){}`]")
 # git options that take a separate value before the subcommand.
 _GIT_VALUE_OPTIONS = {"-C", "-c", "--git-dir", "--work-tree", "--namespace"}
+_MAX_DEPTH = 5
 
 
 def _words(segment: str) -> list[str]:
@@ -52,44 +65,76 @@ def _words(segment: str) -> list[str]:
         return segment.split()
 
 
-def _command_words(words: list[str]) -> list[str]:
-    """Drop variable assignments and wrapper programs, and normalize the program name."""
+def _denied_git(args: list[str]) -> str | None:
+    index = 0
+    while index < len(args) and args[index].startswith("-"):
+        option = args[index]
+        value = args[index + 1] if option == "-c" and index + 1 < len(args) else option[2:]
+        if option.startswith("-c") and value.lower().startswith("alias."):
+            return "git alias"
+        index += 2 if option in _GIT_VALUE_OPTIONS else 1
+    if index >= len(args):
+        return None
+    subcommand, rest = args[index].lower(), args[index + 1:]
+    if subcommand in DENIED_GIT_SUBCOMMANDS:
+        return f"git {subcommand}"
+    if subcommand == "config" and any(
+        arg.lower().startswith("remote.") for arg in rest if not arg.startswith("-")
+    ):
+        return "git config remote"
+    return None
+
+
+def _denied_words(words: list[str], depth: int) -> str | None:
     index = 0
     while index < len(words):
         word = words[index]
+        name = os.path.basename(word).lower()
         if _ASSIGNMENT.match(word):
             index += 1
-        elif os.path.basename(word) in _WRAPPERS:
+        elif _REDIRECT.match(word):
+            index += 2 if _BARE_REDIRECT.match(word) else 1
+        elif name in _WRAPPERS:
+            value_options, positionals = _WRAPPERS[name]
             index += 1
             while index < len(words) and words[index].startswith("-"):
-                index += 1
+                index += 2 if words[index] in value_options else 1
+            index += positionals
         else:
             break
-    rest = words[index:]
-    if not rest:
-        return []
-    program = os.path.basename(rest[0])
-    if program != "git":
-        return [program, *rest[1:]]
-    # Skip git's global options so "git -C path push" is still seen as "git push".
-    args = rest[1:]
-    position = 0
-    while position < len(args) and args[position].startswith("-"):
-        position += 2 if args[position] in _GIT_VALUE_OPTIONS else 1
-    return ["git", *args[position:]]
+    if index >= len(words):
+        return None
+    # Lowercase: macOS file systems are case-insensitive, so GH runs gh.
+    program, args = os.path.basename(words[index]).lower(), words[index + 1:]
+    if program in DENIED_PROGRAMS:
+        return program
+    if program == "eval":
+        return _denied_command(" ".join(args), depth + 1)
+    if program in _SHELLS:
+        for position, arg in enumerate(args[:-1]):
+            if arg.startswith("-") and not arg.startswith("--") and "c" in arg[1:]:
+                return _denied_command(args[position + 1], depth + 1)
+        return None
+    if program.startswith("git-"):
+        program, args = "git", [program[4:], *args]
+    if program == "git":
+        return _denied_git(args)
+    return None
 
 
-def _denied_command(text: str) -> str | None:
+def _denied_command(text: str, depth: int = 0) -> str | None:
+    if depth > _MAX_DEPTH:
+        return "a command nested too deeply to check"
     for segment in _SEPARATORS.split(text):
-        words = _command_words(_words(segment))
-        for denied in DENIED_COMMANDS:
-            if tuple(words[: len(denied)]) == denied:
-                return " ".join(denied)
+        denied = _denied_words(_words(segment), depth)
+        if denied:
+            return denied
     return None
 
 
 def _inside(path: str | None, workspace: str) -> bool:
-    if not path:
+    if not path or path.startswith("~") or "$" in path:
+        # Reject forms the runtime might expand before reading.
         return False
     if not os.path.isabs(path):
         path = os.path.join(workspace, path)
@@ -153,10 +198,23 @@ def session_options(config: dict) -> dict:
         "available_tools": TOOLS[config["mode"]],
         "session_limits": {"max_ai_credits": config["credits"]},
         "enable_skills": False,
+        # Repository .github/hooks would run commands and could settle permissions first.
+        "enable_file_hooks": False,
+        "disabled_mcp_servers": ["github-mcp-server"],
     }
     if config.get("effort"):
         options["reasoning_effort"] = config["effort"]
     return options
+
+
+def session_kwargs(config: dict, on_permission: Any, on_event: Any, tools: Any) -> dict:
+    """Everything create_session receives. drive() passes exactly this."""
+    return {
+        **session_options(config),
+        "available_tools": tools,
+        "on_permission_request": on_permission,
+        "on_event": on_event,
+    }
 
 
 def send_options(config: dict) -> dict:
@@ -233,11 +291,10 @@ async def drive(run_dir: Path) -> None:
         tools = ToolSet()
         for tool in TOOLS[config["mode"]]:
             tools.add_builtin(tool)
-        options = {**session_options(config), "available_tools": tools}
         try:
             async with CopilotClient(**client_options(config)) as client:
                 session = await client.create_session(
-                    on_permission_request=on_permission, on_event=on_event, **options
+                    **session_kwargs(config, on_permission, on_event, tools)
                 )
                 await session.send_and_wait(prompt, **send_options(config))
         finally:

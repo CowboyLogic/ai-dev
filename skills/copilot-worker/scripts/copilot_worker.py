@@ -31,7 +31,8 @@ MODES = ("research", "review", "implement")
 DEFAULT_MODELS = {"research": "gpt-6-luna", "review": "gpt-6.1-sol", "implement": "gpt-6.1-sol"}
 DEFAULT_CREDITS = {"research": 30, "review": 30, "implement": 60}
 DEFAULT_TIMEOUTS = {"research": 600, "review": 600, "implement": 1800}
-EFFORTS = ("none", "minimal", "low", "medium", "high", "xhigh", "max")
+# The values the SDK accepts for reasoning_effort.
+EFFORTS = ("low", "medium", "high", "xhigh", "max")
 RUN_ID_PATTERN = re.compile(r"^\d{8}-\d{6}-[0-9a-f]{4}$")
 # Keeps an attached review diff to a size the worker can read alongside the files.
 MAX_DIFF_BYTES = 100_000

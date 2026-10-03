@@ -22,8 +22,9 @@ itself. The bulk work is billed to the Copilot subscription instead of Claude to
   for a single run.
 - **Built on the Copilot SDK.** It drives Copilot through the official SDK, which pins
   its own runtime, so command-line tool updates cannot break it.
-- **Every tool call checked.** File access is confined to the workspace, and a deny list
-  blocks pushes and the GitHub CLI.
+- **Every permission request checked.** File access is confined to the workspace, a
+  deny list rejects pushes and the GitHub CLI in their common forms, and neither your
+  Copilot hooks nor the repository's run inside a worker.
 
 ## Where it applies
 
