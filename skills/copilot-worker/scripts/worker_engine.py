@@ -325,6 +325,7 @@ async def drive(run_dir: Path) -> None:
         def on_event(event: Any) -> None:
             nonlocal response
             events.write(json.dumps(event.to_dict(), default=str) + "\n")
+            events.flush()
             name = type(event.data).__name__
             if name == "AssistantUsageData":
                 calls.append(_usage_call(event.data))
