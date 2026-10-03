@@ -1,7 +1,24 @@
 #!/usr/bin/env python3
+# Every dependency is pinned exactly, the SDK's own included, so that a new release of
+# any of them cannot change what runs. To upgrade, follow references/upgrading.md.
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["github-copilot-sdk==1.0.14"]
+# dependencies = [
+#     "annotated-types==0.8.0",
+#     "anyio==4.15.1",
+#     "certifi==2026.7.22",
+#     "github-copilot-sdk==1.0.14",
+#     "h11==0.16.0",
+#     "httpcore==1.0.9",
+#     "httpx==0.28.1",
+#     "idna==3.20",
+#     "pydantic==2.13.5",
+#     "pydantic-core==2.46.5",
+#     "python-dateutil==2.9.0.post0",
+#     "six==1.17.0",
+#     "typing-extensions==4.16.0",
+#     "typing-inspection==0.4.4",
+# ]
 # ///
 """Run GitHub Copilot as a bounded worker for Claude Code.
 
@@ -122,6 +139,18 @@ def copilot_version() -> str:
         return "unknown"
     lines = done.stdout.strip().splitlines()
     return lines[0] if done.returncode == 0 and lines else "unknown"
+
+
+def pins_status() -> tuple[bool, str]:
+    """Ask the engine whether the installed SDK and runtime are the ones pins.json names."""
+    try:
+        done = subprocess.run(
+            [*engine_base(), "--check-pins"], capture_output=True, text=True, timeout=60
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False, "could not run the engine to check them"
+    lines = done.stdout.strip().splitlines()
+    return done.returncode == 0, lines[0] if lines else "no answer from the engine"
 
 
 def _kill_group(process: subprocess.Popen[bytes]) -> None:
@@ -382,6 +411,9 @@ def cmd_check(args: argparse.Namespace, cwd: Path) -> int:
         ok = False
     else:
         print(f"copilot sdk: {version}")
+        pins_ok, pins_line = pins_status()
+        print(f"pins: {pins_line}")
+        ok = ok and pins_ok
     try:
         print(f"repository: {repo_root(cwd)}")
     except WorkerError:

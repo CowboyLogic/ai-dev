@@ -23,6 +23,9 @@ TOOLS = {
     "review": READ_TOOLS,
     "implement": (*READ_TOOLS, "apply_patch", "bash", "read_bash", "stop_bash", "list_bash"),
 }
+# The SDK and the Copilot runtime it downloads this skill is built against. The runtime is
+# not chosen here: each SDK release carries its own, so the two move together.
+PINS_FILE = Path(__file__).with_name("pins.json")
 # The supervisor enforces the real timeout. This margin keeps the SDK's own wait,
 # which defaults to 60 seconds, from ending a run first.
 SEND_TIMEOUT_MARGIN = 60
@@ -407,6 +410,22 @@ def _usage_call(data: Any) -> dict:
     }
 
 
+def load_pins() -> dict:
+    return json.loads(PINS_FILE.read_text(encoding="utf-8"))
+
+
+def pin_problem(info: dict, pins: dict) -> str | None:
+    """Describe how the installed SDK or runtime differs from pins.json, if it does."""
+    differences = [
+        f"{label} is {info.get(installed)}, pinned to {pins.get(pinned)}"
+        for label, installed, pinned in (
+            ("github-copilot-sdk", "sdkVersion", "sdk"), ("runtime", "runtimeVersion", "runtime"),
+        )
+        if info.get(installed) != pins.get(pinned)
+    ]
+    return "; ".join(differences) or None
+
+
 def versions() -> dict:
     from importlib.metadata import version
 
@@ -476,9 +495,17 @@ def main(argv: list[str]) -> int:
         info = versions()
         print(f"github-copilot-sdk {info['sdkVersion']} (runtime {info['runtimeVersion']})")
         return 0
+    if argv == ["--check-pins"]:
+        problem = pin_problem(versions(), load_pins())
+        print(f"pin mismatch: {problem}" if problem else "pins ok")
+        return 1 if problem else 0
     if len(argv) != 1:
-        print("usage: worker_engine.py RUN_DIR | --version", file=sys.stderr)
+        print("usage: worker_engine.py RUN_DIR | --version | --check-pins", file=sys.stderr)
         return 2
+    problem = pin_problem(versions(), load_pins())
+    if problem:
+        print(f"pin mismatch: {problem}. See references/upgrading.md.", file=sys.stderr)
+        return 3
     asyncio.run(drive(Path(argv[0])))
     return 0
 

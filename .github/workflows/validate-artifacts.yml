@@ -31,6 +31,20 @@ jobs:
       - name: Validate Matrix manifest
         run: bash agents/matrix-topology/verify-deployment.sh
 
+      - name: Test copilot-worker against its pinned SDK
+        env:
+          REQUIRE_SDK_CONTRACT: "1"
+        run: |
+          pip install uv
+          # Install exactly what the script header pins, so this runs the environment users get.
+          python - > "$RUNNER_TEMP/copilot-worker-requirements.txt" <<'PY'
+          import pathlib, re
+          header = pathlib.Path("skills/copilot-worker/scripts/copilot_worker.py").read_text().split("# ///", 2)[1]
+          print("\n".join(re.findall(r'^#\s+"([^"]+)",?$', header, re.MULTILINE)))
+          PY
+          uv run --no-project --with-requirements "$RUNNER_TEMP/copilot-worker-requirements.txt" \
+            python -m unittest discover -s skills/copilot-worker/scripts -v
+
       - name: Validate artifact documentation synchronization
         run: python scripts/validate_artifact_sync.py
 
