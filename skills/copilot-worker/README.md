@@ -15,14 +15,16 @@ to the Copilot subscription instead of Claude tokens.
   every tool call it asked for, and a `result.json`.
 - It drives Copilot through the official GitHub Copilot SDK, which pins its own Copilot
   runtime. Updates to the `copilot` command-line tool cannot break it.
-- The script decides every tool call itself: workers can only read and write inside their
-  workspace, and a deny list blocks `git push`, `gh`, and similar commands.
+- The script decides every permission request itself: workers can only read and write
+  inside their workspace, and a deny list rejects `git push`, `gh`, and similar commands
+  in their common forms. Neither your Copilot hooks nor the repository's run inside it.
 
 ## Requirements
 
 - [`uv`](https://docs.astral.sh/uv/). It installs Python 3.11 or later and the pinned
   `github-copilot-sdk` from the script's header on first run.
-- A GitHub Copilot login on the machine (`copilot login`, once)
+- A GitHub Copilot login on the machine. Signing in once with the Copilot CLI
+  (`copilot login`) is enough; the worker reuses that login.
 - Git
 - macOS or Linux
 
@@ -74,7 +76,8 @@ The defaults are the `DEFAULT_MODELS` constant in
 > [!WARNING]
 > An implementation worker has full shell access apart from a short deny list
 > (`git push`, `git remote`, `git worktree`, `gh`, `sudo`), and its file tools are
-> confined to its workspace. The worktree isolates the
+> confined to its workspace. The deny list catches common forms of those commands, not
+> code passed to an interpreter. The worktree isolates the
 > worker's normal edits. It is not a sandbox: a shell command can still reach files
 > outside it, including your live checkout.
 

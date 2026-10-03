@@ -128,11 +128,14 @@ security or data-loss question, do not delegate it.
 ## Limits
 
 > [!WARNING]
-> The worker's shell is not sandboxed. The script approves or rejects every tool call
-> itself: an `implement` worker can run any shell command except `git push`,
-> `git remote`, `git worktree`, `gh`, and `sudo`, and its file tools can only read and
-> write inside its workspace. A shell command, once allowed, can still reach outside the
-> worktree. The deny list guards against accidents, not against a hostile worker.
+> The worker's shell is not sandboxed. The script approves or rejects every permission
+> request itself. Its file tools can only read and write inside its workspace, and a
+> deny list rejects shell commands that run `gh`, `sudo`, `git push`, `git remote`,
+> `git worktree`, `git send-pack`, a git alias, or `git config remote.*`, including
+> through common wrappers such as `env`, `xargs`, `bash -c`, and `$(...)`. The deny list
+> guards against accidents, not against a hostile worker: code passed to an interpreter
+> (`python -c`, a script file) can still run anything, and an allowed shell command can
+> reach outside the worktree.
 
 - When a run ends, the script kills the worker's process group. A process that detached
   into its own session (a daemon, or anything started with `setsid` or `nohup`-style
@@ -147,10 +150,11 @@ security or data-loss question, do not delegate it.
   access, subagents, and Copilot skills are not available, so a task must not depend on
   them.
 - The worker runs with its own Copilot home under `~/.copilot-worker`, so the user's
-  Copilot hooks, skills, and MCP configuration do not load in it. The repository's custom
-  instructions (such as `AGENTS.md`) still do.
-- `permissions.jsonl` in the run directory records every tool call the worker asked for,
-  and whether it was allowed and why.
+  Copilot hooks, skills, and MCP configuration do not load in it. Repository hooks in
+  `.github/hooks/` are turned off too. The repository's custom instructions (such as
+  `AGENTS.md`) still load.
+- `permissions.jsonl` in the run directory records every permission request the worker
+  made, and whether it was allowed and why.
 - `review` attaches at most 100,000 bytes of diff and says so when it truncates. For a
   larger change, review it in parts by naming files in the task.
 - `--max-ai-credits` is a soft cap with a minimum of 30. A response can exceed it.

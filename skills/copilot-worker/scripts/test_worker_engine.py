@@ -52,6 +52,44 @@ class PolicyTests(unittest.TestCase):
     def test_any_denied_segment_rejects_the_request(self) -> None:
         self.assertFalse(self.shell("git status", "git push")[0])
 
+    def test_case_does_not_hide_a_denied_command(self) -> None:
+        # macOS file systems are case-insensitive: GH and Git run gh and git.
+        for command in ("GH pr list", "Gh pr list", "Git push", "git Push", "SUDO ls", "/usr/bin/Git push"):
+            self.assertFalse(self.shell(command)[0], command)
+
+    def test_wrapper_options_and_more_wrappers_do_not_hide_a_denied_command(self) -> None:
+        for command in (
+            "env -u FOO gh pr list", "env -P /opt/homebrew/bin gh pr list", "exec -a nice gh pr list",
+            "xargs gh pr list", "echo pr list | xargs gh", "timeout 30 gh pr create",
+            "nice gh pr list", "nice -n 5 git push", "caffeinate gh pr list", "eval gh pr list",
+            "stdbuf -oL gh pr list", "doas ls",
+        ):
+            self.assertFalse(self.shell(command)[0], command)
+
+    def test_shell_and_eval_payloads_are_checked(self) -> None:
+        for command in ("bash -c 'gh pr create'", 'sh -c "git push"', "zsh -c 'sudo ls'", "bash -lc 'gh auth token'"):
+            self.assertFalse(self.shell(command)[0], command)
+
+    def test_redirections_grouping_and_substitution_do_not_hide_a_denied_command(self) -> None:
+        for command in (
+            ">/dev/null gh pr create", "</dev/null gh pr create", "2>/dev/null gh pr list",
+            "(gh pr list)", "{ gh pr list; }", "(git push origin main)",
+            "echo $(gh auth token)", "echo `gh auth token`", "x=$(git push)",
+        ):
+            self.assertFalse(self.shell(command)[0], command)
+
+    def test_git_routes_to_push_or_change_remotes_are_denied(self) -> None:
+        for command in (
+            "git -c alias.p=push p", "git -c 'alias.x=!gh pr create' x", "git send-pack --all origin",
+            "git config remote.origin.url https://example.com/x", "git config --add remote.x.url y",
+            "git-push origin main", "/opt/homebrew/opt/git/libexec/git-core/git-push origin main",
+        ):
+            self.assertFalse(self.shell(command)[0], command)
+
+    def test_ordinary_git_config_and_options_are_still_allowed(self) -> None:
+        for command in ("git config user.name x", "git -c core.pager=cat log", "git config --get user.email"):
+            self.assertTrue(self.shell(command)[0], command)
+
     def test_lookalike_commands_are_not_denied(self) -> None:
         for command in ("ghc --version", "git pushd", "echo gh", "git log --grep=push"):
             self.assertTrue(self.shell(command)[0], command)
@@ -95,6 +133,10 @@ class PolicyTests(unittest.TestCase):
         link = os.path.join(self.workspace, "escape")
         os.symlink("/etc", link)
         self.assertFalse(engine.decide("read", {"path": os.path.join(link, "hosts")}, self.workspace, "research")[0])
+
+    def test_home_and_variable_paths_are_rejected(self) -> None:
+        for path in ("~/.ssh/id_rsa", "~", "$HOME/.ssh/id_rsa", "${HOME}/x", "a/$X/b"):
+            self.assertFalse(engine.decide("read", {"path": path}, self.workspace, "research")[0], path)
 
     def test_reading_the_workspace_root_itself_is_allowed(self) -> None:
         self.assertTrue(engine.decide("read", {"path": self.workspace}, self.workspace, "research")[0])
@@ -165,7 +207,7 @@ class HelperTests(unittest.TestCase):
         self.assertEqual(engine.TOOLS["review"], ("view", "rg", "glob"))
         self.assertEqual(
             engine.TOOLS["implement"],
-            ("view", "rg", "glob", "create", "edit", "apply_patch",
+            ("view", "rg", "glob", "apply_patch",
              "bash", "read_bash", "stop_bash", "list_bash"),
         )
 
@@ -176,9 +218,26 @@ class HelperTests(unittest.TestCase):
         self.assertEqual(options["session_limits"], {"max_ai_credits": 60})
         self.assertEqual(options["available_tools"], engine.TOOLS["implement"])
         self.assertIs(options["enable_skills"], False)
+        # Repository .github/hooks would otherwise run, and could settle permissions first.
+        self.assertIs(options["enable_file_hooks"], False)
+        self.assertEqual(options["disabled_mcp_servers"], ["github-mcp-server"])
         self.assertNotIn("reasoning_effort", options)
         with_effort = engine.session_options({**self.config, "effort": "high"})
         self.assertEqual(with_effort["reasoning_effort"], "high")
+
+    def test_session_kwargs_wire_in_our_handler_events_and_tool_set(self) -> None:
+        def on_permission(request, invocation):
+            return None
+
+        def on_event(event):
+            return None
+
+        sentinel_tools = object()
+        kwargs = engine.session_kwargs(self.config, on_permission, on_event, sentinel_tools)
+        self.assertIs(kwargs["on_permission_request"], on_permission)
+        self.assertIs(kwargs["on_event"], on_event)
+        self.assertIs(kwargs["available_tools"], sentinel_tools)
+        self.assertIs(kwargs["enable_file_hooks"], False)
 
     def test_client_uses_the_isolated_copilot_home(self) -> None:
         options = engine.client_options(self.config)
