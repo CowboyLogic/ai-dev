@@ -91,6 +91,15 @@ class PolicyTests(unittest.TestCase):
         ):
             self.assertTrue(self.shell(command)[0], command)
 
+    def test_a_denied_looking_command_inside_quotes_is_only_text(self) -> None:
+        for command in (
+            "echo 'safe; gh pr list'", 'git commit -m "fix; git push handling"',
+            "echo 'a && gh auth token'", "grep -n 'x | gh' file.txt",
+        ):
+            self.assertTrue(self.shell(command)[0], command)
+        for command in ("echo 'a; b'; git push", "gh 'unterminated", 'echo "oops; git push'):
+            self.assertFalse(self.shell(command)[0], command)
+
     def test_environment_injected_git_config_is_denied(self) -> None:
         for command in (
             "GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.p GIT_CONFIG_VALUE_0=push git p",
