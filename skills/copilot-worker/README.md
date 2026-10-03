@@ -1,6 +1,6 @@
 # Copilot Worker
 
-A skill that lets Claude Code run GitHub Copilot CLI as a worker. Claude Code plans the
+A skill that lets Claude Code run GitHub Copilot as a worker. Claude Code plans the
 work, hands a bounded task to Copilot, and verifies the result. The bulk work is billed
 to the Copilot subscription instead of Claude tokens.
 
@@ -11,15 +11,22 @@ to the Copilot subscription instead of Claude tokens.
   worker's edits off the branch you are on.
 - Each run is a separate process that Claude Code starts in the background. There is no
   server to install and no time limit imposed by the client.
-- Each run leaves a directory with the task, the worker's final message, usage, and a
-  `result.json`.
+- Each run leaves a directory with the task, the worker's final message, usage, a log of
+  every tool call it asked for, and a `result.json`.
+- It drives Copilot through the official GitHub Copilot SDK, which pins its own Copilot
+  runtime. Updates to the `copilot` command-line tool cannot break it.
+- The script decides every tool call itself: workers can only read and write inside their
+  workspace, and a deny list blocks `git push`, `gh`, and similar commands.
 
 ## Requirements
 
-- GitHub Copilot CLI 1.0.89 or later, authenticated (`copilot login`)
+- [`uv`](https://docs.astral.sh/uv/). It installs Python 3.11 or later and the pinned
+  `github-copilot-sdk` from the script's header on first run.
+- A GitHub Copilot login on the machine (`copilot login`, once)
 - Git
-- Python 3.9 or later
 - macOS or Linux
+
+The first run downloads the Copilot runtime the SDK pins, into the SDK's cache.
 
 ## Install
 
@@ -32,10 +39,10 @@ npx skills add CowboyLogic/ai-dev --skill copilot-worker --agent claude-code -g
 From inside a Git repository:
 
 ```bash
-python3 ~/.claude/skills/copilot-worker/scripts/copilot_worker.py check --live
+uv run ~/.claude/skills/copilot-worker/scripts/copilot_worker.py check --live
 ```
 
-`check` confirms the binary and repository. `--live` also sends one small prompt to each
+`check` confirms the SDK, its runtime version, and the repository. `--live` also sends one small prompt to each
 default model, which uses Copilot credits.
 
 ## Make delegation reliable
@@ -66,7 +73,8 @@ The defaults are the `DEFAULT_MODELS` constant in
 
 > [!WARNING]
 > An implementation worker has full shell access apart from a short deny list
-> (`git push`, `git remote`, `git worktree`, `gh`, `sudo`). The worktree isolates the
+> (`git push`, `git remote`, `git worktree`, `gh`, `sudo`), and its file tools are
+> confined to its workspace. The worktree isolates the
 > worker's normal edits. It is not a sandbox: a shell command can still reach files
 > outside it, including your live checkout.
 
@@ -76,6 +84,8 @@ See [SKILL.md](SKILL.md) for the full workflow and limits.
 
 ```bash
 python -m unittest skills/copilot-worker/scripts/test_copilot_worker.py
+python -m unittest skills/copilot-worker/scripts/test_worker_engine.py
 ```
 
-The tests use a fake `copilot` binary and spend no credits.
+The tests need Python 3.11 or later but not the SDK. They use a fake engine and spend no
+credits.
