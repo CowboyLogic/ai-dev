@@ -23,29 +23,26 @@ import copilot_worker as worker  # noqa: E402
 
 SCRIPT = Path(__file__).parent / "copilot_worker.py"
 
-# One assistant message in the shape Copilot CLI 1.0.89 emits with --output-format json.
-RECORDED_EVENT = json.dumps({
-    "type": "assistant.message",
-    "id": "sanitized-assistant-message",
-    "timestamp": "2026-09-19T00:00:00.000Z",
-    "data": {"messageId": "sanitized-message", "content": "Recorded final answer", "toolRequests": []},
-})
 
-FAKE_COPILOT = r'''
+# Stands in for worker_engine.py: same arguments, same files in, same files out.
+FAKE_ENGINE = r"""
 import json, os, signal, subprocess, sys, time
 
 args = sys.argv[1:]
 if args == ["--version"]:
-    print("GitHub Copilot CLI 0.0.0-fake")
+    print("github-copilot-sdk 0.0.0-fake (runtime fake)")
     sys.exit(0)
+run_dir = args[0]
+config = json.load(open(os.path.join(run_dir, "engine.json")))
 log = os.environ.get("FAKE_COPILOT_ARGV")
 if log:
     with open(log, "a") as handle:
-        handle.write(json.dumps(args) + "\n")
+        handle.write(json.dumps({"argv": args, **config}) + "\n")
 with open(os.environ["FAKE_COPILOT_PID"], "w") as handle:
     handle.write(str(os.getpid()))
 with open(os.environ["FAKE_COPILOT_STDIN"], "w") as handle:
-    handle.write(sys.stdin.read())
+    handle.write(open(os.path.join(run_dir, "task.md")).read())
+workspace = config["workspace"]
 behavior = os.environ.get("FAKE_COPILOT_BEHAVIOR", "ok")
 if behavior == "stubborn":
     signal.signal(signal.SIGTERM, signal.SIG_IGN)
@@ -66,12 +63,9 @@ if behavior in ("grandchild", "lingering"):
 if behavior == "grandchild":
     time.sleep(60)
 if behavior == "switch":
-    subprocess.run(
-        ["git", "checkout", "-q", "-b", "worker-own-branch"],
-        cwd=args[args.index("-C") + 1], check=True,
-    )
+    subprocess.run(["git", "checkout", "-q", "-b", "worker-own-branch"], cwd=workspace, check=True)
 if behavior == "wreck":
-    os.remove(os.path.join(args[args.index("-C") + 1], ".git"))
+    os.remove(os.path.join(workspace, ".git"))
 if behavior == "sleep":
     time.sleep(60)
 if behavior == "slow":
@@ -79,15 +73,17 @@ if behavior == "slow":
 if behavior == "fail":
     sys.stderr.write("model rejected\n")
     sys.exit(1)
-workspace = args[args.index("-C") + 1]
-if "--allow-all-tools" in args:
+if config["mode"] == "implement":
     with open(os.path.join(workspace, "worker_output.txt"), "w") as handle:
         handle.write("written by worker\n")
-with open(args[args.index("--usage-output-file") + 1], "w") as handle:
-    json.dump({"totalNanoAiu": 1000000000}, handle)
+with open(os.path.join(run_dir, "usage.json"), "w") as handle:
+    json.dump({"aiCredits": 1.0}, handle)
+with open(os.path.join(run_dir, "runtime.json"), "w") as handle:
+    json.dump({"sdkVersion": "0.0.0-fake", "runtimeVersion": "fake"}, handle)
 if behavior != "silent":
-    print(json.dumps({"type": "assistant.message", "data": {"content": "worker final answer"}}))
-'''
+    with open(os.path.join(run_dir, "response.md"), "w") as handle:
+        handle.write("worker final answer")
+"""
 
 
 class WorkerTestCase(unittest.TestCase):
@@ -98,14 +94,14 @@ class WorkerTestCase(unittest.TestCase):
         self.home = base / "home"
         self.repo = base / "my repo"
         self.repo.mkdir()
-        fake = base / "fake_copilot.py"
-        fake.write_text(FAKE_COPILOT, encoding="utf-8")
+        fake = base / "fake_engine.py"
+        fake.write_text(FAKE_ENGINE, encoding="utf-8")
         self.argv_log = base / "argv.jsonl"
         self.pid_file = base / "worker.pid"
         self.child_pid_file = base / "grandchild.pid"
         self.env = {
             "COPILOT_WORKER_HOME": str(self.home),
-            "COPILOT_WORKER_BIN": f"{shlex.quote(sys.executable)} {shlex.quote(str(fake))}",
+            "COPILOT_WORKER_ENGINE": f"{shlex.quote(sys.executable)} {shlex.quote(str(fake))}",
             "FAKE_COPILOT_ARGV": str(self.argv_log),
             "FAKE_COPILOT_PID": str(self.pid_file),
             "FAKE_COPILOT_STDIN": str(base / "stdin.txt"),
@@ -144,84 +140,51 @@ class WorkerTestCase(unittest.TestCase):
         os.kill(pid, signal.SIGKILL)
         self.fail(f"process {pid} from {pid_file.name} is still running")
 
-    def calls(self) -> list[list[str]]:
+    def calls(self) -> list[dict]:
         if not self.argv_log.exists():
             return []
         return [json.loads(line) for line in self.argv_log.read_text().splitlines()]
 
 
-class CommandTests(WorkerTestCase):
-    def command(self, mode: str, **overrides: object) -> list[str]:
-        options = {
-            "mode": mode,
-            "workspace": self.repo,
-            "model": worker.DEFAULT_MODELS[mode],
-            "effort": None,
-            "credits": 30,
-            "usage_file": self.home / "usage.json",
-        }
-        options.update(overrides)
-        return worker.build_command(**options)
-
+class PromptAndConfigTests(WorkerTestCase):
     def test_default_models_match_the_design(self) -> None:
         self.assertEqual(
             worker.DEFAULT_MODELS,
             {"research": "gpt-6-luna", "review": "gpt-6.1-sol", "implement": "gpt-6.1-sol"},
         )
 
-    def test_implement_command_carries_every_deny_rule(self) -> None:
-        command = self.command("implement")
-        self.assertIn("--allow-all-tools", command)
-        for pattern in (
-            "shell(git push)", "shell(git remote)", "shell(git worktree)",
-            "shell(gh:*)", "shell(sudo)",
-        ):
-            self.assertIn(f"--deny-tool={pattern}", command)
+    def test_engine_config_carries_the_run_settings(self) -> None:
+        result = worker.execute_run(mode="implement", task="Do it.", cwd=self.repo)
+        config = json.loads((Path(result["runDir"]) / "engine.json").read_text())
+        self.assertEqual(config["mode"], "implement")
+        self.assertEqual(config["model"], "gpt-6.1-sol")
+        self.assertEqual(config["credits"], 60)
+        self.assertEqual(config["timeout"], 1800)
+        self.assertIsNone(config["effort"])
+        self.assertEqual(config["workspace"], result["workspace"])
 
-    def test_no_command_grants_all_paths_or_urls(self) -> None:
-        for mode in worker.MODES:
-            command = self.command(mode)
-            for flag in ("--allow-all-paths", "--allow-all-urls", "--allow-all", "--yolo"):
-                self.assertNotIn(flag, command)
+    def test_effort_reaches_the_engine_only_when_given(self) -> None:
+        worker.execute_run(mode="research", task="x", cwd=self.repo, effort="high")
+        self.assertEqual(self.calls()[-1]["effort"], "high")
 
-    def test_implement_command_exposes_only_built_in_file_and_shell_tools(self) -> None:
-        # --allow-all-tools would otherwise pre-approve any configured MCP server's tools,
-        # which the shell deny list cannot see.
-        command = self.command("implement")
-        exposed = [arg for arg in command if arg.startswith("--available-tools=")]
-        self.assertEqual(
-            exposed,
-            ["--available-tools=view,rg,glob,create,edit,apply_patch,"
-             "bash,read_bash,stop_bash,list_bash"],
-        )
+    def test_engine_uses_a_private_copilot_home_inside_the_state_directory(self) -> None:
+        previous = os.umask(0o022)
+        self.addCleanup(os.umask, previous)
+        worker.execute_run(mode="research", task="x", cwd=self.repo)
+        home = Path(self.calls()[-1]["copilotHome"])
+        self.assertEqual(home, self.home / "copilot-home")
+        self.assertTrue(home.is_dir())
+        self.assertEqual(self.home.stat().st_mode & 0o077, 0)
 
-    def test_file_tools_are_kept_out_of_the_system_temp_directory(self) -> None:
-        # Copilot's file tools can otherwise read the temp directory as well as the workspace.
-        for mode in worker.MODES:
-            self.assertIn("--disallow-temp-dir", self.command(mode))
-
-    def test_read_only_command_exposes_only_the_view_tool(self) -> None:
-        for mode in ("research", "review"):
-            command = self.command(mode)
-            self.assertIn("--available-tools=view", command)
-            self.assertIn("--allow-tool=read", command)
-            self.assertNotIn("--allow-all-tools", command)
-
-    def test_effort_is_passed_only_when_given(self) -> None:
-        self.assertNotIn("--reasoning-effort", self.command("implement"))
-        command = self.command("implement", effort="high")
-        self.assertEqual(command[command.index("--reasoning-effort") + 1], "high")
-
-    def test_task_reaches_the_worker_on_stdin_and_never_in_argv(self) -> None:
-        # Argv is visible to other local users through the process list; stdin is not.
+    def test_task_reaches_the_engine_by_file_and_never_in_argv(self) -> None:
+        # Argv is visible to other local users through the process list.
         task = "- fix the \"quoted\" thing\n- then the 'other' thing"
         result = worker.execute_run(mode="research", task=task, cwd=self.repo)
         sent = (Path(result["runDir"]) / "task.md").read_text()
         self.assertTrue(sent.startswith(task))
         self.assertEqual(Path(os.environ["FAKE_COPILOT_STDIN"]).read_text(), sent)
-        for argument in self.calls()[-1]:
+        for argument in self.calls()[-1]["argv"]:
             self.assertNotIn("quoted", argument)
-            self.assertFalse(argument.startswith(("-p", "--prompt")), argument)
 
     def test_review_prompt_attaches_the_working_diff(self) -> None:
         (self.repo / "README.md").write_text("changed\n", encoding="utf-8")
@@ -250,20 +213,11 @@ class CommandTests(WorkerTestCase):
         self.assertNotIn("+changed", prompt)
         self.assertTrue(prompt.startswith("Look around."))
 
-    def test_extract_response_reads_the_recorded_event_shape(self) -> None:
-        events = "not json\n" + RECORDED_EVENT + "\n"
-        self.assertEqual(worker.extract_response(events), "Recorded final answer")
+    def test_the_script_declares_its_sdk_dependency_for_uv(self) -> None:
+        header = SCRIPT.read_text().split("# ///", 2)[1]
+        self.assertIn('requires-python = ">=3.11"', header)
+        self.assertIn('"github-copilot-sdk==1.0.14"', header)
 
-    def test_extract_response_returns_the_last_non_empty_message(self) -> None:
-        first = json.dumps({"type": "assistant.message", "data": {"content": "progress note"}})
-        last = json.dumps({"type": "assistant.message", "content": "legacy shape answer"})
-        blank = json.dumps({"type": "assistant.message", "data": {"content": "  "}})
-        self.assertEqual(
-            worker.extract_response("\n".join([first, last, blank])), "legacy shape answer"
-        )
-
-    def test_extract_response_is_empty_without_an_assistant_message(self) -> None:
-        self.assertEqual(worker.extract_response('{"type":"session.start"}\n'), "")
 
 
 class RunTests(WorkerTestCase):
@@ -298,10 +252,10 @@ class RunTests(WorkerTestCase):
         self.assertIsNone(result["branch"])
         self.assertIsNone(result["baseCommit"])
         self.assertEqual(result["changedFiles"], {"uncommitted": [], "commits": []})
-        self.assertEqual(result["copilotVersion"], "GitHub Copilot CLI 0.0.0-fake")
+        self.assertEqual(result["copilotVersion"], "github-copilot-sdk 0.0.0-fake (runtime fake)")
         self.assertRegex(result["runId"], worker.RUN_ID_PATTERN)
         self.assertEqual((run_dir / "response.md").read_text(), "worker final answer")
-        self.assertEqual(json.loads((run_dir / "usage.json").read_text()), {"totalNanoAiu": 1000000000})
+        self.assertEqual(json.loads((run_dir / "usage.json").read_text()), {"aiCredits": 1.0})
         self.assertTrue((run_dir / "task.md").read_text().startswith("Do the task."))
         self.assertEqual(json.loads((run_dir / "result.json").read_text()), result)
 
@@ -316,14 +270,14 @@ class RunTests(WorkerTestCase):
         for mode in worker.MODES:
             result = self.run_mode(mode)
             call = self.calls()[-1]
-            self.assertEqual(call[call.index("--model") + 1], worker.DEFAULT_MODELS[mode])
+            self.assertEqual(call["model"], worker.DEFAULT_MODELS[mode])
             self.assertEqual(result["maxAiCredits"], worker.DEFAULT_CREDITS[mode])
             self.assertEqual(result["timeoutSeconds"], worker.DEFAULT_TIMEOUTS[mode])
 
     def test_model_override_replaces_the_default(self) -> None:
         result = self.run_mode("research", model="gpt-5-mini")
         call = self.calls()[-1]
-        self.assertEqual(call[call.index("--model") + 1], "gpt-5-mini")
+        self.assertEqual(call["model"], "gpt-5-mini")
         self.assertEqual(result["model"], "gpt-5-mini")
 
     def test_implement_runs_in_a_worktree_and_leaves_the_live_checkout_alone(self) -> None:
@@ -458,7 +412,7 @@ class RunTests(WorkerTestCase):
         self.assertNotIn(result["workspace"], self.git("worktree", "list"))
 
     def test_missing_binary_is_recorded_as_a_spawn_error(self) -> None:
-        os.environ["COPILOT_WORKER_BIN"] = str(self.home / "no-such-copilot")
+        os.environ["COPILOT_WORKER_ENGINE"] = str(self.home / "no-such-copilot")
         result = self.run_mode("research")
         self.assertEqual(result["status"], "failed")
         self.assertEqual(result["terminationReason"], "spawn_error")
@@ -529,7 +483,7 @@ class RunTests(WorkerTestCase):
         self.behavior("sleep")
         process = self.cli("run", "--mode", "research", "--task-file", self.task_file())
         deadline = time.monotonic() + 10
-        while not list((self.home / "runs").glob("*/events.jsonl")):
+        while not self.pid_file.exists():
             self.assertLess(time.monotonic(), deadline, "worker never started")
             time.sleep(0.05)
         time.sleep(0.3)
@@ -593,15 +547,15 @@ class CleanAndCheckTests(WorkerTestCase):
     def test_check_reports_the_version_and_repository(self) -> None:
         code, stdout, _ = self.main("check")
         self.assertEqual(code, 0)
-        self.assertIn("GitHub Copilot CLI 0.0.0-fake", stdout)
+        self.assertIn("github-copilot-sdk 0.0.0-fake (runtime fake)", stdout)
         self.assertIn(str(self.repo), stdout)
         self.assertEqual(self.calls(), [])
 
     def test_check_fails_when_the_binary_is_missing(self) -> None:
-        os.environ["COPILOT_WORKER_BIN"] = str(self.home / "no-such-copilot")
+        os.environ["COPILOT_WORKER_ENGINE"] = str(self.home / "no-such-copilot")
         code, stdout, _ = self.main("check")
         self.assertEqual(code, 1)
-        self.assertIn("copilot: NOT FOUND", stdout)
+        self.assertIn("copilot sdk: NOT AVAILABLE", stdout)
 
     def test_check_fails_outside_a_repository(self) -> None:
         code, stdout, _ = self.main("check", cwd=self.repo.parent)
@@ -611,7 +565,7 @@ class CleanAndCheckTests(WorkerTestCase):
     def test_check_live_probes_each_distinct_default_model_once(self) -> None:
         code, stdout, _ = self.main("check", "--live")
         self.assertEqual(code, 0)
-        models = [call[call.index("--model") + 1] for call in self.calls()]
+        models = [call["model"] for call in self.calls()]
         self.assertEqual(sorted(models), ["gpt-6-luna", "gpt-6.1-sol"])
         self.assertIn("model gpt-6-luna: ok", stdout)
         self.assertIn("model gpt-6.1-sol: ok", stdout)
