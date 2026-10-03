@@ -77,6 +77,19 @@ class PolicyTests(unittest.TestCase):
         ):
             self.assertFalse(self.shell(command)[0], command)
 
+    def test_bsd_xargs_value_options_do_not_hide_a_denied_command(self) -> None:
+        for command in ("xargs -J % gh --version %", "xargs -R 1 gh", "xargs -S 255 gh pr list"):
+            self.assertFalse(self.shell(command)[0], command)
+
+    def test_shell_reserved_words_do_not_hide_a_denied_command(self) -> None:
+        for command in (
+            "! gh --version", "echo a && ! git push", "if gh pr list; then echo ok; fi",
+            "while gh pr list; do :; done", "until gh auth status; do sleep 1; done",
+            "if true; then gh pr create; fi", "coproc gh pr list",
+        ):
+            self.assertFalse(self.shell(command)[0], command)
+        self.assertTrue(self.shell("if true; then echo ok; fi")[0])
+
     def test_shell_and_eval_payloads_are_checked(self) -> None:
         for command in ("bash -c 'gh pr create'", 'sh -c "git push"', "zsh -c 'sudo ls'", "bash -lc 'gh auth token'"):
             self.assertFalse(self.shell(command)[0], command)

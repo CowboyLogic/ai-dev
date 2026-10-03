@@ -43,7 +43,7 @@ _WRAPPERS = {
     "nice": ({"-n", "--adjustment"}, 0),
     "timeout": ({"-s", "-k", "--signal", "--kill-after"}, 1),
     "xargs": ({
-        "-I", "-n", "-L", "-P", "-d", "-E", "-s", "-a", "--max-args", "--max-lines", "--max-procs",
+        "-I", "-J", "-R", "-S", "-n", "-L", "-P", "-d", "-E", "-s", "-a", "--max-args", "--max-lines", "--max-procs",
         "--max-chars", "--delimiter", "--eof", "--arg-file", "--process-slot-var",
     }, 0),
     "stdbuf": ({"-i", "-o", "-e", "--input", "--output", "--error"}, 0),
@@ -52,6 +52,8 @@ _WRAPPERS = {
 }
 # Wrapper options whose value is itself a command line, which is checked in turn.
 _COMMAND_OPTIONS = {"env": ("-S", "--split-string"), "script": ("-c", "--command")}
+# Shell reserved words that precede a command: "! gh" and "if gh" still run gh.
+_RESERVED_PREFIXES = {"!", "if", "then", "else", "elif", "do", "while", "until", "coproc"}
 _ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 _REDIRECT = re.compile(r"^\d*(>>?|<<?|&>|>&)")
 _BARE_REDIRECT = re.compile(r"^\d*(>>?|<<?|&>|>&)$")
@@ -123,7 +125,7 @@ def _denied_words(words: list[str], depth: int, aliases: frozenset[str]) -> str 
     while index < len(words):
         word = words[index]
         name = os.path.basename(word).lower()
-        if _ASSIGNMENT.match(word):
+        if _ASSIGNMENT.match(word) or word in _RESERVED_PREFIXES:
             index += 1
         elif _REDIRECT.match(word):
             index += 2 if _BARE_REDIRECT.match(word) else 1
