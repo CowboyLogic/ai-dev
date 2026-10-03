@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-"""Run GitHub Copilot CLI as a bounded worker for Claude Code."""
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["github-copilot-sdk==1.0.14"]
+# ///
+"""Run GitHub Copilot as a bounded worker for Claude Code.
+
+This supervisor is standard-library Python. It starts worker_engine.py, which drives
+the GitHub Copilot SDK, and enforces the timeout, worktree, and branch rules around it.
+Run it with `uv run` so the SDK dependency declared above is available to the engine.
+"""
 
 from __future__ import annotations
 
@@ -22,21 +31,6 @@ MODES = ("research", "review", "implement")
 DEFAULT_MODELS = {"research": "gpt-6-luna", "review": "gpt-6.1-sol", "implement": "gpt-6.1-sol"}
 DEFAULT_CREDITS = {"research": 30, "review": 30, "implement": 60}
 DEFAULT_TIMEOUTS = {"research": 600, "review": 600, "implement": 1800}
-# An accident guard, not a sandbox: shell commands are not confined to the worktree.
-DENY_TOOLS = (
-    "shell(git push)",
-    "shell(git remote)",
-    "shell(git worktree)",
-    "shell(gh:*)",
-    "shell(sudo)",
-)
-# The only tools an implement worker sees. --allow-all-tools pre-approves whatever is
-# visible, so MCP, web, subagent, and skill tools are left out: the deny list above only
-# matches shell commands and could not stop them.
-IMPLEMENT_TOOLS = (
-    "view", "rg", "glob", "create", "edit", "apply_patch",
-    "bash", "read_bash", "stop_bash", "list_bash",
-)
 EFFORTS = ("none", "minimal", "low", "medium", "high", "xhigh", "max")
 RUN_ID_PATTERN = re.compile(r"^\d{8}-\d{6}-[0-9a-f]{4}$")
 # Keeps an attached review diff to a size the worker can read alongside the files.
@@ -59,11 +53,18 @@ def state_home() -> Path:
     return Path(os.environ.get("COPILOT_WORKER_HOME") or Path.home() / ".copilot-worker")
 
 
-def copilot_bin() -> list[str]:
-    binary = shlex.split(os.environ.get("COPILOT_WORKER_BIN") or "copilot")
-    if not binary:
-        raise WorkerError("COPILOT_WORKER_BIN is empty")
-    return binary
+ENGINE = Path(__file__).with_name("worker_engine.py")
+
+
+def engine_base() -> list[str]:
+    """The engine command without its argument. Tests replace it with a fake."""
+    override = os.environ.get("COPILOT_WORKER_ENGINE")
+    if override is None:
+        return [sys.executable, str(ENGINE)]
+    command = shlex.split(override)
+    if not command:
+        raise WorkerError("COPILOT_WORKER_ENGINE is empty")
+    return command
 
 
 def git(args: list[str], cwd: Path) -> str:
@@ -96,55 +97,6 @@ def build_prompt(mode: str, task: str, root: Path) -> str:
     return prompt
 
 
-def build_command(
-    *,
-    mode: str,
-    workspace: Path,
-    model: str,
-    effort: str | None,
-    credits: int,
-    usage_file: Path,
-) -> list[str]:
-    command = [
-        *copilot_bin(),
-        "-C", str(workspace),
-        "--output-format", "json",
-        "--no-ask-user",
-        "--no-remote",
-        "--no-remote-export",
-        "--disable-builtin-mcps",
-        "--disallow-temp-dir",
-        "--model", model,
-        "--max-ai-credits", str(credits),
-        "--usage-output-file", str(usage_file),
-    ]
-    if effort:
-        command += ["--reasoning-effort", effort]
-    if mode == "implement":
-        command += [f"--available-tools={','.join(IMPLEMENT_TOOLS)}", "--allow-all-tools"]
-        command += [f"--deny-tool={pattern}" for pattern in DENY_TOOLS]
-    else:
-        command += ["--available-tools=view", "--allow-tool=read"]
-    return command
-
-
-def extract_response(events_text: str) -> str:
-    """Return the last non-empty assistant message in Copilot's JSONL output."""
-    response = ""
-    for line in events_text.splitlines():
-        try:
-            event = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if not isinstance(event, dict) or event.get("type") != "assistant.message":
-            continue
-        data = event.get("data")
-        content = data.get("content") if isinstance(data, dict) else event.get("content")
-        if isinstance(content, str) and content.strip():
-            response = content
-    return response
-
-
 class _Terminated(Exception):
     def __init__(self, signum: int) -> None:
         super().__init__(signum)
@@ -163,7 +115,7 @@ def utc_now() -> str:
 def copilot_version() -> str:
     try:
         done = subprocess.run(
-            [*copilot_bin(), "--version"], capture_output=True, text=True, timeout=30
+            [*engine_base(), "--version"], capture_output=True, text=True, timeout=60
         )
     except (OSError, subprocess.TimeoutExpired):
         return "unknown"
@@ -192,7 +144,7 @@ def _kill_stragglers(process: subprocess.Popen[bytes]) -> None:
         pass
 
 
-def run_copilot(command: list[str], run_dir: Path, timeout: int) -> tuple[int | None, str]:
+def run_engine(command: list[str], run_dir: Path, timeout: int) -> tuple[int | None, str]:
     """Run the worker to completion. Return (exit code, termination reason)."""
 
     def on_signal(signum: int, _frame: Any) -> None:
@@ -208,13 +160,12 @@ def run_copilot(command: list[str], run_dir: Path, timeout: int) -> tuple[int | 
     process: subprocess.Popen[bytes] | None = None
     previous = {name: signal.signal(name, on_signal) for name in (signal.SIGTERM, signal.SIGINT)}
     try:
-        with open(run_dir / "task.md", "rb") as task, \
-                open(run_dir / "events.jsonl", "wb") as out, \
-                open(run_dir / "stderr.log", "wb") as err:
-            # Own session, and the prompt on stdin from a file: the worker outlives the
-            # caller's connection, and the task never appears in the process list.
+        with open(run_dir / "stderr.log", "wb") as log:
+            # Own session and no stdin: the worker outlives the caller's connection. The
+            # engine reads its task from task.md, so it never appears in the process list.
             process = subprocess.Popen(
-                command, stdin=task, stdout=out, stderr=err, start_new_session=True,
+                command, stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
+                start_new_session=True,
             )
             code = process.wait(timeout=timeout)
             # Anything the worker left running must not outlive the run it belongs to.
@@ -278,22 +229,26 @@ def execute_run(
         git(["worktree", "add", str(workspace), "-b", branch, "HEAD"], root)
 
     (run_dir / "task.md").write_text(prompt, encoding="utf-8")
-    command = build_command(
-        mode=mode, workspace=workspace, model=model, effort=effort,
-        credits=credits, usage_file=run_dir / "usage.json",
-    )
+    copilot_home = state_home() / "copilot-home"
+    copilot_home.mkdir(exist_ok=True)
+    engine_config = {
+        "mode": mode, "model": model, "effort": effort, "credits": credits,
+        "timeout": timeout, "workspace": str(workspace), "copilotHome": str(copilot_home),
+    }
+    (run_dir / "engine.json").write_text(json.dumps(engine_config, indent=2) + "\n", encoding="utf-8")
+    command = [*engine_base(), str(run_dir)]
     started_at, clock = utc_now(), time.monotonic()
     try:
-        exit_code, reason = run_copilot(command, run_dir, timeout)
+        exit_code, reason = run_engine(command, run_dir, timeout)
     except OSError as error:
-        (run_dir / "stderr.log").write_text(f"could not start copilot: {error}\n", encoding="utf-8")
+        (run_dir / "stderr.log").write_text(f"could not start the engine: {error}\n", encoding="utf-8")
         exit_code, reason = None, "spawn_error"
     duration = round(time.monotonic() - clock, 3)
 
-    events_path = run_dir / "events.jsonl"
-    events = events_path.read_text(encoding="utf-8", errors="replace") if events_path.exists() else ""
-    response = extract_response(events)
-    (run_dir / "response.md").write_text(response, encoding="utf-8")
+    response_path = run_dir / "response.md"
+    response = response_path.read_text(encoding="utf-8", errors="replace") if response_path.exists() else ""
+    if not response_path.exists():
+        response_path.write_text("", encoding="utf-8")
     if reason == "timeout":
         status = "timed_out"
     elif reason == "exit" and exit_code == 0:
@@ -335,10 +290,18 @@ def execute_run(
         "currentBranch": current_branch,
         "baseCommit": base,
         "changedFiles": changed,
-        "copilotVersion": copilot_version(),
+        "copilotVersion": _runtime_version(run_dir),
     }
     (run_dir / "result.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     return result
+
+
+def _runtime_version(run_dir: Path) -> str:
+    try:
+        info = json.loads((run_dir / "runtime.json").read_text(encoding="utf-8"))
+        return f"github-copilot-sdk {info['sdkVersion']} (runtime {info['runtimeVersion']})"
+    except (OSError, ValueError, KeyError):
+        return copilot_version()
 
 
 def print_summary(result: dict[str, Any]) -> None:
@@ -414,10 +377,10 @@ def cmd_check(args: argparse.Namespace, cwd: Path) -> int:
     ok = True
     version = copilot_version()
     if version == "unknown":
-        print("copilot: NOT FOUND")
+        print("copilot sdk: NOT AVAILABLE; run this script with `uv run`")
         ok = False
     else:
-        print(f"copilot: {version}")
+        print(f"copilot sdk: {version}")
     try:
         print(f"repository: {repo_root(cwd)}")
     except WorkerError:
@@ -450,7 +413,7 @@ def build_parser() -> argparse.ArgumentParser:
     clean = commands.add_parser("clean", help="remove a run's worktree and branch")
     clean.add_argument("run_id")
     clean.set_defaults(handler=cmd_clean)
-    check = commands.add_parser("check", help="verify the copilot binary and repository")
+    check = commands.add_parser("check", help="verify the Copilot SDK and repository")
     check.add_argument("--live", action="store_true", help="also probe each default model")
     check.set_defaults(handler=cmd_check)
     return parser
