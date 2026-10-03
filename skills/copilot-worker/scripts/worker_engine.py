@@ -107,17 +107,33 @@ def _denied_git(args: list[str], aliases: frozenset[str]) -> str | None:
     return None
 
 
-def _command_option_value(wrapper: str, words: list[str], index: int) -> str | None:
-    """Return the command line carried by a wrapper option such as env -S, if any."""
+def _scan_option(
+    wrapper: str, words: list[str], index: int, value_options: set[str]
+) -> tuple[str | None, int]:
+    """Return (command line the option carries, if any, words the option consumes).
+
+    Short options may be clustered (script -qc CMD, env -iS CMD): the first letter that
+    takes a value ends the cluster, and the rest of the word, or else the next word, is
+    that value.
+    """
     option = words[index]
-    for name in _COMMAND_OPTIONS.get(wrapper, ()):
-        if option == name:
-            return words[index + 1] if index + 1 < len(words) else ""
-        if name.startswith("--") and option.startswith(name + "="):
-            return option[len(name) + 1:]
-        if not name.startswith("--") and option.startswith(name):
-            return option[len(name):]
-    return None
+    command_options = _COMMAND_OPTIONS.get(wrapper, ())
+    following = words[index + 1] if index + 1 < len(words) else ""
+    if option.startswith("--"):
+        key, equals, attached = option.partition("=")
+        if equals:
+            return (attached if key in command_options else None), 1
+        if key in command_options:
+            return following, 2
+        return None, 2 if key in value_options else 1
+    letters = option[1:]
+    for position, letter in enumerate(letters):
+        flag, rest = "-" + letter, letters[position + 1:]
+        if flag in command_options:
+            return (rest, 1) if rest else (following, 2)
+        if flag in value_options:
+            return None, 1 if rest else 2
+    return None, 1
 
 
 def _denied_words(words: list[str], depth: int, aliases: frozenset[str]) -> str | None:
@@ -133,12 +149,12 @@ def _denied_words(words: list[str], depth: int, aliases: frozenset[str]) -> str 
             value_options, positionals = _WRAPPERS[name]
             index += 1
             while index < len(words) and words[index].startswith("-"):
-                payload = _command_option_value(name, words, index)
+                payload, width = _scan_option(name, words, index, value_options)
                 if payload is not None:
                     denied = _denied_command(payload, aliases, depth + 1)
                     if denied:
                         return denied
-                index += 2 if words[index] in value_options else 1
+                index += width
             index += positionals
         else:
             break
@@ -165,6 +181,9 @@ def _denied_words(words: list[str], depth: int, aliases: frozenset[str]) -> str 
 def _denied_command(text: str, aliases: frozenset[str], depth: int = 0) -> str | None:
     if depth > _MAX_DEPTH:
         return "a command nested too deeply to check"
+    # The shell removes a backslash-newline pair before it splits words, so a command
+    # continued across lines is still one command.
+    text = text.replace("\\\n", "")
     for segment in _SEPARATORS.split(text):
         denied = _denied_words(_words(segment), depth, aliases)
         if denied:

@@ -77,6 +77,21 @@ class PolicyTests(unittest.TestCase):
         ):
             self.assertFalse(self.shell(command)[0], command)
 
+    def test_clustered_short_options_do_not_hide_a_denied_command(self) -> None:
+        for command in (
+            "script -qc 'git push' /tmp/log", "script -qc'gh pr list' /dev/null",
+            "env -iS 'gh --version'", "env -iSgh", "env -i -S 'git push'",
+            "xargs -tn1 gh", "xargs -tI{} gh pr list {}", "stdbuf -oL -eL gh",
+        ):
+            self.assertFalse(self.shell(command)[0], command)
+        for command in ("env -i ls", "script -q /dev/null", "xargs -t echo", "stdbuf -oL ls"):
+            self.assertTrue(self.shell(command)[0], command)
+
+    def test_line_continuations_do_not_hide_a_denied_command(self) -> None:
+        for command in ("git \\\npush --dry-run", "gh \\\n pr list", "g\\\nh pr list", "env \\\n  gh pr list"):
+            self.assertFalse(self.shell(command)[0], repr(command))
+        self.assertTrue(self.shell("echo a \\\n b")[0])
+
     def test_bsd_xargs_value_options_do_not_hide_a_denied_command(self) -> None:
         for command in ("xargs -J % gh --version %", "xargs -R 1 gh", "xargs -S 255 gh pr list"):
             self.assertFalse(self.shell(command)[0], command)
