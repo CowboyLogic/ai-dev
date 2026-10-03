@@ -203,12 +203,12 @@ def _denied_words(words: list[str], depth: int, aliases: frozenset[str]) -> str 
     return None
 
 
-def _split_commands(text: str) -> list[str]:
+def _split_commands(text: str) -> tuple[list[str], bool]:
     """Split on separators the shell would act on, leaving quoted text whole.
 
     This keeps a payload such as bash -c 'echo ok; git push' in one piece, so that the
     recursive check sees it intact. Inside double quotes only $( and a backtick still
-    start a command.
+    start a command. Also return whether every quote was closed.
     """
     segments: list[str] = []
     current: list[str] = []
@@ -247,7 +247,7 @@ def _split_commands(text: str) -> list[str]:
         current.append(char)
         index += 1
     cut()
-    return segments
+    return segments, not quote
 
 
 def _denied_command(text: str, aliases: frozenset[str], depth: int = 0) -> str | None:
@@ -256,9 +256,11 @@ def _denied_command(text: str, aliases: frozenset[str], depth: int = 0) -> str |
     # The shell removes a backslash-newline pair before it splits words, so a command
     # continued across lines is still one command.
     text = text.replace("\\\n", "")
-    # Both splits: the quote-aware one sees a quoted payload whole, and the plain one still
-    # sees a command that unbalanced quotes would otherwise swallow.
-    for segment in (*_split_commands(text), *_SEPARATORS.split(text)):
+    segments, balanced = _split_commands(text)
+    if not balanced:
+        # An unclosed quote would swallow what follows it, so also check the plain split.
+        segments += _SEPARATORS.split(text)
+    for segment in segments:
         denied = _denied_words(_words(segment), depth, aliases)
         if denied:
             return denied
