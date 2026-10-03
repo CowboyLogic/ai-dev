@@ -95,10 +95,15 @@ See [SKILL.md](SKILL.md) for the full workflow and limits.
 
 ## Tests
 
+From the repository root:
+
 ```bash
-python -m unittest skills/copilot-worker/scripts/test_copilot_worker.py
-python -m unittest skills/copilot-worker/scripts/test_worker_engine.py
+python -m unittest discover -s skills/copilot-worker/scripts -v
 ```
 
-The tests need Python 3.11 or later but not the SDK. They use a fake engine and spend no
-credits.
+The unit tests need Python 3.11 or later but not the SDK. They use a fake engine and spend
+no credits. `test_sdk_contract.py` checks the installed SDK against the pinned versions and
+the names the engine uses, so it needs the SDK: without it those tests skip, and with
+`REQUIRE_SDK_CONTRACT=1` they fail instead. CI sets that variable. To run them in the
+environment the script header pins, follow step 4 of
+[references/upgrading.md](references/upgrading.md).

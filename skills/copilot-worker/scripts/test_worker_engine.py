@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import contextlib
+import io
 import os
 from pathlib import Path
 import subprocess
@@ -41,6 +43,39 @@ class PinTests(unittest.TestCase):
     def test_a_pins_file_missing_a_key_is_a_problem_not_a_pass(self) -> None:
         info = {"sdkVersion": "1.0.14", "runtimeVersion": "1.0.85"}
         self.assertIsNotNone(engine.pin_problem(info, {"sdk": "1.0.14"}))
+
+    def run_main(self, info: dict, argv: list[str]) -> tuple[int, str, str, unittest.mock.MagicMock]:
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with unittest.mock.patch.object(engine, "versions", return_value=info), \
+                unittest.mock.patch.object(engine, "load_pins", return_value=self.PINS), \
+                unittest.mock.patch.object(engine, "drive", new=unittest.mock.MagicMock()), \
+                unittest.mock.patch.object(engine.asyncio, "run") as run, \
+                contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            code = engine.main(argv)
+        return code, stdout.getvalue(), stderr.getvalue(), run
+
+    def test_a_run_refuses_to_start_on_mismatched_pins(self) -> None:
+        info = {"sdkVersion": "9.9.9", "runtimeVersion": "1.0.85"}
+        code, _, stderr, run = self.run_main(info, ["/some/run/dir"])
+        self.assertEqual(code, 3)
+        self.assertIn("pin mismatch", stderr)
+        self.assertIn("references/upgrading.md", stderr)
+        run.assert_not_called()
+
+    def test_a_run_starts_when_the_pins_match(self) -> None:
+        info = {"sdkVersion": "1.0.14", "runtimeVersion": "1.0.85"}
+        code, _, _, run = self.run_main(info, ["/some/run/dir"])
+        self.assertEqual(code, 0)
+        run.assert_called_once()
+
+    def test_check_pins_reports_and_never_starts_a_run(self) -> None:
+        bad = {"sdkVersion": "1.0.14", "runtimeVersion": "9.9.9"}
+        code, stdout, _, run = self.run_main(bad, ["--check-pins"])
+        self.assertEqual((code, "pin mismatch" in stdout), (1, True))
+        good = {"sdkVersion": "1.0.14", "runtimeVersion": "1.0.85"}
+        code, stdout, _, run = self.run_main(good, ["--check-pins"])
+        self.assertEqual((code, stdout.strip()), (0, "pins ok"))
+        run.assert_not_called()
 
     def test_the_shipped_pins_file_loads(self) -> None:
         self.assertEqual(sorted(engine.load_pins()), ["runtime", "sdk"])

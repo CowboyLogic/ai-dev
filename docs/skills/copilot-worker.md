@@ -22,6 +22,9 @@ itself. The bulk work is billed to the Copilot subscription instead of Claude to
   for a single run.
 - **Built on the Copilot SDK.** It drives Copilot through the official SDK, which pins
   its own runtime, so command-line tool updates cannot break it.
+- **Pinned versions.** The SDK, its runtime, and every package it needs are pinned to
+  exact versions, and the worker refuses to start if the installed ones differ. Upgrading
+  is a deliberate change with a documented procedure, linked from the skill's README.
 - **Every permission request checked.** File access is confined to the workspace, a
   deny list rejects pushes and the GitHub CLI in their common forms, and neither your
   Copilot hooks nor the repository's run inside a worker.

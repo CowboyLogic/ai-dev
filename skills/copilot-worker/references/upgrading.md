@@ -8,8 +8,8 @@ effect of running the script.
 
 | What | Where |
 | --- | --- |
-| The SDK version | `pins.json` (`sdk`) and the `github-copilot-sdk==` line in the header of `scripts/copilot_worker.py` |
-| The runtime version | `pins.json` (`runtime`). Each SDK release carries its own runtime and downloads it, checked against published checksums, so the two always move together |
+| The SDK version | `scripts/pins.json` (`sdk`) and the `github-copilot-sdk==` line in the header of `scripts/copilot_worker.py` |
+| The runtime version | `scripts/pins.json` (`runtime`). Each SDK release carries its own runtime and downloads it, checked against published checksums, so the two always move together |
 | Every package the SDK needs | The same header, each at an exact `==` version |
 
 The header lists the whole dependency set, not only the SDK, because the SDK's own
@@ -24,10 +24,10 @@ requirements are loose ranges (`pydantic>=2.0`, `httpx>=0.24`) that would otherw
 ## What enforces the pins
 
 - The engine refuses to start a worker when the installed SDK or runtime differs from
-  `pins.json`. The run ends `failed`, and `stderr.log` names the difference.
+  `scripts/pins.json`. The run ends `failed`, and `stderr.log` names the difference.
 - `check` prints a `pins:` line and fails on a mismatch.
 - The unit and contract tests run in CI against an environment built from the header, and
-  fail when the header, `pins.json`, the installed SDK, or the SDK's dependency set disagree.
+  fail when the header, `scripts/pins.json`, the installed SDK, or the SDK's dependency set disagree.
 
 ## Upgrade procedure
 
@@ -42,7 +42,7 @@ requirements are loose ranges (`pydantic>=2.0`, `httpx>=0.24`) that would otherw
    ```
 
 3. **Update the header** in `scripts/copilot_worker.py` with the compiled list, and
-   `pins.json` with the new `sdk` and `runtime`.
+   `scripts/pins.json` with the new `sdk` and `runtime`.
 4. **Run the tests** from the repository root, in the environment the header describes:
 
    ```bash
