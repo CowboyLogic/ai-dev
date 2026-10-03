@@ -28,6 +28,11 @@ to the Copilot subscription instead of Claude tokens.
 - Git
 - macOS or Linux
 
+> [!WARNING]
+> Windows is not supported, including Git Bash. The supervisor uses POSIX process groups
+> and signals that do not exist in Windows Python, and `implement` mode's shell policy
+> assumes a POSIX shell. WSL has not been tested.
+
 The first run downloads the Copilot runtime the SDK pins, into the SDK's cache.
 
 ## Install

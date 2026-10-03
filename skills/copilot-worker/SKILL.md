@@ -14,6 +14,12 @@ first run also downloads the Copilot runtime the SDK pins. Below, `WORKER` stand
 `uv run <this skill's directory>/scripts/copilot_worker.py`. Always launch it with
 `uv run`, never `python3`.
 
+## Platform
+
+macOS and Linux only. On Windows, including Git Bash, do not use this skill: the
+supervisor's process-group kill does not exist there. Do the work yourself, and tell the
+user why you did not delegate.
+
 ## When to delegate
 
 Delegate by default. Research, review, and implementation go to the worker unless one
@@ -23,14 +29,14 @@ of these applies:
   read (under roughly 500 lines). Judge by how much you would have to read, not by how
   many tool calls it takes.
 - The change is a one-line edit in a file you have already read.
+- The task needs this conversation's context and you cannot put that context in a task
+  file.
+- The user asked you to do it yourself.
 
 Delegation pays when the worker reads or writes far more than you need to check: a sweep
 across many files, or an implementation you can verify by its diff and tests. A narrow
 question about one module is the worst case, because checking the answer costs about as
 much as finding it. Do those yourself.
-- The task needs this conversation's context and you cannot put that context in a task
-  file.
-- The user asked you to do it yourself.
 
 ## Modes
 
