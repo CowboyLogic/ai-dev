@@ -15,6 +15,37 @@ sys.path.insert(0, str(Path(__file__).parent))
 import worker_engine as engine  # noqa: E402
 
 
+class PinTests(unittest.TestCase):
+    PINS = {"sdk": "1.0.14", "runtime": "1.0.85"}
+
+    def test_matching_versions_are_not_a_problem(self) -> None:
+        info = {"sdkVersion": "1.0.14", "runtimeVersion": "1.0.85"}
+        self.assertIsNone(engine.pin_problem(info, self.PINS))
+
+    def test_a_different_sdk_is_reported(self) -> None:
+        info = {"sdkVersion": "1.0.15", "runtimeVersion": "1.0.85"}
+        problem = engine.pin_problem(info, self.PINS)
+        self.assertIn("github-copilot-sdk is 1.0.15, pinned to 1.0.14", problem)
+        self.assertNotIn("runtime", problem)
+
+    def test_a_different_runtime_is_reported(self) -> None:
+        info = {"sdkVersion": "1.0.14", "runtimeVersion": "1.0.86"}
+        self.assertIn("runtime is 1.0.86, pinned to 1.0.85", engine.pin_problem(info, self.PINS))
+
+    def test_both_differences_are_reported_together(self) -> None:
+        info = {"sdkVersion": "2.0.0", "runtimeVersion": "2.0.1"}
+        problem = engine.pin_problem(info, self.PINS)
+        self.assertIn("github-copilot-sdk", problem)
+        self.assertIn("runtime", problem)
+
+    def test_a_pins_file_missing_a_key_is_a_problem_not_a_pass(self) -> None:
+        info = {"sdkVersion": "1.0.14", "runtimeVersion": "1.0.85"}
+        self.assertIsNotNone(engine.pin_problem(info, {"sdk": "1.0.14"}))
+
+    def test_the_shipped_pins_file_loads(self) -> None:
+        self.assertEqual(sorted(engine.load_pins()), ["runtime", "sdk"])
+
+
 class PolicyTests(unittest.TestCase):
     def setUp(self) -> None:
         tmp = tempfile.TemporaryDirectory()

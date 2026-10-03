@@ -8,6 +8,7 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import shlex
 import signal
 import subprocess
@@ -31,6 +32,12 @@ import json, os, signal, subprocess, sys, time
 args = sys.argv[1:]
 if args == ["--version"]:
     print("github-copilot-sdk 0.0.0-fake (runtime fake)")
+    sys.exit(0)
+if args == ["--check-pins"]:
+    if os.environ.get("FAKE_COPILOT_PINS") == "mismatch":
+        print("pin mismatch: runtime is fake, pinned to other")
+        sys.exit(1)
+    print("pins ok")
     sys.exit(0)
 run_dir = args[0]
 config = json.load(open(os.path.join(run_dir, "engine.json")))
@@ -215,9 +222,22 @@ class PromptAndConfigTests(WorkerTestCase):
 
     def test_the_script_declares_its_sdk_dependency_for_uv(self) -> None:
         header = SCRIPT.read_text().split("# ///", 2)[1]
+        pins = json.loads((SCRIPT.parent / "pins.json").read_text(encoding="utf-8"))
         self.assertIn('requires-python = ">=3.11"', header)
-        self.assertIn('"github-copilot-sdk==1.0.14"', header)
+        self.assertIn(f'"github-copilot-sdk=={pins["sdk"]}"', header)
 
+    def test_every_dependency_in_the_script_header_is_pinned_exactly(self) -> None:
+        header = SCRIPT.read_text().split("# ///", 2)[1]
+        declared = re.findall(r'^#\s+"([^"]+)",?$', header, re.MULTILINE)
+        self.assertGreater(len(declared), 1)
+        for requirement in declared:
+            self.assertRegex(requirement, r"^[A-Za-z0-9._-]+==[A-Za-z0-9.!+_-]+$", requirement)
+
+    def test_pins_file_names_a_sdk_and_a_runtime(self) -> None:
+        pins = json.loads((SCRIPT.parent / "pins.json").read_text(encoding="utf-8"))
+        self.assertEqual(sorted(pins), ["runtime", "sdk"])
+        for value in pins.values():
+            self.assertRegex(value, r"^\d+\.\d+\.\d+(-\d+)?$")
 
 
 class RunTests(WorkerTestCase):
@@ -548,8 +568,15 @@ class CleanAndCheckTests(WorkerTestCase):
         code, stdout, _ = self.main("check")
         self.assertEqual(code, 0)
         self.assertIn("github-copilot-sdk 0.0.0-fake (runtime fake)", stdout)
+        self.assertIn("pins: pins ok", stdout)
         self.assertIn(str(self.repo), stdout)
         self.assertEqual(self.calls(), [])
+
+    def test_check_fails_when_the_sdk_or_runtime_is_not_the_pinned_one(self) -> None:
+        with patch.dict(os.environ, {"FAKE_COPILOT_PINS": "mismatch"}):
+            code, stdout, _ = self.main("check")
+        self.assertEqual(code, 1)
+        self.assertIn("pins: pin mismatch", stdout)
 
     def test_check_fails_when_the_binary_is_missing(self) -> None:
         os.environ["COPILOT_WORKER_ENGINE"] = str(self.home / "no-such-copilot")
