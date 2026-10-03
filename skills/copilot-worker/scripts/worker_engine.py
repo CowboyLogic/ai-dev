@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import re
 import shlex
+import subprocess
 import sys
 from typing import Any
 
@@ -70,7 +71,7 @@ def _words(segment: str) -> list[str]:
         return segment.split()
 
 
-def _denied_git(args: list[str]) -> str | None:
+def _denied_git(args: list[str], aliases: frozenset[str]) -> str | None:
     index = 0
     while index < len(args) and args[index].startswith("-"):
         option = args[index]
@@ -89,10 +90,15 @@ def _denied_git(args: list[str]) -> str | None:
     subcommand, rest = args[index].lower(), args[index + 1:]
     if subcommand in DENIED_GIT_SUBCOMMANDS:
         return f"git {subcommand}"
-    if subcommand == "config" and any(
-        arg.lower().startswith("remote.") for arg in rest if not arg.startswith("-")
-    ):
-        return "git config remote"
+    # An alias already in the repository or global config can stand for git push.
+    if subcommand in aliases:
+        return "git alias"
+    if subcommand == "config":
+        for arg in rest:
+            if arg.lower().startswith("alias."):
+                return "git config alias"
+            if arg.lower().startswith("remote."):
+                return "git config remote"
     return None
 
 
@@ -109,7 +115,7 @@ def _command_option_value(wrapper: str, words: list[str], index: int) -> str | N
     return None
 
 
-def _denied_words(words: list[str], depth: int) -> str | None:
+def _denied_words(words: list[str], depth: int, aliases: frozenset[str]) -> str | None:
     index = 0
     while index < len(words):
         word = words[index]
@@ -124,7 +130,7 @@ def _denied_words(words: list[str], depth: int) -> str | None:
             while index < len(words) and words[index].startswith("-"):
                 payload = _command_option_value(name, words, index)
                 if payload is not None:
-                    denied = _denied_command(payload, depth + 1)
+                    denied = _denied_command(payload, aliases, depth + 1)
                     if denied:
                         return denied
                 index += 2 if words[index] in value_options else 1
@@ -138,27 +144,40 @@ def _denied_words(words: list[str], depth: int) -> str | None:
     if program in DENIED_PROGRAMS:
         return program
     if program == "eval":
-        return _denied_command(" ".join(args), depth + 1)
+        return _denied_command(" ".join(args), aliases, depth + 1)
     if program in _SHELLS:
         for position, arg in enumerate(args[:-1]):
             if arg.startswith("-") and not arg.startswith("--") and "c" in arg[1:]:
-                return _denied_command(args[position + 1], depth + 1)
+                return _denied_command(args[position + 1], aliases, depth + 1)
         return None
     if program.startswith("git-"):
         program, args = "git", [program[4:], *args]
     if program == "git":
-        return _denied_git(args)
+        return _denied_git(args, aliases)
     return None
 
 
-def _denied_command(text: str, depth: int = 0) -> str | None:
+def _denied_command(text: str, aliases: frozenset[str], depth: int = 0) -> str | None:
     if depth > _MAX_DEPTH:
         return "a command nested too deeply to check"
     for segment in _SEPARATORS.split(text):
-        denied = _denied_words(_words(segment), depth)
+        denied = _denied_words(_words(segment), depth, aliases)
         if denied:
             return denied
     return None
+
+
+def configured_aliases(workspace: str) -> frozenset[str]:
+    """Names of the git aliases the workspace's repository and global config define."""
+    try:
+        result = subprocess.run(
+            ["git", "-C", workspace, "config", "--get-regexp", r"^alias\."],
+            capture_output=True, text=True, timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return frozenset()
+    keys = (line.split(None, 1)[0] for line in result.stdout.splitlines() if line.strip())
+    return frozenset(key.split(".", 1)[1].lower() for key in keys)
 
 
 def _inside(path: str | None, workspace: str) -> bool:
@@ -172,7 +191,9 @@ def _inside(path: str | None, workspace: str) -> bool:
     return real == root or real.startswith(root + os.sep)
 
 
-def decide(kind: str, fields: dict, workspace: str, mode: str) -> tuple[bool, str]:
+def decide(
+    kind: str, fields: dict, workspace: str, mode: str, aliases: frozenset[str] = frozenset()
+) -> tuple[bool, str]:
     """Return (allowed, reason) for one permission request. Unknown kinds are rejected."""
     if kind == "shell":
         if mode != "implement":
@@ -181,7 +202,7 @@ def decide(kind: str, fields: dict, workspace: str, mode: str) -> tuple[bool, st
         if not segments:
             return False, "shell request carried no command text"
         for segment in segments:
-            denied = _denied_command(segment)
+            denied = _denied_command(segment, aliases)
             if denied:
                 return False, f"copilot-worker denied command: {denied}"
         return True, "allowed"
@@ -308,13 +329,14 @@ async def drive(run_dir: Path) -> None:
     (run_dir / "runtime.json").write_text(json.dumps(versions()) + "\n", encoding="utf-8")
     calls: list[dict] = []
     response = ""
+    aliases = configured_aliases(config["workspace"])
 
     with open(run_dir / "events.jsonl", "a", encoding="utf-8") as events, \
             open(run_dir / "permissions.jsonl", "a", encoding="utf-8") as permissions:
 
         def on_permission(request: Any, _invocation: Any) -> Any:
             kind, fields = request_kind(request), request_fields(request)
-            allowed, reason = decide(kind, fields, config["workspace"], config["mode"])
+            allowed, reason = decide(kind, fields, config["workspace"], config["mode"], aliases)
             permissions.write(json.dumps(
                 {"kind": kind, "fields": fields, "allowed": allowed, "reason": reason}) + "\n")
             permissions.flush()
