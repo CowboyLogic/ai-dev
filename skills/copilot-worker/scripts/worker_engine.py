@@ -54,6 +54,10 @@ _WRAPPERS = {
 _COMMAND_OPTIONS = {"env": ("-S", "--split-string"), "script": ("-c", "--command")}
 # Shell reserved words that precede a command: "! gh" and "if gh" still run gh.
 _RESERVED_PREFIXES = {"!", "if", "then", "else", "elif", "do", "while", "until", "coproc"}
+# Environment variables through which git reads aliases or a different config file.
+_GIT_CONFIG_FILE_VARIABLES = {"GIT_CONFIG", "GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM"}
+# Builtins that put an assignment into the shell session, where the next command sees it.
+_EXPORTERS = {"export", "declare", "typeset", "readonly", "local"}
 _ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 _REDIRECT = re.compile(r"^\d*(>>?|<<?|&>|>&)")
 _BARE_REDIRECT = re.compile(r"^\d*(>>?|<<?|&>|>&)$")
@@ -107,6 +111,16 @@ def _denied_git(args: list[str], aliases: frozenset[str]) -> str | None:
     return None
 
 
+def _denied_assignment(word: str) -> str | None:
+    """Deny NAME=value words that make git resolve an alias or read a config file we cannot see."""
+    name, _, value = word.partition("=")
+    if name.startswith("GIT_CONFIG_KEY_") or name == "GIT_CONFIG_PARAMETERS":
+        return "git alias" if "alias." in value.lower() else None
+    if name in _GIT_CONFIG_FILE_VARIABLES and value not in ("", os.devnull):
+        return "a git config file from the environment"
+    return None
+
+
 def _scan_option(
     wrapper: str, words: list[str], index: int, value_options: set[str]
 ) -> tuple[str | None, int]:
@@ -141,7 +155,12 @@ def _denied_words(words: list[str], depth: int, aliases: frozenset[str]) -> str 
     while index < len(words):
         word = words[index]
         name = os.path.basename(word).lower()
-        if _ASSIGNMENT.match(word) or word in _RESERVED_PREFIXES:
+        if _ASSIGNMENT.match(word):
+            denied = _denied_assignment(word)
+            if denied:
+                return denied
+            index += 1
+        elif word in _RESERVED_PREFIXES:
             index += 1
         elif _REDIRECT.match(word):
             index += 2 if _BARE_REDIRECT.match(word) else 1
@@ -164,6 +183,12 @@ def _denied_words(words: list[str], depth: int, aliases: frozenset[str]) -> str 
     program, args = os.path.basename(words[index]).lower(), words[index + 1:]
     if program in DENIED_PROGRAMS:
         return program
+    if program in _EXPORTERS:
+        for arg in args:
+            denied = _denied_assignment(arg) if _ASSIGNMENT.match(arg) else None
+            if denied:
+                return denied
+        return None
     if program == "eval":
         return _denied_command(" ".join(args), aliases, depth + 1)
     if program in _SHELLS:
