@@ -164,7 +164,7 @@ validator script and symptom-to-cause troubleshooting tables.
 
 ### Copilot Worker
 
-Run GitHub Copilot CLI as a worker from Claude Code. Research and review run read-only
+Run GitHub Copilot as a worker from Claude Code. Research and review run read-only
 in the current checkout; implementation runs in a throwaway Git worktree. Each mode has
 its own default model, and every run leaves a result record for the parent agent to
 verify.

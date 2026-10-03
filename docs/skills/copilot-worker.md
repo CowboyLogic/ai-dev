@@ -1,11 +1,11 @@
 # Copilot Worker
 
-Run GitHub Copilot CLI as a worker from Claude Code. Claude Code plans the work, hands
+Run GitHub Copilot as a worker from Claude Code. Claude Code plans the work, hands
 a bounded research, review, or implementation task to Copilot, and verifies the result
 itself. The bulk work is billed to the Copilot subscription instead of Claude tokens.
 
 - **Skill name:** `copilot-worker`
-- **Last updated:** 2026-10-01
+- **Last updated:** 2026-10-02
 - **Source:** [skills/copilot-worker](https://github.com/CowboyLogic/ai-dev/tree/main/skills/copilot-worker)
 
 ---
@@ -20,6 +20,10 @@ itself. The bulk work is billed to the Copilot subscription instead of Claude to
   usage, and a result record for the parent agent to check.
 - **A model per task type.** Each mode has a default model, which can be overridden
   for a single run.
+- **Built on the Copilot SDK.** It drives Copilot through the official SDK, which pins
+  its own runtime, so command-line tool updates cannot break it.
+- **Every tool call checked.** File access is confined to the workspace, and a deny list
+  blocks pushes and the GitHub CLI.
 
 ## Where it applies
 
@@ -31,8 +35,8 @@ implementation, reconnaissance, or an independent review done on Copilot capacit
 > worktree isolates the worker's normal edits. It is not a sandbox: a shell command can
 > still reach files outside it, including your live checkout.
 
-It requires GitHub Copilot CLI 1.0.89 or later, Git, Python 3.9 or later, and macOS
-or Linux.
+It requires `uv`, a GitHub Copilot login, Git, and macOS or Linux. `uv` provides
+Python 3.11 or later and the SDK on first run.
 
 ---
 
