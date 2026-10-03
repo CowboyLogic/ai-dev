@@ -44,8 +44,10 @@ _WRAPPERS = {
     "xargs": ({"-I", "-n", "-L", "-P", "-d", "-E", "-s", "-a"}, 0),
     "stdbuf": (set(), 0),
     "caffeinate": ({"-t", "-w"}, 0),
-    "script": (set(), 1),
+    "script": ({"-c", "--command"}, 1),
 }
+# Wrapper options whose value is itself a command line, which is checked in turn.
+_COMMAND_OPTIONS = {"env": ("-S", "--split-string"), "script": ("-c", "--command")}
 _ASSIGNMENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 _REDIRECT = re.compile(r"^\d*(>>?|<<?|&>|>&)")
 _BARE_REDIRECT = re.compile(r"^\d*(>>?|<<?|&>|>&)$")
@@ -53,7 +55,10 @@ _BARE_REDIRECT = re.compile(r"^\d*(>>?|<<?|&>|>&)$")
 # "$(gh ...)" and "`gh ...`" are each checked as a command of their own.
 _SEPARATORS = re.compile(r"\|\||&&|\$\(|[;|&\n(){}`]")
 # git options that take a separate value before the subcommand.
-_GIT_VALUE_OPTIONS = {"-C", "-c", "--git-dir", "--work-tree", "--namespace"}
+_GIT_VALUE_OPTIONS = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--config-env"}
+# Copilot runtime settings in the environment, such as COPILOT_ALLOW_ALL or
+# COPILOT_CLI_PATH, could pre-approve tools or replace the pinned runtime.
+_KEPT_COPILOT_VARIABLES = {"COPILOT_GITHUB_TOKEN"}
 _MAX_DEPTH = 5
 
 
@@ -69,8 +74,14 @@ def _denied_git(args: list[str]) -> str | None:
     index = 0
     while index < len(args) and args[index].startswith("-"):
         option = args[index]
-        value = args[index + 1] if option == "-c" and index + 1 < len(args) else option[2:]
-        if option.startswith("-c") and value.lower().startswith("alias."):
+        separate = args[index + 1] if index + 1 < len(args) else ""
+        if option.startswith("--config-env"):
+            value = option.partition("=")[2] or separate
+        elif option.startswith("-c") and not option.startswith("--"):
+            value = separate if option == "-c" else option[2:]
+        else:
+            value = ""
+        if value.lower().startswith("alias."):
             return "git alias"
         index += 2 if option in _GIT_VALUE_OPTIONS else 1
     if index >= len(args):
@@ -82,6 +93,19 @@ def _denied_git(args: list[str]) -> str | None:
         arg.lower().startswith("remote.") for arg in rest if not arg.startswith("-")
     ):
         return "git config remote"
+    return None
+
+
+def _command_option_value(wrapper: str, words: list[str], index: int) -> str | None:
+    """Return the command line carried by a wrapper option such as env -S, if any."""
+    option = words[index]
+    for name in _COMMAND_OPTIONS.get(wrapper, ()):
+        if option == name:
+            return words[index + 1] if index + 1 < len(words) else ""
+        if name.startswith("--") and option.startswith(name + "="):
+            return option[len(name) + 1:]
+        if not name.startswith("--") and option.startswith(name):
+            return option[len(name):]
     return None
 
 
@@ -98,6 +122,11 @@ def _denied_words(words: list[str], depth: int) -> str | None:
             value_options, positionals = _WRAPPERS[name]
             index += 1
             while index < len(words) and words[index].startswith("-"):
+                payload = _command_option_value(name, words, index)
+                if payload is not None:
+                    denied = _denied_command(payload, depth + 1)
+                    if denied:
+                        return denied
                 index += 2 if words[index] in value_options else 1
             index += positionals
         else:
@@ -186,9 +215,20 @@ def request_fields(request: Any) -> dict:
     return {}
 
 
-def client_options(config: dict) -> dict:
+def scrub_environment(environ: dict) -> dict:
+    return {
+        key: value for key, value in environ.items()
+        if not key.startswith("COPILOT_") or key in _KEPT_COPILOT_VARIABLES
+    }
+
+
+def client_options(config: dict, env: dict) -> dict:
     # An isolated Copilot home keeps the user's hooks, skills, and MCP config out.
-    return {"working_directory": config["workspace"], "base_directory": config["copilotHome"]}
+    return {
+        "working_directory": config["workspace"],
+        "base_directory": config["copilotHome"],
+        "env": env,
+    }
 
 
 def session_options(config: dict) -> dict:
@@ -255,6 +295,11 @@ def versions() -> dict:
 
 
 async def drive(run_dir: Path) -> None:
+    # Scrub before the SDK loads: it reads COPILOT_* settings from this process too.
+    env = scrub_environment(dict(os.environ))
+    os.environ.clear()
+    os.environ.update(env)
+
     from copilot import CopilotClient, ToolSet
     from copilot.rpc import PermissionDecisionApproveOnce, PermissionDecisionReject
 
@@ -292,7 +337,7 @@ async def drive(run_dir: Path) -> None:
         for tool in TOOLS[config["mode"]]:
             tools.add_builtin(tool)
         try:
-            async with CopilotClient(**client_options(config)) as client:
+            async with CopilotClient(**client_options(config, env)) as client:
                 session = await client.create_session(
                     **session_kwargs(config, on_permission, on_event, tools)
                 )

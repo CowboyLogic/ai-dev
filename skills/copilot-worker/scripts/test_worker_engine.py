@@ -86,6 +86,18 @@ class PolicyTests(unittest.TestCase):
         ):
             self.assertFalse(self.shell(command)[0], command)
 
+    def test_git_config_env_aliases_are_denied(self) -> None:
+        for command in ("FOO=push git --config-env=alias.p=FOO p", "git --config-env alias.p=FOO p"):
+            self.assertFalse(self.shell(command)[0], command)
+        self.assertTrue(self.shell("git --config-env=core.pager=PAGER log")[0])
+
+    def test_commands_carried_in_wrapper_option_values_are_checked(self) -> None:
+        for command in (
+            "env -S 'gh --version'", "env --split-string='git push'", "env -S'gh pr list'",
+            "script -c 'git push' /tmp/log", "script --command='gh pr list' /dev/null",
+        ):
+            self.assertFalse(self.shell(command)[0], command)
+
     def test_ordinary_git_config_and_options_are_still_allowed(self) -> None:
         for command in ("git config user.name x", "git -c core.pager=cat log", "git config --get user.email"):
             self.assertTrue(self.shell(command)[0], command)
@@ -239,8 +251,24 @@ class HelperTests(unittest.TestCase):
         self.assertIs(kwargs["available_tools"], sentinel_tools)
         self.assertIs(kwargs["enable_file_hooks"], False)
 
+    def test_environment_is_scrubbed_of_copilot_overrides(self) -> None:
+        # COPILOT_ALLOW_ALL could pre-approve tools; COPILOT_CLI_PATH would replace the pinned runtime.
+        scrubbed = engine.scrub_environment({
+            "PATH": "/bin", "HOME": "/h", "GH_TOKEN": "t", "COPILOT_GITHUB_TOKEN": "c",
+            "COPILOT_ALLOW_ALL": "true", "COPILOT_CLI_PATH": "/tmp/evil", "COPILOT_HOME": "/x",
+            "COPILOT_CLI_EXTRACT_DIR": "/tmp/cache", "COPILOT_SKIP_CLI_DOWNLOAD": "1",
+            "COPILOT_WORKER_ENGINE": "fake",
+        })
+        self.assertEqual(
+            scrubbed, {"PATH": "/bin", "HOME": "/h", "GH_TOKEN": "t", "COPILOT_GITHUB_TOKEN": "c"}
+        )
+
+    def test_client_gets_the_scrubbed_environment(self) -> None:
+        env = {"PATH": "/bin"}
+        self.assertIs(engine.client_options(self.config, env)["env"], env)
+
     def test_client_uses_the_isolated_copilot_home(self) -> None:
-        options = engine.client_options(self.config)
+        options = engine.client_options(self.config, {})
         self.assertEqual(options["base_directory"], "/home/state/copilot-home")
         self.assertEqual(options["working_directory"], "/w")
 
