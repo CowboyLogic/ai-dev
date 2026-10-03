@@ -31,9 +31,11 @@ work inside a specific agent topology, that topology's own `agents/<topology>/AG
 
 ### Ship on a branch, never touch main
 
-Agents in this repository **may commit, push, and open a pull request without asking
-first**, once the work is complete and verified. That is the expected way to finish a
-task here, not an escalation.
+Agents in this repository **may commit and push to a feature branch without asking
+first**, once the work is complete and verified. **Opening the pull request is the
+exception: ask first.** GitHub Copilot reviews every PR and re-reviews every push, and
+each review spends the user's AI credits, so the PR waits until the user is satisfied
+with the work.
 
 The controls below exist to protect `main` (and `master`): it deploys the published
 site, and nothing lands on it except through a PR a human merges. Feature branches are
@@ -63,9 +65,10 @@ anchored) or `git rebase origin/main`. Resolve conflicts, re-run the
 already-pushed feature branch is pushed with `git push --force-with-lease` — never bare
 `--force`, and never to a branch the task does not own.
 
-Report the PR link when the work is done. For a task that produced a diff, that link
-— on a PR that has cleared the [Copilot review loop](#copilot-review-loop) — is what
-"finished" means.
+When the work is complete and verified, say so and ask whether to open the PR. Once
+the user agrees and the PR is open, report its link. For a task that produced a diff,
+that link — on a PR that has cleared the [Copilot review loop](#copilot-review-loop) —
+is what "finished" means.
 
 ### Copilot review loop
 
@@ -236,8 +239,9 @@ instead.
 - **Staging** (`git add <specific-files>`) — name the files. Never `-A`, never `.`.
 - **Committing** and **pushing** are autonomous once the work is complete and verified.
   No approval step.
-- **Opening a PR** (`gh pr create`) is the normal end of a task that produced a diff.
-  If the branch already has an open PR, the push updates it — do not open a second.
+- **Opening a PR** (`gh pr create`) needs the user's yes. When the work is complete and
+  verified, say so and ask; do not open it first. If the branch already has an open PR,
+  the push updates it — do not open a second.
 - **After opening or updating a PR**, run the [Copilot review loop](#copilot-review-loop):
   wait, address valid findings, resolve every thread, and repeat until the latest
   commit has been reviewed and no thread is left unresolved.
@@ -354,6 +358,7 @@ types; schema version is `"1"`.
 - Do not force-push with bare `--force` — use `--force-with-lease`, and only on a
   feature branch the task owns.
 - Do not `git add -A` or `git add .` — stage the files the work actually changed.
+- Do not open a PR without asking first.
 - Do not treat a freshly opened PR as finished — run the Copilot review loop and leave
   no unresolved review threads.
 - Do not write temporary or generated files anywhere other than `.agent-output/`.
