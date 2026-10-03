@@ -68,6 +68,15 @@ class PolicyTests(unittest.TestCase):
         ):
             self.assertFalse(self.shell(command)[0], command)
 
+    def test_wrapper_options_that_take_a_separate_value_do_not_hide_a_denied_command(self) -> None:
+        for command in (
+            "xargs --max-args 1 gh", "xargs --max-procs 2 gh pr list", "xargs --delimiter , gh",
+            "stdbuf -o L gh", "stdbuf --output L gh", "stdbuf -i0 -e L git push",
+            "nice --adjustment 5 gh", "env -a name gh pr list", "env --argv0 name gh",
+            "time -o out.txt gh pr list", "time --format %e git push",
+        ):
+            self.assertFalse(self.shell(command)[0], command)
+
     def test_shell_and_eval_payloads_are_checked(self) -> None:
         for command in ("bash -c 'gh pr create'", 'sh -c "git push"', "zsh -c 'sudo ls'", "bash -lc 'gh auth token'"):
             self.assertFalse(self.shell(command)[0], command)
