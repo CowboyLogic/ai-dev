@@ -35,15 +35,18 @@ _SHELLS = {"sh", "bash", "zsh", "dash", "ksh", "fish"}
 # Programs that run another command, with their options that take a separate value and
 # the number of plain arguments that come before the command they run.
 _WRAPPERS = {
-    "env": ({"-u", "-P", "-S", "-C", "--unset", "--chdir", "--split-string"}, 0),
+    "env": ({"-u", "-P", "-S", "-C", "-a", "--unset", "--chdir", "--split-string", "--argv0"}, 0),
     "command": (set(), 0),
     "exec": ({"-a"}, 0),
     "nohup": (set(), 0),
-    "time": (set(), 0),
-    "nice": ({"-n"}, 0),
+    "time": ({"-f", "-o", "--format", "--output"}, 0),
+    "nice": ({"-n", "--adjustment"}, 0),
     "timeout": ({"-s", "-k", "--signal", "--kill-after"}, 1),
-    "xargs": ({"-I", "-n", "-L", "-P", "-d", "-E", "-s", "-a"}, 0),
-    "stdbuf": (set(), 0),
+    "xargs": ({
+        "-I", "-n", "-L", "-P", "-d", "-E", "-s", "-a", "--max-args", "--max-lines", "--max-procs",
+        "--max-chars", "--delimiter", "--eof", "--arg-file", "--process-slot-var",
+    }, 0),
+    "stdbuf": ({"-i", "-o", "-e", "--input", "--output", "--error"}, 0),
     "caffeinate": ({"-t", "-w"}, 0),
     "script": ({"-c", "--command"}, 1),
 }
