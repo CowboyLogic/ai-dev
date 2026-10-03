@@ -5,6 +5,7 @@ bin/
 obj/
 
 __pycache__/
+.pytest_cache/
 
 # mkdocs site output
 site/
