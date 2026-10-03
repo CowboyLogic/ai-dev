@@ -77,6 +77,20 @@ class PolicyTests(unittest.TestCase):
         ):
             self.assertFalse(self.shell(command)[0], command)
 
+    def test_compound_payloads_in_quotes_are_checked_whole(self) -> None:
+        for command in (
+            "bash -c 'echo ok; git push'", "eval 'echo ok; git push'", 'sh -c "echo ok; gh pr create"',
+            "bash -c 'cd x && git push origin main'", "bash -lc 'ls | gh auth token'",
+            'echo "$(true)"; git push', 'echo "$(gh auth token)"', "echo \"`gh auth token`\"",
+            "echo 'a'; git push", 'echo "a" && gh pr list', "bash -c 'echo \\'; git push",
+        ):
+            self.assertFalse(self.shell(command)[0], command)
+        for command in (
+            "echo 'a; b'", 'echo "a; b"', "git commit -m 'fix; thing'", "bash -c 'echo ok; ls'",
+            'echo "$(date)"', "echo 'it'\\''s; fine'",
+        ):
+            self.assertTrue(self.shell(command)[0], command)
+
     def test_environment_injected_git_config_is_denied(self) -> None:
         for command in (
             "GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.p GIT_CONFIG_VALUE_0=push git p",
