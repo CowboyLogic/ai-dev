@@ -273,6 +273,17 @@ as local files.
 - **Write the body** with the [feature request template](.github/ISSUE_TEMPLATE/feature_request.md)
   headings: the problem, the solution, the alternatives considered and why they were rejected,
   and any dependencies on other issues, named by number.
+- **Set dependencies as relationships.** When one issue's output feeds another, name the
+  dependency in the body and also set it as a GitHub *blocked by* relationship on the
+  dependent issue, so the order shows on the issues themselves and not only in their text.
+  The API takes the blocker's issue `id`, which is not its number:
+
+  ```bash
+  blocker_id="$(gh api repos/{owner}/{repo}/issues/<blocker-number> --jq .id)"
+  gh api -X POST repos/{owner}/{repo}/issues/<dependent-number>/dependencies/blocked_by \
+    -F issue_id="$blocker_id"
+  ```
+
 - **Show the draft first.** An issue is public and permanent, so the user approves it before an
   agent posts it. Keep drafts in `.agent-output/` until then and delete them once posted. Keep
   private details out: no employer, machine, account, or usage figures.
