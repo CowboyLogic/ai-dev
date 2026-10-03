@@ -77,6 +77,22 @@ class PolicyTests(unittest.TestCase):
         ):
             self.assertFalse(self.shell(command)[0], command)
 
+    def test_environment_injected_git_config_is_denied(self) -> None:
+        for command in (
+            "GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.p GIT_CONFIG_VALUE_0=push git p",
+            "env GIT_CONFIG_KEY_0=alias.p GIT_CONFIG_VALUE_0=push GIT_CONFIG_COUNT=1 git p",
+            "GIT_CONFIG_PARAMETERS=\"'alias.p=push'\" git p",
+            "GIT_CONFIG_GLOBAL=./evil.cfg git p", "GIT_CONFIG_SYSTEM=evil.cfg git status",
+            "export GIT_CONFIG_KEY_0=alias.p", "declare -x GIT_CONFIG_GLOBAL=./evil.cfg",
+        ):
+            self.assertFalse(self.shell(command)[0], command)
+        for command in (
+            "GIT_CONFIG_GLOBAL=/dev/null git status", "GIT_CONFIG_NOSYSTEM=1 git log",
+            "GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.pager GIT_CONFIG_VALUE_0=cat git log",
+            "export PATH=/usr/bin", "export GIT_AUTHOR_NAME=x",
+        ):
+            self.assertTrue(self.shell(command)[0], command)
+
     def test_clustered_short_options_do_not_hide_a_denied_command(self) -> None:
         for command in (
             "script -qc 'git push' /tmp/log", "script -qc'gh pr list' /dev/null",
