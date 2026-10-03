@@ -258,6 +258,29 @@ instead.
 
 ---
 
+## Recording Planned Work
+
+This repository is public, so the reasoning behind a change should be visible, not only the
+diff. Record planned features, design decisions, and deferred work as **GitHub issues**, not
+as local files.
+
+- **Title** each issue with the affected item first: `[<path of the item>] <summary>`, for
+  example `[skills/copilot-worker] Support Windows`.
+- **Label** it with the kind of item it affects (`skill`, `agent`, `harness`, and so on) in
+  addition to its type of change (`enhancement`, `bug`, `documentation`). Keep the kind label
+  coarse: enough for a reader to know what sort of thing the issue covers. Reuse an existing
+  label where one fits, and create a new one only when none does.
+- **Write the body** with the [feature request template](.github/ISSUE_TEMPLATE/feature_request.md)
+  headings: the problem, the solution, the alternatives considered and why they were rejected,
+  and any dependencies on other issues, named by number.
+- **Show the draft first.** An issue is public and permanent, so the user approves it before an
+  agent posts it. Keep drafts in `.agent-output/` until then and delete them once posted. Keep
+  private details out: no employer, machine, account, or usage figures.
+- **Link, don't copy.** A pull request that implements or defers an issue refers to it by
+  number.
+
+---
+
 ## Content & Markdown Standards
 
 - Use **GitHub Flavored Markdown** for all `.md` files.
@@ -361,6 +384,8 @@ types; schema version is `"1"`.
 - Do not open a PR without asking first.
 - Do not treat a freshly opened PR as finished — run the Copilot review loop and leave
   no unresolved review threads.
+- Do not record planned features or design decisions in local files, and do not post an
+  issue before the user has seen the draft.
 - Do not write temporary or generated files anywhere other than `.agent-output/`.
 - Do not edit `site/` (build output).
 - Do not add features, refactors, or abstractions beyond what the user requests.
