@@ -372,19 +372,32 @@ def flush_writes(pending: dict[Path, tuple[str, str]]) -> list[str]:
     """Write staged pages, unless one changed on disk since it was validated.
 
     Every page is re-read first, so a page edited mid-run aborts the whole write
-    rather than being overwritten, and no page is left half refreshed.
+    rather than being overwritten. If a write itself fails, the pages already
+    written are restored, so no page is left half refreshed.
     """
-    errors = [
-        f"{path} changed while the validator was running; rerun it"
-        for path, (validated, _) in pending.items()
-        if path.read_text(encoding="utf-8") != validated
-    ]
+    errors: list[str] = []
+    for path, (validated, _) in pending.items():
+        try:
+            if path.read_text(encoding="utf-8") != validated:
+                errors.append(f"{path} changed while the validator was running; rerun it")
+        except OSError as error:
+            errors.append(f"cannot re-read {path}: {error}")
     if errors:
         return errors
-    for path, (validated, regenerated) in pending.items():
-        if regenerated != validated:
-            path.write_text(regenerated, encoding="utf-8")
-    return []
+    written: list[Path] = []
+    try:
+        for path, (validated, regenerated) in pending.items():
+            if regenerated != validated:
+                path.write_text(regenerated, encoding="utf-8")
+                written.append(path)
+    except OSError as error:
+        errors.append(f"write failed, restoring the pages already written: {error}")
+        for path in written:
+            try:
+                path.write_text(pending[path][0], encoding="utf-8")
+            except OSError as restore_error:
+                errors.append(f"could not restore {path}: {restore_error}")
+    return errors
 
 
 def validate_topology(topology: Topology, write: bool) -> None:
