@@ -73,6 +73,14 @@ class ValidatorTest(unittest.TestCase):
 
     # -- helpers ------------------------------------------------------------
 
+    def load_module(self):
+        sys.path.insert(0, str(REPO / "scripts"))
+        try:
+            import validate_artifact_sync as module
+        finally:
+            sys.path.remove(str(REPO / "scripts"))
+        return module
+
     def run_validator(self, *args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             [sys.executable, str(self.root / "scripts" / SCRIPT_NAME), *args],
@@ -174,11 +182,7 @@ class ValidatorTest(unittest.TestCase):
         self.assertEqual(self.run_validator().returncode, 0)
 
     def test_write_refuses_a_page_edited_after_validation(self) -> None:
-        sys.path.insert(0, str(REPO / "scripts"))
-        try:
-            import validate_artifact_sync as module
-        finally:
-            sys.path.remove(str(REPO / "scripts"))
+        module = self.load_module()
         page = self.root / "page.md"
         page.write_text("validated\n")
         pending = {page: ("validated\n", "regenerated\n")}
@@ -186,6 +190,27 @@ class ValidatorTest(unittest.TestCase):
         errors = module.flush_writes(pending)
         self.assertEqual(len(errors), 1, errors)
         self.assertEqual(page.read_text(), "edited by someone else\n")
+
+    def test_failed_write_restores_pages_already_written(self) -> None:
+        module = self.load_module()
+        first, second = self.root / "first.md", self.root / "second.md"
+        first.write_text("one\n")
+        second.write_text("two\n")
+        second.chmod(0o444)
+        self.addCleanup(second.chmod, 0o644)
+        if os.access(second, os.W_OK):
+            self.skipTest("file permissions are not enforced for this user")
+        pending = {first: ("one\n", "ONE\n"), second: ("two\n", "TWO\n")}
+        errors = module.flush_writes(pending)
+        self.assertTrue(errors)
+        self.assertEqual(first.read_text(), "one\n")
+        self.assertEqual(second.read_text(), "two\n")
+
+    def test_page_deleted_after_validation_is_reported_not_raised(self) -> None:
+        module = self.load_module()
+        page = self.root / "gone.md"
+        errors = module.flush_writes({page: ("x\n", "y\n")})
+        self.assertEqual(len(errors), 1, errors)
 
     # -- 2. unexpected YAML shapes -------------------------------------------
 
