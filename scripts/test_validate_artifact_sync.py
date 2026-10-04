@@ -223,6 +223,19 @@ class ValidatorTest(unittest.TestCase):
 
     # -- 4. marker structure --------------------------------------------------
 
+    def test_nested_blocks_fail_and_write_changes_nothing(self) -> None:
+        def marker(name: str, edge: str) -> str:
+            return f"<!-- artifact-sync:{name}:{edge} -->"
+
+        text = self.read(LANE_DOC)
+        for edge in ("start", "end"):
+            text = text.replace(marker("install", edge), "")
+        text = text.replace(marker("roster", "start"), marker("install", "start") + marker("roster", "start"))
+        text = text.replace(marker("roster", "end"), marker("roster", "end") + marker("install", "end"))
+        self.write(LANE_DOC, text)
+        self.assert_fails_cleanly(self.run_validator())
+        self.assert_write_changes_nothing()
+
     def test_duplicate_block_with_different_content_fails(self) -> None:
         stale = "\n<!-- artifact-sync:roster:start -->\nSTALE DUPLICATE\n<!-- artifact-sync:roster:end -->\n"
         self.write(LANE_DOC, self.read(LANE_DOC) + stale)
