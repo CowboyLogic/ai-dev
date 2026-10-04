@@ -21,8 +21,9 @@ in the Copilot Agent Creator skill, and for VS Code's own description see
 | Workspace | `.github/agents/` or `.claude/agents/` |
 | User (all workspaces) | `~/.copilot/agents/` or `~/.claude/agents/` |
 
-Files use the `.agent.md` extension. VS Code also detects a plain `.md` file in `.github/agents/`. A legacy
-`.chatmode.md` file should be renamed to `.agent.md`. Commit the workspace folder to share agents with your team.
+Files in `.github/agents/` and `~/.copilot/agents/` use the `.agent.md` extension. VS Code also detects a plain `.md`
+file in `.github/agents/`. Files in `.claude/agents/` are in Claude Code's format and are plain `.md` files, so do not
+rename them. A legacy `.chatmode.md` file should be renamed to `.agent.md`. Commit the workspace folder to share agents with your team.
 
 An organization can publish agents that VS Code detects for its members once you set
 `github.copilot.chat.organizationCustomAgents.enabled` to `true`.
@@ -54,7 +55,7 @@ You are a planning agent. Produce a step-by-step plan and do not edit files.
 | `agents` | Subagents this agent may call. `*` allows all, `[]` allows none |
 | `model` | One model name, or a prioritized list |
 | `user-invocable` | Whether the agent appears in the Agent dropdown. Default `true` |
-| `disable-model-invocation` | Prevents other agents from calling this one as a subagent |
+| `disable-model-invocation` | Stops other agents from selecting this one as a subagent, unless a coordinator names it in its `agents` list |
 | `target` | `vscode` or `github-copilot`. Omit it for both |
 | `handoffs` | Suggested next steps, shown as buttons after a response |
 | `hooks` | Commands scoped to the agent (Preview) |

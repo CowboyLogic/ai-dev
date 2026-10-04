@@ -54,7 +54,7 @@ Agent names are case-sensitive, so use the exact `name` from the target's defini
 | Allow any subagent | `agents: ["*"]` |
 | Forbid subagents | `agents: []` |
 | Hide an agent from the dropdown but keep it callable | `user-invocable: false` on the agent |
-| Stop other agents from calling an agent | `disable-model-invocation: true` on the agent |
+| Stop other agents from choosing an agent | `disable-model-invocation: true` on the agent. A coordinator that names it in `agents` can still call it, so this is not an access control |
 
 A custom agent used as a subagent can override the tools and model the main agent has.
 

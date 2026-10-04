@@ -10,7 +10,7 @@ Check these in order:
 1. **Location.** The file must be in `.github/agents/` or `.claude/agents/` in the workspace, or
    `~/.copilot/agents/` or `~/.claude/agents/` for your user. A file in `.github/copilot-instructions/` or any
    other folder is not detected.
-2. **Extension.** Use `.agent.md`. A legacy `.chatmode.md` file should be renamed.
+2. **Extension.** Use `.agent.md` in `.github/agents/` and `~/.copilot/agents/`. Files in `.claude/agents/` are plain `.md`. A legacy `.chatmode.md` file should be renamed.
 3. **Frontmatter.** The block must open and close with `---` on their own lines and be valid YAML. A tab, a
    missing quote around a value containing a colon, or a stray character in the block can stop it parsing.
 4. **`user-invocable`.** `user-invocable: false` hides an agent from the dropdown on purpose.
@@ -49,7 +49,7 @@ for tool names.
 2. **The `agents` property.** The target must be named in the caller's `agents` list, or the list must be `*`.
    `agents: []` forbids all subagents.
 3. **The name.** Names are case-sensitive and must match the target's `name` exactly.
-4. **`disable-model-invocation`.** `disable-model-invocation: true` on the target stops other agents calling it.
+4. **`disable-model-invocation`.** `disable-model-invocation: true` on the target stops other agents choosing it. Naming it in the caller's `agents` list overrides that, so a coordinator that lists it can still call it.
 5. **The description.** Another agent chooses a subagent partly from its `description`. Make it say when to use the agent.
 6. **Nesting.** A subagent calling another subagent requires `chat.subagents.allowInvocationsFromSubagents`, and nesting
    stops at a depth of five.

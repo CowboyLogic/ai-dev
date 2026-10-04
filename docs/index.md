@@ -29,7 +29,7 @@ This repository complements official docs with **ready-to-use configurations, in
 ## Quick Start
 
 - **AI Assistants:** Start with [AGENTS.md](https://github.com/CowboyLogic/ai-dev/blob/main/AGENTS.md), then review tool-specific AGENTS.md files.
-- **Claude Code Users:** See the [VertexAI Configuration Guide](harness/claudecode/claudecode-vertexai.md) for enterprise Google Cloud integration.
+- **Claude Code Users:** See the [Claude Code overview](harness/claudecode/index.md) for skills, the Matrix mirror, and Google Cloud Vertex AI setup.
 - **OpenCode CLI Users:** See the [OpenCode Overview](harness/opencode/index.md) and [Configuration Guide](harness/opencode/configuration.md).
 - **VS Code Users:** See the [VS Code Agent Guide](harness/vscode/README.md) and [Quick Start](harness/vscode/quick-start.md).
 - **Learning Best Practices:** Explore the [Skills](skills/index.md) section and [Frontmatter Reference](https://github.com/CowboyLogic/ai-dev/blob/main/skills/agent-creator-copilot/references/frontmatter-reference.md).

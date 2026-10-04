@@ -61,7 +61,7 @@ This repository emphasizes **examples over explanations**. We provide working co
 
 **[Harness](harness/index.md)** — Configuration and integration guides:
 
-- **[Claude Code CLI](harness/claudecode/claudecode-vertexai.md)** - Enterprise VertexAI configuration for Google Cloud Platform
+- **[Claude Code CLI](harness/claudecode/index.md)** - Skills, the Matrix Claude mirror, and Google Cloud Vertex AI setup
 - **[OpenCode CLI](harness/opencode/index.md)** - Multi-agent configuration, custom commands, MCP integrations
 - **[Visual Studio Code](harness/vscode/README.md)** - GitHub Copilot integration, agent examples, best practices
 
@@ -194,4 +194,4 @@ This repository builds on:
 
 ---
 
-**Ready to get started?** Explore the **[Claude Code VertexAI Configuration](harness/claudecode/claudecode-vertexai.md)** or the **[OpenCode Configuration](harness/opencode/index.md)**.
+**Ready to get started?** Explore the **[Claude Code harness](harness/claudecode/index.md)** or the **[OpenCode Configuration](harness/opencode/index.md)**.
