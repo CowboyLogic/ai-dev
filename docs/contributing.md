@@ -119,7 +119,7 @@ Be respectful and constructive. Focus on the content, not the person. Assume goo
 
 ## License
 
-By contributing, you agree that your work will be licensed under the same license as this project.
+By contributing, you agree that your work will be licensed under the same terms as this project, the [MIT License](https://github.com/CowboyLogic/ai-dev/blob/main/LICENSE).
 
 ---
 
