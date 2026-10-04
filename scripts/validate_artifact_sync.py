@@ -130,6 +130,8 @@ def strip_jsonc(text: str) -> str:
             end = text.find("*/", i + 2)
             if end == -1:
                 raise ValueError("unterminated block comment")
+            # A comment separates tokens: tru/**/e must not become true.
+            without_comments.append(" ")
             i = end + 2
         else:
             without_comments.append(text[i])
