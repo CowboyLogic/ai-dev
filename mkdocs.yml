@@ -120,11 +120,8 @@ nav:
           - Best Practices: harness/vscode/best-practices.md
           - Troubleshooting: harness/vscode/troubleshooting.md
       - Claude Code:
-          - VertexAI Configuration: harness/claudecode/claudecode-vertexai.md
-  - Agentic Patterns:
-      - Agentic CI/CD Pipelines: agentic-patterns/agentic-cicd-pipelines.md
-      - Containerized Agent Pattern: agentic-patterns/containerized-agentic-pattern.md
-      - Containerized Agent Setup: agentic-patterns/containerized-agentic-setup.md
+          - Overview: harness/claudecode/index.md
+          - Vertex AI: harness/claudecode/claudecode-vertexai.md
   - MCP Servers: mcp/index.md
   - Contributing: contributing.md
   - About: about.md
