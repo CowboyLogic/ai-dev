@@ -67,9 +67,10 @@ When you change a configuration or behavior, update the related documentation in
 - `mkdocs.yml` nav (required when adding or removing pages)
 - `AGENTS.md` if agent behavior changes
 
-Topology inventory and roster tables are generated from canonical agent
-frontmatter. After changing a topology roster, model, description, client mirror,
-or harness mapping, refresh those tables:
+Topology inventory, roster, and GitHub Copilot install blocks, and the domain
+specialist roster on the agents overview page, are generated from agent frontmatter. After
+changing an agent roster, model, description, client mirror, or harness mapping,
+refresh those blocks:
 
 ```bash
 python scripts/validate_artifact_sync.py --write
@@ -78,7 +79,7 @@ python scripts/validate_artifact_sync.py --write
 The validator also requires every `skills/*/SKILL.md` definition to appear in
 `docs/skills/index.md`, `skills/README.md`, and `cerebro-catalog.yaml`. It checks
 topology mirror rosters and bodies, harness defaults, and the generated documentation
-blocks.
+blocks, including that every root `agents/*.agent.md` file appears in the specialist roster.
 
 Run the same checks used by pull requests before submitting:
 

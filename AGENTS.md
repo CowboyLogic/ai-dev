@@ -207,17 +207,25 @@ examples, and configuration or topology details synchronized with the current
 artifact contents. If a new item has no existing documentation page, create the
 appropriate page and add it to the MkDocs navigation when required.
 
-Topology inventory and roster tables are generated from canonical agent
-frontmatter. After changing a topology roster, model, description, client mirror,
-or harness mapping, refresh those blocks:
+Topology inventory, roster, and GitHub Copilot install blocks, and the domain
+specialist roster in `docs/agents/index.md`, are generated from agent frontmatter. A
+roster's Role column is the first sentence of each agent's `description`. After
+changing an agent roster, model, description, client mirror, or harness mapping,
+refresh those blocks:
 
 ```bash
 python scripts/validate_artifact_sync.py --write
 ```
 
 Do not hand-edit content between `artifact-sync` markers. CI runs the same script
-without `--write` and fails when generated topology content, skill catalog coverage,
-client mirrors, or harness mappings drift.
+without `--write` and fails when generated topology or specialist content, skill
+catalog coverage, client mirrors, or harness mappings drift. `--write` is all or
+nothing: it changes no page unless every source and every marker pair validates. The
+script has its own tests; run them after changing it:
+
+```bash
+python -m unittest discover -s scripts
+```
 
 ---
 
@@ -340,7 +348,9 @@ as local files.
 ### Adding a new agent
 
 - **Domain specialist** (single `.agent.md` at repo root): create the file under
-  `agents/`, then add it to the roster table in `docs/agents/index.md`.
+  `agents/` with a `description` whose first sentence says what the agent does, then run
+  `python scripts/validate_artifact_sync.py --write` to add it to the roster in
+  `docs/agents/index.md`.
 - **Topology agent** (`agents/matrix-topology/` or `agents/lane-topology/`): follow
   that topology's own `AGENTS.md` first — it defines the roster invariants, and for
   multi-format topologies, which formats a body must be kept identical across. Then run
