@@ -693,7 +693,8 @@ Now go walk it. 🎯
 ## License
 
 This repository is released under the MIT License. Use it, adapt it, share it.
-Attribution appreciated but not required.
+Keep the copyright and licence notice with any copy or substantial portion; see
+[LICENSE](../../LICENSE).
 
 ---
 
