@@ -3,7 +3,7 @@ name: client-config-copilotcli
 description: 'Manage GitHub Copilot CLI configuration files including settings.json, config.json, permissions-config.json, mcp-config.json, lsp-config.json, hooks, skills, custom agents, plugins, and custom instructions. Use this skill whenever the user wants to view, edit, add, or understand any Copilot CLI setting: trusted folders, user or repository settings, tool permissions, sandboxing, MCP or LSP servers, hooks, skills, custom agents, plugins and marketplaces, BYOK models, authentication, session management, or custom instructions. Trigger on: "add trusted folder", "allow tool", "configure MCP", "add hook", "create skill", "create agent", "install plugin", "set model", "use my own API key", "add custom instructions", "name session", "resume session", or "show my copilot config".'
 ---
 
-# GitHub Copilot CLI Configuration Manager
+# Copilot Configuration Manager
 
 You help the user manage all GitHub Copilot CLI configuration files.
 

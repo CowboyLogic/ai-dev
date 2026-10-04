@@ -1,11 +1,10 @@
-# Claude Code Settings Manager
+# Claude Code Configuration Manager
 
 Manage all Claude Code configuration files from a single skill. Covers every scope
 the Claude Code CLI reads — user settings, project settings, permissions, hooks,
 MCP servers, model configuration, sandbox isolation, auto mode, voice, and plugins.
 
 - **Skill name:** `client-config-claudecode`
-- **Last updated:** 2026-09-24
 - **Source:** [skills/client-config-claudecode](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-claudecode)
 
 ---
@@ -13,36 +12,20 @@ MCP servers, model configuration, sandbox isolation, auto mode, voice, and plugi
 ## What it does
 
 Without this skill an agent answers Claude Code configuration questions from training
-data alone. For stable, well-established settings (hooks, permissions) the baseline
-is accurate. For settings that have changed since training — such as the `voice` object
-replacing the deprecated `voiceEnabled` boolean — the baseline defaults to the old
-shape and confidently tells the user the newer fields don't exist.
+data alone. For well-established settings that is usually accurate, but for settings
+that have changed since training it can confidently describe the old shape and deny
+that the newer fields exist. The skill loads authoritative reference material only for
+the config area the task requires, rather than injecting the full schema on every
+request.
 
-The skill loads authoritative reference material only for the config area the task
-requires, rather than injecting the full schema on every request.
+It covers settings at every scope Claude Code reads, from user and project files to
+command-line options and managed settings, and the subagent files that sit alongside
+them. It also bundles scripts that show and validate the current configuration.
 
-**Config scopes covered:**
+## Where it applies
 
-| Scope | File | Notes |
-|-------|------|-------|
-| User | `~/.claude/settings.json` (or `$CLAUDE_CONFIG_DIR/settings.json`) | Primary focus |
-| Local project | `.claude/settings.local.json` | Gitignored |
-| Project | `.claude/settings.json` | Committed |
-| Command line | `--settings <file-or-json>`, `--model`, `--permission-mode` | One session |
-| Managed (macOS) | `/Library/Application Support/ClaudeCode/managed-settings.json` + `managed-settings.d/*.json` | IT-deployed |
-| Managed (Linux/WSL) | `/etc/claude-code/managed-settings.json` + `managed-settings.d/*.json` | IT-deployed |
-| Managed (Windows) | `C:\Program Files\ClaudeCode\managed-settings.json` + `managed-settings.d\*.json` | IT-deployed |
-| Managed (other) | MDM profile, `HKLM` registry, or server-managed settings | IT-deployed |
-
-**Scope precedence (highest → lowest):** managed → command line → local project → project → user.
-Some keys are honored only in user or managed settings (for example `autoMode`), and
-`defaultMode` values `auto` and `bypassPermissions` are ignored in project and local files.
-
-The schema reference also covers global Claude Code state in `~/.claude.json`; the
-skill's editing workflow is centered on `settings.json` files.
-
-**Subagent files:** User subagents live in `~/.claude/agents/`; project subagents
-live in `.claude/agents/`.
+Use it in Claude Code sessions where an agent edits `settings.json`, permissions, hooks,
+MCP servers, or related configuration. The workflow centers on `settings.json` files.
 
 ---
 
@@ -73,86 +56,19 @@ npx skills ls -g --agent claude-code
 
 ---
 
-## Evaluation results
+## Evaluation and history
 
-Benchmark run: **2026-04-26 · iteration 1** · 3 scenarios · 6 total runs
-
-### Overall
-
-| | With skill | Baseline (no skill) | Delta |
-|---|---|---|---|
-| Assertions passed | 15 / 15 | 12 / 15 | — |
-| Pass rate | **100%** | **80%** | **+20 pp** |
-
-### By scenario
-
-| Scenario | With skill | Baseline | Delta | Notes |
-|---|---|---|---|---|
-| Lint hook on file edit/write (`PostToolUse`, `Edit\|Write`, `$CLAUDE_PROJECT_DIR`) | 5 / 5 | 5 / 5 | 0% | Well-established; both answered correctly |
-| Git read-allow / destructive-deny (`Bash()` rule syntax, deny precedence) | 5 / 5 | 5 / 5 | 0% | Baseline has accurate permissions knowledge |
-| Voice dictation + model (`voice` object, tap mode, `autoSubmit`) | 5 / 5 | 2 / 5 | +60% | Baseline used deprecated `voiceEnabled: true`; stated `voice.mode` and `voice.autoSubmit` do not exist |
-
-> [!NOTE]
-> This skill has marginal but measurable value when used with Claude models. For well-established
-> configuration areas (hooks, permissions), the baseline is already reliable. Value increases for
-> settings that postdate the model's training cutoff.
-
-### Key takeaway
-
-For Claude Code's established configuration surface (hooks structure, `Bash()` permission
-rules), the baseline model is already reliable — the skill reinforces rather than corrects.
-The gap opens on settings that have changed since training: the baseline defaults to the
-deprecated `voiceEnabled: true` boolean, asserts the `voice` object sub-fields don't exist,
-and confidently gives the user a configuration that will behave differently than expected.
-The skill closes this gap entirely.
-
-> [!TIP]
-> **When does this skill matter most?** Any time a user asks about voice dictation
-> settings, or any other Claude Code feature that postdates the model's training cutoff.
-> The skill reference reflects the current schema; the baseline cannot.
+In a benchmark run on 2026-04-26, the skill raised the assertion pass rate from 80% to
+100%, with the gain concentrated on settings that postdate the model's training. The
+detail is in the [skill README](https://github.com/CowboyLogic/ai-dev/blob/main/skills/client-config-claudecode/README.md),
+and the version history is in the
+[CHANGELOG](https://github.com/CowboyLogic/ai-dev/blob/main/skills/client-config-claudecode/CHANGELOG.md).
 
 ---
 
-## Changelog
+## Related
 
-### 2026-09-24 — v2.0 (upstream refresh)
-
-- Sources: the full key reference moved upstream to `settings-reference.md`; it is now
-  the primary source for `references/settings-schema.md`. `assets/sources.json` gains
-  `additional_urls` (settings, managed settings, subagents, permission modes, skills,
-  managed MCP).
-- `references/settings-schema.md`: rewritten against all documented keys with per-key
-  scope labels, a files-and-precedence section, and a deprecated/removed keys section.
-  Adds `modelSettings`, `maxEffortLevel`, `promptCacheTtl`, `autoCompactWindow`,
-  `enableWorkflows`, sandbox credential keys, and more. Corrects `effortLevel`,
-  `ultracode`, and `voice.autoSubmit` behavior.
-- `references/hooks.md`: adds `DirectoryAdded`, `PreModelSwitch`, `PostModelSwitch`,
-  new matcher values, handler fields (`args`, `statusMessage`, `once`), and output
-  fields; corrects `PermissionRequest` and `WorktreeRemove` blocking behavior.
-- `references/permissions.md`: adds `Skill()` rules, tool-name globs, `manual` mode
-  alias, and project/local restrictions on `auto` and `bypassPermissions`.
-- `references/mcp.md`: local-scope servers live under `projects["<path>"].mcpServers`
-  in `~/.claude.json`; adds `ws` transport, per-server `timeout`, `headersHelper`,
-  `alwaysLoad`; marks SSE deprecated.
-- Scripts: `validate-settings.py` checks keys by scope, all hook events and handler
-  types, and deprecated keys; `show-settings.py` gains `--settings` and shows managed
-  and local-scope MCP configuration.
-- Evals: new eval for project-scope `bypassPermissions` being ignored.
-
-### 2026-04-26 — v1.0 (initial release)
-
-- `SKILL.md`: Full task-to-reference map covering all config areas; quick-edit snippets
-  for common operations; helper scripts listed (`show-settings.py`, `validate-settings.py`).
-- `references/settings-schema.md`: Complete `~/.claude/settings.json` schema covering
-  Model & Performance, Auto Mode, UI & Display, Session & Behavior, Environment, Plugins,
-  Subagents, Sandbox, and Misc/Enterprise sections. Documents `voice` object (replaces
-  deprecated `voiceEnabled`), `effortLevel`, `alwaysThinkingEnabled`, `outputStyle`,
-  `statusLine`, `teammateMode`, and all other current keys.
-- `references/hooks.md`: Full hooks event table (23 events), matcher pattern rules,
-  handler types (`command`, `http`), env vars available in hook context, and complete
-  examples for PreToolUse/PostToolUse/Stop.
-- `references/permissions.md`: `Bash()`, `Read()`, `Edit()`, `WebFetch()`, `mcp__*`,
-  and `Agent()` rule syntax with glob semantics; all `defaultMode` values; common
-  pattern library for dev workflows.
-- `references/mcp.md`: MCP server config in `~/.claude/settings.json` mcpServers block;
-  transport types; credential handling via `$VAR_NAME` env references.
+- [Claude Code Agent Creator](agent-creator-claudecode.md) — write custom Claude Code subagent files
+- [Copilot Configuration Manager](client-config-copilotcli.md) — the equivalent skill for GitHub Copilot CLI
+- [OpenCode Configuration Manager](client-config-opencode.md) — the equivalent skill for OpenCode
+- [Codex Configuration Manager](client-config-codex.md) — the equivalent skill for Codex

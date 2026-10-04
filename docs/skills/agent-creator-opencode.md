@@ -6,7 +6,6 @@ beside the new agent are V1-shaped. Covers Markdown and JSON agent definitions, 
 permission model, V1 → V2 migration, model and variant selection, and subagent patterns.
 
 - **Skill name:** `agent-creator-opencode`
-- **Last updated:** 2026-09-25
 - **Source:** [skills/agent-creator-opencode](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-opencode)
 
 ---
@@ -14,52 +13,23 @@ permission model, V1 → V2 migration, model and variant selection, and subagent
 ## What it does
 
 OpenCode V1 and V2 use different field names and different permission models for the same
-concepts, and a single agent must be entirely one format. The skill starts by picking the
-format version, then walks through mode, scope, prompt, permissions, model, file creation,
-and testing.
+concepts, and a single agent must be entirely one format. The skill picks the format version
+first, then guides the agent through writing and testing the definition, and loads reference
+material by version and task rather than all at once.
 
-**Format detection:**
+**Topics covered:**
 
-| V1 signals | V2 signals |
-|------------|------------|
-| `agent` map, `prompt`, `permission` map, `disable`, `variant`, `temperature`, `top_p`, `maxSteps`, `tools`, `bash` / `task` keys | `agents` map, `system`, `permissions` array of `{action, resource, effect}`, `disabled`, `model: ...#variant`, `request`, `shell` / `subagent` actions |
+- Markdown and JSON agent definitions
+- The permission model in V1 and V2
+- Migrating agents and permissions from V1 to V2
+- Model and variant selection, including cost gating
+- Multi-agent orchestration
 
-> [!IMPORTANT]
-> Never mix `permission` with `permissions`, or `prompt` with `system`, in one agent. V2
-> tolerates V1 and V2 fields side by side at the top level of a config file, but it does
-> not infer formats inside an individual agent.
+## Where it applies
 
-**Key rules the skill enforces:**
-
-- **Set `mode` explicitly.** The default is `all` in V1 and `primary` in V2.
-- **Start permissions with a catch-all deny.** Denying only `edit` and `shell` still leaves
-  `subagent`, `skill`, `question`, `webfetch`, and `websearch` open. In V2, permission rules
-  are ordered and the last match wins.
-- **Always set an explicit `model`** unless told to inherit, and match it to the role.
-- **Never auto-select extreme-cost models** (such as Opus fast mode or Fable) without
-  explicit cost acceptance.
-- **Only use a model `#variant` that exists** — an unknown variant is an error in V2.
-- **Keep `hidden: false` on subagents an orchestrator must discover.** In V2, `hidden: true`
-  also removes the agent from the subagent catalog.
-
-**Scope:** agents, the permission model, V1 → V2 migration of agents and permissions,
-multi-agent orchestration, and model selection are covered in full. OpenCode skills,
-commands, plugins, MCP servers, and providers are out of scope — use the
+Use it when an agent writes or migrates OpenCode agents. OpenCode skills, commands, plugins,
+MCP servers, and providers are out of scope; use the
 [OpenCode Configuration Manager](client-config-opencode.md) for those.
-
----
-
-## Reference files
-
-The skill loads references on demand by version and task rather than all at once.
-
-| Task | V2 (default) | V1 |
-|------|--------------|----|
-| Fields, types, defaults, locations, built-ins | `references/v2/agents.md` | `references/v1/properties.md` |
-| Permission rules, actions, defaults, external dirs | `references/v2/permissions.md` | `references/v1/permissions.md` |
-| Full working agent templates | `references/v2/examples.md` | `references/v1/examples.md` |
-| Converting V1 agents to V2 | `references/v2/migration.md` | — |
-| Model IDs, variants, cost gating | `references/models.md` | `references/models.md` |
 
 ---
 

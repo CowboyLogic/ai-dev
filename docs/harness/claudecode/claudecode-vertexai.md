@@ -70,5 +70,5 @@ your settings file.
 ## Related
 
 - [Claude Code on Google Cloud's Agent Platform](https://code.claude.com/docs/en/google-vertex-ai): Anthropic's full guide
-- [Claude Code Settings Manager skill](../../skills/client-config-claudecode.md): where the `env` block and other settings live
+- [Claude Code Configuration Manager skill](../../skills/client-config-claudecode.md): where the `env` block and other settings live
 - [Claude Code overview](index.md)

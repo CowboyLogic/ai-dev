@@ -114,9 +114,34 @@ Once all runs are complete:
 
 ---
 
-## Stage 4 — Create or update the docs overview page
+## Stage 4 — Record history and results, and update the docs overview page
 
-The page lives at `docs/skills/$input.md`. Check whether it already exists.
+The skill folder is the record of the skill's history and benchmark results. The docs
+overview page is short and links to it.
+
+### In the skill folder
+
+- **`skills/$input/CHANGELOG.md`** — add an entry at the top, newest first, listing every
+  change made in Stage 1. Create the file with a `# Changelog` heading if it does not
+  exist.
+
+  ```markdown
+  ## <YYYY-MM-DD> — v<N> (<label>)
+
+  - <File changed and what was updated.>
+  ```
+
+- **`skills/$input/README.md`** — add the Stage 3 results under an `## Evaluation results`
+  heading: the run date and iteration, the scenario and run counts, the overall pass rates,
+  a per-scenario table with notes on what the baseline got wrong, and a key takeaway. Keep
+  earlier iterations below the new one. Create the file if it does not exist.
+
+### The docs overview page
+
+The page lives at `docs/skills/$input.md`. Check whether it already exists. It lets a
+reader decide whether to use the skill and install it. It must not embed skill content:
+no instruction text, reference file contents, examples, workflows, rule tables, or script
+usage. Link to `skills/$input/` instead.
 
 ### If it does not exist — create it
 
@@ -128,16 +153,18 @@ Use this structure:
 <One-paragraph description of what the skill covers.>
 
 - **Skill name:** `$input`
-- **Last updated:** <YYYY-MM-DD>
 - **Source:** [skills/$input](https://github.com/CowboyLogic/ai-dev/tree/main/skills/$input)
 
 ---
 
 ## What it does
 
-<Explain what gap the skill closes — what the baseline gets wrong without it.>
+<One short paragraph: the gap the skill closes and how it works. List the topics it
+covers. Do not reproduce rules, tables, or examples from the skill.>
 
-<Include a config/scope table if the skill covers multiple files or areas.>
+## Where it applies
+
+<One or two sentences: the clients, tasks, or repositories the skill is for.>
 
 ---
 
@@ -159,36 +186,17 @@ npx skills ls -g
 
 ---
 
-## Evaluation results
+## Evaluation and history
 
-Benchmark run: **<YYYY-MM-DD> · iteration N** · <X> scenarios · <Y> total runs
-
-### Overall
-
-| | With skill | Baseline (no skill) | Delta |
-|---|---|---|---|
-| Assertions passed | N / N | N / N | — |
-| Pass rate | **X%** | **X%** | **+X pp** |
-
-### By scenario
-
-<Table with per-eval results and notes on what the baseline got wrong.>
-
-<GFM callout summarising the value proposition, e.g.:>
-> [!NOTE]
-> <When this skill matters most and for which agent/model combination.>
-
-### Key takeaway
-
-<Prose explanation of where the gap is real vs where baseline is already reliable.>
+<Include this section only if the skill has benchmark results. One sentence giving the run
+date and the with-skill and baseline pass rates, then links to the skill's README.md and
+CHANGELOG.md on GitHub.>
 
 ---
 
-## Changelog
+## Related
 
-### <YYYY-MM-DD> — v<N> (<label>)
-
-<Bullet list of every file changed and what was updated.>
+<Links to sibling skills, if any.>
 ```
 
 Follow all repo Markdown standards:
@@ -199,12 +207,10 @@ Follow all repo Markdown standards:
 
 ### If it already exists — update it
 
-- Update the `Last updated` metadata field.
-- Add a new entry at the top of the Changelog section listing every
-  change made in Stage 1.
-- Update the Evaluation results section with the new benchmark data from
-  Stage 3, preserving previous iteration data below it.
-- Update the "What it does" section if the skill's scope changed materially.
+- Do not add a "Last updated" date. `CHANGELOG.md` and git history carry dates.
+- Update the one-line result in "Evaluation and history" with the new benchmark data
+  from Stage 3.
+- Update "What it does" and "Where it applies" if the skill's scope changed materially.
 
 ### Wire up the page (new pages only)
 
