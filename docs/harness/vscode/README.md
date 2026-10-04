@@ -1,159 +1,25 @@
-# Visual Studio Code Agent Configuration Guide
+# Visual Studio Code
 
-> [!NOTE]
-> Configure specialized AI agents in VS Code using GitHub Copilot.
+Custom agents for GitHub Copilot in VS Code: how to write them, ten ready-made examples, and how to
+make them delegate to each other.
 
-## Overview
+A custom agent is a Markdown file with YAML frontmatter in `.github/agents/`. The frontmatter sets which
+tools the agent may use, and the body is its instructions. For the complete feature set, see
+[Custom agents in VS Code](https://code.visualstudio.com/docs/agent-customization/custom-agents) and the
+[GitHub Copilot documentation](https://docs.github.com/en/copilot).
 
-This guide provides **practical examples and patterns** for configuring GitHub Copilot agents in VS Code. For complete GitHub Copilot documentation, see the [official GitHub Copilot docs](https://docs.github.com/en/copilot).
+## In this section
 
-**What's here:** Working configurations, integration patterns, and specialized agent examples you can copy and adapt.
+| Page | Read it to |
+|---|---|
+| [Quick Start](quick-start.md) | Create and use your first agent |
+| [Custom Agent Files](markdown-agents.md) | Learn the file locations, frontmatter, tools, and handoffs |
+| [Subagents](subagent-tool.md) | Have an agent delegate to other agents |
+| [Agent Examples](agent-examples.md) | Install ready-made agents and see what each demonstrates |
+| [Best Practices](best-practices.md) | Design agents that stay narrow and safe |
+| [Troubleshooting](troubleshooting.md) | Fix an agent that does not appear or behave |
 
-**Official Resources:**
+## Related
 
-- [GitHub Copilot Documentation](https://docs.github.com/en/copilot) - Complete Copilot features and usage
-- [Custom Instructions Guide](https://docs.github.com/en/copilot/customizing-copilot/creating-custom-instructions-for-github-copilot) - Creating custom agents
-- [VS Code Copilot Docs](https://code.visualstudio.com/docs/copilot) - VS Code-specific Copilot integration
-
-## Documentation Structure
-
-This guide is organized into focused topics:
-
-### 🚀 Getting Started
-
-- **[Quick Start Guide](quick-start.md)** - Get up and running in 5 minutes
-  - Basic agent file setup
-  - Your first agent invocation
-  - Common agent examples
-
-### 📋 Configuration Methods
-
-- **[Markdown-Based Agents](markdown-agents.md)** - Declarative configuration (Recommended)
-  - How markdown agents work
-  - YAML frontmatter reference
-  - VS Code workspace settings
-  - Agent file organization
-  - Complete agent examples
-
-- **[Programmatic SubAgents](subagent-tool.md)** - The `runSubagent` tool
-  - When to use runSubagent
-  - How it works
-  - Configuration strategies
-  - Advanced examples
-
-### 📚 Reference
-
-- **[Agent Examples Library](agent-examples.md)** - Ready-to-use agent configurations
-  - Code Review Agent
-  - Testing Specialist
-  - Security Auditor
-  - Documentation Generator
-  - Performance Optimizer
-  - And more...
-
-- **[Best Practices](best-practices.md)** - Optimization and patterns
-  - Agent design principles
-  - Permission configuration
-  - Temperature selection
-  - Multi-agent workflows
-  - Team collaboration
-
-- **[Troubleshooting](troubleshooting.md)** - Common issues and solutions
-  - Agent not recognized
-  - Permission issues
-  - Performance problems
-  - Configuration errors
-
-## Key Concepts
-
-### Two Configuration Approaches
-
-#### Method 1: Markdown Files (Recommended)
-
-Create specialized agents as markdown files with YAML frontmatter:
-
-```markdown
----
-name: reviewer
-description: Code review specialist
-model: claude-sonnet-4.5
-temperature: 0.1
-permissions:
-  read: true
-  write: false
-  execute: false
----
-
-# Code Review Agent
-You are a specialized code review agent...
-```
-
-**Invoke with:** `@reviewer Check this code for issues`
-
-**Best for:**
-- Reusable agent behaviors
-- Team-wide standardization
-- Quick access to specialized "modes"
-- Version-controlled configurations
-
-#### Method 2: runSubagent Tool
-
-Programmatically delegate complex tasks to autonomous sub-agents:
-
-```typescript
-runSubagent({
-  description: "Research authentication patterns",
-  prompt: "Comprehensive task instructions..."
-})
-```
-
-**Best for:**
-- One-off complex research
-- Autonomous multi-step tasks
-- Dynamic task generation
-- Deep codebase analysis
-
-## Quick Comparison
-
-| Feature | Markdown Files | runSubagent |
-|---------|----------------|-------------|
-| **Setup** | Create `.md` file once | No setup needed |
-| **Invocation** | `@agentname` | Full prompt each time |
-| **Reusability** | High | Low |
-| **Team Sharing** | Excellent | N/A |
-| **Complexity** | Simple | Advanced |
-| **Best For** | Consistent roles | Complex one-off tasks |
-
-## Getting Started
-
-1. **New to VS Code agents?** Start with the [Quick Start Guide](quick-start.md)
-2. **Want to create custom agents?** See [Markdown-Based Agents](markdown-agents.md)
-3. **Need complex automation?** Check out [Programmatic SubAgents](subagent-tool.md)
-4. **Looking for examples?** Browse the [Agent Examples Library](agent-examples.md)
-
-## What You'll Learn
-
-Throughout this guide, you'll discover how to:
-
-- ✅ Create specialized agents for different workflows
-- ✅ Configure agent behaviors, models, and permissions
-- ✅ Invoke agents efficiently in your daily development
-- ✅ Build multi-agent workflows for complex tasks
-- ✅ Share agent configurations with your team
-- ✅ Troubleshoot common configuration issues
-
-## Additional Resources
-
-- **[GitHub Copilot Documentation](https://docs.github.com/en/copilot)** - Official Copilot documentation
-- **[Custom Instructions](https://docs.github.com/en/copilot/customizing-copilot/creating-custom-instructions-for-github-copilot)** - Creating custom agents
-- **[OpenCode Modular Config](../opencode/index.md)** - Similar pattern for CLI tools
-
----
-
-**Ready to get started?** Jump to the [Quick Start Guide](quick-start.md) →
-
----
-
-**Last Updated:** November 25, 2025  
-**Repository:** [ai-dev](https://github.com/CowboyLogic/ai-dev)
-
+- [Copilot Agent Creator skill](../../skills/agent-creator-copilot.md): a skill that writes and checks agent files across VS Code, the Copilot CLI, and the cloud agent
+- [Agents overview](../../agents/index.md): multi-agent topologies, with GitHub Copilot mirrors

@@ -8,7 +8,8 @@ This section documents configurations and integration patterns for the harnesses
 
 Anthropic's official CLI for Claude, providing terminal-based AI development workflows with model flexibility and enterprise integration options.
 
-- [VertexAI Configuration](claudecode/claudecode-vertexai.md) — Configure Claude Code to use Google Cloud VertexAI as the model provider
+- [Overview](claudecode/index.md) — The skills and agent topology this repository provides for Claude Code
+- [Vertex AI](claudecode/claudecode-vertexai.md) — Run Claude Code against Claude models served through Google Cloud
 
 ### OpenCode CLI
 
