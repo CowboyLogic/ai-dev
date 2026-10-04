@@ -154,6 +154,39 @@ class ValidatorTest(unittest.TestCase):
         self.assertEqual(self.run_validator("--write").returncode, 0)
         self.assertEqual(snapshot(self.root), refreshed)
 
+    def test_edited_install_line_fails_and_write_restores_it(self) -> None:
+        line = "gh copilot agent install CowboyLogic/ai-dev/agents/lane-topology/copilot/conductor.agent.md"
+        self.assertIn(line, self.read(LANE_DOC))
+        self.write(LANE_DOC, self.read(LANE_DOC).replace(line, line.replace("conductor", "wrong")))
+        self.assertEqual(self.run_validator().returncode, 1)
+        self.assertEqual(self.run_validator("--write").returncode, 0)
+        self.assertIn(line, self.read(LANE_DOC))
+
+    def test_new_topology_agent_appears_in_roster_and_install_blocks(self) -> None:
+        shutil.copy2(self.root / LANE_CANONICAL, self.root / "agents/lane-topology/opencode/zeta.md")
+        shutil.copy2(self.root / LANE_MIRROR, self.root / "agents/lane-topology/copilot/zeta.agent.md")
+        self.assertEqual(self.run_validator().returncode, 1)
+        self.assertEqual(self.run_validator("--write").returncode, 0)
+        doc = self.read(LANE_DOC)
+        self.assertIn("lane-topology/copilot/zeta.agent.md", doc)
+        self.assertIn("[zeta.md]", doc)
+        self.assertRegex(doc, r"# Install all \d+ agents")
+        self.assertEqual(self.run_validator().returncode, 0)
+
+    def test_write_refuses_a_page_edited_after_validation(self) -> None:
+        sys.path.insert(0, str(REPO / "scripts"))
+        try:
+            import validate_artifact_sync as module
+        finally:
+            sys.path.remove(str(REPO / "scripts"))
+        page = self.root / "page.md"
+        page.write_text("validated\n")
+        pending = {page: ("validated\n", "regenerated\n")}
+        page.write_text("edited by someone else\n")
+        errors = module.flush_writes(pending)
+        self.assertEqual(len(errors), 1, errors)
+        self.assertEqual(page.read_text(), "edited by someone else\n")
+
     # -- 2. unexpected YAML shapes -------------------------------------------
 
     def test_list_frontmatter_is_reported_not_a_traceback(self) -> None:

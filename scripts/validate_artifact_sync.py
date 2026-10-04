@@ -69,7 +69,8 @@ CLIENT_NAMES = {
 failures: list[str] = []
 checks_run = 0
 # Regenerated documentation, held back until every validation has passed.
-pending_writes: dict[Path, str] = {}
+# Each entry is (text as validated, regenerated text).
+pending_writes: dict[Path, tuple[str, str]] = {}
 
 
 def check(ok: bool, label: str, detail: str = "") -> None:
@@ -339,7 +340,7 @@ def sync_blocks(doc_path: Path, expected: dict[str, str], write: bool) -> None:
     page is written by main() once the whole run has validated.
     """
     label = doc_path.relative_to(ROOT).as_posix()
-    text = doc_path.read_text(encoding="utf-8")
+    original = text = doc_path.read_text(encoding="utf-8")
     try:
         spans = sorted((*block_span(text, name), name) for name in expected)
     except ValueError as error:
@@ -364,7 +365,26 @@ def sync_blocks(doc_path: Path, expected: dict[str, str], write: bool) -> None:
             check(False, f"{label}: {error}")
             return
     if write:
-        pending_writes[doc_path] = text
+        pending_writes[doc_path] = (original, text)
+
+
+def flush_writes(pending: dict[Path, tuple[str, str]]) -> list[str]:
+    """Write staged pages, unless one changed on disk since it was validated.
+
+    Every page is re-read first, so a page edited mid-run aborts the whole write
+    rather than being overwritten, and no page is left half refreshed.
+    """
+    errors = [
+        f"{path} changed while the validator was running; rerun it"
+        for path, (validated, _) in pending.items()
+        if path.read_text(encoding="utf-8") != validated
+    ]
+    if errors:
+        return errors
+    for path, (validated, regenerated) in pending.items():
+        if regenerated != validated:
+            path.write_text(regenerated, encoding="utf-8")
+    return []
 
 
 def validate_topology(topology: Topology, write: bool) -> None:
@@ -612,9 +632,11 @@ def main() -> int:
             print("\nno documentation was changed")
         return 1
     if args.write:
-        for doc_path, text in pending_writes.items():
-            if doc_path.read_text(encoding="utf-8") != text:
-                doc_path.write_text(text, encoding="utf-8")
+        errors = flush_writes(pending_writes)
+        if errors:
+            print("\n".join(f"  - {error}" for error in errors))
+            print("\nno documentation was changed")
+            return 1
         print("generated documentation blocks refreshed")
     else:
         print("all clean")
