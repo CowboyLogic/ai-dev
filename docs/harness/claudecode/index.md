@@ -8,7 +8,7 @@ Code works, so these pages cover only what this repository adds.
 
 | Skill | Use it to |
 |---|---|
-| [Claude Code Settings Manager](../../skills/client-config-claudecode.md) | Configure `settings.json`, permissions, hooks, MCP servers, models, and plugins |
+| [Claude Code Configuration Manager](../../skills/client-config-claudecode.md) | Configure `settings.json`, permissions, hooks, MCP servers, models, and plugins |
 | [Claude Code Agent Creator](../../skills/agent-creator-claudecode.md) | Write and troubleshoot custom subagents in `.claude/agents/` |
 | [Copilot Worker](../../skills/copilot-worker.md) | Hand bounded research, review, or implementation work to GitHub Copilot from a Claude Code session |
 

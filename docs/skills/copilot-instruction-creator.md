@@ -6,7 +6,6 @@ repository, and organization level. Covers `copilot-instructions.md`, path-speci
 `AGENTS.md`/`CLAUDE.md`/`GEMINI.md` agent instructions, precedence, and per-surface support.
 
 - **Skill name:** `copilot-instruction-creator`
-- **Last updated:** 2026-09-25
 - **Source:** [skills/copilot-instruction-creator](https://github.com/CowboyLogic/ai-dev/tree/main/skills/copilot-instruction-creator)
 
 ---
@@ -15,46 +14,22 @@ repository, and organization level. Covers `copilot-instructions.md`, path-speci
 
 Custom instructions give Copilot persistent context so you do not repeat it in every
 conversation. The skill guides an agent through choosing the right scope and file type,
-gathering project context, structuring and writing the instructions, and testing that they
-take effect. It tells the agent to check GitHub's current documentation first, because file
-support differs by surface and changes often.
+gathering project context, writing the instructions, and testing that they take effect.
+It tells the agent to check GitHub's current documentation first, because file support
+differs by surface and changes often.
 
-**Instruction types:**
+**Topics covered:**
 
-| Type | Location | Notes |
-|------|----------|-------|
-| Personal | Copilot Chat on GitHub.com (profile picture > **Personal instructions**); `~/.copilot/copilot-instructions.md` and `~/.copilot/instructions/**/*.instructions.md` for the Copilot CLI | Individual preferences |
-| Repository-wide | `.github/copilot-instructions.md` | Applies to the whole repository |
-| Path-specific | `.github/instructions/**/NAME.instructions.md` | Requires an `applyTo` glob in frontmatter; optional `excludeAgent: "code-review"` or `"cloud-agent"` |
-| Agent instructions | `AGENTS.md` anywhere (nearest wins), or one root `CLAUDE.md` or `GEMINI.md` | Read by Copilot agents |
-| Organization | Organization **Settings** > **Copilot** > **Custom instructions** | Owners only, Copilot Business or Enterprise; GitHub.com Chat, code review, and cloud agent only |
+- Personal, repository-wide, path-specific, agent, and organization instructions
+- Precedence between instruction sets
+- Which surfaces read which files
+- Structuring and writing short, non-conflicting instructions
+- Testing and maintaining instructions as project standards change
 
-**Precedence:** personal > repository (path-specific, then repository-wide, then agent) >
-organization. All relevant instruction sets are sent to Copilot; precedence only decides
-conflicts between them.
+## Where it applies
 
-> [!WARNING]
-> A path-specific `.instructions.md` file without an `applyTo` glob is never applied.
-> This is the most common reason path instructions appear to do nothing.
-
-**Workflow:**
-
-1. Determine the scope and instruction type.
-2. Gather project context and the Copilot behaviors that need correcting.
-3. Structure the file — project overview, folder structure, coding standards, libraries.
-4. Write short, self-contained statements that do not conflict.
-5. Create the instruction files.
-6. Test across Copilot features and refine.
-7. Review and update as project standards change.
-
----
-
-## Reference files
-
-| File | Contents |
-|------|----------|
-| `references/example-repository-instructions.md` | Sample `.github/copilot-instructions.md` for a React/TypeScript project |
-| `references/example-path-instructions.md` | Sample path-specific `.instructions.md` for API files, with `applyTo` frontmatter |
+Use it when an agent sets up Copilot instructions for a person, a repository, or an
+organization.
 
 ---
 

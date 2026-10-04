@@ -175,7 +175,7 @@ verify.
 
 ## AI Client Configuration Skills
 
-### Claude Code Settings Manager
+### Claude Code Configuration Manager
 
 Manage and maintain `~/.claude/settings.json` and all Claude Code configuration files.
 Covers permissions, hooks, MCP servers, environment variables, model settings,
@@ -199,7 +199,7 @@ and admin-enforced `requirements.toml`.
 
 ---
 
-### Copilot CLI Configuration Manager
+### Copilot Configuration Manager
 
 Manage GitHub Copilot CLI configuration files — `settings.json`, `config.json`,
 `permissions-config.json`, `mcp-config.json`, `lsp-config.json`, hooks, skills, custom agents,

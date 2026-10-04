@@ -91,21 +91,21 @@ nav:
   - Skills:
       - Overview: skills/index.md
       - About-Me Skill Creator: skills/about-me-skill-creator.md
-      - Google Style Docs: skills/google-style-docs.md
-      - Git Commit Messages: skills/git-commit-messages.md
       - Docker Image Management: skills/docker-image-management.md
-      - MkDocs Site Management: skills/mkdocs-site-management.md
+      - Git Commit Messages: skills/git-commit-messages.md
+      - Google Style Docs: skills/google-style-docs.md
       - Markdownlint Validator: skills/markdownlint-validator.md
-      - Copilot Agent Creator: skills/agent-creator-copilot.md
-      - Copilot Instruction Creator: skills/copilot-instruction-creator.md
+      - MkDocs Site Management: skills/mkdocs-site-management.md
       - Claude Code Agent Creator: skills/agent-creator-claudecode.md
-      - OpenCode Agent Creator: skills/agent-creator-opencode.md
+      - Claude Code Configuration Manager: skills/client-config-claudecode.md
       - Codex Agent Creator: skills/agent-creator-codex.md
-      - Claude Code Settings Manager: skills/client-config-claudecode.md
       - Codex Configuration Manager: skills/client-config-codex.md
-      - Copilot CLI Configuration Manager: skills/client-config-copilotcli.md
-      - OpenCode Configuration Manager: skills/client-config-opencode.md
+      - Copilot Agent Creator: skills/agent-creator-copilot.md
+      - Copilot Configuration Manager: skills/client-config-copilotcli.md
+      - Copilot Instruction Creator: skills/copilot-instruction-creator.md
       - Copilot Worker: skills/copilot-worker.md
+      - OpenCode Agent Creator: skills/agent-creator-opencode.md
+      - OpenCode Configuration Manager: skills/client-config-opencode.md
   - Harness:
       - Overview: harness/index.md
       - OpenCode:

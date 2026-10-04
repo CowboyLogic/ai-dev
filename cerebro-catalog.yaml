@@ -69,7 +69,7 @@ artifacts:
     source: skills/agent-creator-codex
     tags: [skills, codex, agents]
   - id: client-config-claudecode
-    name: Claude Code Settings Manager
+    name: Claude Code Configuration Manager
     description: Manage and maintain ~/.claude/settings.json and Claude Code configuration files
     type: skill
     source: skills/client-config-claudecode
@@ -81,7 +81,7 @@ artifacts:
     source: skills/client-config-codex
     tags: [skills, codex, configuration]
   - id: client-config-copilotcli
-    name: Copilot CLI Configuration Manager
+    name: Copilot Configuration Manager
     description: Manage GitHub Copilot CLI configuration files including settings.json, permissions, MCP and LSP servers, hooks, agents, plugins, and custom instructions
     type: skill
     source: skills/client-config-copilotcli

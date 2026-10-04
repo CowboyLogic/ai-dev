@@ -5,7 +5,6 @@ project `.codex/` layer, sandbox and approval settings, permission profiles and 
 MCP servers, hooks, skills, plugins, model providers, and `AGENTS.md` instructions.
 
 - **Skill name:** `client-config-codex`
-- **Last updated:** 2026-09-29
 - **Source:** [skills/client-config-codex](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-codex)
 
 ---
@@ -29,12 +28,16 @@ reference material for the config area involved and loads only that material.
 - Authentication, environment variables, and admin-enforced `requirements.toml`
 - CLI subcommands, `-c` overrides, and sessions
 
+The skill also bundles a script that shows the current configuration with secrets redacted,
+and a script that refreshes its reference files from the upstream Codex documentation.
+
 > [!IMPORTANT]
 > The skill never reads or prints Codex credentials, and it asks before trusting a project
 > or loosening the sandbox and approval settings.
 
-The skill also bundles a script that shows the current configuration with secrets redacted,
-and a script that refreshes its reference files from the upstream Codex documentation.
+## Where it applies
+
+Use it when an agent edits or explains OpenAI Codex CLI configuration, global or per project.
 
 ---
 
@@ -59,14 +62,11 @@ npx skills add CowboyLogic/ai-dev --skill client-config-codex -g -l
 npx skills ls -g
 ```
 
-The skill, its references, and its scripts live in the repository:
-[skills/client-config-codex](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-codex).
-
 ---
 
 ## Related
 
 - [Codex Agent Creator](agent-creator-codex.md) — write custom Codex subagent files
-- [Claude Code Settings Manager](client-config-claudecode.md) — the equivalent skill for Claude Code
-- [Copilot CLI Configuration Manager](client-config-copilotcli.md) — the equivalent skill for GitHub Copilot CLI
+- [Claude Code Configuration Manager](client-config-claudecode.md) — the equivalent skill for Claude Code
+- [Copilot Configuration Manager](client-config-copilotcli.md) — the equivalent skill for GitHub Copilot CLI
 - [OpenCode Configuration Manager](client-config-opencode.md) — the equivalent skill for OpenCode
