@@ -172,13 +172,14 @@ ai-dev/
 │   └── *.agent.md           # Domain specialist agents
 ├── harness/                 # Client harness configs (symlink targets, not published)
 │   ├── opencode/            # OpenCode config for the Matrix Topology
-│   └── opencode-lane/       # OpenCode config for the Lane Topology
+│   ├── opencode-lane/       # OpenCode config for the Lane Topology
+│   └── opencode-samples/    # Sample OpenCode configs readers copy (standard, modular, MCP)
 ├── skills/                  # Installable skill definitions (GitHub CLI discoverable)
 │   └── <skill-name>/        # Each skill: SKILL.md + README + references/
 ├── docs/                    # MkDocs source — PUBLICATION ONLY, not directives
 │   ├── agents/              # Agent catalog pages (links to agents/ at root)
 │   ├── skills/              # Skills catalog (index.md) + one lightweight overview page per skill
-│   ├── tools/               # Claude Code, OpenCode, VS Code configuration guides
+│   ├── harness/             # Claude Code, OpenCode, VS Code configuration guides
 │   └── mcp/                 # MCP server documentation
 ├── agent-output/            # Legacy output folder — gitignored
 ├── cerebro-catalog.yaml     # Artifact catalog (Cerebro integration)

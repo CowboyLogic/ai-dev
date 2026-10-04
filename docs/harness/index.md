@@ -1,8 +1,8 @@
-# Tools
+# Harness
 
-This section documents configurations and integration patterns for AI development tools. Each tool has its own subsection with setup guides, examples, and best practices.
+This section documents configurations and integration patterns for the harnesses that run AI agents: Claude Code, OpenCode, and VS Code with GitHub Copilot. Each harness has its own subsection with setup guides, examples, and best practices.
 
-## Available Tools
+## Available Harnesses
 
 ### Claude Code CLI
 
@@ -14,9 +14,8 @@ Anthropic's official CLI for Claude, providing terminal-based AI development wor
 
 A terminal-based AI development tool supporting multi-model configurations, specialized agents, and MCP server integrations.
 
-- [Overview](opencode/index.md) — Standard and agent/subagent configuration approaches
+- [Overview](opencode/index.md) — The sample configurations and how to install them
 - [Configuration Guide](opencode/configuration.md) — Complete setup and customization
-- [Sample Configs](opencode/samples.md) — Real-world examples for common workflows
 
 ### Visual Studio Code
 

@@ -57,17 +57,17 @@ This repository emphasizes **examples over explanations**. We provide working co
 - Docker image management
 - Git commit messages and Copilot instructions
 
-### Tools
+### Harness
 
-**[Tools](tools/index.md)** — Configuration and integration guides:
+**[Harness](harness/index.md)** — Configuration and integration guides:
 
-- **[Claude Code CLI](tools/claudecode/claudecode-vertexai.md)** - Enterprise VertexAI configuration for Google Cloud Platform
-- **[OpenCode CLI](tools/opencode/index.md)** - Multi-agent configuration, custom commands, MCP integrations
-- **[Visual Studio Code](tools/vscode/README.md)** - GitHub Copilot integration, agent examples, best practices
+- **[Claude Code CLI](harness/claudecode/claudecode-vertexai.md)** - Enterprise VertexAI configuration for Google Cloud Platform
+- **[OpenCode CLI](harness/opencode/index.md)** - Multi-agent configuration, custom commands, MCP integrations
+- **[Visual Studio Code](harness/vscode/README.md)** - GitHub Copilot integration, agent examples, best practices
 
 ### MCP Servers
 
-**[MCP Servers](mcp/overview.md)** — Working examples for Model Context Protocol server integrations.
+**[MCP Servers](mcp/index.md)** — Working examples for Model Context Protocol server integrations.
 
 ## Use Cases
 
@@ -116,7 +116,7 @@ ai-dev/
 │   ├── contributing.md              # Contributing guidelines
 │   ├── agents/                      # Agent catalog pages
 │   ├── skills/                      # Skills catalog page
-│   ├── tools/                       # Tool configuration guides
+│   ├── harness/                     # Harness configuration guides
 │   └── mcp/                         # MCP server documentation
 ├── agents/                           # Installable agent definitions
 │   ├── lane-topology/               # Lane Topology multi-agent system
@@ -194,4 +194,4 @@ This repository builds on:
 
 ---
 
-**Ready to get started?** Explore the **[Claude Code VertexAI Configuration](tools/claudecode/claudecode-vertexai.md)** or the **[OpenCode Configuration](tools/opencode/index.md)**.
+**Ready to get started?** Explore the **[Claude Code VertexAI Configuration](harness/claudecode/claudecode-vertexai.md)** or the **[OpenCode Configuration](harness/opencode/index.md)**.
