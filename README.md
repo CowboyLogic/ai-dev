@@ -99,7 +99,7 @@ This repository provides configurations, not vendor documentation. For comprehen
 
 ## License
 
-See [LICENSE](LICENSE) file for terms.
+Released under the [MIT License](LICENSE).
 
 ---
 

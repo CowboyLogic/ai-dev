@@ -174,7 +174,7 @@ Contributions welcome! See our **[Contributing Guide](contributing.md)** and Git
 
 ## License
 
-This repository is provided as-is for community use. No LICENSE file is currently published at the repository root; contact the maintainer with licensing questions.
+This repository is released under the [MIT License](https://github.com/CowboyLogic/ai-dev/blob/main/LICENSE). Use it, adapt it, and share it; keep the copyright and licence notice with any substantial copy.
 
 ## Acknowledgments
 
