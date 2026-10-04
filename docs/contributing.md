@@ -45,7 +45,7 @@ Configurations should be self-documenting. Include inline comments explaining no
 ```
 
 > [!NOTE]
-> Name sample files with the `.jsonc` extension. Plain `.json` does not allow comments. Put setup instructions on the [MCP Servers](mcp/index.md) page rather than beside the file.
+> OpenCode accepts comments in both `.json` and `.jsonc` files, but strict JSON parsers and some editors do not. Name a standalone sample that carries comments with the `.jsonc` extension. A file OpenCode loads by name, such as `opencode.json`, keeps that name. Put setup instructions on the [MCP Servers](mcp/index.md) page rather than beside the file.
 
 **Each configuration should be accompanied by:**
 
