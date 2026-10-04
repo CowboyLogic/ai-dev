@@ -15,6 +15,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 import yaml
@@ -205,6 +206,23 @@ class ValidatorTest(unittest.TestCase):
         self.assertTrue(errors)
         self.assertEqual(first.read_text(), "one\n")
         self.assertEqual(second.read_text(), "two\n")
+
+    def test_page_truncated_by_a_failing_write_is_restored(self) -> None:
+        module = self.load_module()
+        page = self.root / "page.md"
+        page.write_text("before\n")
+        real_write = Path.write_text
+
+        def truncate_then_fail(path, data, *args, **kwargs):
+            if path == page and data == "after\n":
+                real_write(path, "", *args, **kwargs)
+                raise OSError("disk full")
+            return real_write(path, data, *args, **kwargs)
+
+        with unittest.mock.patch.object(Path, "write_text", truncate_then_fail):
+            errors = module.flush_writes({page: ("before\n", "after\n")})
+        self.assertTrue(errors)
+        self.assertEqual(page.read_text(), "before\n")
 
     def test_page_deleted_after_validation_is_reported_not_raised(self) -> None:
         module = self.load_module()

@@ -388,8 +388,9 @@ def flush_writes(pending: dict[Path, tuple[str, str]]) -> list[str]:
     try:
         for path, (validated, regenerated) in pending.items():
             if regenerated != validated:
-                path.write_text(regenerated, encoding="utf-8")
+                # Track first: a write that fails midway can still truncate the page.
                 written.append(path)
+                path.write_text(regenerated, encoding="utf-8")
     except OSError as error:
         errors.append(f"write failed, restoring the pages already written: {error}")
         for path in written:
