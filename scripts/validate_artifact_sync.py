@@ -156,10 +156,18 @@ def strip_jsonc(text: str) -> str:
     return "".join(result)
 
 
+def reject_constant(name: str) -> None:
+    raise ValueError(f"{name} is not valid JSON")
+
+
 def load_jsonc(path: Path) -> dict:
     relative = path.relative_to(ROOT)
     try:
-        data = json.loads(strip_jsonc(path.read_text(encoding="utf-8-sig")))
+        # json.loads accepts NaN and Infinity by default; JSON does not.
+        data = json.loads(
+            strip_jsonc(path.read_text(encoding="utf-8-sig")),
+            parse_constant=reject_constant,
+        )
     except ValueError as error:
         raise ValueError(f"{relative}: invalid JSONC ({error})") from error
     if not isinstance(data, dict):
