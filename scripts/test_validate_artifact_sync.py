@@ -205,6 +205,13 @@ class ValidatorTest(unittest.TestCase):
                 self.assert_fails_cleanly(result)
                 self.assertIn(constant, result.stdout)
 
+    def test_block_comment_cannot_join_two_halves_of_a_token(self) -> None:
+        self.write(
+            LANE_HARNESS,
+            '{ "default_agent": "conductor", "limit": tru/*note*/e }\n',
+        )
+        self.assert_fails_cleanly(self.run_validator())
+
     def test_jsonc_comments_urls_and_trailing_commas_still_parse(self) -> None:
         self.write(
             LANE_HARNESS,
