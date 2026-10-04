@@ -16,32 +16,36 @@ Contributions of all kinds are welcome — agent configurations, MCP integration
 
 | Type | Where to Put It |
 | ---- | --------------- |
-| MCP server configs | `docs/mcp/sample-configs/` |
+| MCP server configs | `harness/opencode-samples/mcp/` |
 | Agent definitions | `agents/` |
 | Skill instructions | `skills/<skill-name>/` |
-| Tool documentation | `docs/tools/<tool-name>/` |
+| Harness documentation | `docs/harness/<harness-name>/` |
 | General docs | `docs/` |
 
 ## Guidelines
 
 ### Configuration Files
 
-Configurations should be self-documenting. Include inline comments explaining non-obvious settings, and never hardcode secrets — always reference environment variables:
+Configurations should be self-documenting. Include inline comments explaining non-obvious settings, and never hardcode secrets — always reference environment variables with `{env:NAME}`. Use the OpenCode V2 format, with servers under `mcp.servers`:
 
-```json
+```jsonc
 {
-  "postgres": {
-    "type": "local",
-    "command": ["docker", "run", "--rm", "-i", "postgres-mcp"],
-    "environment": {
-      "DB_PASSWORD": "${DB_PASSWORD}"
+  "mcp": {
+    "servers": {
+      "postgres": {
+        "type": "local",
+        "command": ["docker", "run", "--rm", "-i", "postgres-mcp"],
+        "environment": {
+          "DB_PASSWORD": "{env:DB_PASSWORD}"
+        }
+      }
     }
   }
 }
 ```
 
 > [!NOTE]
-> JSON doesn't officially support comments, but they are shown here for illustration. Use a companion README for setup instructions when needed.
+> Name sample files with the `.jsonc` extension. Plain `.json` does not allow comments. Put setup instructions on the [MCP Servers](mcp/index.md) page rather than beside the file.
 
 **Each configuration should be accompanied by:**
 

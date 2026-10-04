@@ -12,8 +12,8 @@ Practical configurations and working examples for AI-powered development tools. 
 
 - **[Agents](agents/)** — Installable AI agent definitions (Lane Topology, Matrix Topology, and domain specialists), discoverable via GitHub CLI
 - **[Skills](skills/)** — Installable domain-specific instruction sets, discoverable via GitHub CLI
-- **[Tools](docs/tools/index.md)** — Claude Code, OpenCode CLI, and VS Code configurations with examples
-- **[MCP Servers](docs/mcp/overview.md)** — Model Context Protocol integration examples
+- **[Harness](docs/harness/index.md)** — Claude Code, OpenCode CLI, and VS Code configurations with examples
+- **[MCP Servers](docs/mcp/index.md)** — Model Context Protocol integration examples
 
 ## Quick Start
 
@@ -29,19 +29,19 @@ Practical configurations and working examples for AI-powered development tools. 
 
 **Claude Code:**
 
-- [VertexAI Configuration](docs/tools/claudecode/claudecode-vertexai.md) — Configure Claude Code to use Google Cloud VertexAI
+- [VertexAI Configuration](docs/harness/claudecode/claudecode-vertexai.md) — Configure Claude Code to use Google Cloud VertexAI
 
 **OpenCode CLI:**
 
-- [Overview](docs/tools/opencode/index.md) | [Configuration Guide](docs/tools/opencode/configuration.md) | [Samples](docs/tools/opencode/samples.md)
+- [Overview](docs/harness/opencode/index.md) | [Configuration Guide](docs/harness/opencode/configuration.md) | [Samples](harness/opencode-samples/)
 
 **VS Code + Copilot:**
 
-- [Agent Guide](docs/tools/vscode/README.md) | [Quick Start](docs/tools/vscode/quick-start.md) | [Examples](docs/tools/vscode/agent-examples.md)
+- [Agent Guide](docs/harness/vscode/README.md) | [Quick Start](docs/harness/vscode/quick-start.md) | [Examples](docs/harness/vscode/agent-examples.md)
 
 **MCP Servers:**
 
-- [Overview](docs/mcp/overview.md) | [Configuration](docs/mcp/configuration.md) | [Samples](docs/mcp/sample-configs/)
+- [MCP Servers](docs/mcp/index.md) | [Samples](harness/opencode-samples/mcp/)
 
 ## Repository Structure
 
@@ -51,13 +51,13 @@ ai-dev/
 │   ├── matrix-topology/        # Matrix Topology multi-agent system
 │   ├── lane-topology/          # Lane Topology (OpenCode + Copilot)
 │   └── *.agent.md              # Domain specialist agents
-├── harness/                    # Client harness configs (OpenCode symlink targets)
+├── harness/                    # Client harness configs and OpenCode sample configs
 ├── skills/                     # Installable skill definitions (GitHub CLI discoverable)
 │   └── <skill-name>/           # Each skill: SKILL.md + README + references/
 ├── docs/                       # MkDocs documentation source (catalog & guides only)
 │   ├── agents/                 # Agent catalog pages
 │   ├── skills/                 # Skills catalog page
-│   ├── tools/                  # Claude Code, OpenCode, & VS Code guides
+│   ├── harness/                # Claude Code, OpenCode, & VS Code guides
 │   └── mcp/                    # MCP server documentation
 ├── .agent-output/              # Temporary agent output (gitignored)
 ├── AGENTS.md                   # Human-readable directive overview

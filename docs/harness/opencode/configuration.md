@@ -43,44 +43,26 @@ Both `.json` and `.jsonc` accept comments and trailing commas.
 
 ## Configuration approaches
 
-This repository ships two sample configurations under `docs/tools/opencode/`:
+This repository ships two sample configurations under
+[`harness/opencode-samples/`](https://github.com/CowboyLogic/ai-dev/tree/main/harness/opencode-samples):
 
 | Approach | Location | Best for |
 |---|---|---|
 | **Standard** | `standard-config/opencode.json` | A few agents, everything in one file |
 | **Modular** | `agent-subagent-config/` | Many specialized agents, one Markdown file each |
 
+The [overview](index.md#install) has the install commands. `update` is honored only in the
+global `~/.config/opencode/opencode.json`.
+
 For a real multi-agent system, see the topologies in `agents/`. They use the modular
 pattern with a harness configuration, described in
 [Topologies in this repository](#topologies-in-this-repository).
-
-### Install the standard sample
-
-```bash
-cp docs/tools/opencode/standard-config/opencode.json ~/your-project/opencode.json
-```
-
-Or copy it to `~/.config/opencode/opencode.json` to apply it to every project.
-`update` is honored only in the global file.
-
-### Install the modular sample
-
-```bash
-cd ~/your-project
-cp ~/src/ai-dev/docs/tools/opencode/agent-subagent-config/opencode.json .
-cp -r ~/src/ai-dev/docs/tools/opencode/agent-subagent-config/prompts .
-mkdir -p .opencode
-cp -r ~/src/ai-dev/docs/tools/opencode/agent-subagent-config/agents .opencode/agents
-```
-
-The plan agent loads its prompt with `{file:./prompts/plan.txt}`, which resolves
-relative to `opencode.json`. Keep `prompts/` beside it.
 
 ---
 
 ## Standard configuration walkthrough
 
-The standard sample is a single [`opencode.json`](https://github.com/CowboyLogic/ai-dev/blob/main/docs/tools/opencode/standard-config/opencode.json).
+The standard sample is a single [`opencode.json`](https://github.com/CowboyLogic/ai-dev/blob/main/harness/opencode-samples/standard-config/opencode.json).
 Its sections are described below.
 
 ### Model and title agent
@@ -218,8 +200,10 @@ above as frontmatter and the body as the template.
 ## Modular configuration
 
 The modular sample keeps only the primary agents in
-[`opencode.json`](https://github.com/CowboyLogic/ai-dev/blob/main/docs/tools/opencode/agent-subagent-config/opencode.json)
-and defines each subagent as a Markdown file in `.opencode/agents/`.
+[`opencode.json`](https://github.com/CowboyLogic/ai-dev/blob/main/harness/opencode-samples/agent-subagent-config/opencode.json)
+and defines each subagent as a Markdown file in `.opencode/agents/`. The `plan` agent loads its
+prompt with `{file:./prompts/plan.txt}`, which resolves relative to `opencode.json`, so keep
+`prompts/` beside it.
 
 ```jsonc
 {
@@ -285,25 +269,15 @@ style. Both are standard YAML.
 
 ### Sample subagents
 
-| Agent | Model | Access |
-|---|---|---|
-| `api` | `github-copilot/gpt-6-sol` | Full |
-| `architect` | `github-copilot/claude-sonnet-5` | Read-only (deny all, then allow read, glob, grep) |
-| `cloud` | `github-copilot/gpt-6-sol` | Full |
-| `data` | `github-copilot/gpt-5-mini` | Full |
-| `database` | `github-copilot/gpt-6-sol` | Full |
-| `devops` | `github-copilot/gpt-5-mini` | Full |
-| `documentation` | `github-copilot/gpt-6-luna` | Edit, no shell |
-| `performance` | `github-copilot/gpt-6-sol` | Full |
-| `research` | `github-copilot/gpt-5-mini` | Shell, no edit |
-| `reviewer` | `github-copilot/claude-sonnet-5` | Read-only (deny all, then allow read, glob, grep) |
-| `security` | `github-copilot/claude-sonnet-5` | Shell, no edit |
-| `testing` | `github-copilot/gpt-5-mini` | Full |
-| `uxui` | `github-copilot/gemini-3.8-flash` | Edit, no shell |
+The sample ships thirteen subagents: `api`, `architect`, `cloud`, `data`, `database`, `devops`,
+`documentation`, `performance`, `research`, `reviewer`, `security`, `testing`, and `uxui`. Each
+file in
+[`agents/`](https://github.com/CowboyLogic/ai-dev/tree/main/harness/opencode-samples/agent-subagent-config/agents)
+sets that agent's model and permissions in its frontmatter, which is the authoritative record.
 
-"Full" means the agent has no permission rules of its own and runs under the base
-policy plus any global rules. The base policy does not deny the `subagent` action
-either; add a `subagent` deny rule if an agent should not delegate.
+An agent with no `permissions` of its own runs under the base policy plus any global rules.
+The base policy does not deny the `subagent` action either; add a `subagent` deny rule if an
+agent should not delegate.
 
 Invoke a subagent by `@`-mentioning it in the TUI (`@security audit src/auth/`), or let
 a primary agent launch it through the subagent tool.
@@ -419,7 +393,7 @@ model.
 
 ## MCP servers
 
-V2 nests servers under `mcp.servers`:
+V2 nests servers under `mcp.servers`. The [MCP Servers](../../mcp/index.md) page has sample entries to copy.
 
 ```jsonc
 {
@@ -575,7 +549,7 @@ Run it again.
 
 ## Next steps
 
-- [OpenCode Overview](index.md): feature overview and use cases
-- [Sample Configurations](samples.md): MCP server examples
+- [OpenCode Overview](index.md): the samples and how to install them
+- [MCP Servers](../../mcp/index.md): MCP server samples
 - [OpenCode Configuration Manager skill](../../skills/client-config-opencode.md): V1 and V2 configuration reference
 - [OpenCode V2 documentation](https://opencode.ai/v2/docs/)

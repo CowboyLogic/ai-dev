@@ -1,0 +1,21 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // A local, container-based MCP server run through Docker.
+  // OpenCode V2 format: servers live under mcp.servers and connect automatically.
+  "mcp": {
+    "servers": {
+      "docker-mcp-sample": {
+        "type": "local",
+        // --rm removes the container on exit; -i keeps stdin open for the stdio transport.
+        "command": ["docker", "run", "--rm", "-i", "my-mcp-server:latest"],
+        "environment": {
+          // {env:NAME} reads the variable from your shell. Never hardcode a secret here.
+          "API_KEY": "{env:MY_API_KEY}",
+          "DEBUG": "true"
+        },
+        "timeout": { "catalog": 10000, "execution": 10000 }
+      }
+    }
+  }
+}

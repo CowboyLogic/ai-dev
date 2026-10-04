@@ -310,8 +310,11 @@ def validate_discovery() -> None:
         "topology validator configuration drift",
         f"expected {sorted(TOPOLOGIES)}, found {sorted(discovered_topologies)}",
     )
+    # opencode-samples holds sample configs for readers, not a topology harness.
     discovered_harnesses = {
-        path.name for path in (ROOT / "harness").glob("opencode*") if path.is_dir()
+        path.name
+        for path in (ROOT / "harness").glob("opencode*")
+        if path.is_dir() and path.name != "opencode-samples"
     }
     configured_harnesses = {topology.harness for topology in TOPOLOGIES.values()}
     check(
