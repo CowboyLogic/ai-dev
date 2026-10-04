@@ -582,4 +582,4 @@ dispatch, a handoff, and a place for context to be lost.
 
 ## License
 
-MIT. Use it, adapt it, share it. Attribution appreciated but not required.
+MIT. Use it, adapt it, share it. Keep the copyright and licence notice with any copy or substantial portion; see [LICENSE](../../LICENSE).
