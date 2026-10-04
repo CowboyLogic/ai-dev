@@ -30,7 +30,7 @@ The coordinators call these agents by name, so install them together:
 |---|---|
 | `architecture-coordinator` | `api-designer`, `security-auditor`, `performance-reviewer` |
 | `feature-lead` | `api-designer`, `react-developer`, `test-engineer`, `code-reviewer`, `docs-writer` |
-| `review-coordinator` | `code-reviewer`, `security-auditor`, `performance-reviewer`, `test-engineer` |
+| `review-coordinator` | `code-reviewer`, `security-auditor`, `performance-reviewer` |
 
 ## Adapt one
 

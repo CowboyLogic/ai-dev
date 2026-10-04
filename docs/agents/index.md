@@ -86,13 +86,13 @@ Single-file agents that stand alone, outside any topology. They use the VS Code 
 | [**code-reviewer**](https://github.com/CowboyLogic/ai-dev/blob/main/agents/code-reviewer.agent.md) | Reviews code for correctness, security, maintainability, and test coverage. Read-only |
 | [**test-engineer**](https://github.com/CowboyLogic/ai-dev/blob/main/agents/test-engineer.agent.md) | Writes and runs automated tests, and reports the actual results |
 | [**security-auditor**](https://github.com/CowboyLogic/ai-dev/blob/main/agents/security-auditor.agent.md) | Audits code and configuration against the OWASP Top 10. Read-only |
-| [**performance-reviewer**](https://github.com/CowboyLogic/ai-dev/blob/main/agents/performance-reviewer.agent.md) | Finds inefficient algorithms, N+1 queries, and memory growth. Does not edit code |
+| [**performance-reviewer**](https://github.com/CowboyLogic/ai-dev/blob/main/agents/performance-reviewer.agent.md) | Finds inefficient algorithms, N+1 queries, and memory growth. Read-only |
 | [**docs-writer**](https://github.com/CowboyLogic/ai-dev/blob/main/agents/docs-writer.agent.md) | Writes and updates READMEs, API references, and how-to guides |
 | [**api-designer**](https://github.com/CowboyLogic/ai-dev/blob/main/agents/api-designer.agent.md) | Designs REST APIs and OpenAPI specifications |
 | [**react-developer**](https://github.com/CowboyLogic/ai-dev/blob/main/agents/react-developer.agent.md) | Builds and refactors React components with TypeScript |
 | [**architecture-coordinator**](https://github.com/CowboyLogic/ai-dev/blob/main/agents/architecture-coordinator.agent.md) | Coordinator: delegates to `api-designer`, `security-auditor`, and `performance-reviewer` |
 | [**feature-lead**](https://github.com/CowboyLogic/ai-dev/blob/main/agents/feature-lead.agent.md) | Coordinator: delegates to `api-designer`, `react-developer`, `test-engineer`, `code-reviewer`, and `docs-writer` |
-| [**review-coordinator**](https://github.com/CowboyLogic/ai-dev/blob/main/agents/review-coordinator.agent.md) | Coordinator: delegates to `code-reviewer`, `security-auditor`, `performance-reviewer`, and `test-engineer` |
+| [**review-coordinator**](https://github.com/CowboyLogic/ai-dev/blob/main/agents/review-coordinator.agent.md) | Coordinator: delegates to `code-reviewer`, `security-auditor`, and `performance-reviewer` |
 
 Install one with the GitHub CLI:
 

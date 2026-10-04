@@ -29,7 +29,7 @@ Practical configurations and working examples for AI-powered development tools. 
 
 **Claude Code:**
 
-- [VertexAI Configuration](docs/harness/claudecode/claudecode-vertexai.md) — Configure Claude Code to use Google Cloud VertexAI
+- [Claude Code](docs/harness/claudecode/index.md) — Skills, the Matrix Claude mirror, and Google Cloud Vertex AI setup
 
 **OpenCode CLI:**
 
