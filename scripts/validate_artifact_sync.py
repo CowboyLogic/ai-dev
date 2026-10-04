@@ -340,6 +340,15 @@ def sync_blocks(doc_path: Path, expected: dict[str, str], write: bool) -> None:
     """
     label = doc_path.relative_to(ROOT).as_posix()
     text = doc_path.read_text(encoding="utf-8")
+    try:
+        spans = sorted((*block_span(text, name), name) for name in expected)
+    except ValueError as error:
+        check(False, f"{label}: {error}")
+        return
+    for (_, previous_end, previous), (start, _, name) in zip(spans, spans[1:]):
+        if start < previous_end:
+            check(False, f"{label}: artifact-sync:{name} block overlaps artifact-sync:{previous}")
+            return
     for block_name, replacement in expected.items():
         try:
             if write:
