@@ -51,7 +51,8 @@ main() {
   fi
   echo "---"
   head -n "$MAX_LINES" "$file" 2>/dev/null
-  total=$(wc -l <"$file" 2>/dev/null | tr -d ' ')
+  # awk counts records, so a last line with no trailing newline is still counted.
+  total=$(awk 'END { print NR }' "$file" 2>/dev/null)
   if [ -n "$total" ] && [ "$total" -gt "$MAX_LINES" ]; then
     echo "[handoff truncated at $MAX_LINES of $total lines]"
   fi
