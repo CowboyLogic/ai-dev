@@ -75,6 +75,16 @@ Covers type selection, scope notation, subject line rules, and multi-paragraph b
 
 ---
 
+### Handoff
+
+Carry task state from one Claude Code session to the next. `/handoff` writes a short,
+curated file of what is half done and what comes next, and a `SessionStart` hook loads it
+into a fresh session instead of re-reading a long transcript.
+
+[Skill Overview](handoff.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/handoff)
+
+---
+
 ## Development Skills
 
 ### Docker Image Management
