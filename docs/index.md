@@ -1,37 +1,33 @@
 # AI Development Tools & Configurations
 
-Welcome to my repository for AI tools, agents, and configurations designed to streamline AI-assisted development workflows.
+Practical configurations and working examples for AI coding assistants: multi-agent topologies, installable skills, and harness setup for Claude Code, OpenCode, and VS Code with GitHub Copilot.
 
-## Overview
+This site complements the vendors' own documentation with ready-to-use configurations, integration patterns, and behavioral guidelines. It does not rewrite their guides. Learn more on the [About](about.md) page.
 
-This repository provides **practical configurations and working examples** for AI coding assistants. We focus on concrete implementations you can copy and adapt, not rewriting vendor documentation.
+## What do you want to do?
 
-### Official Documentation
-
-For comprehensive tool documentation, see:
-
-- **[Claude Code](https://claude.ai/code)** - Anthropic's official CLI for Claude
-- **[GitHub Copilot](https://docs.github.com/en/copilot)** - Official GitHub Copilot documentation
-- **[Model Context Protocol](https://modelcontextprotocol.io)** - MCP specification and guides
-- **[OpenCode AI](https://opencode.ai/docs)** - OpenCode CLI documentation
-- **[VS Code](https://code.visualstudio.com/docs)** - Visual Studio Code documentation
-
-This repository complements official docs with **ready-to-use configurations, integration patterns, and behavioral guidelines**.
+- **Install a skill.** Browse the [skills catalog](skills/index.md) and follow its [install commands](skills/index.md#installing-skills).
+- **Install a topology.** Choose between the [Lane](agents/lane-topology.md) and [Matrix](agents/matrix-topology.md) multi-agent topologies, then follow the [installation steps](agents/index.md#installing-agents).
+- **Configure Claude Code.** Start with the [Claude Code overview](harness/claudecode/index.md): skills, the Matrix mirror, and Google Cloud Vertex AI setup.
+- **Configure OpenCode.** Start with the [OpenCode overview](harness/opencode/index.md) and the [Configuration Guide](harness/opencode/configuration.md).
+- **Configure VS Code with GitHub Copilot.** Start with the [VS Code guide](harness/vscode/index.md) and its [Quick Start](harness/vscode/quick-start.md).
+- **Add an MCP server.** See the [MCP server examples](mcp/index.md).
+- **Contribute.** Read the [Contributing guide](contributing.md).
 
 ## What's Inside
 
-- **[Agents](agents/index.md)** — Specialized AI agent definitions for development tasks (API, architecture, security, testing, and more).
-- **[Skills](skills/index.md)** — Structured instruction sets that teach AI agents domain-specific tasks.
-- **[Harness](harness/index.md)** — Configurations and guides for Claude Code, OpenCode CLI, and VS Code.
-- **[MCP Servers](mcp/index.md)** — Working examples for Model Context Protocol server integrations.
-- **[Contributing](contributing.md)** — How to contribute configurations, examples, and documentation.
+- **[Agents](agents/index.md)**: two multi-agent topologies, Lane and Matrix, plus a roster of domain specialist agents (API, architecture, security, testing, and more).
+- **[Skills](skills/index.md)**: structured instruction sets that teach AI agents domain-specific tasks.
+- **[Harness](harness/index.md)**: configurations and guides for Claude Code, OpenCode, and VS Code.
+- **[MCP Servers](mcp/index.md)**: working examples for Model Context Protocol server integrations.
 
-## Quick Start
+## Official documentation
 
-- **AI Assistants:** Start with [AGENTS.md](https://github.com/CowboyLogic/ai-dev/blob/main/AGENTS.md), then review tool-specific AGENTS.md files.
-- **Claude Code Users:** See the [Claude Code overview](harness/claudecode/index.md) for skills, the Matrix mirror, and Google Cloud Vertex AI setup.
-- **OpenCode CLI Users:** See the [OpenCode Overview](harness/opencode/index.md) and [Configuration Guide](harness/opencode/configuration.md).
-- **VS Code Users:** See the [VS Code Agent Guide](harness/vscode/index.md) and [Quick Start](harness/vscode/quick-start.md).
-- **Learning Best Practices:** Explore the [Skills](skills/index.md) section and [Frontmatter Reference](https://github.com/CowboyLogic/ai-dev/blob/main/skills/agent-creator-copilot/references/frontmatter-reference.md).
+- [Claude Code](https://claude.ai/code)
+- [GitHub Copilot](https://docs.github.com/en/copilot)
+- [Model Context Protocol](https://modelcontextprotocol.io)
+- [OpenCode](https://opencode.ai/docs)
+- [VS Code](https://code.visualstudio.com/docs)
 
-Learn more on the [About](about.md) page.
+> [!NOTE]
+> If you are an AI agent working in this repository, start with [AGENTS.md](https://github.com/CowboyLogic/ai-dev/blob/main/AGENTS.md). The pages on this site are publication content, not instructions.
