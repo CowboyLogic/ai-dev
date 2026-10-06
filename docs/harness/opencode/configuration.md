@@ -379,11 +379,13 @@ configuration files, which are the authoritative record:
 | Cross-family review | Independent review from a third model family |
 | Heavy reasoning | Infrequent, high-stakes planning, design, and security review |
 
-To see the model behind each tier, read the
-[Matrix topology config](https://github.com/CowboyLogic/ai-dev/blob/main/harness/opencode/opencode.jsonc),
-the roster tables in [Matrix Topology](../../agents/matrix-topology.md) and
-[Lane Topology](../../agents/lane-topology.md), or the `model` field in each sample agent's
-frontmatter. Check `/models` for what your subscription offers before pinning a model. The
+To see the model behind each tier, read the roster tables in
+[Matrix Topology](../../agents/matrix-topology.md) and
+[Lane Topology](../../agents/lane-topology.md), or the `model` field in each agent's
+frontmatter, such as the
+[Matrix agent definitions](https://github.com/CowboyLogic/ai-dev/tree/main/agents/matrix-topology/opencode)
+and the
+[sample agents](https://github.com/CowboyLogic/ai-dev/tree/main/harness/opencode-samples/agent-subagent-config/agents). Check `/models` for what your subscription offers before pinning a model. The
 model IDs in this guide's JSON examples show the syntax and are not a recommendation.
 
 > [!WARNING]
