@@ -96,6 +96,7 @@ nav:
           - About-Me Skill Creator: skills/about-me-skill-creator.md
           - Google Style Docs: skills/google-style-docs.md
           - Git Commit Messages: skills/git-commit-messages.md
+          - Handoff: skills/handoff.md
       - Development:
           - Docker Image Management: skills/docker-image-management.md
           - MkDocs Site Management: skills/mkdocs-site-management.md
