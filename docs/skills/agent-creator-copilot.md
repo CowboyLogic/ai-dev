@@ -32,7 +32,7 @@ testing a profile, and loads detailed reference material only when the task need
 
 Use it when an agent writes or debugs Copilot agent profiles for VS Code, the Copilot CLI,
 or the cloud agent. The VS Code guide under
-[Visual Studio Code](../harness/vscode/README.md) covers the same file format from the
+[Visual Studio Code](../harness/vscode/index.md) covers the same file format from the
 editor's side.
 
 ---

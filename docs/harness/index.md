@@ -22,8 +22,10 @@ A terminal-based AI development tool supporting multi-model configurations, spec
 
 Integration patterns for GitHub Copilot in VS Code, including markdown-based agents and programmatic subagents.
 
-- [Overview](vscode/README.md) — Quick start guide for first agent setup
+- [Overview](vscode/index.md) — Quick start guide for first agent setup
 - [Quick Start](vscode/quick-start.md) — Get running in 5 minutes
 - [Markdown-Based Agents](vscode/markdown-agents.md) — Declarative configuration approach
 - [Agent Examples](vscode/agent-examples.md) — Ready-to-use configurations
 - [Best Practices](vscode/best-practices.md) — Optimization patterns and collaboration patterns
+- [Programmatic SubAgents](vscode/subagent-tool.md) — Agents that delegate to other agents
+- [Troubleshooting](vscode/troubleshooting.md) — When an agent does not show up or behave

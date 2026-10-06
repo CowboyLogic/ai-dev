@@ -67,4 +67,3 @@ These are admonition types available in MkDocs but not in GitHub Flavored Markdo
 
 !!! quote "Quote"
     This is a quote.
-
