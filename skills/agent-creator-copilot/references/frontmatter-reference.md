@@ -35,7 +35,7 @@ Every surface ignores tool names it does not recognize, and GitHub.com explicitl
 | `tools` | ✅ (aliases, tool sets, tool names) | ✅ (aliases, MCP tools) | ✅ |
 | `model` | ✅ string or array | ⚠️ See [`model`](#model) | ✅ string |
 | `user-invocable` | ✅ | ✅ | Not listed in CLI reference |
-| `disable-model-invocation` | ✅ (blocks subagent use) | ✅ (blocks auto-selection) | Not listed in CLI reference |
+| `disable-model-invocation` | ✅ (blocks subagent use unless a coordinator lists the agent in `agents`) | ✅ (blocks auto-selection) | Not listed in CLI reference |
 | `infer` | Deprecated | Retired | ✅ Listed as active (see [`infer`](#infer-retired--deprecated)) |
 | `argument-hint` | ✅ | ❌ Ignored | Not listed |
 | `handoffs` | ✅ | ❌ Ignored | Not listed |
@@ -65,7 +65,7 @@ target: vscode                        # vscode | github-copilot | omit for both
 tools: ["read", "search"]             # omit = all tools
 model: Claude Sonnet 5                # string, or array in VS Code
 user-invocable: true                  # show in agent picker (default true)
-disable-model-invocation: false       # block auto-selection / subagent use (default false)
+disable-model-invocation: false       # block auto-selection / subagent use, unless a coordinator lists the agent in `agents` (default false)
 argument-hint: Paste your spec here   # VS Code / IDEs only
 agents: ["Researcher", "Reviewer"]    # VS Code only: allowed subagents
 handoffs:                             # VS Code / IDEs only
