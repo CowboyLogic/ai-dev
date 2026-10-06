@@ -56,7 +56,7 @@ ai-dev/
 │   └── <skill-name>/           # Each skill: SKILL.md + README + references/
 ├── docs/                       # MkDocs documentation source (catalog & guides only)
 │   ├── agents/                 # Agent catalog pages
-│   ├── skills/                 # Skills catalog page
+│   ├── skills/                 # Skills catalog + one overview page per skill
 │   ├── harness/                # Claude Code, OpenCode, & VS Code guides
 │   └── mcp/                    # MCP server documentation
 ├── .agent-output/              # Temporary agent output (gitignored)
