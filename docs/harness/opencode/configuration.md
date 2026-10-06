@@ -367,23 +367,29 @@ agent ID. A saved approval never overrides a configured `deny`.
 
 ## Model selection
 
-Models in this repository use the built-in `github-copilot` provider. The table covers
-the models the samples and topologies use. Check `/models` for what your subscription
-offers before pinning a model.
+Models in this repository use the built-in `github-copilot` provider. The repository
+assigns models by tier, not by name, and the pinned model for each tier is set in the
+configuration files, which are the authoritative record:
 
-| Tier | Model | Used for |
-|---|---|---|
-| Fast and cheap | `github-copilot/gpt-6-luna`, `github-copilot/gpt-5-mini` | Title generation, docs, data, simple tasks |
-| Balanced | `github-copilot/claude-sonnet-5` | Review, security, architecture, orchestration |
-| Agentic coding | `github-copilot/gpt-6-sol` | Implementation, planning, and build loops |
-| Cross-family review | `github-copilot/gemini-3.8-flash` | Independent review from a third model family |
-| Heavy reasoning | `github-copilot/claude-opus-5.5` | Infrequent, high-stakes planning, design, and security review |
+| Tier | Used for |
+|---|---|
+| Fast and cheap | Title generation, docs, data, simple tasks |
+| Balanced | Review, security, architecture, orchestration |
+| Agentic coding | Implementation, planning, and build loops |
+| Cross-family review | Independent review from a third model family |
+| Heavy reasoning | Infrequent, high-stakes planning, design, and security review |
+
+To see the model behind each tier, read the
+[Matrix topology config](https://github.com/CowboyLogic/ai-dev/blob/main/harness/opencode/opencode.jsonc),
+the roster tables in [Matrix Topology](../../agents/matrix-topology.md) and
+[Lane Topology](../../agents/lane-topology.md), or the `model` field in each sample agent's
+frontmatter. Check `/models` for what your subscription offers before pinning a model. The
+model IDs in this guide's JSON examples show the syntax and are not a recommendation.
 
 > [!WARNING]
-> Copilot retires models regularly. Models that earlier versions of this guide and its
-> samples used, including `claude-sonnet-4.5`, `claude-sonnet-4.6`, `gemini-2.5-pro`,
-> `gemini-3.1-pro-preview`, `gpt-4o`, and `grok-code-fast-1`, have been retired. A pin to
-> a retired model fails at request time, not at load time.
+> Copilot retires models regularly, and a pin to a retired model fails at request time,
+> not at load time. When a model request fails, check that the pinned model is still
+> offered for your plan.
 
 A model variant selects preset request settings, such as reasoning effort:
 `github-copilot/claude-sonnet-5#high`. Available variants depend on the provider and

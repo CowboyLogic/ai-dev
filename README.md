@@ -37,7 +37,7 @@ Practical configurations and working examples for AI-powered development tools. 
 
 **VS Code + Copilot:**
 
-- [Agent Guide](docs/harness/vscode/README.md) | [Quick Start](docs/harness/vscode/quick-start.md) | [Examples](docs/harness/vscode/agent-examples.md)
+- [Agent Guide](docs/harness/vscode/index.md) | [Quick Start](docs/harness/vscode/quick-start.md) | [Examples](docs/harness/vscode/agent-examples.md)
 
 **MCP Servers:**
 

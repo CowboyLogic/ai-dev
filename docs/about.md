@@ -63,7 +63,7 @@ This repository emphasizes **examples over explanations**. We provide working co
 
 - **[Claude Code CLI](harness/claudecode/index.md)** - Skills, the Matrix Claude mirror, and Google Cloud Vertex AI setup
 - **[OpenCode CLI](harness/opencode/index.md)** - Multi-agent configuration, custom commands, MCP integrations
-- **[Visual Studio Code](harness/vscode/README.md)** - GitHub Copilot integration, agent examples, best practices
+- **[Visual Studio Code](harness/vscode/index.md)** - GitHub Copilot integration, agent examples, best practices
 
 ### MCP Servers
 
