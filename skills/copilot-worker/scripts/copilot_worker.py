@@ -32,6 +32,7 @@ from __future__ import annotations
 import argparse
 import datetime
 import json
+import math
 import os
 import re
 import secrets
@@ -53,6 +54,7 @@ EFFORTS = ("low", "medium", "high", "xhigh", "max")
 RUN_ID_PATTERN = re.compile(r"^\d{8}-\d{6}-[0-9a-f]{4}$")
 # Keeps an attached review diff to a size the worker can read alongside the files.
 MAX_DIFF_BYTES = 100_000
+MAX_LABEL_CHARS = 120
 MIN_CREDITS = 30
 KILL_GRACE_SECONDS = 10
 FOOTER = (
@@ -101,6 +103,43 @@ def repo_root(cwd: Path) -> Path:
         return Path(git(["rev-parse", "--show-toplevel"], cwd))
     except WorkerError as error:
         raise WorkerError(f"{cwd} is not inside a Git repository") from error
+
+
+def short_label(task: str, explicit: str | None = None) -> str:
+    """Prefer the Objective section to a generic task heading."""
+    if explicit is not None:
+        text = " ".join(explicit.split())
+        if not text:
+            raise WorkerError("--label must not be empty")
+    else:
+        lines = task.splitlines()
+        text = ""
+        for index, line in enumerate(lines):
+            match = re.match(r"^\s*(?:#{1,6}\s+)?(?:\*\*)?Objective(?:\*\*)?(?:\s*:(?:\*\*)?\s*(.*)|\s*)$", line, re.I)
+            if match:
+                text = (match.group(1) or "").strip()
+                if not text:
+                    text = next((part.strip() for part in lines[index + 1:] if part.strip()), "")
+                    if text.startswith("#"):
+                        text = ""
+                break
+        if not text:
+            text = next((line.strip() for line in lines if line.strip() and not line.lstrip().startswith("#")), "Unlabelled task")
+        text = " ".join(text.split())
+    return text[:MAX_LABEL_CHARS]
+
+
+def skill_commit(skill_dir: Path | None = None) -> str | None:
+    """Identify the source skill, never the repository a copied install happens to be in."""
+    source = (skill_dir or Path(__file__).resolve().parents[1]).resolve()
+    try:
+        root = repo_root(source)
+        relative = source.relative_to(root)
+        git(["ls-files", "--error-unmatch", "--", str(relative / "SKILL.md"),
+             str(relative / "scripts" / "copilot_worker.py")], root)
+        return git(["log", "-1", "--format=%H", "--", str(relative)], root) or None
+    except (WorkerError, OSError, ValueError):
+        return None
 
 
 def build_prompt(mode: str, task: str, root: Path) -> str:
@@ -221,6 +260,7 @@ def execute_run(
     effort: str | None = None,
     credits: int | None = None,
     timeout: int | None = None,
+    label: str | None = None,
 ) -> dict[str, Any]:
     if mode not in MODES:
         raise WorkerError(f"unknown mode: {mode}")
@@ -236,6 +276,24 @@ def execute_run(
     if timeout <= 0:
         raise WorkerError("--timeout must be greater than 0")
     root = repo_root(cwd)
+    try:
+        starting_branch = git(["symbolic-ref", "--short", "HEAD"], root)
+    except WorkerError:
+        starting_branch = "HEAD"
+    try:
+        starting_commit = git(["rev-parse", "--verify", "HEAD"], root)
+    except WorkerError:
+        starting_commit = None  # A read-only run can inspect a repository with no commits.
+    if mode == "implement" and starting_commit is None:
+        raise WorkerError("implement requires a repository with at least one commit")
+    metadata = {
+        "repoName": root.name,
+        "repoRoot": str(root),
+        "baseBranch": starting_branch,
+        "baseCommit": starting_commit,
+        "label": short_label(task, label),
+        "skillCommit": skill_commit(),
+    }
     prompt = build_prompt(mode, task, root)
 
     run_id = new_run_id()
@@ -244,9 +302,12 @@ def execute_run(
     os.chmod(state_home(), 0o700)
     run_dir = state_home() / "runs" / run_id
     run_dir.mkdir(parents=True)
-    workspace, branch, base = root, None, None
+    started_at = utc_now()
+    (run_dir / "metadata.json").write_text(json.dumps({
+        **metadata, "runId": run_id, "mode": mode, "model": model, "startedAt": started_at,
+    }, indent=2) + "\n", encoding="utf-8")
+    workspace, branch, base = root, None, metadata["baseCommit"]
     if mode == "implement":
-        base = git(["rev-parse", "HEAD"], root)
         if git(["status", "--porcelain"], root):
             print(
                 "warning: the checkout has uncommitted changes; the worker starts from "
@@ -256,7 +317,7 @@ def execute_run(
         branch = f"copilot/{run_id}"
         workspace = state_home() / "worktrees" / f"{root.name}-{run_id}"
         workspace.parent.mkdir(parents=True, exist_ok=True)
-        git(["worktree", "add", str(workspace), "-b", branch, "HEAD"], root)
+        git(["worktree", "add", str(workspace), "-b", branch, base], root)
 
     (run_dir / "task.md").write_text(prompt, encoding="utf-8")
     copilot_home = state_home() / "copilot-home"
@@ -267,7 +328,7 @@ def execute_run(
     }
     (run_dir / "engine.json").write_text(json.dumps(engine_config, indent=2) + "\n", encoding="utf-8")
     command = [*engine_base(), str(run_dir)]
-    started_at, clock = utc_now(), time.monotonic()
+    clock = time.monotonic()
     try:
         exit_code, reason = run_engine(command, run_dir, timeout)
     except OSError as error:
@@ -301,6 +362,7 @@ def execute_run(
             status = "failed"
 
     result = {
+        **metadata,
         "runId": run_id,
         "mode": mode,
         "model": model,
@@ -313,12 +375,10 @@ def execute_run(
         "durationSeconds": duration,
         "timeoutSeconds": timeout,
         "maxAiCredits": credits,
-        "repoRoot": str(root),
         "runDir": str(run_dir),
         "workspace": str(workspace),
         "branch": branch,
         "currentBranch": current_branch,
-        "baseCommit": base,
         "changedFiles": changed,
         "copilotVersion": _runtime_version(run_dir),
     }
@@ -370,9 +430,81 @@ def cmd_run(args: argparse.Namespace, cwd: Path) -> int:
     result = execute_run(
         mode=args.mode, task=task, cwd=cwd, model=args.model, effort=args.effort,
         credits=args.max_ai_credits, timeout=args.timeout,
+        label=args.label,
     )
     print_summary(result)
     return 0 if result["status"] == "completed" else 1
+
+
+def read_record(path: Path) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+        return value if isinstance(value, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def list_runs() -> list[dict[str, Any]]:
+    """Read summaries only; legacy records are backfilled in memory, never rewritten."""
+    runs = state_home() / "runs"
+    if not runs.exists():
+        return []
+    records = []
+    try:
+        directories = sorted(runs.iterdir(), reverse=True)
+    except OSError as error:
+        raise WorkerError(f"cannot read the run store: {error}") from error
+    for directory in directories:
+        if not RUN_ID_PATTERN.fullmatch(directory.name) or not directory.is_dir():
+            continue
+        metadata = read_record(directory / "metadata.json")
+        result = read_record(directory / "result.json")
+        if not metadata and not result:
+            continue
+        record = {**metadata, **result, "runId": directory.name}
+        root = record.get("repoRoot")
+        if not record.get("repoName") and isinstance(root, str):
+            record["repoName"] = Path(root).name
+        # A snapshot without a result may be active or interrupted; don't assert liveness.
+        record.setdefault("status", "unfinished")
+        usage = read_record(directory / "usage.json").get("aiCredits")
+        try:
+            valid_usage = type(usage) in (int, float) and math.isfinite(usage) and usage >= 0
+        except OverflowError:
+            valid_usage = False
+        record["aiCredits"] = usage if valid_usage else None
+        records.append(record)
+    return records
+
+
+def display_cell(value: Any) -> str:
+    if value is None or value == "":
+        return "unknown"
+    return " ".join("".join(char if char.isprintable() else " " for char in str(value)).split())
+
+
+def cmd_list(args: argparse.Namespace, _cwd: Path) -> int:
+    rows = []
+    for record in list_runs():
+        if args.repo is not None and args.repo not in (record.get("repoName"), record.get("repoRoot")):
+            continue
+        if args.branch is not None and args.branch != record.get("baseBranch"):
+            continue
+        branch = record.get("baseBranch")
+        if branch == "HEAD":
+            commit = record.get("baseCommit")
+            branch = f"detached:{commit[:12]}" if isinstance(commit, str) else "detached"
+        rows.append([display_cell(record.get(key)) for key in ("runId", "repoName")]
+                    + [display_cell(branch)]
+                    + [display_cell(record.get(key)) for key in ("mode", "status", "aiCredits", "label")])
+    if not rows:
+        print("No matching runs.")
+        return 0
+    headers = ["RUN ID", "REPOSITORY", "BASE BRANCH", "MODE", "STATUS", "CREDITS", "LABEL"]
+    widths = [max(len(row[index]) for row in [headers, *rows]) for index in range(len(headers))]
+    for row in [headers, *rows]:
+        print("  ".join(cell.ljust(width) for cell, width in zip(row, widths)).rstrip())
+    return 0
 
 
 def cmd_clean(args: argparse.Namespace, cwd: Path) -> int:
@@ -442,7 +574,12 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--effort", choices=EFFORTS)
     run.add_argument("--max-ai-credits", type=int)
     run.add_argument("--timeout", type=int)
+    run.add_argument("--label", help="short run label (otherwise derived from the task's Objective)")
     run.set_defaults(handler=cmd_run)
+    listing = commands.add_parser("list", help="list local runs without starting Copilot")
+    listing.add_argument("--repo", help="exact repository name or recorded root path")
+    listing.add_argument("--branch", help="exact starting branch (HEAD for detached runs)")
+    listing.set_defaults(handler=cmd_list)
     clean = commands.add_parser("clean", help="remove a run's worktree and branch")
     clean.add_argument("run_id")
     clean.set_defaults(handler=cmd_clean)

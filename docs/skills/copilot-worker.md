@@ -16,7 +16,9 @@ itself. The bulk work is billed to the Copilot subscription instead of Claude to
 - **No server.** Each delegation is a separate background process, so there is nothing
   to install beyond the skill and no client time limit on a run.
 - **Evidence for every run.** Each run leaves its task, the worker's final message,
-  usage, and a result record for the parent agent to check.
+  usage, and a result record for the parent agent to check. Repository, starting branch
+  or detached commit, label, and source skill version identify the work; an offline
+  list helps find earlier runs across repositories.
 - **A model per task type.** Each mode has a default model, which can be overridden
   for a single run.
 - **Built on the Copilot SDK.** It drives Copilot through the official SDK, which pins
