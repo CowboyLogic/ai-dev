@@ -348,7 +348,10 @@ _START_PROCESS_ALIASES = {
 }
 _INVOKE_EXPRESSION = {"invoke-expression", "iex"}
 _ALIAS_SETTERS = {"set-alias", "new-alias", "sal", "nal"}
-_ENV_SETTERS = {"set-item", "new-item", "si", "ni", "set-content", "add-content", "ac"}
+# sc is Set-Content in Windows PowerShell 5.1.
+_ENV_SETTERS = {"set-item", "new-item", "si", "ni", "set-content", "sc", "add-content", "ac"}
+# Array and grouping parentheses, which the split treats as separators.
+_PS_GROUPING = re.compile(r"@\(|(?<!\$)\(|\)")
 _ENV_SETTER_PARAMETERS = ("path", "literalpath", "value", "name", "itemtype", "credential")
 _WSL_VALUE_OPTIONS = {"-d", "--distribution", "-u", "--user", "--cd", "--shell-type", "--distribution-id"}
 _CMD_SEPARATORS = "&|()\n\r"
@@ -673,6 +676,12 @@ def _denied_powershell(text: str, aliases: frozenset[str], depth: int = 0) -> st
     if not balanced:
         # An unclosed quote would swallow what follows it, so also check the plain split.
         segments += re.split(r"[;|&\n\r(){}]", text)
+    # An array or group can be an argument: Start-Process git -ArgumentList @('push') runs
+    # git push. Check the line again with those parentheses removed, so the words stay
+    # with the command they belong to, and each array kept as one comma-separated word.
+    flattened = re.sub(r"\s*,\s*", ",", _PS_GROUPING.sub(" ", text))
+    if flattened != text:
+        segments += _split_powershell(flattened)[0]
     for segment in segments:
         denied = _denied_powershell_words(_powershell_words(segment), depth, aliases)
         if denied:

@@ -562,6 +562,20 @@ class RunTests(WorkerTestCase):
         self.assert_process_gone(self.pid_file)
 
     @unittest.skipUnless(WINDOWS, "a job object holds the worker only on Windows")
+    def test_a_stop_before_the_worker_joins_the_job_still_ends_it(self) -> None:
+        # A signal can land between Popen and started(), while the worker is suspended
+        # and outside the job. Stopping must end it rather than wait on it forever.
+        job = worker._JobObject()
+        self.addCleanup(job.close)
+        process = subprocess.Popen(
+            [sys.executable, "-c", "pass"], stdin=subprocess.DEVNULL, **job.popen_options)
+        stopper = threading.Thread(target=job.stop, args=(process,), daemon=True)
+        stopper.start()
+        stopper.join(timeout=10)
+        self.assertFalse(stopper.is_alive(), "stop() hung on a worker outside the job")
+        self.assertIsNotNone(process.poll())
+
+    @unittest.skipUnless(WINDOWS, "a job object holds the worker only on Windows")
     def test_killing_the_supervisor_also_kills_the_worker_on_windows(self) -> None:
         # The job closes with the supervisor, so no worker runs on without anyone recording it.
         self.behavior("grandchild")
