@@ -13,6 +13,8 @@ to the Copilot subscription instead of Claude tokens.
   server to install and no time limit imposed by the client.
 - Each run leaves a directory with the task, the worker's final message, usage, a log of
   every tool call it asked for, and a `result.json`.
+- Runs record their repository, starting branch or detached commit, label, and source
+  skill commit before the engine starts. An offline list finds runs across repositories.
 - It drives Copilot through the official GitHub Copilot SDK, which pins its own Copilot
   runtime. Updates to the `copilot` command-line tool cannot break it.
 - The script decides every permission request itself: workers can only read and write
@@ -92,6 +94,36 @@ The defaults are the `DEFAULT_MODELS` constant in
 > outside it, including your live checkout.
 
 See [SKILL.md](SKILL.md) for the full workflow and limits.
+
+## Find previous runs
+
+```bash
+uv run ~/.claude/skills/copilot-worker/scripts/copilot_worker.py list
+uv run ~/.claude/skills/copilot-worker/scripts/copilot_worker.py list --repo ai-dev --branch main
+uv run ~/.claude/skills/copilot-worker/scripts/copilot_worker.py list --repo /path/to/ai-dev
+```
+
+The list reads only local summary records and usage files, starts no engine, and spends
+no credits. It works outside a Git repository. Rows show run ID, repository, starting
+branch, mode, status, credits, and label, newest first. Filters match exactly; a full
+recorded repository path distinguishes repositories with the same name. Use `--branch
+HEAD` for detached runs, which display the starting commit.
+
+Pass `--label "Parser regression"` to `run`, or let it use the task's `Objective:` line
+or `## Objective` section. Without an Objective, it uses the first non-heading line.
+Labels collapse whitespace and are capped at 120 characters.
+
+`metadata.json` holds the snapshot written before work starts; `result.json` includes
+the same fields when the run ends. `baseBranch` is the original branch (`HEAD` when
+detached), and `baseCommit` is the original commit in every mode. `branch` continues to
+mean the worker's implementation branch. `skillCommit` is the latest commit touching
+the tracked source skill directory, resolved through symlinks. It is `null` for a copied
+install without tracked source; it does not identify uncommitted source edits.
+
+Old runs get their repository name from `repoRoot` when listed, without rewriting any
+files. Their starting branch, label, and skill commit remain unknown. Missing or invalid
+usage is unknown, never zero. A snapshot without a final result is shown as `unfinished`:
+the worker may still be active or may have been interrupted. Malformed records are skipped.
 
 ## Tests
 

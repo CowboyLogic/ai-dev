@@ -175,5 +175,21 @@ security or data-loss question, do not delegate it.
 | `--effort LEVEL` | Not passed |
 | `--max-ai-credits N` | `30` for read-only modes, `60` for `implement` |
 | `--timeout SECONDS` | `600` for read-only modes, `1800` for `implement` |
+| `--label TEXT` | Task's Objective, otherwise its first non-heading line; capped at 120 characters |
 
 Run state lives in `~/.copilot-worker`. Set `COPILOT_WORKER_HOME` to move it.
+
+## Find runs
+
+`WORKER list [--repo NAME_OR_PATH] [--branch BRANCH]` reads the local run store without
+starting Copilot. It prints run ID, repository, starting branch, mode, status, credits,
+and label, newest first. Filters are exact; use the full recorded repository path to
+distinguish identical names, and `--branch HEAD` for detached runs.
+
+Every run records its repository, starting branch and commit, label, and source skill
+commit in `metadata.json` before work starts and in `result.json` when it ends. The
+starting branch is `baseBranch`; `branch` remains the implementation worker's branch.
+The source commit is unknown for copied installs without tracked source. Old runs are
+listed without rewriting them: repository comes from `repoRoot`, and missing provenance
+and usage stay unknown. `unfinished` means a snapshot exists without a final result;
+it is not proof the worker is still running.
