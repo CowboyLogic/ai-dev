@@ -16,9 +16,10 @@ first run also downloads the Copilot runtime the SDK pins. Below, `WORKER` stand
 
 ## Platform
 
-macOS and Linux only. On Windows, including Git Bash, do not use this skill: the
-supervisor's process-group kill does not exist there. Do the work yourself, and tell the
-user why you did not delegate.
+macOS, Linux, and Windows. On Windows the `implement` worker's shell is PowerShell, so
+write the test command in the task file for PowerShell (for example
+`python -m unittest`, not a bash-only one-liner). When you start `WORKER` from Git Bash
+or PowerShell, the command is the same.
 
 ## When to delegate
 
@@ -136,10 +137,12 @@ security or data-loss question, do not delegate it.
 > [!WARNING]
 > The worker's shell is not sandboxed. The script approves or rejects every permission
 > request itself. Its file tools can only read and write inside its workspace, and a
-> deny list rejects shell commands that run `gh`, `sudo`, `git push`, `git remote`,
-> `git worktree`, `git send-pack`, a git alias, or `git config remote.*`, when they are
-> written plainly or behind a common wrapper such as `env`, `xargs`, `bash -c`, or
-> `$(...)`. The deny list guards against accidents, not against a hostile worker. It is
+> deny list rejects shell commands that run `gh`, `sudo`, `runas`, `git push`,
+> `git remote`, `git worktree`, `git send-pack`, a git alias, or `git config remote.*`,
+> when they are written plainly or behind a common wrapper such as `env`, `xargs`,
+> `bash -c`, or `$(...)`. On Windows it also reads PowerShell and `cmd.exe` forms such as
+> `& gh`, `Start-Process`, `Invoke-Expression`, `pwsh -Command`, and `cmd /c`. The deny
+> list guards against accidents, not against a hostile worker. It is
 > not exhaustive: unusual shell syntax can get past it, and it is not extended to cover
 > deliberate evasion. Code passed to an interpreter (`python -c`, a script file) can
 > still run anything, and an allowed shell command can reach outside the worktree.
@@ -147,7 +150,9 @@ security or data-loss question, do not delegate it.
 - When a run ends, the script kills the worker's process group. A process that detached
   into its own session (a daemon, or anything started with `setsid` or `nohup`-style
   detachment) is outside that group and survives. If a task could start one, check for
-  it before trusting the worktree's contents.
+  it before trusting the worktree's contents. On Windows the worker runs in a job object
+  instead, which holds every process it starts, so nothing survives the run; there is no
+  grace period, so a stopped Windows run ends at once.
 - The worktree starts from `HEAD`. An `implement` worker does not see uncommitted
   changes in the live checkout; the script warns when there are any.
 - `research` and `review` read the live checkout, so they do see uncommitted changes.
@@ -176,4 +181,6 @@ security or data-loss question, do not delegate it.
 | `--max-ai-credits N` | `30` for read-only modes, `60` for `implement` |
 | `--timeout SECONDS` | `600` for read-only modes, `1800` for `implement` |
 
-Run state lives in `~/.copilot-worker`. Set `COPILOT_WORKER_HOME` to move it.
+Run state lives in `~/.copilot-worker`. Set `COPILOT_WORKER_HOME` to move it. On macOS
+and Linux the script makes it private to you; on Windows it keeps the permissions it
+inherits, which under your user profile are already private to you.

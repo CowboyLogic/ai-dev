@@ -53,3 +53,30 @@ jobs:
 
       - name: Build documentation
         run: mkdocs build --clean --strict
+
+  copilot-worker-windows:
+    # The supervisor's job object, the PowerShell tool set, and Windows path handling run
+    # only on Windows.
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Test copilot-worker against its pinned SDK
+        shell: bash
+        env:
+          REQUIRE_SDK_CONTRACT: "1"
+        run: |
+          pip install uv
+          python - > "$RUNNER_TEMP/copilot-worker-requirements.txt" <<'PY'
+          import pathlib, re
+          header = pathlib.Path("skills/copilot-worker/scripts/copilot_worker.py").read_text().split("# ///", 2)[1]
+          print("\n".join(re.findall(r'^#\s+"([^"]+)",?$', header, re.MULTILINE)))
+          PY
+          uv run --no-project --with-requirements "$RUNNER_TEMP/copilot-worker-requirements.txt" \
+            python -m unittest discover -s skills/copilot-worker/scripts -v

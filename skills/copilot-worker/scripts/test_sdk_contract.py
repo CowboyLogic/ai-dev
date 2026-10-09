@@ -103,9 +103,10 @@ class SdkContractTests(unittest.TestCase):
         self.assertLessEqual(set(engine.send_options(SAMPLE_CONFIG)), _parameters(copilot.CopilotSession.send_and_wait))
 
     def test_toolset_still_adds_builtin_tools(self) -> None:
-        tools = copilot.ToolSet()
-        for name in engine.TOOLS["implement"]:
-            tools.add_builtin(name)
+        for windows in (False, True):
+            tools = copilot.ToolSet()
+            for name in engine.tools_for(windows)["implement"]:
+                tools.add_builtin(name)
 
     def test_permission_decisions_the_engine_returns_still_construct(self) -> None:
         rpc.PermissionDecisionApproveOnce()
