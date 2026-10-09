@@ -423,6 +423,7 @@ class PowerShellPolicyTests(unittest.TestCase):
             "${env:GIT_CONFIG_SYSTEM} = 'x'", "$env:GIT_CONFIG_KEY_0 = 'alias.p'",
             "$env:GIT_CONFIG_PARAMETERS = \"'alias.p=push'\"",
             "Set-Item env:GIT_CONFIG_KEY_0 alias.p", "Set-Item -Path Env:GIT_CONFIG_GLOBAL -Value x.cfg",
+            "sc env:GIT_CONFIG_GLOBAL evil.cfg; git status", "Set-Content -Path env:GIT_CONFIG_KEY_0 -Value alias.p",
             "New-Item -Path env:GIT_CONFIG_GLOBAL -Value x.cfg",
             "[Environment]::SetEnvironmentVariable('GIT_CONFIG_GLOBAL', 'x.cfg')",
             "[System.Environment]::SetEnvironmentVariable(\"GIT_CONFIG_KEY_0\", \"alias.p\", 'User')",
@@ -443,6 +444,8 @@ class PowerShellPolicyTests(unittest.TestCase):
             "Start-Process cmd -ArgumentList '/c git push'", "Start-Process -ErrorAction Stop gh",
             "Invoke-Expression 'git push'", "iex \"gh pr list\"", "Invoke-Expression -Command 'git status; git push'",
             "iex 'iex \"gh pr list\"'",
+            "Start-Process git -ArgumentList @('push')", "Start-Process git -ArgumentList ('push', 'origin')",
+            "saps git @('push')", "Start-Process -FilePath git -ArgumentList @('-C', 'sub', 'push')",
         )
         self.assert_allowed("Start-Process -FilePath notepad -ArgumentList x.txt", "iex 'git status'")
 

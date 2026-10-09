@@ -266,6 +266,10 @@ class _JobObject:
 
     def stop(self, process: subprocess.Popen[bytes]) -> None:
         self.kill_rest(process)
+        # A stop can land before started() put the still-suspended worker in the job; the
+        # job does not hold it then, so end it directly or the wait never returns.
+        if process.poll() is None:
+            process.kill()
         process.wait()
 
     def kill_rest(self, process: subprocess.Popen[bytes]) -> None:
