@@ -55,6 +55,10 @@ RUN_ID_PATTERN = re.compile(r"^\d{8}-\d{6}-[0-9a-f]{4}$")
 MAX_DIFF_BYTES = 100_000
 MIN_CREDITS = 30
 KILL_GRACE_SECONDS = 10
+# On Windows a blocking wait keeps a signal handler from running until it returns, so the
+# supervisor waits in slices of this length to stay responsive to Ctrl+C and Ctrl+Break.
+WAIT_SLICE_SECONDS = 0.5
+WINDOWS = os.name == "nt"
 FOOTER = (
     "\n\n---\nWorker rules: stay inside the current working directory. Do not push, "
     "do not open pull requests, do not change Git remotes, and do not switch, create, or "
@@ -153,25 +157,146 @@ def pins_status() -> tuple[bool, str]:
     return done.returncode == 0, lines[0] if lines else "no answer from the engine"
 
 
-def _kill_group(process: subprocess.Popen[bytes]) -> None:
-    """SIGTERM the worker's process group, then SIGKILL whatever is left of it."""
-    try:
-        os.killpg(process.pid, signal.SIGTERM)
-        process.wait(timeout=KILL_GRACE_SECONDS)
-    except (ProcessLookupError, PermissionError, subprocess.TimeoutExpired):
+class _ProcessGroup:
+    """POSIX containment: the worker leads its own session and process group."""
+
+    popen_options: dict[str, Any] = {"start_new_session": True}
+
+    def started(self, process: subprocess.Popen[bytes]) -> None:
         pass
-    # The leader exiting does not mean the group is gone: a child may ignore SIGTERM.
-    _kill_stragglers(process)
-    process.wait()
+
+    def stop(self, process: subprocess.Popen[bytes]) -> None:
+        """SIGTERM the worker's process group, then SIGKILL whatever is left of it."""
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+            process.wait(timeout=KILL_GRACE_SECONDS)
+        except (ProcessLookupError, PermissionError, subprocess.TimeoutExpired):
+            pass
+        # The leader exiting does not mean the group is gone: a child may ignore SIGTERM.
+        self.kill_rest(process)
+        process.wait()
+
+    def kill_rest(self, process: subprocess.Popen[bytes]) -> None:
+        # Reaches the worker's own process group only. A process that moved to a new session
+        # is not contained; SKILL.md states that limit.
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            pass
+
+    def close(self) -> None:
+        pass
 
 
-def _kill_stragglers(process: subprocess.Popen[bytes]) -> None:
-    # Reaches the worker's own process group only. A process that moved to a new session
-    # is not contained; SKILL.md states that limit.
-    try:
-        os.killpg(process.pid, signal.SIGKILL)
-    except (ProcessLookupError, PermissionError):
-        pass
+class _JobObject:
+    """Windows containment: a job object holds the worker and every process it starts.
+
+    The worker starts suspended and resumes only once it is in the job, so nothing it
+    starts runs outside it. Closing the job kills whatever is left in it, so the worker
+    also ends when the supervisor itself is killed. Windows has no SIGTERM to send first:
+    stopping a run ends every process in the job at once.
+    """
+
+    _CREATE_SUSPENDED = 0x00000004
+    _CREATE_NO_WINDOW = 0x08000000
+    _EXTENDED_LIMIT_INFORMATION = 9
+    _KILL_ON_JOB_CLOSE = 0x00002000
+    # PROCESS_SET_QUOTA | PROCESS_TERMINATE | PROCESS_SUSPEND_RESUME
+    _PROCESS_ACCESS = 0x0100 | 0x0001 | 0x0800
+    # A hidden console of its own: Ctrl+C in the caller's console does not reach the worker.
+    popen_options: dict[str, Any] = {"creationflags": _CREATE_SUSPENDED | _CREATE_NO_WINDOW}
+
+    def __init__(self) -> None:
+        import ctypes
+        from ctypes import wintypes
+
+        class BasicLimits(ctypes.Structure):
+            _fields_ = [
+                ("PerProcessUserTimeLimit", ctypes.c_int64), ("PerJobUserTimeLimit", ctypes.c_int64),
+                ("LimitFlags", wintypes.DWORD), ("MinimumWorkingSetSize", ctypes.c_size_t),
+                ("MaximumWorkingSetSize", ctypes.c_size_t), ("ActiveProcessLimit", wintypes.DWORD),
+                ("Affinity", ctypes.c_size_t), ("PriorityClass", wintypes.DWORD),
+                ("SchedulingClass", wintypes.DWORD),
+            ]
+
+        class ExtendedLimits(ctypes.Structure):
+            _fields_ = [
+                ("BasicLimitInformation", BasicLimits), ("IoInfo", ctypes.c_uint64 * 6),
+                ("ProcessMemoryLimit", ctypes.c_size_t), ("JobMemoryLimit", ctypes.c_size_t),
+                ("PeakProcessMemoryUsed", ctypes.c_size_t), ("PeakJobMemoryUsed", ctypes.c_size_t),
+            ]
+
+        self._ctypes = ctypes
+        self._kernel32 = kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        self._ntdll = ctypes.WinDLL("ntdll")
+        kernel32.CreateJobObjectW.restype = wintypes.HANDLE
+        kernel32.OpenProcess.restype = wintypes.HANDLE
+        self._handle = kernel32.CreateJobObjectW(None, None)
+        if not self._handle:
+            raise ctypes.WinError(ctypes.get_last_error())
+        limits = ExtendedLimits()
+        limits.BasicLimitInformation.LimitFlags = self._KILL_ON_JOB_CLOSE
+        if not kernel32.SetInformationJobObject(
+            ctypes.c_void_p(self._handle), self._EXTENDED_LIMIT_INFORMATION,
+            ctypes.byref(limits), ctypes.sizeof(limits),
+        ):
+            error = ctypes.WinError(ctypes.get_last_error())
+            self.close()
+            raise error
+
+    def started(self, process: subprocess.Popen[bytes]) -> None:
+        ctypes, kernel32 = self._ctypes, self._kernel32
+        handle = kernel32.OpenProcess(self._PROCESS_ACCESS, False, process.pid)
+        try:
+            error: OSError | None = None
+            if not handle or not kernel32.AssignProcessToJobObject(
+                ctypes.c_void_p(self._handle), ctypes.c_void_p(handle)
+            ):
+                error = ctypes.WinError(ctypes.get_last_error())
+            elif self._ntdll.NtResumeProcess(ctypes.c_void_p(handle)) != 0:
+                error = OSError("could not resume the worker process")
+            if error is not None:
+                # Never let an uncontained worker run. It is still suspended, so end it.
+                process.kill()
+                process.wait()
+                raise error
+        finally:
+            if handle:
+                kernel32.CloseHandle(ctypes.c_void_p(handle))
+
+    def stop(self, process: subprocess.Popen[bytes]) -> None:
+        self.kill_rest(process)
+        process.wait()
+
+    def kill_rest(self, process: subprocess.Popen[bytes]) -> None:
+        if self._handle:
+            self._kernel32.TerminateJobObject(self._ctypes.c_void_p(self._handle), 1)
+
+    def close(self) -> None:
+        if self._handle:
+            self._kernel32.CloseHandle(self._ctypes.c_void_p(self._handle))
+            self._handle = None
+
+
+def _containment() -> _ProcessGroup | _JobObject:
+    return _JobObject() if WINDOWS else _ProcessGroup()
+
+
+def _stop_signals() -> tuple[int, ...]:
+    # SIGBREAK is Ctrl+Break, the stop signal a Windows console process can catch.
+    return (signal.SIGTERM, signal.SIGINT, *([signal.SIGBREAK] if hasattr(signal, "SIGBREAK") else []))
+
+
+def _wait(process: subprocess.Popen[bytes], timeout: float) -> int:
+    """process.wait(timeout), in slices so that a signal handler can run between them."""
+    deadline = time.monotonic() + timeout
+    while True:
+        remaining = deadline - time.monotonic()
+        try:
+            return process.wait(timeout=max(0.0, min(WAIT_SLICE_SECONDS, remaining)))
+        except subprocess.TimeoutExpired:
+            if remaining <= WAIT_SLICE_SECONDS:
+                raise
 
 
 def run_engine(command: list[str], run_dir: Path, timeout: int) -> tuple[int | None, str]:
@@ -185,21 +310,24 @@ def run_engine(command: list[str], run_dir: Path, timeout: int) -> tuple[int | N
         for name in previous:
             signal.signal(name, signal.SIG_IGN)
         if process is not None:
-            _kill_group(process)
+            container.stop(process)
 
     process: subprocess.Popen[bytes] | None = None
-    previous = {name: signal.signal(name, on_signal) for name in (signal.SIGTERM, signal.SIGINT)}
+    container = _containment()
+    previous = {name: signal.signal(name, on_signal) for name in _stop_signals()}
     try:
         with open(run_dir / "stderr.log", "wb") as log:
-            # Own session and no stdin: the worker outlives the caller's connection. The
-            # engine reads its task from task.md, so it never appears in the process list.
+            # Own session (a job, on Windows) and no stdin: the worker outlives the caller's
+            # connection. The engine reads its task from task.md, so it never appears in
+            # the process list.
             process = subprocess.Popen(
                 command, stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
-                start_new_session=True,
+                **container.popen_options,
             )
-            code = process.wait(timeout=timeout)
+            container.started(process)
+            code = _wait(process, timeout)
             # Anything the worker left running must not outlive the run it belongs to.
-            _kill_stragglers(process)
+            container.kill_rest(process)
         return (code, "exit") if code >= 0 else (None, f"signal:{-code}")
     except subprocess.TimeoutExpired:
         stop_worker()
@@ -208,6 +336,7 @@ def run_engine(command: list[str], run_dir: Path, timeout: int) -> tuple[int | N
         stop_worker()
         return None, f"signal:{stop.signum}"
     finally:
+        container.close()
         for name, handler in previous.items():
             signal.signal(name, handler)
 
@@ -240,6 +369,7 @@ def execute_run(
 
     run_id = new_run_id()
     # Tasks, diffs, responses, and worktrees are private: keep the state root owner-only.
+    # Windows ignores these mode bits; there the directory keeps the ACL it inherits.
     state_home().mkdir(parents=True, exist_ok=True)
     os.chmod(state_home(), 0o700)
     run_dir = state_home() / "runs" / run_id
@@ -453,8 +583,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None, cwd: Path | None = None) -> int:
-    # A hangup of the caller's terminal must not end a run.
-    signal.signal(signal.SIGHUP, signal.SIG_IGN)
+    # A hangup of the caller's terminal must not end a run. Windows has no SIGHUP.
+    if hasattr(signal, "SIGHUP"):
+        signal.signal(signal.SIGHUP, signal.SIG_IGN)
     args = build_parser().parse_args(argv)
     try:
         return args.handler(args, cwd or Path.cwd())

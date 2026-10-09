@@ -66,6 +66,11 @@ requirements are loose ranges (`pydantic>=2.0`, `httpx>=0.24`) that would otherw
    uv run skills/copilot-worker/scripts/copilot_worker.py check --live
    ```
 
+   The shell tools differ by platform (`SHELL_TOOLS` in `scripts/worker_engine.py`):
+   `bash` and its companions on macOS and Linux, `powershell` and its companions on
+   Windows. Run the `implement` check on Windows too when the upgrade touches shell
+   handling.
+
 6. **Update the documentation** that mentions behavior the upgrade changed, and say in the
    pull request which SDK and runtime versions moved.
 
@@ -78,6 +83,7 @@ requirements are loose ranges (`pydantic>=2.0`, `httpx>=0.24`) that would otherw
 
 ## Housekeeping
 
-The SDK keeps each runtime it has downloaded in its cache directory (on macOS,
-`~/Library/Caches/github-copilot-sdk/cli/`). Old versions stay there unused after an
+The SDK keeps each runtime it has downloaded in its cache directory
+(`~/Library/Caches/github-copilot-sdk/cli/` on macOS, `~/.cache/github-copilot-sdk/cli/`
+on Linux, `%LOCALAPPDATA%\github-copilot-sdk\cli\` on Windows). Old versions stay there unused after an
 upgrade and can be deleted.

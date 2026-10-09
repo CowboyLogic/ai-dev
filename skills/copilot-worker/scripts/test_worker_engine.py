@@ -313,9 +313,23 @@ class PolicyTests(unittest.TestCase):
         )
 
     def test_a_symlink_inside_the_workspace_that_points_outside_is_rejected(self) -> None:
+        outside = self.workspace + "-outside"
+        os.mkdir(outside)
         link = os.path.join(self.workspace, "escape")
-        os.symlink("/etc", link)
+        try:
+            os.symlink(outside, link, target_is_directory=True)
+        except OSError:
+            # Windows allows symlinks only with Developer Mode or elevation.
+            self.skipTest("this account cannot create symlinks")
         self.assertFalse(engine.decide("read", {"path": os.path.join(link, "hosts")}, self.workspace, "research")[0])
+
+    @unittest.skipUnless(os.name == "nt", "Windows paths are case-insensitive")
+    def test_containment_ignores_case_and_slash_direction_on_windows(self) -> None:
+        inside = os.path.join(self.workspace, "inside.txt")
+        for path in (inside.upper(), inside.lower(), inside.replace("\\", "/")):
+            self.assertTrue(engine.decide("read", {"path": path}, self.workspace, "research")[0], path)
+        self.assertFalse(engine.decide("read", {"path": self.workspace.upper() + "-other\\x"},
+                                       self.workspace, "research")[0])
 
     def test_home_and_variable_paths_are_rejected(self) -> None:
         for path in ("~/.ssh/id_rsa", "~", "$HOME/.ssh/id_rsa", "${HOME}/x", "a/$X/b"):
@@ -327,6 +341,164 @@ class PolicyTests(unittest.TestCase):
     def test_unknown_request_kinds_are_rejected(self) -> None:
         for kind in ("mcp", "url", "memory", "custom-tool", "extension", "something-new"):
             self.assertFalse(engine.decide(kind, {}, self.workspace, "implement")[0], kind)
+
+
+class PowerShellPolicyTests(unittest.TestCase):
+    """The deny list for the PowerShell and cmd.exe commands of the Windows runtime.
+
+    These call the checker directly, so they run on every platform.
+    """
+
+    def denied(self, command: str, aliases: frozenset[str] = frozenset()) -> str | None:
+        return engine._denied_powershell(command, aliases)
+
+    def assert_denied(self, *commands: str) -> None:
+        for command in commands:
+            self.assertIsNotNone(self.denied(command), command)
+
+    def assert_allowed(self, *commands: str) -> None:
+        for command in commands:
+            self.assertIsNone(self.denied(command), command)
+
+    def test_ordinary_commands_are_allowed(self) -> None:
+        self.assert_allowed(
+            "git status --short", "git commit -m 'fix the thing'", "npm test", "python -m unittest",
+            "Get-ChildItem -Recurse -Filter *.py | Select-String 'TODO'", "npm test 2>&1 | Out-String",
+            "Set-Location src; dotnet build", "$env:PATH = 'C:\\tools;' + $env:PATH",
+            "if (Test-Path x) { Remove-Item x }", "git log --grep=push", "Write-Output gh",
+            "$files = Get-ChildItem", "& python -m pytest", "pwsh -NoProfile -File build.ps1",
+            "cmd /c dir", "Start-Process notepad", "Set-Alias ll Get-ChildItem",
+        )
+
+    def test_denied_programs_and_git_subcommands_are_rejected(self) -> None:
+        self.assert_denied(
+            "gh pr create", "sudo Remove-Item x", "runas /user:admin cmd", "gsudo whoami",
+            "git push", "git push origin main", "git remote add x y", "git worktree add ..\\x",
+            "git send-pack --all origin", "git config remote.origin.url x", "git config alias.p push",
+            "git -c alias.p=push p",
+        )
+
+    def test_paths_extensions_and_case_do_not_hide_a_denied_command(self) -> None:
+        self.assert_denied(
+            "gh.exe pr list", "GH.EXE pr list", "Git push", "git.exe Push", "git-push.exe origin",
+            "C:\\Program` Files\\GitHub` CLI\\gh.exe pr list", "& 'C:\\Program Files\\GitHub CLI\\gh.exe' pr list",
+            '& "C:\\Program Files\\Git\\cmd\\git.exe" push', "gh. pr list", "Microsoft.PowerShell.Core\\gh pr",
+        )
+
+    def test_call_operators_escapes_and_typographic_characters_do_not_hide_a_denied_command(self) -> None:
+        self.assert_denied(
+            "& gh pr list", ". gh pr list", "&gh pr list", "g`h pr list", "git `\npush", "git `\r\npush",
+            "\u2018gh\u2019 pr list", "& \u201cgh\u201d pr list",
+        )
+
+    def test_separators_grouping_and_subexpressions_do_not_hide_a_denied_command(self) -> None:
+        self.assert_denied(
+            "git status; git push", "git status && git push", "Test-Path x || gh auth login",
+            "Get-Content x | gh api -", "(gh pr list)", "$(gh auth token)", "@(gh pr list)",
+            "Write-Output \"$(gh auth token)\"", "Write-Output \"a $(git status; git push) b\"",
+            "Write-Output \"$( (gh auth token) )\"", "if (Test-Path x) { git push }",
+            "Get-ChildItem | ForEach-Object { gh issue view $_ }", "& { gh pr list }", "gh pr list &",
+            "git status\ngit push", "return gh pr list", "[void](gh pr list)",
+        )
+
+    def test_quoted_text_is_only_text(self) -> None:
+        self.assert_allowed(
+            "git commit -m 'fix; gh handling'", 'git commit -m "fix; git push handling"',
+            "Write-Output 'a && gh auth token'", "Select-String -Pattern 'x | gh' -Path f.txt",
+            "Write-Output \"it`\"s; gh\"", "Write-Output 'it''s; gh'", 'Write-Output "say ""hi""; gh"',
+            "Write-Output \"`$(gh auth token)\"",
+        )
+        self.assert_denied("Write-Output 'a'; git push", "gh 'unterminated", 'Write-Output "oops; git push')
+
+    def test_assignments_run_the_command_they_assign(self) -> None:
+        self.assert_denied(
+            "$x = gh pr list", "$x=gh pr list", "$x =gh pr list", "$x= gh pr list", "$x += gh pr list",
+            "$a = $b = gh pr list", "${x} = git push",
+        )
+        self.assert_allowed("$x = git status", "$count = 3", "& $tool --version")
+
+    def test_environment_injected_git_config_is_denied(self) -> None:
+        self.assert_denied(
+            "$env:GIT_CONFIG_GLOBAL = 'evil.cfg'", "$env:git_config_global='evil.cfg'",
+            "${env:GIT_CONFIG_SYSTEM} = 'x'", "$env:GIT_CONFIG_KEY_0 = 'alias.p'",
+            "$env:GIT_CONFIG_PARAMETERS = \"'alias.p=push'\"",
+            "Set-Item env:GIT_CONFIG_KEY_0 alias.p", "Set-Item -Path Env:GIT_CONFIG_GLOBAL -Value x.cfg",
+            "New-Item -Path env:GIT_CONFIG_GLOBAL -Value x.cfg",
+            "[Environment]::SetEnvironmentVariable('GIT_CONFIG_GLOBAL', 'x.cfg')",
+            "[System.Environment]::SetEnvironmentVariable(\"GIT_CONFIG_KEY_0\", \"alias.p\", 'User')",
+            "cmd /c set GIT_CONFIG_GLOBAL=x.cfg", 'cmd /c "set GIT_CONFIG_KEY_0=alias.p& git p"',
+        )
+        self.assert_allowed(
+            "$env:GIT_CONFIG_GLOBAL = 'NUL'", "$env:GIT_CONFIG_GLOBAL = '/dev/null'",
+            "$env:GIT_CONFIG_KEY_0 = 'core.pager'", "$env:GIT_AUTHOR_NAME = 'x'",
+            "Set-Item env:GIT_PAGER cat", "cmd /c set GIT_PAGER=cat",
+        )
+
+    def test_start_process_and_invoke_expression_are_checked(self) -> None:
+        self.assert_denied(
+            "Start-Process gh", "Start-Process gh -ArgumentList 'pr list'", "start gh 'pr list'",
+            "saps -FilePath git -ArgumentList push", "Start-Process -FilePath git -ArgumentList push,origin",
+            "Start-Process -ArgumentList 'push' -FilePath git", "Start-Process -Wait -NoNewWindow gh",
+            "Start-Process -WorkingDirectory C:\\x gh", "Start-Process -File:gh", "Start-Process -Verb RunAs pwsh",
+            "Start-Process cmd -ArgumentList '/c git push'", "Start-Process -ErrorAction Stop gh",
+            "Invoke-Expression 'git push'", "iex \"gh pr list\"", "Invoke-Expression -Command 'git status; git push'",
+            "iex 'iex \"gh pr list\"'",
+        )
+        self.assert_allowed("Start-Process -FilePath notepad -ArgumentList x.txt", "iex 'git status'")
+
+    def test_nested_shells_are_checked(self) -> None:
+        import base64
+
+        encoded = base64.b64encode("git push".encode("utf-16-le")).decode()
+        self.assert_denied(
+            "pwsh -c 'gh pr list'", "pwsh -NoProfile -Command \"git push\"", "powershell -Command git push",
+            "powershell.exe -ExecutionPolicy Bypass -Command gh", "pwsh -NoLogo -NonInteractive -co 'gh'",
+            "pwsh /c gh", "pwsh -Command:'gh pr list'", "powershell gh pr list",
+            f"pwsh -EncodedCommand {encoded}", f"pwsh -enc {encoded}", f"powershell -e {encoded}",
+            "pwsh -EncodedCommand not-base64!",
+            "cmd /c gh pr list", "cmd.exe /C \"git status & git push\"", "cmd /k gh", "cmd /s /c \"gh\"",
+            "cmd /cgh pr list", "cmd /c gh^ pr list", "cmd /c g^h pr list", "cmd /c \"git status && gh pr list\"",
+            "cmd /c (gh pr list)", "cmd /c @gh pr", "cmd /c call gh pr", "cmd /c >nul gh pr list",
+            "cmd /c if exist x gh pr list", "cmd /c if not \"%X%\"==\"\" git push",
+            "cmd /c for %i in (1) do gh pr list", "cmd /c start \"\" gh pr list", "cmd /c start /b gh",
+            "cmd /c start \"title\" /d C:\\ gh",
+            "bash -c 'git push'", "sh -c \"gh pr list\"", "bash.exe -lc 'git status; git push'",
+            "wsl git push", "wsl -d Ubuntu -- gh pr list", "wsl -e gh pr list", "wsl --exec git push",
+            "wsl -u root sudo ls", "wsl 'git status; git push'",
+        )
+        self.assert_allowed(
+            "pwsh -NoProfile -File build.ps1", "pwsh -c 'Get-ChildItem'", "cmd /c dir /b", "wsl ls -la",
+            "bash -c 'make test'", "cmd /c echo \"a & gh\"",
+        )
+
+    def test_aliases_for_denied_programs_or_git_are_denied(self) -> None:
+        self.assert_denied("Set-Alias g gh", "Set-Alias -Name p -Value git", "New-Alias x gh.exe", "sal g git")
+
+    def test_a_configured_git_alias_is_denied(self) -> None:
+        for command in ("git p origin main", "git.exe -C sub ship", "& git P"):
+            self.assertEqual(self.denied(command, frozenset({"p", "ship"})), "git alias", command)
+
+    def test_posix_wrappers_from_git_for_windows_are_checked(self) -> None:
+        self.assert_denied("env gh pr list", "xargs gh", "timeout 30 gh pr create", "env GIT_CONFIG_GLOBAL=x git status")
+
+    def test_deep_nesting_is_denied_rather_than_skipped(self) -> None:
+        command = "gh pr list"
+        for _ in range(8):
+            command = f"iex '{command.replace(chr(39), chr(39) * 2)}'"
+        self.assertIsNotNone(self.denied(command))
+
+    def test_decide_applies_both_checks_on_windows(self) -> None:
+        workspace = tempfile.gettempdir()
+        with unittest.mock.patch.object(engine, "WINDOWS", True):
+            for command in ("& gh pr list", "bash -c 'git push'", "g`h pr list", "git push"):
+                allowed, reason = engine.decide("shell", {"segments": [command]}, workspace, "implement")
+                self.assertFalse(allowed, command)
+                self.assertIn("denied", reason)
+            self.assertTrue(engine.decide(
+                "shell", {"segments": ["Get-ChildItem -Recurse | Select-String 'x'"]}, workspace, "implement")[0])
+        with unittest.mock.patch.object(engine, "WINDOWS", False):
+            # The POSIX check alone does not read PowerShell's backtick escape.
+            self.assertTrue(engine.decide("shell", {"segments": ["g`h pr list"]}, workspace, "implement")[0])
 
 
 class PermissionRequestShell:
@@ -386,13 +558,24 @@ class HelperTests(unittest.TestCase):
         self.assertEqual(engine.request_fields(PermissionRequestRead(None, "/w/b"))["path"], "/w/b")
 
     def test_tools_per_mode(self) -> None:
-        self.assertEqual(engine.TOOLS["research"], ("view", "rg", "glob"))
-        self.assertEqual(engine.TOOLS["review"], ("view", "rg", "glob"))
+        for windows in (False, True):
+            tools = engine.tools_for(windows)
+            self.assertEqual(tools["research"], ("view", "rg", "glob"))
+            self.assertEqual(tools["review"], ("view", "rg", "glob"))
         self.assertEqual(
-            engine.TOOLS["implement"],
+            engine.tools_for(False)["implement"],
             ("view", "rg", "glob", "apply_patch",
              "bash", "read_bash", "stop_bash", "list_bash"),
         )
+        # On Windows the runtime's shell is PowerShell, and it has no bash tool.
+        self.assertEqual(
+            engine.tools_for(True)["implement"],
+            ("view", "rg", "glob", "apply_patch",
+             "powershell", "read_powershell", "stop_powershell", "list_powershell"),
+        )
+
+    def test_the_tools_in_use_match_this_platform(self) -> None:
+        self.assertEqual(engine.TOOLS, engine.tools_for(os.name == "nt"))
 
     def test_session_options(self) -> None:
         options = engine.session_options(self.config)

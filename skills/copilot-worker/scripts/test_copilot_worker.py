@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import re
 import shlex
+import shutil
 import signal
 import subprocess
 import sys
@@ -23,6 +24,38 @@ sys.path.insert(0, str(Path(__file__).parent))
 import copilot_worker as worker  # noqa: E402
 
 SCRIPT = Path(__file__).parent / "copilot_worker.py"
+WINDOWS = os.name == "nt"
+
+
+def process_alive(pid: int) -> bool:
+    if WINDOWS:
+        # os.kill(pid, 0) would send Ctrl+C on Windows; ask for the exit code instead.
+        import ctypes
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.OpenProcess.restype = ctypes.c_void_p
+        handle = kernel32.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+        if not handle:
+            return False
+        try:
+            code = ctypes.c_ulong()
+            kernel32.GetExitCodeProcess(ctypes.c_void_p(handle), ctypes.byref(code))
+            return code.value == 259  # STILL_ACTIVE
+        finally:
+            kernel32.CloseHandle(ctypes.c_void_p(handle))
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    return True
+
+
+def signal_self(signum: int) -> None:
+    # On Windows os.kill would terminate this process; raise_signal runs its handler.
+    if WINDOWS:
+        signal.raise_signal(signum)
+    else:
+        os.kill(os.getpid(), signum)
 
 
 # Stands in for worker_engine.py: same arguments, same files in, same files out.
@@ -139,12 +172,10 @@ class WorkerTestCase(unittest.TestCase):
         pid = int(pid_file.read_text())
         deadline = time.monotonic() + 3
         while time.monotonic() < deadline:
-            try:
-                os.kill(pid, 0)
-            except ProcessLookupError:
+            if not process_alive(pid):
                 return
             time.sleep(0.05)
-        os.kill(pid, signal.SIGKILL)
+        os.kill(pid, getattr(signal, "SIGKILL", signal.SIGTERM))
         self.fail(f"process {pid} from {pid_file.name} is still running")
 
     def calls(self) -> list[dict]:
@@ -181,7 +212,8 @@ class PromptAndConfigTests(WorkerTestCase):
         home = Path(self.calls()[-1]["copilotHome"])
         self.assertEqual(home, self.home / "copilot-home")
         self.assertTrue(home.is_dir())
-        self.assertEqual(self.home.stat().st_mode & 0o077, 0)
+        if not WINDOWS:
+            self.assertEqual(self.home.stat().st_mode & 0o077, 0)
 
     def test_task_reaches_the_engine_by_file_and_never_in_argv(self) -> None:
         # Argv is visible to other local users through the process list.
@@ -279,6 +311,7 @@ class RunTests(WorkerTestCase):
         self.assertTrue((run_dir / "task.md").read_text().startswith("Do the task."))
         self.assertEqual(json.loads((run_dir / "result.json").read_text()), result)
 
+    @unittest.skipIf(WINDOWS, "Windows has no mode bits; the directory keeps its inherited ACL")
     def test_state_directory_is_private_to_the_owner(self) -> None:
         # Task text, diffs, responses, and worktrees live here; other users must not read them.
         previous = os.umask(0o022)
@@ -391,16 +424,19 @@ class RunTests(WorkerTestCase):
 
     def test_second_signal_during_the_kill_still_writes_a_result(self) -> None:
         # A stubborn worker keeps the script in its kill grace period when signal two lands.
+        # Windows has no grace period, so there signal two can land after the run ends; the
+        # handler the script restores then must not end the test process.
         self.behavior("stubborn")
+        self.addCleanup(signal.signal, signal.SIGTERM, signal.signal(signal.SIGTERM, lambda *_: None))
 
         def signal_twice() -> None:
             deadline = time.monotonic() + 10
             while not self.pid_file.exists() and time.monotonic() < deadline:
                 time.sleep(0.05)
             time.sleep(0.2)
-            os.kill(os.getpid(), signal.SIGTERM)
+            signal_self(signal.SIGTERM)
             time.sleep(0.3)
-            os.kill(os.getpid(), signal.SIGTERM)
+            signal_self(signal.SIGTERM)
 
         sender = threading.Thread(target=signal_twice)
         with patch.object(worker, "KILL_GRACE_SECONDS", 1):
@@ -498,22 +534,43 @@ class RunTests(WorkerTestCase):
         self.assertLess(one["startedAt"], two["endedAt"])
         self.assertLess(two["startedAt"], one["endedAt"])
 
-    def test_sigterm_kills_the_worker_and_still_writes_a_result(self) -> None:
-        # Invariant 5.
-        self.behavior("sleep")
-        process = self.cli("run", "--mode", "research", "--task-file", self.task_file())
+    def wait_for_worker(self) -> None:
         deadline = time.monotonic() + 10
-        while not self.pid_file.exists():
+        while not (self.pid_file.exists() and self.pid_file.read_text()):
             self.assertLess(time.monotonic(), deadline, "worker never started")
             time.sleep(0.05)
         time.sleep(0.3)
-        process.send_signal(signal.SIGTERM)
+
+    def test_sigterm_kills_the_worker_and_still_writes_a_result(self) -> None:
+        # Invariant 5. Windows cannot deliver SIGTERM to another process; Ctrl+Break is
+        # the stop signal a console process there can catch.
+        self.behavior("sleep")
+        if WINDOWS:
+            process = self.cli("run", "--mode", "research", "--task-file", self.task_file(),
+                               creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+            stop, received = signal.CTRL_BREAK_EVENT, signal.SIGBREAK
+        else:
+            process = self.cli("run", "--mode", "research", "--task-file", self.task_file())
+            stop = received = signal.SIGTERM
+        self.wait_for_worker()
+        process.send_signal(stop)
         process.communicate(timeout=30)
         self.assertEqual(process.returncode, 1)
         result = self.results()[0]
         self.assertEqual(result["status"], "failed")
-        self.assertEqual(result["terminationReason"], f"signal:{int(signal.SIGTERM)}")
+        self.assertEqual(result["terminationReason"], f"signal:{int(received)}")
         self.assert_process_gone(self.pid_file)
+
+    @unittest.skipUnless(WINDOWS, "a job object holds the worker only on Windows")
+    def test_killing_the_supervisor_also_kills_the_worker_on_windows(self) -> None:
+        # The job closes with the supervisor, so no worker runs on without anyone recording it.
+        self.behavior("grandchild")
+        process = self.cli("run", "--mode", "research", "--task-file", self.task_file())
+        self.wait_for_worker()
+        process.kill()
+        process.communicate(timeout=30)
+        self.assert_process_gone(self.pid_file)
+        self.assert_process_gone(self.child_pid_file)
 
 
 class CleanAndCheckTests(WorkerTestCase):
@@ -543,7 +600,7 @@ class CleanAndCheckTests(WorkerTestCase):
 
     def test_clean_succeeds_after_the_worktree_was_deleted_by_hand(self) -> None:
         result = self.implement()
-        subprocess.run(["rm", "-rf", result["workspace"]], check=True)
+        shutil.rmtree(result["workspace"])
         self.assertEqual(self.main("clean", result["runId"])[0], 0)
         self.assertEqual(self.git("branch", "--list", result["branch"]), "")
 

@@ -38,11 +38,10 @@ implementation, reconnaissance, or an independent review done on Copilot capacit
 > worktree isolates the worker's normal edits. It is not a sandbox: a shell command can
 > still reach files outside it, including your live checkout.
 
-It requires `uv`, a GitHub Copilot login, Git, and macOS or Linux. `uv` provides
-Python 3.11 or later and the SDK on first run.
-
-> [!WARNING]
-> Windows is not supported, including Git Bash. WSL has not been tested.
+It requires `uv`, a GitHub Copilot login, and Git, on macOS, Linux, or Windows. `uv`
+provides Python 3.11 or later and the SDK on first run. On Windows an implementation
+worker's shell is PowerShell, and the deny list checks PowerShell and `cmd.exe` commands
+as well as POSIX ones.
 
 ---
 
