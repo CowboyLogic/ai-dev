@@ -155,6 +155,7 @@ def find_skill_dirs(root: Path) -> list[Path]:
     A symlink placed directly in the library is followed, because whoever owns the
     library put it there. A symlink any deeper is not: it came with a clone, and a
     checked-in link to `/` or a home directory would lead the search out of the library.
+    For the same reason a SKILL.md that is itself a symlink is not read.
     """
     found: list[Path] = []
     seen: set[str] = set()
@@ -170,7 +171,10 @@ def find_skill_dirs(root: Path) -> list[Path]:
                 dirnames[:] = []
                 continue
             seen.add(real)
-            if "SKILL.md" in filenames:
+            if "SKILL.md" in filenames and os.path.islink(os.path.join(current, "SKILL.md")):
+                # A linked SKILL.md could point at any file, inside the library or not.
+                warn(f"skipped {os.path.join(current, 'SKILL.md')}: it is a symlink")
+            elif "SKILL.md" in filenames:
                 found.append(Path(current))
                 # A skill's own subdirectories are its files, not more skills.
                 dirnames[:] = []

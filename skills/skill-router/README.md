@@ -48,8 +48,9 @@ git clone https://github.com/<owner>/<skills-repo> ~/.skill-library/<skills-repo
 Update the library with `git pull` in each clone. There is no install step.
 
 A clone kept elsewhere can be linked in: a symlink placed directly in the library
-directory is followed. Symlinks deeper than that are not, so a link checked into a
-repository cannot lead the search outside the library.
+directory is followed. Symlinks deeper than that are not, and a `SKILL.md` that is itself
+a symlink is skipped with a message, so a link checked into a repository cannot lead the
+search outside the library.
 
 > [!IMPORTANT]
 > Put skills in the library with `git clone` or a plain copy, not with a skill installer.

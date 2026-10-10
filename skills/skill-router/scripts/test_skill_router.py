@@ -348,6 +348,20 @@ class IndexTests(LibraryTestCase):
         self.assertEqual([(s["name"], s["dir"]) for s in skills], [("real", "clone/skills/real")])
 
     @unittest.skipIf(os.name == "nt", "creating symlinks needs elevation on Windows")
+    def test_symlinked_skill_file_is_not_read(self) -> None:
+        add_skill(self.root, "clone/real", "name: real\ndescription: R.")
+        with tempfile.TemporaryDirectory() as outside:
+            secret = add_skill(Path(outside), "secret", "name: secret\ndescription: Outside content.") / "SKILL.md"
+            (self.root / "clone" / "escape").mkdir()
+            os.symlink(secret, self.root / "clone" / "escape" / "SKILL.md")
+            add_skill(self.root, "clone/escape/below", "name: below\ndescription: B.")
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                skills = router.refresh_index(self.root)
+        self.assertEqual([s["name"] for s in skills], ["below", "real"])
+        self.assertIn("escape/SKILL.md: it is a symlink", err.getvalue().replace(os.sep, "/"))
+
+    @unittest.skipIf(os.name == "nt", "creating symlinks needs elevation on Windows")
     def test_top_level_symlinks_are_followed_once_and_pruned_names_skipped(self) -> None:
         add_skill(self.root, "clone/skills/real", "name: real\ndescription: R.")
         with tempfile.TemporaryDirectory() as outside:
