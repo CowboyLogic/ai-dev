@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import sys
 import tempfile
+import threading
 import unittest
 from unittest.mock import patch
 
@@ -53,6 +54,28 @@ class FrontmatterTests(unittest.TestCase):
     def test_double_quoted_whitespace_escapes_become_spaces(self) -> None:
         fields = router.read_frontmatter('---\ndescription: "First.\\nSecond\\tthird.\\n"\n---\n')
         self.assertEqual(fields["description"], "First. Second third.")
+
+    def test_quoted_values_keep_hashes_and_drop_trailing_comments(self) -> None:
+        cases = {
+            "'Review code # Kubernetes deployments' # editorial": "Review code # Kubernetes deployments",
+            '"Review code # Kubernetes deployments" # editorial': "Review code # Kubernetes deployments",
+            "'It''s # fine' # note": "It's # fine",
+            '"Say \\"hi\\" # loudly" # note': 'Say "hi" # loudly',
+            '"Ends with a backslash \\\\" # note': "Ends with a backslash \\",
+            "'No comment # here'": "No comment # here",
+        }
+        for raw, expected in cases.items():
+            with self.subTest(raw=raw):
+                fields = router.read_frontmatter(f"---\ndescription: {raw}\nname: demo\n---\n")
+                self.assertEqual(fields, {"description": expected, "name": "demo"})
+
+    def test_double_quoted_character_escapes_are_decoded(self) -> None:
+        text = '---\ndescription: "Review \\u0052 \\x43 \\U0001F600 \\/ code\\0 \\ud83d."\n---\n'
+        self.assertEqual(router.read_frontmatter(text)["description"], "Review R C \U0001F600 / code .")
+
+    def test_unterminated_quote_is_read_as_plain_text(self) -> None:
+        fields = router.read_frontmatter("---\ndescription: 'Unfinished value\n---\n")
+        self.assertEqual(fields["description"], "'Unfinished value")
 
     def test_folded_and_literal_blocks_collapse_to_one_line(self) -> None:
         for indicator in (">", ">-", "|", "|+"):
@@ -142,13 +165,137 @@ class IndexTests(LibraryTestCase):
                 self.assertEqual([s["name"] for s in router.refresh_index(self.root)], ["alpha"])
                 self.assertEqual(json.loads(index_path.read_text(encoding="utf-8"))["version"], router.INDEX_VERSION)
 
+    def temporary_files(self) -> list[str]:
+        return sorted(path.name for path in self.root.glob(router.INDEX_NAME + ".*"))
+
+    def test_malformed_records_are_rebuilt_from_source(self) -> None:
+        add_skill(self.root, "alpha", "name: alpha\ndescription: A.")
+        add_skill(self.root, "beta", "name: beta\ndescription: B.")
+        good = router.refresh_index(self.root)
+        index_path = self.root / router.INDEX_NAME
+        broken = {
+            "missing description": {k: v for k, v in good[0].items() if k != "description"},
+            "missing name": {k: v for k, v in good[0].items() if k != "name"},
+            "empty name": {**good[0], "name": ""},
+            "description not text": {**good[0], "description": None},
+            "unhashable dir": {**good[0], "dir": ["alpha"]},
+            "variables not a list": {**good[0], "harness_variables": "$ARGUMENTS"},
+            "variable not text": {**good[0], "harness_variables": [1]},
+            "size not a number": {**good[0], "size": "12"},
+            "time is a boolean": {**good[0], "mtime_ns": True},
+            "record not a mapping": "alpha",
+        }
+        for label, record in broken.items():
+            with self.subTest(label):
+                index_path.write_text(
+                    json.dumps({"version": router.INDEX_VERSION, "skills": [record, good[1]]}), encoding="utf-8"
+                )
+                original = router.build_entry
+                with patch.object(router, "build_entry", side_effect=original) as rebuilt:
+                    self.assertEqual(router.refresh_index(self.root), good)
+                # Only the malformed record is read again; the valid one stays cached.
+                self.assertEqual([call.args[1].name for call in rebuilt.call_args_list], ["alpha"])
+                self.assertEqual(router.load_index(index_path), good)
+
+    def test_commands_tolerate_a_malformed_index(self) -> None:
+        add_skill(self.root, "alpha", "name: alpha\ndescription: A.")
+        index_path = self.root / router.INDEX_NAME
+        expected = {("search", "alpha"): "1. alpha", ("index",): "1 skills indexed", ("topics",): "alpha"}
+        for command, output in expected.items():
+            with self.subTest(command=command):
+                router.refresh_index(self.root)
+                stored = json.loads(index_path.read_text(encoding="utf-8"))
+                del stored["skills"][0]["description"]
+                index_path.write_text(json.dumps(stored), encoding="utf-8")
+                code, out, err = run("--library", str(self.root), *command)
+                self.assertEqual((code, err), (0, ""))
+                self.assertIn(output, out)
+
     def test_unwritable_index_still_returns_skills(self) -> None:
         add_skill(self.root, "alpha", "name: alpha\ndescription: A.")
+        for target in ("replace", "fdopen"):
+            with self.subTest(target=target):
+                err = io.StringIO()
+                failure = patch.object(router.os, target, side_effect=OSError("read-only"))
+                with failure, contextlib.redirect_stderr(err):
+                    skills = router.refresh_index(self.root, rebuild=True)
+                self.assertEqual([s["name"] for s in skills], ["alpha"])
+                self.assertIn("could not write", err.getvalue())
+                self.assertEqual(self.temporary_files(), [])
+
+    def test_uncreatable_temporary_file_still_returns_skills(self) -> None:
+        add_skill(self.root, "alpha", "name: alpha\ndescription: A.")
         err = io.StringIO()
-        with patch.object(router.os, "replace", side_effect=OSError("read-only")), contextlib.redirect_stderr(err):
+        failure = patch.object(router.tempfile, "mkstemp", side_effect=OSError("read-only"))
+        with failure, contextlib.redirect_stderr(err):
             skills = router.refresh_index(self.root)
         self.assertEqual([s["name"] for s in skills], ["alpha"])
         self.assertIn("could not write", err.getvalue())
+
+    @unittest.skipIf(os.name == "nt", "creating symlinks needs elevation on Windows")
+    def test_symlink_at_a_predictable_temporary_path_is_not_followed(self) -> None:
+        add_skill(self.root, "alpha", "name: alpha\ndescription: A.")
+        unrelated = self.root / "unrelated.txt"
+        unrelated.write_text("keep me", encoding="utf-8")
+        os.symlink(unrelated, self.root / (router.INDEX_NAME + ".tmp"))
+        router.refresh_index(self.root)
+        self.assertEqual(unrelated.read_text(encoding="utf-8"), "keep me")
+        index_path = self.root / router.INDEX_NAME
+        self.assertFalse(index_path.is_symlink())
+        self.assertEqual([s["name"] for s in router.load_index(index_path)], ["alpha"])
+
+    def test_overlapping_writers_publish_one_complete_payload(self) -> None:
+        index_path = self.root / router.INDEX_NAME
+        payloads = [
+            [{"name": f"writer-{number}", "description": str(number) * 50_000, "dir": "d",
+              "harness_variables": [], "mtime_ns": 1, "size": 1}]
+            for number in range(4)
+        ]
+
+        def write_repeatedly(skills: list[dict]) -> None:
+            for _ in range(25):
+                router.write_index(index_path, skills)
+
+        threads = [threading.Thread(target=write_repeatedly, args=(payload,)) for payload in payloads]
+        # On Windows a replace can lose to a concurrent one; that is reported, not fatal.
+        with contextlib.redirect_stderr(io.StringIO()):
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+        stored = json.loads(index_path.read_text(encoding="utf-8"))
+        self.assertIn(stored["skills"], payloads)
+        self.assertEqual(self.temporary_files(), [])
+
+    def test_skill_that_vanishes_before_it_is_read_is_skipped(self) -> None:
+        add_skill(self.root, "alpha", "name: alpha\ndescription: A.")
+        add_skill(self.root, "beta", "name: beta\ndescription: B.")
+        original = router.build_entry
+
+        def vanish(root: Path, skill_dir: Path, stat: os.stat_result) -> dict:
+            if skill_dir.name == "beta":
+                raise FileNotFoundError(2, "No such file or directory")
+            return original(root, skill_dir, stat)
+
+        err = io.StringIO()
+        with patch.object(router, "build_entry", side_effect=vanish), contextlib.redirect_stderr(err):
+            skills = router.refresh_index(self.root)
+        self.assertEqual([s["name"] for s in skills], ["alpha"])
+        self.assertIn("skipped beta/SKILL.md: No such file or directory", err.getvalue())
+
+    @unittest.skipIf(os.name == "nt" or not hasattr(os, "geteuid") or os.geteuid() == 0, "needs file permissions that bind")
+    def test_unreadable_skill_and_subtree_are_reported_not_fatal(self) -> None:
+        add_skill(self.root, "alpha", "name: alpha\ndescription: Healthy terraform skill.")
+        locked_file = add_skill(self.root, "beta", "name: beta\ndescription: Terraform too.") / "SKILL.md"
+        locked_dir = add_skill(self.root, "gamma/inner", "name: inner\ndescription: Terraform three.").parent
+        locked_file.chmod(0)
+        locked_dir.chmod(0)
+        self.addCleanup(locked_dir.chmod, 0o700)
+        code, out, err = run("--library", str(self.root), "search", "--json", "terraform")
+        self.assertEqual(code, 0)
+        self.assertEqual([result["name"] for result in json.loads(out)["results"]], ["alpha"])
+        self.assertIn("skipped beta/SKILL.md: Permission denied", err)
+        self.assertIn(f"cannot read {locked_dir}", err)
 
     @unittest.skipIf(os.name == "nt", "creating symlinks needs elevation on Windows")
     def test_symlinked_checkout_is_indexed_and_loops_end(self) -> None:
@@ -187,6 +334,21 @@ class SearchTests(LibraryTestCase):
         self.assertEqual(self.names("Docker IMAGE"), ["docker-images"])
         self.assertEqual(self.names("reviews of modules"), ["terraform-review"])
 
+    def test_exact_name_comes_first(self) -> None:
+        add_skill(self.root, "review", "name: review\ndescription: Summarize a document.")
+        add_skill(self.root, "copy/review", "name: Review\ndescription: A second copy.")
+        self.skills = router.refresh_index(self.root)
+        ranked = router.search(self.skills, "review", 5)
+        self.assertEqual([(score, skill["dir"]) for score, skill in ranked[:2]],
+                         [(float("inf"), "copy/review"), (float("inf"), "review")])
+        self.assertEqual([skill["name"] for _, skill in ranked[2:]], ["terraform-review"])
+
+    def test_exact_name_matches_spaced_words_and_stopword_names(self) -> None:
+        add_skill(self.root, "how-to", "name: how-to\ndescription: Guides.")
+        self.skills = router.refresh_index(self.root)
+        self.assertEqual(self.names("Commit Messages")[0], "commit-messages")
+        self.assertEqual(self.names("how to"), ["how-to"])
+
     def test_limit_caps_the_results(self) -> None:
         with patch.object(router, "RELATIVE_FLOOR", 0):
             self.assertEqual(self.names("terraform", limit=1), ["terraform-review"])
@@ -215,6 +377,17 @@ class CommandTests(LibraryTestCase):
         self.assertIn("1. terraform-review", out)
         self.assertIn(f"dir:  {(self.root / 'repo/terraform-review').as_posix()}", out)
         self.assertIn("note: uses $ARGUMENTS", out)
+
+    def test_search_marks_an_exact_name(self) -> None:
+        _, out, _ = run(*self.library, "search", "terraform-review")
+        self.assertIn("1. terraform-review (exact name)", out)
+        _, out, _ = run(*self.library, "search", "--json", "terraform-review")
+        first = json.loads(out)["results"][0]
+        self.assertEqual((first["exact_name"], first["score"]), (True, None))
+        _, out, _ = run(*self.library, "search", "--json", "docker")
+        first = json.loads(out)["results"][0]
+        self.assertFalse(first["exact_name"])
+        self.assertGreater(first["score"], 0)
 
     def test_search_truncates_long_descriptions(self) -> None:
         _, out, _ = run(*self.library, "search", "docker")

@@ -19,6 +19,7 @@ import os
 from pathlib import Path
 import re
 import sys
+import tempfile
 
 LIBRARY_ENV = "SKILL_ROUTER_LIBRARY"
 DEFAULT_LIBRARY = "~/.skill-library"
@@ -53,10 +54,22 @@ GENERIC_NAME_WORDS = frozenset("skill skills helper helpers tool tools util util
 
 FRONTMATTER_KEY = re.compile(r"^([A-Za-z_][\w-]*):(.*)$")
 BLOCK_SCALAR = re.compile(r"^[|>][+-]?\d*\s*(#.*)?$")
+DOUBLE_QUOTED = re.compile(r'"((?:[^"\\]|\\.)*)"')
+SINGLE_QUOTED = re.compile(r"'((?:[^']|'')*)'")
+DOUBLE_QUOTE_ESCAPE = re.compile(r"\\(x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|U[0-9a-fA-F]{8}|.)")
+# Values are kept on one line, so escapes for whitespace become a space and escapes for
+# control characters are dropped. Any other escaped character stands for itself.
+WHITESPACE_ESCAPES = frozenset("nrtvfN_LP")
+CONTROL_ESCAPES = frozenset("0abe")
 
 
 class RouterError(Exception):
     """A problem to report to the caller, without a traceback."""
+
+
+def warn(message: str) -> None:
+    """Report a problem that does not stop the command. Stdout stays clean for results."""
+    print(f"skill-router: {message}", file=sys.stderr)
 
 
 def read_frontmatter(text: str) -> dict[str, str]:
@@ -85,7 +98,7 @@ def read_frontmatter(text: str) -> dict[str, str]:
         if key is None:
             return
         value = " ".join(" ".join(parts).split())
-        fields[key] = value if is_block else _unquote(value)
+        fields[key] = value if is_block else _flow_scalar(value)
 
     for line in block:
         match = FRONTMATTER_KEY.match(line)
@@ -101,24 +114,43 @@ def read_frontmatter(text: str) -> dict[str, str]:
     return fields
 
 
-def _unquote(value: str) -> str:
-    if len(value) >= 2 and value[0] == value[-1] == '"':
-        # Whitespace escapes become spaces, since values are kept on one line.
-        unescaped = re.sub(r"\\(.)", lambda m: " " if m.group(1) in "nrt" else m.group(1), value[1:-1])
-        return " ".join(unescaped.split())
-    if len(value) >= 2 and value[0] == value[-1] == "'":
-        return value[1:-1].replace("''", "'")
+def _flow_scalar(value: str) -> str:
+    """Decode a plain or quoted scalar, dropping a trailing comment."""
+    if value.startswith('"'):
+        match = DOUBLE_QUOTED.match(value)
+        if match:
+            # Anything after the closing quote is a comment.
+            return " ".join(DOUBLE_QUOTE_ESCAPE.sub(_decode_escape, match.group(1)).split())
+    elif value.startswith("'"):
+        match = SINGLE_QUOTED.match(value)
+        if match:
+            return match.group(1).replace("''", "'")
     if value.startswith("#"):
         return ""
     # In a plain scalar, " #" starts a comment.
     return re.split(r"\s#", value, maxsplit=1)[0].rstrip()
 
 
+def _decode_escape(match: re.Match) -> str:
+    code = match.group(1)
+    if len(code) > 1:
+        point = int(code[1:], 16)
+        # Surrogates and out-of-range values are not characters.
+        return chr(point) if point <= 0x10FFFF and not 0xD800 <= point <= 0xDFFF else ""
+    if code in WHITESPACE_ESCAPES:
+        return " "
+    return "" if code in CONTROL_ESCAPES else code
+
+
 def find_skill_dirs(root: Path) -> list[Path]:
     """Return every directory under root that holds a SKILL.md, in a stable order."""
     found: list[Path] = []
     seen: set[str] = set()
-    for current, dirnames, filenames in os.walk(root, followlinks=True):
+
+    def unreadable(error: OSError) -> None:
+        warn(f"cannot read {error.filename}: {error.strerror or error}")
+
+    for current, dirnames, filenames in os.walk(root, followlinks=True, onerror=unreadable):
         real = os.path.realpath(current)
         if real in seen:
             # A symlink loop, or two links to one place.
@@ -155,9 +187,27 @@ def load_index(index_path: Path) -> list[dict]:
     if not isinstance(data, dict) or data.get("version") != INDEX_VERSION:
         return []
     skills = data.get("skills")
-    if not isinstance(skills, list) or not all(isinstance(s, dict) for s in skills):
+    if not isinstance(skills, list):
         return []
-    return skills
+    # The cache is disposable: a record that is not well formed is read again from source.
+    return [entry for entry in skills if valid_entry(entry)]
+
+
+def valid_entry(entry: object) -> bool:
+    def is_int(value: object) -> bool:
+        return isinstance(value, int) and not isinstance(value, bool)
+
+    return (
+        isinstance(entry, dict)
+        and isinstance(entry.get("name"), str)
+        and bool(entry["name"])
+        and isinstance(entry.get("description"), str)
+        and isinstance(entry.get("dir"), str)
+        and isinstance(entry.get("harness_variables"), list)
+        and all(isinstance(variable, str) for variable in entry["harness_variables"])
+        and is_int(entry.get("mtime_ns"))
+        and is_int(entry.get("size"))
+    )
 
 
 def refresh_index(root: Path, rebuild: bool = False) -> list[dict]:
@@ -168,20 +218,19 @@ def refresh_index(root: Path, rebuild: bool = False) -> list[dict]:
     """
     index_path = root / INDEX_NAME
     previous = [] if rebuild else load_index(index_path)
-    cached = {entry.get("dir"): entry for entry in previous}
+    cached = {entry["dir"]: entry for entry in previous}
     skills: list[dict] = []
     for skill_dir in find_skill_dirs(root):
+        relative = skill_dir.relative_to(root).as_posix()
         try:
             stat = (skill_dir / "SKILL.md").stat()
-        except OSError:
+            entry = cached.get(relative)
+            if entry is None or entry["mtime_ns"] != stat.st_mtime_ns or entry["size"] != stat.st_size:
+                entry = build_entry(root, skill_dir, stat)
+        except OSError as error:
+            # One unreadable or vanished skill must not hide the rest of the library.
+            warn(f"skipped {relative}/SKILL.md: {error.strerror or error}")
             continue
-        entry = cached.get(skill_dir.relative_to(root).as_posix())
-        if (
-            entry is None
-            or entry.get("mtime_ns") != stat.st_mtime_ns
-            or entry.get("size") != stat.st_size
-        ):
-            entry = build_entry(root, skill_dir, stat)
         skills.append(entry)
     skills.sort(key=lambda entry: (entry["name"], entry["dir"]))
     if rebuild or skills != previous:
@@ -191,13 +240,26 @@ def refresh_index(root: Path, rebuild: bool = False) -> list[dict]:
 
 def write_index(index_path: Path, skills: list[dict]) -> None:
     payload = json.dumps({"version": INDEX_VERSION, "skills": skills}, indent=1)
-    temporary = index_path.with_name(index_path.name + ".tmp")
+    # A read-only library still searches; it just re-reads every file each time.
     try:
-        temporary.write_text(payload + "\n", encoding="utf-8")
+        # A new, uniquely named file: a fixed name could be a planted symlink, and two
+        # commands running at once would write through each other.
+        descriptor, temporary = tempfile.mkstemp(
+            dir=index_path.parent, prefix=index_path.name + ".", suffix=".tmp"
+        )
+    except OSError as error:
+        warn(f"could not write {index_path}: {error}")
+        return
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            handle.write(payload + "\n")
         os.replace(temporary, index_path)
     except OSError as error:
-        # A read-only library still searches; it just re-reads every file each time.
-        print(f"skill-router: could not write {index_path}: {error}", file=sys.stderr)
+        warn(f"could not write {index_path}: {error}")
+        try:
+            os.unlink(temporary)
+        except OSError:
+            pass
 
 
 def tokenize(text: str) -> list[str]:
@@ -212,9 +274,15 @@ def tokenize(text: str) -> list[str]:
 
 
 def search(skills: list[dict], query: str, limit: int) -> list[tuple[float, dict]]:
-    """Rank skills against the query with BM25, names weighted above descriptions."""
+    """Rank skills against the query with BM25, names weighted above descriptions.
+
+    A skill whose name is the query comes first, with an infinite score, ahead of
+    anything ranked by relevance.
+    """
+    wanted = {query.strip().lower(), "-".join(query.lower().split())}
+    exact = [skill for skill in skills if skill["name"].lower() in wanted]
     terms = set(tokenize(query))
-    if not terms:
+    if not terms and not exact:
         raise RouterError("the query has no searchable words; name the task or the tool")
     documents = [
         Counter(tokenize(skill["name"]) * NAME_WEIGHT + tokenize(skill["description"]))
@@ -240,7 +308,9 @@ def search(skills: list[dict], query: str, limit: int) -> list[tuple[float, dict
     if ranked:
         floor = ranked[0][0] * RELATIVE_FLOOR
         ranked = [item for item in ranked if item[0] >= floor]
-    return ranked[:limit]
+    # The floor is set before named skills move up, so it still measures the best match.
+    ranked = [item for item in ranked if not any(item[1] is skill for skill in exact)]
+    return ([(math.inf, skill) for skill in exact] + ranked)[:limit]
 
 
 def snippet(text: str) -> str:
@@ -321,7 +391,8 @@ def command_search(args: argparse.Namespace) -> int:
                 "dir": (root / skill["dir"]).as_posix(),
                 "description": skill["description"],
                 "harness_variables": skill["harness_variables"],
-                "score": round(score, 3),
+                "exact_name": math.isinf(score),
+                "score": None if math.isinf(score) else round(score, 3),
             }
             for score, skill in ranked
         ]
@@ -340,9 +411,9 @@ def command_search(args: argparse.Namespace) -> int:
         )
         return 0
     print(f'Top {len(ranked)} of {len(skills)} skills for "{query}":')
-    for position, (_, skill) in enumerate(ranked, start=1):
+    for position, (score, skill) in enumerate(ranked, start=1):
         print()
-        print(f"{position}. {skill['name']}")
+        print(f"{position}. {skill['name']}" + (" (exact name)" if math.isinf(score) else ""))
         print(f"   dir:  {(root / skill['dir']).as_posix()}")
         print(f"   desc: {snippet(skill['description']) or '(no description)'}")
         if skill["harness_variables"]:
