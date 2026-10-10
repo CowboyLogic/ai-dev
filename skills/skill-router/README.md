@@ -11,6 +11,13 @@ with descriptions near the 1,024-character limit come to about 51,000 tokens bef
 first prompt (an estimate, at four characters per token). With the router, a session
 carries one description and pays for a search only when it needs a skill.
 
+> [!NOTE]
+> **The router earns its place with a large library.** As a rough guide, if you rely on
+> fewer than about 50 skills routinely, it may not give you the value it is built for: their
+> descriptions cost little to carry, and finding a skill through a search adds a step. The
+> saving grows with the size of the library, and a library of 50 or more is where the
+> router starts to pay off. With fewer, leave your skills where the harness discovers them.
+
 ## What's included
 
 - **`SKILL.md`**: tells the agent when to search the library and how to load a result.
