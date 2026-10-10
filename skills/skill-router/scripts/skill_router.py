@@ -251,7 +251,16 @@ def write_index(index_path: Path, skills: list[dict]) -> None:
         warn(f"could not write {index_path}: {error}")
         return
     try:
-        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+        try:
+            handle = os.fdopen(descriptor, "w", encoding="utf-8")
+        except OSError:
+            # Windows cannot delete a file that still has an open descriptor.
+            try:
+                os.close(descriptor)
+            except OSError:
+                pass
+            raise
+        with handle:
             handle.write(payload + "\n")
         os.replace(temporary, index_path)
     except OSError as error:
