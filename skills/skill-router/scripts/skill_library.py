@@ -535,7 +535,8 @@ def decide_and_install(args: argparse.Namespace, library: Library, staged: list[
                 f"{skill['dir']} is already in the library. Run `update` to refresh it, or pass --force to replace it."
             )
 
-    undecided = [skill for skill in wanted if not trust.source_rule(skill["source"])]
+    # An explicit denial is for the skills named, so a wider approval does not excuse them from it.
+    undecided = wanted if args.deny else [skill for skill in wanted if not trust.source_rule(skill["source"])]
     if undecided:
         tree = fingerprint(undecided)
         show_summary(undecided, tree)
