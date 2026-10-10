@@ -26,6 +26,12 @@ artifacts:
     type: skill
     source: skills/handoff
     tags: [skills, context, sessions]
+  - id: skill-router
+    name: Skill Router
+    description: Search a library of skills kept outside the harness's discovery path and return the directory of the one that fits the task
+    type: skill
+    source: skills/skill-router
+    tags: [skills, context, discovery]
   - id: docker-image-management
     name: Docker Image Management
     description: Create, build, and manage Docker images and containers
