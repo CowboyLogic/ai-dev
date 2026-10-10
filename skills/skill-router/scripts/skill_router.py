@@ -30,7 +30,7 @@ MINIMUM_PYTHON = (3, 12)
 LIBRARY_ENV = "SKILL_ROUTER_LIBRARY"
 DEFAULT_LIBRARY = "~/.skill-library"
 INDEX_NAME = ".skill-router-index.json"
-INDEX_VERSION = 1
+INDEX_VERSION = 2
 
 # Directories that never hold skills and can be large.
 PRUNED_DIRS = {".git", ".hg", ".svn", "node_modules", "__pycache__", ".venv", "venv"}
@@ -59,7 +59,8 @@ STOPWORDS = frozenset(
 GENERIC_NAME_WORDS = frozenset("skill skills helper helpers tool tools util utils".split())
 
 FRONTMATTER_KEY = re.compile(r"^([A-Za-z_][\w-]*):(.*)$")
-BLOCK_SCALAR = re.compile(r"^[|>][+-]?\d*\s*(#.*)?$")
+# The chomping and indentation indicators may come in either order: ">-2" or ">2-".
+BLOCK_SCALAR = re.compile(r"^[|>](?:[+-]?\d?|\d[+-])\s*(#.*)?$")
 DOUBLE_QUOTED = re.compile(r'"((?:[^"\\]|\\.)*)"')
 SINGLE_QUOTED = re.compile(r"'((?:[^']|'')*)'")
 DOUBLE_QUOTE_ESCAPE = re.compile(r"\\(x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|U[0-9a-fA-F]{8}|.)")
@@ -200,22 +201,37 @@ def build_entry(root: Path, skill_dir: Path, stat: os.stat_result) -> dict:
         "dir": skill_dir.relative_to(root).as_posix(),
         "harness_variables": sorted(set(HARNESS_VARIABLE.findall(text))),
         "mtime_ns": stat.st_mtime_ns,
+        "ctime_ns": stat.st_ctime_ns,
         "size": stat.st_size,
     }
 
 
 def load_index(index_path: Path) -> list[dict]:
+    return read_index(index_path)[0]
+
+
+def read_index(index_path: Path) -> tuple[list[dict], bool]:
+    """Return the usable cached records, and whether the file on disk was sound.
+
+    An unsound file is rewritten even when the records to keep come out the same.
+    """
     try:
-        data = json.loads(index_path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return []
+        text = index_path.read_text(encoding="utf-8")
+    except OSError:
+        # No index yet, or one that cannot be read: nothing here to repair.
+        return [], True
+    try:
+        data = json.loads(text)
+    except ValueError:
+        return [], False
     if not isinstance(data, dict) or data.get("version") != INDEX_VERSION:
-        return []
+        return [], False
     skills = data.get("skills")
     if not isinstance(skills, list):
-        return []
+        return [], False
     # The cache is disposable: a record that is not well formed is read again from source.
-    return [entry for entry in skills if valid_entry(entry)]
+    usable = [entry for entry in skills if valid_entry(entry)]
+    return usable, len(usable) == len(skills)
 
 
 def valid_entry(entry: object) -> bool:
@@ -231,6 +247,7 @@ def valid_entry(entry: object) -> bool:
         and isinstance(entry.get("harness_variables"), list)
         and all(isinstance(variable, str) for variable in entry["harness_variables"])
         and is_int(entry.get("mtime_ns"))
+        and is_int(entry.get("ctime_ns"))
         and is_int(entry.get("size"))
     )
 
@@ -238,12 +255,15 @@ def valid_entry(entry: object) -> bool:
 def refresh_index(root: Path, rebuild: bool = False) -> list[dict]:
     """Return the library's skills, re-reading only SKILL.md files that changed.
 
-    The index file is a cache keyed on each SKILL.md's size and modification time.
-    Every call walks the library and repairs what differs. A change that keeps both
-    the same is not seen; `rebuild` reads every file again.
+    The index file is a cache keyed on each SKILL.md's size, modification time, and
+    change time. Every call walks the library and repairs what differs. The change
+    time moves when a file's content or permissions do, so a skill that has become
+    unreadable is read again and skipped. On Windows that value is the creation time,
+    so an edit that keeps size and modification time is not seen there; `rebuild`
+    reads every file again.
     """
     index_path = root / INDEX_NAME
-    previous = [] if rebuild else load_index(index_path)
+    previous, sound = ([], True) if rebuild else read_index(index_path)
     cached = {entry["dir"]: entry for entry in previous}
     skills: list[dict] = []
     for skill_dir in find_skill_dirs(root):
@@ -251,7 +271,14 @@ def refresh_index(root: Path, rebuild: bool = False) -> list[dict]:
         try:
             stat = (skill_dir / "SKILL.md").stat()
             entry = cached.get(relative)
-            if entry is None or entry["mtime_ns"] != stat.st_mtime_ns or entry["size"] != stat.st_size:
+            if entry is None or any(
+                entry[key] != value
+                for key, value in (
+                    ("mtime_ns", stat.st_mtime_ns),
+                    ("ctime_ns", stat.st_ctime_ns),
+                    ("size", stat.st_size),
+                )
+            ):
                 entry = build_entry(root, skill_dir, stat)
         except OSError as error:
             # One unreadable or vanished skill must not hide the rest of the library.
@@ -259,7 +286,7 @@ def refresh_index(root: Path, rebuild: bool = False) -> list[dict]:
             continue
         skills.append(entry)
     skills.sort(key=lambda entry: (entry["name"], entry["dir"]))
-    if rebuild or skills != previous:
+    if rebuild or not sound or skills != previous:
         write_index(index_path, skills)
     return skills
 
