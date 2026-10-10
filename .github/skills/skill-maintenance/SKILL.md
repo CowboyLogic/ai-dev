@@ -6,8 +6,11 @@ argument-hint: "Skill folder name, e.g. client-config-copilotcli"
 ---
 # Skill Maintenance — CowboyLogic/ai-dev
 
-Run the full maintenance cycle for the skill named **`$input`** located at
-`skills/$input/`.
+Run the full maintenance cycle for one skill in this repository. The skill to
+maintain is named by the argument this skill was invoked with. This file calls
+that name `<skill-name>`, and the skill lives at `skills/<skill-name>/`. If no
+argument was given, ask which folder under `skills/` to maintain before doing
+anything else.
 
 Work through each stage in order. Do not skip a stage or move to the next
 until the current one is complete.
@@ -16,7 +19,7 @@ until the current one is complete.
 
 ## Stage 1 — Research and update the skill
 
-1. Read `skills/$input/SKILL.md` and all files under `skills/$input/references/`
+1. Read `skills/<skill-name>/SKILL.md` and all files under `skills/<skill-name>/references/`
    in full to understand the current state.
 
 2. Research what has changed since the skill was last updated. The skill's
@@ -27,9 +30,9 @@ until the current one is complete.
    to produce wrong or outdated answers.
 
 3. Apply updates:
-   - Edit `skills/$input/SKILL.md` if the task→reference map, quick-ops
+   - Edit `skills/<skill-name>/SKILL.md` if the task→reference map, quick-ops
      list, or config file table needs updating.
-   - Edit files under `skills/$input/references/` with specific, targeted
+   - Edit files under `skills/<skill-name>/references/` with specific, targeted
      changes — do not rewrite sections that are still accurate.
 
 4. Note every change made — you will need this list for the changelog
@@ -39,11 +42,11 @@ until the current one is complete.
 
 ## Stage 2 — Run benchmark evaluations
 
-Use the eval cases in `skills/$input/evals/evals.json`. If no evals exist
+Use the eval cases in `skills/<skill-name>/evals/evals.json`. If no evals exist
 yet, draft 3–4 realistic test cases that cover the skill's primary tasks
-and save them to `skills/$input/evals/evals.json` before proceeding.
+and save them to `skills/<skill-name>/evals/evals.json` before proceeding.
 
-All runs go in `skills/$input-workspace/iteration-N/` where N is the next
+All runs go in `skills/<skill-name>-workspace/iteration-N/` where N is the next
 iteration number (check for existing iteration folders first).
 
 **Launch all runs in a single turn** — spawn with-skill AND without-skill
@@ -87,7 +90,7 @@ Once all runs are complete:
 2. Write `benchmark.json` in the iteration folder:
    ```json
    {
-     "skill_name": "$input",
+     "skill_name": "<skill-name>",
      "iteration": N,
      "run_date": "<YYYY-MM-DD>",
      "evals": [
@@ -121,7 +124,7 @@ overview page is short and links to it.
 
 ### In the skill folder
 
-- **`skills/$input/CHANGELOG.md`** — add an entry at the top, newest first, listing every
+- **`skills/<skill-name>/CHANGELOG.md`** — add an entry at the top, newest first, listing every
   change made in Stage 1. Create the file with a `# Changelog` heading if it does not
   exist.
 
@@ -131,17 +134,17 @@ overview page is short and links to it.
   - <File changed and what was updated.>
   ```
 
-- **`skills/$input/README.md`** — add the Stage 3 results under an `## Evaluation results`
+- **`skills/<skill-name>/README.md`** — add the Stage 3 results under an `## Evaluation results`
   heading: the run date and iteration, the scenario and run counts, the overall pass rates,
   a per-scenario table with notes on what the baseline got wrong, and a key takeaway. Keep
   earlier iterations below the new one. Create the file if it does not exist.
 
 ### The docs overview page
 
-The page lives at `docs/skills/$input.md`. Check whether it already exists. It lets a
+The page lives at `docs/skills/<skill-name>.md`. Check whether it already exists. It lets a
 reader decide whether to use the skill and install it. It must not embed skill content:
 no instruction text, reference file contents, examples, workflows, rule tables, or script
-usage. Link to `skills/$input/` instead.
+usage. Link to `skills/<skill-name>/` instead.
 
 ### If it does not exist — create it
 
@@ -152,8 +155,8 @@ Use this structure:
 
 <One-paragraph description of what the skill covers.>
 
-- **Skill name:** `$input`
-- **Source:** [skills/$input](https://github.com/CowboyLogic/ai-dev/tree/main/skills/$input)
+- **Skill name:** `<skill-name>`
+- **Source:** [skills/<skill-name>](https://github.com/CowboyLogic/ai-dev/tree/main/skills/<skill-name>)
 
 ---
 
@@ -173,9 +176,9 @@ covers. Do not reproduce rules, tables, or examples from the skill.>
 ### Using `npx skills` (recommended — works across all agents)
 
 \`\`\`bash
-npx skills add CowboyLogic/ai-dev --skill $input -g
-npx skills add CowboyLogic/ai-dev --skill $input --agent <agent> -g
-npx skills add CowboyLogic/ai-dev --skill $input -g -l
+npx skills add CowboyLogic/ai-dev --skill <skill-name> -g
+npx skills add CowboyLogic/ai-dev --skill <skill-name> --agent <agent> -g
+npx skills add CowboyLogic/ai-dev --skill <skill-name> -g -l
 \`\`\`
 
 ### Verify installation
@@ -220,13 +223,13 @@ After creating a new page:
    ```yaml
    - Skills:
        - Overview: skills/index.md
-       - <Title>: skills/$input.md   # add here
+       - <Title>: skills/<skill-name>.md   # add here
    ```
 
 2. Update the skill's entry in `docs/skills/index.md`:
    - Change the existing GitHub-only link to include a `Skill Overview` link:
      ```markdown
-     [Skill Overview](skills/$input.md) · [View on GitHub](https://github.com/...)
+     [Skill Overview](skills/<skill-name>.md) · [View on GitHub](https://github.com/...)
      ```
    - If there is no entry yet, add one in the appropriate section.
 
