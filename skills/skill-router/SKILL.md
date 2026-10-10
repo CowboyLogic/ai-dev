@@ -1,6 +1,6 @@
 ---
 name: skill-router
-description: Find an installed skill in the skill library, a folder of skills kept outside the harness's discovery path so their descriptions do not load into every session. Search it BEFORE starting a task that a specialized skill could cover and that no skill already listed in this session fits, and whenever the user names a skill you cannot see or asks what skills are installed. Returns the skill's directory so you can read and follow it.
+description: Find an installed skill in the skill library, a folder of skills kept outside the harness's discovery path so their descriptions do not load into every session. Search it BEFORE starting a task that a specialized skill could cover and that no skill already listed in this session fits, and whenever the user names a skill you cannot see or asks what skills are installed. Returns the skill's directory so you can read and follow it. Also use it when the user asks to install, update, review, or remove a skill in the library.
 license: MIT
 ---
 
@@ -63,7 +63,70 @@ in when it loads a skill itself. Here it stays literal. Substitute it yourself:
 
 Tell the user the library has no skill for the task and carry on without one. Do not
 install a skill from a remote source on your own. Adding to the library is the user's
-decision.
+decision; when they make it, install as described below.
+
+## 4. Manage the library
+
+These commands change the library, and `install` and `update` need the GitHub CLI (`gh`).
+Run them when the user asks, not on your own.
+
+Any command can print a notice on stderr that begins `skill-router:`. Two of them are for
+the user, so pass them on: the library was initialized, or skills are waiting for review.
+
+### Install a skill
+
+Always install into the library with this command, never with an installer that writes to
+a harness's skill directories.
+
+```bash
+uv run <this-skill-dir>/scripts/skill_router.py install <owner/repo> <skill>
+```
+
+Use `--all` in place of the skill name for every skill in the repository, and `--pin <ref>`
+to hold a skill at a tag or commit.
+
+Nothing is installed until the user has approved the source:
+
+1. Run the command. If it exits with status 3, it has printed a summary: the source, the
+   version, a tree value, and the files, with scripts marked.
+2. Show the user that summary and ask two things: do they trust this source, and how far.
+   The choices are this skill only, everything in the repository, or everything from the
+   owner. Do not answer for them, and do not suggest the wider choices as a convenience.
+3. Run the same command again with their answer:
+   `--approved-by-user --scope skill|repo|owner --expect-tree <tree value>`, or `--deny`.
+
+`--approved-by-user` states that the user said yes to that summary in this conversation.
+Never pass it on any other basis. If the command reports that the tree has changed, the
+source changed after the summary was shown: show the new summary and ask again.
+
+A denied skill is refused from then on. Pass `--reconsider` only when the user asks for
+that skill again. A skill covered by an earlier approval installs with no question.
+
+### Review skills that arrived another way
+
+A skill put in the library by hand, or with another tool, is left out of search results
+until the user has reviewed it. When a command says skills are waiting:
+
+```bash
+uv run <this-skill-dir>/scripts/skill_router.py review
+```
+
+Show the user the list and ask, for each skill, whether they put it there. Then run
+`review` again with their answers: `--approve <skill>...` for the ones they did,
+`--approve-dir <dir>` when a whole directory in the library is theirs, `--approve-all` when
+all of them are, and `--delete <skill>...` for the ones they did not. `--delete` removes
+the folder, so use it only on a clear no.
+
+### Update, remove, and inspect
+
+- `update` brings every library skill up to date from its source and asks nothing.
+  `update --check` reports what would change. Skills pinned to a version, and skills with
+  no recorded source, are skipped and named. Run it when the user asks, or suggest it when
+  they mention a skill is out of date.
+- `remove <skill> --yes` deletes a skill's folder. Ask the user first and pass `--yes` only
+  on their yes.
+- `status` lists every skill with its source, version, and approval, then the wider
+  approvals and the denied skills.
 
 ## Other commands
 

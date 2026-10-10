@@ -28,7 +28,7 @@ artifacts:
     tags: [skills, context, sessions]
   - id: skill-router
     name: Skill Router
-    description: Search a library of skills kept outside the harness's discovery path and return the directory of the one that fits the task
+    description: Search a library of skills kept outside the harness's discovery path and return the directory of the one that fits the task; install, update, and remove the skills in it
     type: skill
     source: skills/skill-router
     tags: [skills, context, discovery]
