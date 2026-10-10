@@ -131,6 +131,21 @@ class SourceTests(unittest.TestCase):
             with self.subTest(text=text):
                 self.assertIsNone(router.read_source(text))
 
+    def test_only_the_keys_directly_under_metadata_name_the_source(self) -> None:
+        real = (
+            "    github-path: skills/alpha\n    github-ref: refs/heads/main\n"
+            "    github-repo: https://github.com/evil/tools\n    github-tree-sha: " + SHA_A + "\n"
+        )
+        nested = "    z:\n      github-repo: https://github.com/acme/tools\n      github-path: skills/beta\n"
+        for label, body in (("after", real + nested), ("before", nested + real)):
+            with self.subTest(order=label):
+                text = f"---\nname: alpha\ndescription: A.\nmetadata:\n{body}---\n"
+                source = router.read_source(text)
+                self.assertEqual((source["repo"], source["path"], source["tree_sha"]),
+                                 ("evil/tools", "skills/alpha", SHA_A))
+        only_nested = f"---\nname: alpha\ndescription: A.\nmetadata:\n  z:\n    github-repo: acme/tools\n---\n"
+        self.assertIsNone(router.read_source(only_nested))
+
     def test_repository_identity(self) -> None:
         for raw in ("acme/tools", "https://github.com/acme/tools", "https://github.com/acme/tools.git/"):
             self.assertEqual(router.repo_identity(raw), "acme/tools")

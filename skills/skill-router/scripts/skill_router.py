@@ -136,11 +136,18 @@ def read_source(text: str) -> dict[str, str] | None:
     """
     found: dict[str, str] = {}
     inside = False
+    # Only the keys directly under `metadata` are gh's. A mapping nested inside it is
+    # whatever the skill's author wrote, and must not stand in for them.
+    child_indent: str | None = None
     for line in _frontmatter_block(text):
         if METADATA_KEY.match(line):
-            inside = True
-        elif inside and (match := GITHUB_FIELD.match(line)):
-            found[match.group(1)] = _flow_scalar(match.group(2).strip())
+            inside, child_indent = True, None
+        elif inside and line.strip() and line[:1] in (" ", "\t") and not line.lstrip().startswith("#"):
+            indent = line[: len(line) - len(line.lstrip())]
+            if child_indent is None:
+                child_indent = indent
+            if indent == child_indent and (match := GITHUB_FIELD.match(line)):
+                found[match.group(1)] = _flow_scalar(match.group(2).strip())
         elif line.strip() and line[:1] not in (" ", "\t"):
             inside = False
     repo = repo_identity(found.get("repo", ""))
