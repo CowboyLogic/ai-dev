@@ -647,6 +647,22 @@ class InstallTests(LifecycleTestCase):
                     self.assertEqual(sorted(path.relative_to(folder).as_posix() for path in folder.rglob("*")), before)
                     self.assertFalse(any(rule["name"] == name for rule in self.rules() if rule.get("name")))
 
+    def test_force_does_not_replace_a_folder_whose_skill_md_is_a_link(self) -> None:
+        elsewhere = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda: library.shutil.rmtree(elsewhere, ignore_errors=True))
+        add_skill(elsewhere, "real", "name: real\ndescription: Real.")
+        folder = self.root / "alpha"
+        folder.mkdir(parents=True)
+        (folder / "notes.txt").write_text("unrelated", encoding="utf-8")
+        try:
+            (folder / "SKILL.md").symlink_to(elsewhere / "real" / "SKILL.md")
+        except OSError:
+            self.skipTest("symlinks are not available here")
+        code, _, err = self.approve("acme/tools", "alpha", "skill", SHA_A, "--force")
+        self.assertEqual(code, 2)
+        self.assertIn("not a single skill", err)
+        self.assertTrue((folder / "notes.txt").is_file())
+
     def test_force_does_not_replace_a_skill_that_holds_another_skill(self) -> None:
         self.approve("acme/tools", "alpha")
         add_skill(self.root / "alpha", "examples/inner", "name: inner\ndescription: Inner.")

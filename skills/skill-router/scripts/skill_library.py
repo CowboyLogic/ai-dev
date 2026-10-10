@@ -318,9 +318,11 @@ def replaceable(location: Path) -> bool:
     """
     if location.is_symlink():
         return True
-    if not (location / "SKILL.md").is_file() or (location / ".git").exists():
+    marker = location / "SKILL.md"
+    # A SKILL.md that is itself a link does not make a skill: the router skips it.
+    if marker.is_symlink() or not marker.is_file() or (location / ".git").exists():
         return False
-    return not any(found != location / "SKILL.md" for found in location.rglob("SKILL.md"))
+    return not any(found != marker for found in location.rglob("SKILL.md"))
 
 
 def pick(skills: list[dict], wanted: str) -> dict:
