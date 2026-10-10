@@ -357,6 +357,12 @@ def quoted(value: object) -> str:
     return shlex.quote(shown(value))
 
 
+def source_url(repo: str) -> str:
+    """Return where a recorded repository lives. A host other than github.com is part of its identity."""
+    host_given = repo.count("/") >= 2
+    return f"https://{shown(repo)}" if host_given else f"https://github.com/{shown(repo)}"
+
+
 def describe_source(source: dict | None) -> str:
     if not source:
         return "no recorded source"
@@ -392,6 +398,11 @@ def is_script(path: Path) -> bool:
     if path.suffix.lower() in SCRIPT_SUFFIXES:
         return True
     try:
+        # gh writes what it fetches without the executable bit, so a file with no
+        # extension is a script if it says which interpreter runs it.
+        with path.open("rb") as handle:
+            if handle.read(2) == b"#!":
+                return True
         # Windows marks every file executable, so the mode says nothing there.
         return os.name != "nt" and bool(path.stat().st_mode & stat.S_IXUSR)
     except OSError:
@@ -412,7 +423,7 @@ def show_summary(skills: list[dict], tree: str) -> None:
         source = skill["source"]
         say()
         say(f"  {shown(skill['name'])}")
-        say(f"    source: https://github.com/{shown(source['repo'])}  path: {shown(source['path'])}")
+        say(f"    source: {source_url(source['repo'])}  path: {shown(source['path'])}")
         say(f"    version: {describe_source(source).rsplit('(', 1)[1].rstrip(')')}  tree: {shown(source['tree_sha'])}")
         say(f"    files ({len(skill['files'])}):")
         for name in skill["files"][:SUMMARY_FILE_LIMIT]:
