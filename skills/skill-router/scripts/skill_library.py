@@ -19,6 +19,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import re
+import shlex
 import shutil
 import stat
 import subprocess
@@ -347,6 +348,15 @@ def shown(value: object) -> str:
     return text if text.isprintable() else json.dumps(text)
 
 
+def quoted(value: object) -> str:
+    """Return text written by a repository as one safe argument of a command we print.
+
+    A command line is something a person or an agent will paste, so a name holding a
+    space or a shell metacharacter must not be able to end the argument it is in.
+    """
+    return shlex.quote(shown(value))
+
+
 def describe_source(source: dict | None) -> str:
     if not source:
         return "no recorded source"
@@ -415,9 +425,9 @@ def show_summary(skills: list[dict], tree: str) -> None:
                 say(f"    scripts among those {len(skill['files']) - SUMMARY_FILE_LIMIT}:")
                 for name in hidden:
                     say(f"      {shown(name)}   <- script")
-        say(f"    read it first: gh skill preview {shown(source['repo'])} {shown(source['path'])}")
+        say(f"    read it first: gh skill preview {quoted(source['repo'])} {quoted(source['path'])}")
     say()
-    say(f"Tree to approve: {tree}")
+    say(f"Tree to approve: {shown(tree)}")
     say("A skill is instructions and scripts an agent will follow. Approve only a source you trust.")
 
 
@@ -541,7 +551,7 @@ def decide_and_install(args: argparse.Namespace, library: Library, staged: list[
             say("Approval required. Show the summary above to the user and ask whether they trust this source")
             say("and how far: this skill only, the whole repository, or the whole owner. Then run install again")
             say(f"with the same arguments plus one of:")
-            say(f"  --approved-by-user --scope skill|repo|owner --expect-tree {tree}")
+            say(f"  --approved-by-user --scope skill|repo|owner --expect-tree {quoted(tree)}")
             say("  --deny")
             return APPROVAL_REQUIRED
 

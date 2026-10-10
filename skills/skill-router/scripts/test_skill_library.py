@@ -341,6 +341,23 @@ class TrustTests(LifecycleTestCase):
         self.assertNotIn("\x1b", library.describe_source(source))
         self.assertEqual(library.shown("plain name"), "plain name")
 
+    def test_a_command_printed_for_pasting_cannot_be_extended_by_a_repository(self) -> None:
+        import contextlib
+        import io
+
+        path = "skills/a b;$(touch pwned)"
+        source = {"repo": "acme/tools", "path": path, "ref": "refs/heads/main",
+                  "tree_sha": "abc; touch pwned", "pinned": ""}
+        staged = {"name": "alpha", "dir": "alpha", "source": source, "files": ["SKILL.md"], "scripts": []}
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            library.show_summary([staged], "abc; touch pwned")
+        lines = err.getvalue().splitlines()
+        self.assertIn("    read it first: gh skill preview acme/tools 'skills/a b;$(touch pwned)'", lines)
+        # An ordinary skill is not quoted at all.
+        self.assertEqual(library.quoted("skills/alpha"), "skills/alpha")
+        self.assertEqual(library.quoted("evil\x1b[2J"), "'\"evil\\u001b[2J\"'")
+
     def test_a_script_past_the_file_cap_is_still_named(self) -> None:
         import contextlib
         import io
