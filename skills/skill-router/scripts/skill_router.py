@@ -637,6 +637,13 @@ def build_parser() -> argparse.ArgumentParser:
     find.add_argument("--json", action="store_true", help="print results as JSON, with full descriptions")
     find.set_defaults(run=command_search)
 
+    remote = commands.add_parser("find", help="search GitHub for a skill the library does not have")
+    remote.add_argument("query", nargs="+", help="words describing the task; they are sent to GitHub")
+    remote.add_argument("-n", "--limit", type=positive_int, default=5, help="most results to print (default: 5)")
+    remote.add_argument("--owner", help="only skills from this GitHub user or organization")
+    remote.add_argument("--json", action="store_true", help="print results as JSON")
+    remote.set_defaults(run=lifecycle("command_find"))
+
     index = commands.add_parser("index", help="refresh the index and report on the library")
     index.add_argument("--rebuild", action="store_true", help="discard the cached index and re-read every skill")
     index.set_defaults(run=command_index)

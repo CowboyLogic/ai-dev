@@ -18,8 +18,8 @@ session, and that cost grows with the number of skills. The router replaces thos
 descriptions with one. When a task might have a skill, the agent runs the router's search
 script, which ranks the library by keyword and returns the best matches. The agent then
 reads the chosen skill from where it lives, so skills with their own reference files and
-scripts keep working. On a miss the agent searches once more, then reports that nothing is
-installed. It never installs a skill on its own.
+scripts keep working. On a miss the agent searches once more, then looks on GitHub through
+the GitHub CLI and shows you what it finds. It never installs a skill on its own.
 
 The router also looks after the library. It installs a skill from GitHub into it through
 the GitHub CLI, and asks you first whether you trust the source: that one skill, its whole
@@ -31,8 +31,8 @@ library without an approval until you have reviewed it.
 
 Use it when you keep many skills installed globally and most sessions use few of them. It
 works in any harness that can run a Python script and read files outside the project.
-Installing and updating need the GitHub CLI (`gh`) with its `gh skill` commands; searching
-does not. It is not worth the indirection for a handful of skills, and a skill you use in every session
+Finding skills on GitHub, installing, and updating need the GitHub CLI (`gh`) with its
+`gh skill` commands; searching the library does not. It is not worth the indirection for a handful of skills, and a skill you use in every session
 is better left where the harness discovers it.
 
 ---
