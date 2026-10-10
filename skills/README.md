@@ -19,6 +19,7 @@ Agent Skills are structured collections of instructions, templates, examples, an
 - **[About-Me Skill Creator](about-me-skill-creator/README.md)** - Create a private personal-context skill through a conversational wizard
 - **[Google Style Docs](google-style-docs/README.md)** - Write technical documentation following Google's Developer Documentation Style Guide
 - **[Handoff](handoff/README.md)** - Carry task state from one Claude Code session to the next with a `/handoff` command and a `SessionStart` hook
+- **[Skill Router](skill-router/README.md)** - Find an installed skill in a library kept outside the harness's discovery path, so hundreds of skills cost one description per session
 - **[Copilot Agent Creator](agent-creator-copilot/README.md)** - Create custom agents for GitHub Copilot in VS Code, the Copilot CLI, and the cloud agent
 - **[Copilot Instruction Creator](copilot-instruction-creator/README.md)** - Create custom instructions to tailor GitHub Copilot responses
 

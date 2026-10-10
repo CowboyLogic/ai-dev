@@ -97,6 +97,7 @@ nav:
           - Google Style Docs: skills/google-style-docs.md
           - Git Commit Messages: skills/git-commit-messages.md
           - Handoff: skills/handoff.md
+          - Skill Router: skills/skill-router.md
       - Development:
           - Docker Image Management: skills/docker-image-management.md
           - MkDocs Site Management: skills/mkdocs-site-management.md
