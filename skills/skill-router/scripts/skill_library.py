@@ -38,6 +38,8 @@ RULE_FIELDS = {
     "local": ("dir",),
     "local-dir": ("dir",),
 }
+# Rule fields that are paths, and so are matched exactly.
+CASE_SENSITIVE = frozenset(("dir", "path"))
 APPROVAL_REQUIRED = 3
 SCRIPT_SUFFIXES = frozenset(".py .sh .bash .zsh .fish .ps1 .bat .cmd .js .mjs .ts .rb .pl .php".split())
 SUMMARY_FILE_LIMIT = 40
@@ -69,14 +71,20 @@ class Trust:
     def __init__(self, path: Path, rules: list[dict]) -> None:
         self.path = path
         self.rules = rules
+        # The rules as the file held them when they were read, so `save` can tell what changed.
+        self._loaded = list(rules)
 
     @staticmethod
     def _key(rule: dict) -> tuple:
-        return (rule["scope"], *(rule[field].lower() if field != "dir" else rule[field] for field in RULE_FIELDS[rule["scope"]]))
+        # Owner and repository names are not case-sensitive on GitHub. A path in a repository is.
+        return (
+            rule["scope"],
+            *(rule[field] if field in CASE_SENSITIVE else rule[field].lower() for field in RULE_FIELDS[rule["scope"]]),
+        )
 
     def denial(self, source: dict) -> dict | None:
         """Return the record refusing this skill. A refusal is always for one skill."""
-        wanted = ("skill", source["repo"].lower(), source["path"].lower())
+        wanted = ("skill", source["repo"].lower(), source["path"])
         for rule in self.rules:
             if rule["decision"] == "denied" and self._key(rule) == wanted:
                 return rule
@@ -87,7 +95,7 @@ class Trust:
         if self.denial(source):
             return None
         repo = source["repo"].lower()
-        wanted = {("skill", repo, source["path"].lower()), ("repo", repo), ("owner", owner_of(repo))}
+        wanted = {("skill", repo, source["path"]), ("repo", repo), ("owner", owner_of(repo))}
         for rule in self.rules:
             if rule["decision"] == "approved" and self._key(rule) in wanted:
                 return rule
@@ -135,7 +143,28 @@ class Trust:
             self.record("local", decision, dir=skill["dir"], **extra)
 
     def save(self) -> bool:
-        return router.write_json(self.path, {"version": TRUST_VERSION, "rules": self.rules})
+        """Write this command's decisions on top of the file as it is now.
+
+        Another command may have recorded a decision since this one read the file, and an
+        install waits on a person and a download in between. So the rules are merged, not
+        replaced: a decision made here wins over the file's on the same thing, and every
+        other rule in the file is kept.
+        """
+        added = [rule for rule in self.rules if rule not in self._loaded]
+        dropped = {self._key(rule) for rule in self._loaded if rule not in self.rules}
+        try:
+            current = load_trust(self.path.parent)
+        except RouterError:
+            return False
+        merged = [rule for rule in (current.rules if current else []) if self._key(rule) not in dropped]
+        for rule in added:
+            key = self._key(rule)
+            merged = [existing for existing in merged if self._key(existing) != key] + [rule]
+        if not router.write_json(self.path, {"version": TRUST_VERSION, "rules": merged}):
+            return False
+        self.rules = merged
+        self._loaded = list(merged)
+        return True
 
     def must_save(self) -> None:
         if not self.save():
@@ -278,6 +307,21 @@ def delete_skill(root: Path, relative: str) -> None:
     shutil.rmtree(target)
 
 
+def replaceable(location: Path) -> bool:
+    """Whether what stands at this library path is one skill, which a new install may replace.
+
+    A link is removed as a link and leaves what it points at alone, so it is replaceable.
+    A folder is only if its own SKILL.md is at the top and nothing else of value hangs
+    off it: a clone or a folder of several skills is not one skill, and removing it would
+    take the rest with it.
+    """
+    if location.is_symlink():
+        return True
+    if not (location / "SKILL.md").is_file() or (location / ".git").exists():
+        return False
+    return not any(found != location / "SKILL.md" for found in location.rglob("SKILL.md"))
+
+
 def pick(skills: list[dict], wanted: str) -> dict:
     """Return the one skill a name or library-relative directory refers to."""
     as_dir = wanted.replace("\\", "/").strip("/")
@@ -379,7 +423,7 @@ def command_install(args: argparse.Namespace) -> int:
             rule["decision"] == "denied"
             and not args.reconsider
             and rule["repo"].lower() == repo.lower()
-            and wanted in (rule.get("name", "").lower(), rule["path"].lower())
+            and wanted in (rule_name(rule).lower(), rule["path"].lower())
         ):
             raise RouterError(denied_message(rule))
 
@@ -400,9 +444,17 @@ def command_install(args: argparse.Namespace) -> int:
         shutil.rmtree(stage, ignore_errors=True)
 
 
+def rule_name(rule: dict) -> str:
+    """The name recorded on a rule. It is audit detail, so a damaged one reads as absent."""
+    name = rule.get("name")
+    return name if isinstance(name, str) else ""
+
+
 def denied_message(rule: dict) -> str:
+    decided = rule.get("decided_at")
+    when = f" on {decided[:10]}" if isinstance(decided, str) and decided else ""
     return (
-        f"{rule.get('name') or rule['path']} from {rule['repo']} was denied on {rule['decided_at'][:10]} "
+        f"{rule_name(rule) or rule['path']} from {rule['repo']} was denied{when} "
         "and was not installed. Pass --reconsider to be asked again."
     )
 
@@ -421,7 +473,16 @@ def decide_and_install(args: argparse.Namespace, library: Library, staged: list[
     if not wanted:
         return 1
     for skill in wanted:
-        if (root / skill["dir"]).exists() and not args.force:
+        occupant = root / skill["dir"]
+        if not (occupant.exists() or occupant.is_symlink()):
+            continue
+        if not replaceable(occupant):
+            raise RouterError(
+                f"{skill['dir']} is already in the library and is not a single skill: it is a clone, holds "
+                "other skills, or is not a skill folder. --force does not replace it. Move or remove it "
+                "yourself, then install again; nothing was changed."
+            )
+        if not args.force:
             raise RouterError(
                 f"{skill['dir']} is already in the library. Run `update` to refresh it, or pass --force to replace it."
             )
@@ -535,13 +596,13 @@ def sources_on_record(library_option: str | None) -> tuple[set[tuple[str, str]],
     except RouterError:
         return set(), set()
     have = {
-        (skill["source"]["repo"].lower(), skill["source"]["path"].lower())
+        (skill["source"]["repo"].lower(), skill["source"]["path"])
         for skill in router.refresh_index(root)
         if skill["source"]
     }
     trust = load_trust(root)
     refused = {
-        (rule["repo"].lower(), rule["path"].lower())
+        (rule["repo"].lower(), rule["path"])
         for rule in (trust.rules if trust else [])
         if rule["decision"] == "denied"
     }
@@ -577,7 +638,7 @@ def command_find(args: argparse.Namespace) -> int:
         if candidate is None:
             left_out["unreadable"] += 1
             continue
-        key = (candidate["repo"].lower(), candidate["dir"].lower())
+        key = (candidate["repo"].lower(), candidate["dir"])
         if key in seen:
             continue
         seen.add(key)

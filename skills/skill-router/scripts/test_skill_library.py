@@ -252,6 +252,75 @@ class TrustTests(LifecycleTestCase):
                     self.assertIn("not a trust file", err)
                 self.assertEqual(self.trust_path.read_text(encoding="utf-8"), content)
 
+    def test_a_path_that_differs_only_in_case_is_another_skill(self) -> None:
+        upper, lower = self.skill("acme/tools", "Alpha"), self.skill("acme/tools", "alpha")
+        trust = library.Trust(self.trust_path, [])
+        trust.record_skill(upper)
+        self.assertIsNotNone(trust.covering(upper))
+        self.assertIsNone(trust.covering(lower))
+        trust.record_skill(lower, decision="denied")
+        self.assertIsNotNone(trust.covering(upper))
+        self.assertIsNone(trust.covering(lower))
+        self.assertEqual(len(trust.rules), 2)
+
+    def test_the_owner_and_repository_are_still_matched_without_case(self) -> None:
+        trust = library.Trust(self.trust_path, [])
+        trust.record_skill(self.skill("acme/tools", "alpha"))
+        self.assertIsNotNone(trust.covering(self.skill("ACME/Tools", "alpha")))
+
+    def test_a_decision_made_elsewhere_in_the_meantime_is_kept(self) -> None:
+        library.Trust(self.trust_path, []).save()
+        first, second = library.load_trust(self.root), library.load_trust(self.root)
+        beta = self.skill("acme/tools", "beta")
+        first.record_skill(beta, decision="denied")
+        self.assertTrue(first.save())
+        second.record("repo", repo="acme/tools")
+        self.assertTrue(second.save())
+        reloaded = library.load_trust(self.root)
+        self.assertIsNone(reloaded.covering(beta))
+        self.assertEqual(sorted(rule["scope"] for rule in reloaded.rules), ["repo", "skill"])
+        self.assertEqual(second.rules, reloaded.rules)
+
+    def test_a_decision_made_here_wins_over_the_file_on_the_same_thing(self) -> None:
+        alpha = self.skill("acme/tools", "alpha")
+        seed = library.Trust(self.trust_path, [])
+        seed.record_skill(alpha, decision="denied")
+        seed.save()
+        here, there = library.load_trust(self.root), library.load_trust(self.root)
+        there.record_skill(alpha, decision="denied", via="again")
+        there.save()
+        # A refusal being reconsidered is dropped, and stays dropped.
+        here.rules = [rule for rule in here.rules if rule["decision"] != "denied"]
+        here.record("repo", repo="acme/tools")
+        self.assertTrue(here.save())
+        reloaded = library.load_trust(self.root)
+        self.assertEqual([rule["scope"] for rule in reloaded.rules], ["repo"])
+        self.assertIsNotNone(reloaded.covering(alpha))
+
+    def test_a_trust_file_damaged_since_it_was_read_is_not_overwritten(self) -> None:
+        trust = library.Trust(self.trust_path, [])
+        trust.save()
+        self.trust_path.write_text("not json", encoding="utf-8")
+        trust.record("repo", repo="acme/tools")
+        self.assertFalse(trust.save())
+        self.assertEqual(self.trust_path.read_text(encoding="utf-8"), "not json")
+
+    def test_a_refusal_with_damaged_audit_fields_is_still_reported(self) -> None:
+        rule = {"scope": "skill", "repo": "acme/tools", "path": "skills/alpha", "decision": "denied"}
+        cases = {
+            "no timestamp": {**rule, "name": "alpha"},
+            "timestamp of the wrong type": {**rule, "name": "alpha", "decided_at": 5},
+            "name of the wrong type": {**rule, "name": 7, "decided_at": "2026-10-01T00:00:00Z"},
+        }
+        for label, record in cases.items():
+            with self.subTest(case=label):
+                self.trust_path.write_text(json.dumps({"version": 1, "rules": [record]}), encoding="utf-8")
+                code, out, err = self.cli("install", "acme/tools", "skills/alpha")
+                self.assertEqual((code, out), (2, ""))
+                self.assertIn("was denied", err)
+                self.assertIn("--reconsider", err)
+                self.assertNotIn("Traceback", err)
+
     def test_rebuilding_the_index_leaves_the_trust_file_alone(self) -> None:
         add_skill(self.root, "alpha", "name: alpha\ndescription: A.")
         self.initialize()
@@ -454,6 +523,46 @@ class InstallTests(LifecycleTestCase):
         self.assertTrue((self.root / "alpha" / "local-note.txt").exists())
         self.assertEqual(self.cli("install", "acme/tools", "alpha", "--force")[0], 0)
         self.assertFalse((self.root / "alpha" / "local-note.txt").exists())
+
+    def test_force_does_not_replace_a_folder_that_is_not_one_skill(self) -> None:
+        clone = self.root / "alpha"
+        add_skill(clone / "skills", "keep", "name: keep\ndescription: Kept.")
+        (clone / "README.md").write_text("a clone", encoding="utf-8")
+        (clone / ".git").mkdir()
+        plain = self.root / "beta"
+        plain.mkdir()
+        (plain / "notes.txt").write_text("not a skill", encoding="utf-8")
+        for name, folder in (("alpha", clone), ("beta", plain)):
+            for force in ((), ("--force",)):
+                with self.subTest(skill=name, force=bool(force)):
+                    before = sorted(path.relative_to(folder).as_posix() for path in folder.rglob("*"))
+                    code, out, err = self.approve("acme/tools", name, "skill", SHA_A if name == "alpha" else SHA_B, *force)
+                    self.assertEqual((code, out), (2, ""))
+                    self.assertIn("not a single skill", err)
+                    self.assertEqual(sorted(path.relative_to(folder).as_posix() for path in folder.rglob("*")), before)
+                    self.assertFalse(any(rule["name"] == name for rule in self.rules() if rule.get("name")))
+
+    def test_force_does_not_replace_a_skill_that_holds_another_skill(self) -> None:
+        self.approve("acme/tools", "alpha")
+        add_skill(self.root / "alpha", "examples/inner", "name: inner\ndescription: Inner.")
+        code, _, err = self.cli("install", "acme/tools", "alpha", "--force")
+        self.assertEqual(code, 2)
+        self.assertIn("not a single skill", err)
+        self.assertTrue((self.root / "alpha" / "examples" / "inner" / "SKILL.md").is_file())
+
+    def test_force_replaces_a_link_without_touching_its_target(self) -> None:
+        elsewhere = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda: library.shutil.rmtree(elsewhere, ignore_errors=True))
+        add_skill(elsewhere, "alpha", "name: alpha\ndescription: Elsewhere.")
+        (self.root).mkdir(parents=True, exist_ok=True)
+        try:
+            (self.root / "alpha").symlink_to(elsewhere / "alpha", target_is_directory=True)
+        except OSError:
+            self.skipTest("symlinks are not available here")
+        self.initialize()
+        self.assertEqual(self.approve("acme/tools", "alpha", "skill", SHA_A, "--force")[0], 0)
+        self.assertFalse((self.root / "alpha").is_symlink())
+        self.assertTrue((elsewhere / "alpha" / "SKILL.md").is_file())
 
     def test_pin_is_passed_to_gh(self) -> None:
         self.approve("acme/tools", "alpha", "skill", SHA_A, "--pin", "v1.0")
