@@ -217,6 +217,8 @@ class IndexTests(LibraryTestCase):
         add_skill(self.root, "alpha", "name: alpha\ndescription: A.")
         index_path = self.root / router.INDEX_NAME
         expected = {("search", "alpha"): "1. alpha", ("index",): "1 skills indexed", ("topics",): "alpha"}
+        # The first command on a library reports that it accepted what was there.
+        run("--library", str(self.root), "list")
         for command, output in expected.items():
             with self.subTest(command=command):
                 router.refresh_index(self.root)
