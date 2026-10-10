@@ -589,6 +589,27 @@ class InstallTests(LifecycleTestCase):
         self.assertEqual(self.cli("install", "acme/tools", "beta")[0], 2)
         self.assertFalse((self.root / "beta").exists())
 
+    def test_deny_refuses_a_skill_a_wider_approval_already_covers(self) -> None:
+        self.approve("acme/tools", "alpha", "repo")
+        code, _, _ = self.cli("install", "acme/tools", "beta", "--deny")
+        self.assertEqual(code, 0)
+        self.assertFalse((self.root / "beta").exists())
+        self.assertEqual(
+            sorted((rule["scope"], rule["decision"]) for rule in self.rules()),
+            [("repo", "approved"), ("skill", "denied")],
+        )
+        self.assertEqual(self.cli("install", "acme/tools", "beta")[0], 2)
+
+    def test_deny_with_all_installs_nothing_under_an_approved_owner(self) -> None:
+        self.approve("Acme/other", "gamma", "owner")
+        code, _, _ = self.cli("install", "acme/tools", "--all", "--deny")
+        self.assertEqual(code, 0)
+        self.assertEqual(self.names(), ["gamma"])
+        self.assertEqual(
+            sorted(rule["name"] for rule in self.rules() if rule["decision"] == "denied"),
+            ["alpha", "beta"],
+        )
+
     def test_all_leaves_out_denied_skills(self) -> None:
         self.cli("install", "acme/tools", "beta", "--deny")
         code, _, err = self.cli("install", "acme/tools", "--all")
