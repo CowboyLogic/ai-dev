@@ -622,7 +622,7 @@ def sources_on_record(library_option: str | None) -> tuple[set[tuple[str, str]],
         return set(), set()
     have = {
         (skill["source"]["repo"].lower(), skill["source"]["path"])
-        for skill in router.refresh_index(root)
+        for skill in router.refresh_index(root, persist=False)
         if skill["source"]
     }
     trust = load_trust(root)

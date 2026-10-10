@@ -717,6 +717,18 @@ class FindTests(LifecycleTestCase):
         # Two wanted, and room for results the library already has.
         self.assertEqual(call[call.index("--limit") + 1], str(2 + library.SEARCH_SPARE))
 
+    def test_find_does_not_write_to_an_existing_library(self) -> None:
+        self.initialize()
+        add_skill(self.root, "newcomer", gh_frontmatter("acme/tools", "newcomer", SHA_A))
+        # The index is now behind the folder. Any other command would repair it.
+        before = {path.name: path.read_bytes() for path in self.root.iterdir() if path.is_file()}
+        self.gh.search_results = [search_row("acme/tools", "alpha")]
+        self.assertEqual(self.cli("find", "alpha")[0], 0)
+        after = {path.name: path.read_bytes() for path in self.root.iterdir() if path.is_file()}
+        self.assertEqual(after, before)
+        self.assertEqual(sorted(path.name for path in self.root.iterdir()), sorted(
+            [*before, "newcomer"]))
+
     def test_what_the_library_has_or_refused_is_left_out(self) -> None:
         self.approve("acme/tools", "alpha")
         self.cli("install", "acme/tools", "beta", "--deny")

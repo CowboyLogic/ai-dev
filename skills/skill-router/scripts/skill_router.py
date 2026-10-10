@@ -303,7 +303,7 @@ def valid_entry(entry: object) -> bool:
     )
 
 
-def refresh_index(root: Path, rebuild: bool = False) -> list[dict]:
+def refresh_index(root: Path, rebuild: bool = False, persist: bool = True) -> list[dict]:
     """Return the library's skills, re-reading only SKILL.md files that changed.
 
     The index file is a cache keyed on each SKILL.md's size, modification time, and
@@ -311,7 +311,8 @@ def refresh_index(root: Path, rebuild: bool = False) -> list[dict]:
     time moves when a file's content or permissions do, so a skill that has become
     unreadable is read again and skipped. On Windows that value is the creation time,
     so an edit that keeps size and modification time is not seen there; `rebuild`
-    reads every file again.
+    reads every file again. With `persist` false the file is read but never written, for
+    a command that promises to change nothing on disk.
     """
     index_path = root / INDEX_NAME
     previous, sound = ([], True) if rebuild else read_index(index_path)
@@ -337,7 +338,7 @@ def refresh_index(root: Path, rebuild: bool = False) -> list[dict]:
             continue
         skills.append(entry)
     skills.sort(key=lambda entry: (entry["name"], entry["dir"]))
-    if rebuild or not sound or skills != previous:
+    if persist and (rebuild or not sound or skills != previous):
         write_index(index_path, skills)
     return skills
 
