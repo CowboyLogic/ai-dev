@@ -369,7 +369,8 @@ def library_topics(skills: list[dict], max_chars: int) -> list[str]:
     for word in sorted(counts, key=lambda word: (-counts[word], word)):
         cost = len(word) + (2 if chosen else 0)
         if used + cost > max_chars:
-            break
+            # A shorter word further down may still fit.
+            continue
         chosen.append(word)
         used += cost
     return chosen
@@ -482,6 +483,15 @@ def command_index(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_list(args: argparse.Namespace) -> int:
+    root = resolve_library(args.library)
+    skills = refresh_index(root)
+    print(f"{len(skills)} skills in {root.as_posix()}:")
+    for skill in skills:
+        print(f"  {skill['name']}")
+    return 0
+
+
 def command_topics(args: argparse.Namespace) -> int:
     root = resolve_library(args.library)
     skills = refresh_index(root)
@@ -521,6 +531,9 @@ def build_parser() -> argparse.ArgumentParser:
     index = commands.add_parser("index", help="refresh the index and report on the library")
     index.add_argument("--rebuild", action="store_true", help="discard the cached index and re-read every skill")
     index.set_defaults(run=command_index)
+
+    names = commands.add_parser("list", help="print the name of every skill in the library")
+    names.set_defaults(run=command_list)
 
     topics = commands.add_parser("topics", help="print the words most common across skill names")
     topics.add_argument("--max-chars", type=positive_int, default=300, help="length budget for the list (default: 300)")

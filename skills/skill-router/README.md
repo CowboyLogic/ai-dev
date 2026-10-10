@@ -86,16 +86,20 @@ later, and [uv](https://docs.astral.sh/uv/) finds or fetches one, so the system 
 not matter and no virtual environment is needed. Without `uv`, use a `python3` or `python`
 that is 3.12 or later; an older one stops with a message saying so.
 
+In the commands below, `<skill-dir>` is where your harness installed this skill, such as
+`~/.claude/skills/skill-router` for a global Claude Code install.
+
 | Command | What it does |
 |---|---|
 | `search <words>` | Print the best matches. `-n <count>` changes how many, and `--json` prints full descriptions. |
+| `list` | Print the name of every skill in the library. |
 | `index` | Refresh the index and report on the library. `--rebuild` discards the cached index first. |
 | `topics` | Print the words most common across skill names. `--write` adds them to this skill's description. |
 
 ### Check the library
 
 ```bash
-uv run ~/.claude/skills/skill-router/scripts/skill_router.py index
+uv run <skill-dir>/scripts/skill_router.py index
 ```
 
 The report gives the skill count and lists three kinds of skill worth a look:
@@ -112,7 +116,7 @@ An agent searches only when it suspects a skill exists. To give it a reason, add
 library's most common name words to this skill's own description:
 
 ```bash
-uv run ~/.claude/skills/skill-router/scripts/skill_router.py topics --write
+uv run <skill-dir>/scripts/skill_router.py topics --write
 ```
 
 This appends a sentence such as `Library topics include terraform, review, docker.` to the

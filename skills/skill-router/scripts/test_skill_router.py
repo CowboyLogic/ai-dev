@@ -445,6 +445,12 @@ class CommandTests(LibraryTestCase):
         self.assertIn("no skill library at", err)
         self.assertIn(router.LIBRARY_ENV, err)
 
+    def test_list_prints_every_name(self) -> None:
+        code, out, _ = run(*self.library, "list")
+        self.assertEqual(code, 0)
+        self.assertEqual(out.splitlines()[1:], ["  docker-images", "  terraform-review"])
+        self.assertTrue(out.startswith("2 skills in "))
+
     def test_older_python_is_refused(self) -> None:
         with patch.object(router.sys, "version_info", (3, 11, 9)):
             code, out, err = run(*self.library, "search", "terraform")
@@ -490,6 +496,10 @@ class TopicsTests(LibraryTestCase):
     def test_topics_stop_at_the_length_budget(self) -> None:
         topics = router.library_topics(router.refresh_index(self.root), len("review, terraform"))
         self.assertEqual(topics, ["review", "terraform"])
+
+    def test_topics_skip_a_word_that_does_not_fit_and_keep_looking(self) -> None:
+        skills = [{"name": "verylong-short"}, {"name": "verylong"}]
+        self.assertEqual(router.library_topics(skills, 5), ["short"])
 
     def test_write_appends_then_replaces_the_sentence(self) -> None:
         router.write_topics(self.skill_md, ["docker", "terraform"])
