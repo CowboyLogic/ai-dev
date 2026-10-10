@@ -57,8 +57,10 @@ To keep the library somewhere else, set `SKILL_ROUTER_LIBRARY` to its path, or p
 `--library <path>` before the command.
 
 The library is outside your project, so a harness may ask before reading from it or
-running a script in it. Allow the library path once in your harness's permission
-settings. In Claude Code, for example:
+running a script in it. These are two separate permissions in most harnesses.
+
+Reading a skill's files is one. In Claude Code, for example, this rule lets the agent
+load any library skill without a prompt:
 
 ```json
 {
@@ -67,6 +69,11 @@ settings. In Claude Code, for example:
   }
 }
 ```
+
+Running a script is the other, and a read rule does not cover it. That applies to the
+router's own search script and to any script a library skill ships. Approve those commands
+when the harness asks, or add a narrowly scoped rule for them in your harness's
+permission settings.
 
 ## Commands
 
@@ -112,8 +119,12 @@ does.
 The script keeps `.skill-router-index.json` at the top of the library: each skill's name,
 description, and directory, plus the size and modification time of its `SKILL.md`. Every
 command walks the library and re-reads only the `SKILL.md` files whose size or time
-changed, so the index never needs a manual rebuild. If the library is read-only, the
-script still works and re-reads every file each time.
+changed, so the index does not need a rebuild in normal use. If the library is read-only,
+the script still works and re-reads every file each time.
+
+The one change the script cannot see is an edit that keeps both the size and the
+modification time, such as a copy that preserves timestamps over a file of the same
+length. Run `index --rebuild` after an update like that.
 
 A cached record that is incomplete or of the wrong shape is discarded and read again from
 its `SKILL.md`. The index is written to a uniquely named temporary file and then moved
