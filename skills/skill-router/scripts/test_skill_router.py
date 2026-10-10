@@ -11,6 +11,7 @@ from pathlib import Path
 import sys
 import tempfile
 import threading
+import time
 import unittest
 from unittest.mock import patch
 
@@ -78,7 +79,7 @@ class FrontmatterTests(unittest.TestCase):
         self.assertEqual(fields["description"], "'Unfinished value")
 
     def test_folded_and_literal_blocks_collapse_to_one_line(self) -> None:
-        for indicator in (">", ">-", "|", "|+"):
+        for indicator in (">", ">-", "|", "|+", ">2", ">-2", ">2-", "|2+", "|+2 # note"):
             with self.subTest(indicator=indicator):
                 text = f"---\nname: demo\ndescription: {indicator}\n  First line\n  second line.\n\n  Third.\nlicense: MIT\n---\n"
                 fields = router.read_frontmatter(text)
@@ -183,6 +184,7 @@ class IndexTests(LibraryTestCase):
             "variable not text": {**good[0], "harness_variables": [1]},
             "size not a number": {**good[0], "size": "12"},
             "time is a boolean": {**good[0], "mtime_ns": True},
+            "missing change time": {k: v for k, v in good[0].items() if k != "ctime_ns"},
             "record not a mapping": "alpha",
         }
         for label, record in broken.items():
@@ -196,6 +198,20 @@ class IndexTests(LibraryTestCase):
                 # Only the malformed record is read again; the valid one stays cached.
                 self.assertEqual([call.args[1].name for call in rebuilt.call_args_list], ["alpha"])
                 self.assertEqual(router.load_index(index_path), good)
+
+    def test_unsound_index_is_rewritten_even_when_nothing_else_changed(self) -> None:
+        index_path = self.root / router.INDEX_NAME
+        orphan = {"version": router.INDEX_VERSION, "skills": [{"dir": "gone"}]}
+        for content in ("not json", "[]", json.dumps({"version": 0, "skills": []}), json.dumps(orphan)):
+            with self.subTest(content=content):
+                index_path.write_text(content, encoding="utf-8")
+                self.assertEqual(router.refresh_index(self.root), [])
+                stored = json.loads(index_path.read_text(encoding="utf-8"))
+                self.assertEqual(stored, {"version": router.INDEX_VERSION, "skills": []})
+
+    def test_empty_library_with_no_index_writes_nothing(self) -> None:
+        self.assertEqual(router.refresh_index(self.root), [])
+        self.assertFalse((self.root / router.INDEX_NAME).exists())
 
     def test_commands_tolerate_a_malformed_index(self) -> None:
         add_skill(self.root, "alpha", "name: alpha\ndescription: A.")
@@ -248,7 +264,7 @@ class IndexTests(LibraryTestCase):
         index_path = self.root / router.INDEX_NAME
         payloads = [
             [{"name": f"writer-{number}", "description": str(number) * 50_000, "dir": "d",
-              "harness_variables": [], "mtime_ns": 1, "size": 1}]
+              "harness_variables": [], "mtime_ns": 1, "ctime_ns": 1, "size": 1}]
             for number in range(4)
         ]
 
@@ -296,6 +312,20 @@ class IndexTests(LibraryTestCase):
         self.assertEqual([result["name"] for result in json.loads(out)["results"]], ["alpha"])
         self.assertIn("skipped beta/SKILL.md: Permission denied", err)
         self.assertIn(f"cannot read {locked_dir}", err)
+
+    @unittest.skipIf(os.name == "nt" or not hasattr(os, "geteuid") or os.geteuid() == 0, "needs file permissions that bind")
+    def test_cached_skill_that_becomes_unreadable_is_skipped(self) -> None:
+        add_skill(self.root, "alpha", "name: alpha\ndescription: A.")
+        locked = add_skill(self.root, "beta", "name: beta\ndescription: B.") / "SKILL.md"
+        self.assertEqual([s["name"] for s in router.refresh_index(self.root)], ["alpha", "beta"])
+        # Some filesystems stamp change times coarsely; let the clock move first.
+        time.sleep(0.05)
+        locked.chmod(0)
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            skills = router.refresh_index(self.root)
+        self.assertEqual([s["name"] for s in skills], ["alpha"])
+        self.assertIn("skipped beta/SKILL.md: Permission denied", err.getvalue())
 
     @unittest.skipIf(os.name == "nt", "creating symlinks needs elevation on Windows")
     def test_symlinked_checkout_is_indexed_and_loops_end(self) -> None:

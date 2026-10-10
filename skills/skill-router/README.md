@@ -128,17 +128,19 @@ does.
 ## The index
 
 The script keeps `.skill-router-index.json` at the top of the library: each skill's name,
-description, and directory, plus the size and modification time of its `SKILL.md`. Every
-command walks the library and re-reads only the `SKILL.md` files whose size or time
-changed, so the index does not need a rebuild in normal use. If the library is read-only,
-the script still works and re-reads every file each time.
+description, and directory, plus the size, modification time, and change time of its
+`SKILL.md`. Every command walks the library and re-reads only the `SKILL.md` files where
+one of those differs, so the index does not need a rebuild in normal use. If the library
+is read-only, the script still works and re-reads every file each time.
 
-The one change the script cannot see is an edit that keeps both the size and the
-modification time, such as a copy that preserves timestamps over a file of the same
-length. Run `index --rebuild` after an update like that.
+The change time moves when a file's content or permissions change, so a replaced file is
+read again even if its size and modification time were kept, and a skill that has become
+unreadable is dropped. Windows reports a file's creation time in that field, so there an
+edit that keeps both the size and the modification time is not seen. Run
+`index --rebuild` after an update like that.
 
 A cached record that is incomplete or of the wrong shape is discarded and read again from
-its `SKILL.md`. The index is written to a uniquely named temporary file and then moved
+its `SKILL.md`, and an index file that is damaged is written again. The index is written to a uniquely named temporary file and then moved
 into place, so two commands running at once never mix their output.
 
 A skill or directory the script cannot read is skipped with a message on stderr, and the
