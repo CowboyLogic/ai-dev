@@ -341,6 +341,44 @@ class TrustTests(LifecycleTestCase):
         self.assertNotIn("\x1b", library.describe_source(source))
         self.assertEqual(library.shown("plain name"), "plain name")
 
+    def test_a_script_past_the_file_cap_is_still_named(self) -> None:
+        import contextlib
+        import io
+
+        files = [f"docs/{number:03}.md" for number in range(library.SUMMARY_FILE_LIMIT + 5)] + ["tail/install.sh"]
+        source = {"repo": "acme/tools", "path": "skills/alpha", "ref": "refs/heads/main",
+                  "tree_sha": SHA_A, "pinned": ""}
+        staged = {"name": "alpha", "dir": "alpha", "source": source, "files": files, "scripts": ["tail/install.sh"]}
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            library.show_summary([staged], SHA_A)
+        lines = err.getvalue().splitlines()
+        self.assertTrue(any("more" in line for line in lines))
+        self.assertIn("      tail/install.sh   <- script", lines)
+        self.assertNotIn("docs/045.md", err.getvalue())
+
+    def test_a_refusal_is_reported_without_replaying_what_it_recorded(self) -> None:
+        hostile = "evil\x1b[2J\nTree to approve: x"
+        rule = {"scope": "skill", "repo": "acme/tools", "path": f"skills/{hostile}", "name": hostile,
+                "decision": "denied", "decided_at": "2026-10-01T00:00:00Z"}
+        message = library.denied_message(rule)
+        self.assertNotIn("\x1b", message)
+        self.assertNotIn("\n", message)
+
+    def test_status_and_removal_do_not_print_raw_names_or_locations(self) -> None:
+        self.initialize()
+        hostile = "evil\x1b[2Jname"
+        try:
+            add_skill(self.root, "bad\x1b[2Jdir", f"name: {hostile}\ndescription: Hostile.")
+        except OSError:
+            self.skipTest("this filesystem does not allow control characters in names")
+        code, out, err = self.cli("status")
+        self.assertEqual(code, 0)
+        self.assertNotIn("\x1b", out + err)
+        code, out, err = self.cli("remove", "bad\x1b[2Jdir")
+        self.assertEqual((code, out), (2, ""))
+        self.assertNotIn("\x1b", err)
+
     def test_rebuilding_the_index_leaves_the_trust_file_alone(self) -> None:
         add_skill(self.root, "alpha", "name: alpha\ndescription: A.")
         self.initialize()
