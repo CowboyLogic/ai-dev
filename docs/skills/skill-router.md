@@ -54,9 +54,11 @@ Set `SKILL_ROUTER_LIBRARY` to use a different directory.
 
 ```bash
 npx skills ls -g
-uv run ~/.claude/skills/skill-router/scripts/skill_router.py index
+uv run <skill-dir>/scripts/skill_router.py index
 ```
 
-The second command prints how many skills the library holds. See the
+Replace `<skill-dir>` with where your harness installed the skill, such as
+`~/.claude/skills/skill-router` for a global Claude Code install. The second command
+prints how many skills the library holds. See the
 [skill README](https://github.com/CowboyLogic/ai-dev/blob/main/skills/skill-router/README.md)
 for the permission setup, the commands, how search ranks results, and the limits.

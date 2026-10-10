@@ -67,6 +67,9 @@ decision.
 
 ## Other commands
 
+- `list` prints the name of every skill in the library. Use it when the user asks what is
+  installed. With hundreds of skills the output is long, so prefer `search` when the user
+  wants a skill for a particular task.
 - `index` refreshes the index and reports on the library: the skill count, skills with
   no description, names used twice, and skills that use harness-only variables. `search`
   refreshes the index itself, so this is for inspection, not a required step.
