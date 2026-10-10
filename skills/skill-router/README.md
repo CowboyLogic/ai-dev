@@ -115,6 +115,13 @@ command walks the library and re-reads only the `SKILL.md` files whose size or t
 changed, so the index never needs a manual rebuild. If the library is read-only, the
 script still works and re-reads every file each time.
 
+A cached record that is incomplete or of the wrong shape is discarded and read again from
+its `SKILL.md`. The index is written to a uniquely named temporary file and then moved
+into place, so two commands running at once never mix their output.
+
+A skill or directory the script cannot read is skipped with a message on stderr, and the
+rest of the library is still searched.
+
 If the library directory is itself a git clone, the index file shows up there as
 untracked. Use a plain directory that holds your clones, or add the file to that clone's
 `.git/info/exclude`.
@@ -124,6 +131,11 @@ untracked. Use a plain directory that holds your clones, or add the file to that
 Search is by keyword, with BM25 scoring. A word in a skill's name counts three times as
 much as a word in its description. Results that score under 35% of the best result are
 dropped, so a skill that only mentions a query word in passing does not fill the list.
+
+A skill whose name is the query comes first, ahead of the ranking, and is marked
+`(exact name)`. Case does not matter, and spaces match hyphens, so `commit messages` finds
+`commit-messages`. If two skills in the library share that name, both are listed with
+their directories.
 
 Keyword search does not know synonyms. A search for `k8s` does not find a skill that says
 only `Kubernetes`. That is why the skill tells the agent to search a second time with
@@ -137,7 +149,8 @@ different words before it concludes nothing is installed.
   Claude Code's `allowed-tools` or `disable-model-invocation` has no effect on them. The
   agent reads the skill as a file.
 - The script reads the subset of YAML that skill frontmatter uses: plain, quoted, folded,
-  and literal values. It does not read anchors or flow collections.
+  and literal values, with trailing comments and double-quote escapes. It does not read
+  anchors, tags, or flow collections.
 - The ranking was tuned against this repository's own skills, not a library of hundreds.
 - Finding and installing skills from remote sources is not part of this skill.
 

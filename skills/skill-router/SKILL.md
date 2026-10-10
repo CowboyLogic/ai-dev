@@ -35,6 +35,10 @@ Search is by keyword, so a miss can mean the wrong words and not a missing skill
 nothing fits, search **once more** with different words, such as a synonym, the tool's
 name, or a broader term. Two misses mean the library has no skill for this.
 
+When the user names a skill, search for that name. A skill whose name is the query comes
+first, marked `(exact name)`. Two results with that mark are two copies of the skill in
+different directories: ask the user which to use unless one is plainly the right source.
+
 Add `--json` for full descriptions when the shortened ones are not enough to choose.
 
 ## 2. Load the skill
