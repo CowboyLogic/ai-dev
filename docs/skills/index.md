@@ -89,7 +89,8 @@ into a fresh session instead of re-reading a long transcript.
 
 Keep hundreds of skills installed without loading every description into every session.
 The skills live in a library directory that no harness scans, and the router searches it
-and returns the directory of the skill that fits the task.
+and returns the directory of the skill that fits the task. It also installs skills into the
+library after you approve their source, and updates and removes them.
 
 [Skill Overview](skill-router.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/skill-router)
 

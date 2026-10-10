@@ -3,7 +3,8 @@
 Keep hundreds of skills installed without loading every description into every session.
 The skills live in a library directory that no harness scans, and the router is the one
 skill the agent sees: it searches the library and hands back the directory of the skill
-that fits.
+that fits. It also installs skills into the library, once you approve their source, and
+updates and removes them.
 
 - **Skill name:** `skill-router`
 - **Source:** [skills/skill-router](https://github.com/CowboyLogic/ai-dev/tree/main/skills/skill-router)
@@ -20,11 +21,18 @@ reads the chosen skill from where it lives, so skills with their own reference f
 scripts keep working. On a miss the agent searches once more, then reports that nothing is
 installed. It never installs a skill on its own.
 
+The router also looks after the library. It installs a skill from GitHub into it through
+the GitHub CLI, and asks you first whether you trust the source: that one skill, its whole
+repository, or its owner. It remembers the answer, including a refusal. It updates
+installed skills on request, removes them, and holds back any skill that turns up in the
+library without an approval until you have reviewed it.
+
 ## Where it applies
 
 Use it when you keep many skills installed globally and most sessions use few of them. It
-works in any harness that can run a Python script and read files outside the project. It
-is not worth the indirection for a handful of skills, and a skill you use in every session
+works in any harness that can run a Python script and read files outside the project.
+Installing and updating need the GitHub CLI (`gh`) with its `gh skill` commands; searching
+does not. It is not worth the indirection for a handful of skills, and a skill you use in every session
 is better left where the harness discovers it.
 
 ---
@@ -41,12 +49,20 @@ npx skills add CowboyLogic/ai-dev --skill skill-router -g
 npx skills add CowboyLogic/ai-dev --skill skill-router --agent <agent> -g
 ```
 
-### Create the library
+### Fill the library
+
+The router is the only skill to install where your harness discovers skills. Install the
+rest into the library with the router itself, which creates `~/.skill-library` on first
+use:
 
 ```bash
-mkdir -p ~/.skill-library
-git clone https://github.com/<owner>/<skills-repo> ~/.skill-library/<skills-repo>
+uv run <skill-dir>/scripts/skill_router.py install <owner>/<repo> <skill>
 ```
+
+Do not use an installer that can only write to a harness's skill directories: a skill
+placed there loads into every session. Skills you already have can be moved into the
+library by hand, and a clone of a skill repository works as it is. The library is a plain
+folder and does not need to be a git repository.
 
 Set `SKILL_ROUTER_LIBRARY` to use a different directory.
 
@@ -61,4 +77,5 @@ Replace `<skill-dir>` with where your harness installed the skill, such as
 `~/.claude/skills/skill-router` for a global Claude Code install. The second command
 prints how many skills the library holds. See the
 [skill README](https://github.com/CowboyLogic/ai-dev/blob/main/skills/skill-router/README.md)
-for the permission setup, the commands, how search ranks results, and the limits.
+for the permission setup, the commands, how approval and updates work, how search ranks
+results, and the limits.
