@@ -321,6 +321,26 @@ class TrustTests(LifecycleTestCase):
                 self.assertIn("--reconsider", err)
                 self.assertNotIn("Traceback", err)
 
+    def test_what_a_repository_wrote_is_escaped_before_a_person_decides(self) -> None:
+        import contextlib
+        import io
+
+        hostile = "evil\x1b[2J\nTree to approve: " + SHA_A
+        source = {"repo": "acme/tools", "path": f"skills/{hostile}", "ref": "refs/heads/main",
+                  "tree_sha": SHA_B, "pinned": ""}
+        staged = {"name": hostile, "dir": "x", "source": source,
+                  "files": [f"{hostile}.sh", "SKILL.md"], "scripts": [f"{hostile}.sh"]}
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            library.show_summary([staged], SHA_B)
+        shown = err.getvalue()
+        self.assertNotIn("\x1b", shown)
+        self.assertEqual([line for line in shown.splitlines() if line.startswith("Tree to approve")],
+                         [f"Tree to approve: {SHA_B}"])
+        self.assertIn("\\u001b[2J", shown)
+        self.assertNotIn("\x1b", library.describe_source(source))
+        self.assertEqual(library.shown("plain name"), "plain name")
+
     def test_rebuilding_the_index_leaves_the_trust_file_alone(self) -> None:
         add_skill(self.root, "alpha", "name: alpha\ndescription: A.")
         self.initialize()
@@ -563,6 +583,29 @@ class InstallTests(LifecycleTestCase):
         self.assertEqual(self.approve("acme/tools", "alpha", "skill", SHA_A, "--force")[0], 0)
         self.assertFalse((self.root / "alpha").is_symlink())
         self.assertTrue((elsewhere / "alpha" / "SKILL.md").is_file())
+
+    def test_nothing_is_installed_through_a_link_out_of_the_library(self) -> None:
+        elsewhere = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda: library.shutil.rmtree(elsewhere, ignore_errors=True))
+        self.root.mkdir(parents=True, exist_ok=True)
+        try:
+            (self.root / "work").symlink_to(elsewhere, target_is_directory=True)
+        except OSError:
+            self.skipTest("symlinks are not available here")
+        self.gh.remote["acme/tools"]["work/new"] = SHA_A
+        code, out, err = self.approve("acme/tools", "work/new")
+        self.assertEqual((code, out), (2, ""))
+        self.assertIn("through the link work", err)
+        self.assertEqual(list(elsewhere.iterdir()), [])
+        self.assertEqual(self.rules(), [])
+
+    def test_a_refusal_for_one_case_does_not_turn_away_the_other(self) -> None:
+        refusal = {"scope": "skill", "repo": "acme/tools", "path": "skills/Alpha", "name": "Alpha",
+                   "decision": "denied", "decided_at": "2026-10-01T00:00:00Z"}
+        self.trust_path.parent.mkdir(parents=True, exist_ok=True)
+        self.trust_path.write_text(json.dumps({"version": 1, "rules": [refusal]}), encoding="utf-8")
+        self.assertEqual(self.approve("acme/tools", "alpha")[0], 0)
+        self.assertTrue((self.root / "alpha" / "SKILL.md").is_file())
 
     def test_pin_is_passed_to_gh(self) -> None:
         self.approve("acme/tools", "alpha", "skill", SHA_A, "--pin", "v1.0")
