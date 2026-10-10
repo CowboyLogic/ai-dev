@@ -86,12 +86,12 @@ Copilot review without being asked, and **unresolved review threads block mergin
 Opening a PR is therefore the start of the review loop, not the end of the task.
 
 Every push to a PR branch triggers a fresh review, and every review spends the user's AI
-credits. The loop therefore runs in **rounds**: one review, then **one commit and one
-push** that handles everything the review raised. Never push a fix for one finding while
-others from the same review are still unaddressed, and never push while a review of the
-branch is still pending.
+credits. The loop therefore runs in **rounds**: one review, then **one commit per fix**
+and a **single push** once every finding in the review has been addressed. Commit as you
+go, but never push a fix while other findings from the same review are still
+unaddressed, and never push while a review of the branch is still pending.
 
-1. **Submit** the PR, or push the round's commit to the existing PR branch.
+1. **Submit** the PR, or push the round's commits to the existing PR branch.
 2. **Wait 2–3 minutes**, then check the PR for Copilot review comments. If no Copilot
    review has landed on the latest commit yet, keep re-checking before concluding there
    is nothing to address — but **never wait more than 10 minutes in total** for a
@@ -101,17 +101,19 @@ branch is still pending.
    threads and any finding that appears only in the review summary. Do not change
    anything until every finding is classified. Do not apply a suggestion blindly, and do
    not dismiss one without checking it against the code.
-   - **Valid finding** — fix it in the working tree. Do not commit or push yet.
+   - **Valid finding** — fix it and commit the fix on its own, with its test. Do not push
+     yet. Findings that share one cause are one fix and one commit.
    - **Invalid or inapplicable finding** — no change. Note a short reason (what you
      checked and why no change is needed).
    - **Valid but out of scope for this PR** — no change. Note why, and where the work is
      tracked (see [Recording Planned Work](#recording-planned-work)).
-4. **Commit all the round's fixes together** as one commit, run the
-   [build commands](#build-commands) validators once, and push once. Don't amend or
-   rebase mid-loop: rewriting reviewed commits detaches the review threads from the code
-   they were raised against.
-5. **Reply on every thread, then resolve it**, valid or not. Name the commit for a fix and
-   give the reason for the rest. A thread left open blocks the merge even when the
+4. **Push once**, after every finding is classified and every valid one is fixed and
+   committed. Run the [build commands](#build-commands) validators on the final tree
+   first, so a failure is fixed before the push and not after it. Don't amend or rebase
+   mid-loop: rewriting reviewed commits detaches the review threads from the code they
+   were raised against.
+5. **Reply on every thread, then resolve it**, valid or not. Name the fix's commit for a
+   fix and give the reason for the rest. A thread left open blocks the merge even when the
    finding was wrong.
 6. **Repeat from step 2 after the push** — the push triggers a fresh Copilot review that
    can raise new findings. The loop ends when Copilot has reviewed the latest commit and
@@ -274,9 +276,9 @@ instead.
   verified, say so and ask; do not open it first. If the branch already has an open PR,
   the push updates it — do not open a second.
 - **After opening or updating a PR**, run the [Copilot review loop](#copilot-review-loop):
-  wait, address every finding of the review in one commit and one push, resolve every
-  thread, and repeat until the latest commit has been reviewed and no thread is left
-  unresolved.
+  wait, address every finding of the review with one commit per fix and a single push,
+  resolve every thread, and repeat until the latest commit has been reviewed and no thread
+  is left unresolved.
 - **Merging a PR into `main`** is a human action. No agent merges a PR, ever.
 - **Updating a feature branch from `main`** (`git merge origin/main` or
   `git rebase origin/main`) is normal agent work — see
@@ -430,7 +432,8 @@ types; schema version is `"1"`.
 - Do not treat a freshly opened PR as finished — run the Copilot review loop and leave
   no unresolved review threads.
 - Do not push once per review finding, or push while a review is pending. Each push to a
-  PR branch starts another paid review; handle a whole review in one commit and one push.
+  PR branch starts another paid review; commit each fix separately, then push the whole
+  review's fixes together.
 - Do not record planned features or design decisions in local files, and do not post an
   issue before the user has seen the draft.
 - Do not write temporary or generated files anywhere other than `.agent-output/`.
