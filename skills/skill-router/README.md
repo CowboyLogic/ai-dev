@@ -299,7 +299,8 @@ uv run <skill-dir>/scripts/skill_router.py update
 `update --check` reports which skills have a newer version at their source. `update`
 applies them. Run it whenever you like; nothing does it for you. Pinned skills are
 skipped, and so are skills with no recorded source, such as hand-copied ones and those in
-a clone, which you update with `git pull`.
+a clone, which you update with `git pull`. `gh` looks at most one folder below the
+library root, so a skill nested deeper is neither updated nor reported.
 
 ### Remove a skill
 
@@ -355,7 +356,7 @@ older one stops with a message saying so.
 | `index` | Refresh the index and report on the library. `--rebuild` discards the cached index first. |
 | `topics` | Print the words most common across skill names. `--write` adds them to this skill's description. |
 | `install <owner/repo> <skill>` | Install a skill from GitHub after you approve its source. `--all` takes every skill in the repository; `--pin <ref>` holds a version. |
-| `update` | Update every library skill from its source. `--check` only reports. Name skills to limit it. |
+| `update` | Update every library skill from its source. `--check` only reports. Name skills to limit it. Skills nested more than one folder deep are not reached. |
 | `review` | List skills that arrived without approval, and approve or delete them. |
 | `remove <skill>` | Delete a skill from the library. |
 | `status` | Show each skill's source, version, and approval. `--json` prints it as JSON. |

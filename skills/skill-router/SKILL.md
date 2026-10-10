@@ -142,8 +142,9 @@ the folder, so use it only on a clear no.
 
 - `update` brings every library skill up to date from its source and asks nothing.
   `update --check` reports what would change. Skills pinned to a version, and skills with
-  no recorded source, are skipped and named. Run it when the user asks, or suggest it when
-  they mention a skill is out of date.
+  no recorded source, are skipped and named. Skills nested more than one folder below the
+  library root are neither updated nor named. Run `update` when the user asks, or suggest
+  it when they mention a skill is out of date.
 - `remove <skill> --yes` deletes a skill's folder. Ask the user first and pass `--yes` only
   on their yes.
 - `status` lists every skill with its source, version, and approval, then the wider
