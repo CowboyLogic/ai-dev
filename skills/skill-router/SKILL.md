@@ -11,7 +11,8 @@ library that the harness does not scan, so that their descriptions cost nothing 
 one is needed. Search the library, then load the one skill that fits.
 
 The script is `scripts/skill_router.py` in this skill's directory. It is
-standard-library Python. Use `python` where `python3` is not the command name.
+standard-library Python and needs Python 3.12 or later. Use `python` where `python3` is
+not the command name.
 
 ## 1. Search
 

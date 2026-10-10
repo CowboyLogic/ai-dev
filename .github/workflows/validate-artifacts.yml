@@ -58,7 +58,7 @@ jobs:
         run: mkdocs build --clean --strict
 
   skill-router-python-floor:
-    # skill-router promises Python 3.9, which the other jobs do not run.
+    # skill-router promises Python 3.12, which the other jobs do not run.
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -67,7 +67,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.12'
 
       - name: Test skill-router
         run: python -m unittest discover -s skills/skill-router/scripts -v

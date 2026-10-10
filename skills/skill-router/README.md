@@ -13,7 +13,7 @@ carries one description and pays for a search only when it needs a skill.
 ## What's included
 
 - **`SKILL.md`**: tells the agent when to search the library and how to load a result.
-- **`scripts/skill_router.py`**: the search script. Standard-library Python 3.9 or later,
+- **`scripts/skill_router.py`**: the search script. Standard-library Python 3.12 or later,
   with no dependencies, on macOS, Linux, and Windows.
 - **`scripts/test_skill_router.py`**: its unit tests.
 
@@ -81,7 +81,8 @@ permission settings.
 
 ## Commands
 
-Run the script with `python3`, or `python` where that is the command name.
+Run the script with `python3`, or `python` where that is the command name. The interpreter
+must be Python 3.12 or later; an older one stops with a message saying so.
 
 | Command | What it does |
 |---|---|
