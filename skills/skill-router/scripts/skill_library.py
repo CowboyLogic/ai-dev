@@ -336,11 +336,22 @@ def pick(skills: list[dict], wanted: str) -> dict:
     return matches[0]
 
 
+def shown(value: object) -> str:
+    """Return text written by a repository in a form that is safe to print before a decision.
+
+    A skill's name or file name is chosen by whoever wrote the repository. A line break
+    or an escape sequence in one could clear the screen or pass for a line of the
+    summary, so anything unprintable is shown as a quoted, escaped string instead.
+    """
+    text = value if isinstance(value, str) else str(value)
+    return text if text.isprintable() else json.dumps(text)
+
+
 def describe_source(source: dict | None) -> str:
     if not source:
         return "no recorded source"
     version = f"pinned to {source['pinned']}" if source["pinned"] else source["ref"].removeprefix("refs/heads/")
-    return f"{source['repo']}  {source['path']}  ({version or 'unknown version'})"
+    return f"{shown(source['repo'])}  {shown(source['path'])}  ({shown(version) or 'unknown version'})"
 
 
 def staged_skills(stage: Path) -> list[dict]:
@@ -390,15 +401,15 @@ def show_summary(skills: list[dict], tree: str) -> None:
     for skill in skills:
         source = skill["source"]
         say()
-        say(f"  {skill['name']}")
-        say(f"    source: https://github.com/{source['repo']}  path: {source['path']}")
-        say(f"    version: {describe_source(source).rsplit('(', 1)[1].rstrip(')')}  tree: {source['tree_sha']}")
+        say(f"  {shown(skill['name'])}")
+        say(f"    source: https://github.com/{shown(source['repo'])}  path: {shown(source['path'])}")
+        say(f"    version: {describe_source(source).rsplit('(', 1)[1].rstrip(')')}  tree: {shown(source['tree_sha'])}")
         say(f"    files ({len(skill['files'])}):")
         for name in skill["files"][:SUMMARY_FILE_LIMIT]:
-            say(f"      {name}" + ("   <- script" if name in skill["scripts"] else ""))
+            say(f"      {shown(name)}" + ("   <- script" if name in skill["scripts"] else ""))
         if len(skill["files"]) > SUMMARY_FILE_LIMIT:
             say(f"      ... and {len(skill['files']) - SUMMARY_FILE_LIMIT} more")
-        say(f"    read it first: gh skill preview {source['repo']} {source['path']}")
+        say(f"    read it first: gh skill preview {shown(source['repo'])} {shown(source['path'])}")
     say()
     say(f"Tree to approve: {tree}")
     say("A skill is instructions and scripts an agent will follow. Approve only a source you trust.")
@@ -417,13 +428,13 @@ def command_install(args: argparse.Namespace) -> int:
     trust = library.trust
 
     # A skill refused before is turned away without downloading it again.
-    wanted = (args.skill or "").split("@")[0].strip("/").lower()
+    wanted = (args.skill or "").split("@")[0].strip("/")
     for rule in trust.rules:
         if (
             rule["decision"] == "denied"
             and not args.reconsider
             and rule["repo"].lower() == repo.lower()
-            and wanted in (rule_name(rule).lower(), rule["path"].lower())
+            and wanted in (rule_name(rule), rule["path"])
         ):
             raise RouterError(denied_message(rule))
 
@@ -473,6 +484,14 @@ def decide_and_install(args: argparse.Namespace, library: Library, staged: list[
     if not wanted:
         return 1
     for skill in wanted:
+        parent = root
+        for part in PurePosixPath(skill["dir"]).parts[:-1]:
+            parent = parent / part
+            if parent.is_symlink():
+                raise RouterError(
+                    f"{skill['dir']} would be written through the link {part}, which keeps it outside the "
+                    "library. Install it somewhere else, or remove the link; nothing was changed."
+                )
         occupant = root / skill["dir"]
         if not (occupant.exists() or occupant.is_symlink()):
             continue
@@ -720,7 +739,7 @@ def command_review(args: argparse.Namespace) -> int:
 
     if not acting and interactive() and not args.json:
         for skill in waiting:
-            say(f"\n{skill['name']}  ({(root / skill['dir']).as_posix()})\n  {describe_source(skill['source'])}")
+            say(f"\n{shown(skill['name'])}  ({shown((root / skill['dir']).as_posix())})\n  {describe_source(skill['source'])}")
             answer = ask("Did you put this here? [a] yes, approve  [d] no, delete it  [Enter] skip:")[:1]
             if answer == "a":
                 args.approve.append(skill["dir"])
@@ -776,8 +795,8 @@ def list_waiting(root: Path, waiting: list[dict], as_json: bool) -> int:
         return 0
     print(f"{len(waiting)} skill(s) in {root.as_posix()} arrived without approval:")
     for skill in waiting:
-        print(f"\n  {skill['name']}")
-        print(f"    dir:    {(root / skill['dir']).as_posix()}")
+        print(f"\n  {shown(skill['name'])}")
+        print(f"    dir:    {shown((root / skill['dir']).as_posix())}")
         print(f"    source: {describe_source(skill['source'])}")
     print(
         "\nAsk the user about each one: did they put it there? Then run review again with their answers:\n"
