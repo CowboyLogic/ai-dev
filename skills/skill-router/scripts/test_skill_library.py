@@ -1070,6 +1070,15 @@ class ReviewTests(LifecycleTestCase):
         self.assertEqual([(rule["repo"], rule["name"]) for rule in denied], [("solo/skills", "fetched")])
         self.assertEqual(self.cli("install", "solo/skills", "fetched")[0], 2)
 
+    def test_a_skill_cannot_be_both_approved_and_deleted(self) -> None:
+        before = self.rules()
+        code, _, err = self.cli("review", "--approve", "copied", "--delete", "copied")
+        self.assertEqual(code, 2)
+        self.assertIn("both --approve and --delete", err)
+        self.assertTrue((self.root / "copied").exists())
+        self.assertEqual(self.rules(), before)
+        self.assertEqual(self.cli("review", "--approve", "copied", "--delete", "fetched")[0], 0)
+
     def test_only_waiting_skills_can_be_reviewed(self) -> None:
         self.assertEqual(self.cli("review", "--delete", "first")[0], 2)
         self.assertTrue((self.root / "first").exists())

@@ -782,6 +782,13 @@ def command_review(args: argparse.Namespace) -> int:
 
     approving = [pick(waiting, name) for name in args.approve]
     deleting = [pick(waiting, name) for name in args.delete]
+    both = sorted({skill["dir"] for skill in approving} & {skill["dir"] for skill in deleting})
+    if both:
+        # An approval would stay on record for a place the skill no longer occupies.
+        raise RouterError(
+            f"{', '.join(shown(name) for name in both)} was given to both --approve and --delete. "
+            "Choose one; nothing was changed."
+        )
     directories = []
     for raw in args.approve_dir:
         relative = raw.replace("\\", "/").strip("/")
