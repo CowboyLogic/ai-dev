@@ -65,24 +65,19 @@ anchored) or `git rebase origin/main`. Resolve conflicts, re-run the
 already-pushed feature branch is pushed with `git push --force-with-lease` — never bare
 `--force`, and never to a branch the task does not own.
 
-When the work is complete and verified, say so and ask whether to open the PR. If the
-change is executable code, also suggest the user check the
-[Copilot review effort](#copilot-review-effort). Once the user agrees and the PR is open,
-report its link. For a task that produced a diff,
+When the work is complete and verified, say so and ask whether to open the PR. Once the
+user agrees and the PR is open, report its link. For a task that produced a diff,
 that link — on a PR that has cleared the [Copilot review loop](#copilot-review-loop) —
 is what "finished" means.
 
 ### Copilot review effort
 
 The repository's Copilot review effort is a setting the user controls. It is normally kept
-at **Lite**, which suits the documentation that makes up most changes here. Lite is a
-lighter review than **Balanced**, and executable code deserves the more thorough one. When a
-change adds or alters executable code, which includes scripts, tests, CI workflows, and
-harness or agent tooling that runs, **suggest the user raise the effort to Balanced before
-the PR is opened**, because opening it is what triggers the review. Do this when asking
-whether to open the PR. The setting is the user's to change: an agent never changes
-repository settings, and the user decides when to lower it again. A review overview states
-the effort it ran at, so check it matches what was intended.
+at **Balanced**, which is thorough enough for executable code as well as for the
+documentation that makes up most changes here, so there is nothing to suggest before a PR
+is opened. The setting is the user's to change: an agent never changes repository
+settings. A review overview states the effort it ran at, so check it says Balanced, and
+tell the user if it says anything else.
 
 ### Copilot review loop
 
