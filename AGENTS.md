@@ -101,15 +101,17 @@ unaddressed, and never push while a review of the branch is still pending.
    threads and any finding that appears only in the review summary. Do not change
    anything until every finding is classified. Do not apply a suggestion blindly, and do
    not dismiss one without checking it against the code.
-   - **Valid finding** — fix it and commit the fix on its own, with its test. Do not push
-     yet. Findings that share one cause are one fix and one commit.
+   - **Valid finding** — fix it and commit the fix on its own, with the test or validator
+     that covers it where one applies. Do not push yet. Findings that share one cause are
+     one fix and one commit.
    - **Invalid or inapplicable finding** — no change. Note a short reason (what you
      checked and why no change is needed).
    - **Valid but out of scope for this PR** — no change. Note why, and where the work is
      tracked (see [Recording Planned Work](#recording-planned-work)).
-4. **Push once**, after every finding is classified and every valid one is fixed and
-   committed. Run the [build commands](#build-commands) validators on the final tree
-   first, so a failure is fixed before the push and not after it. Don't amend or rebase
+4. **Push once**, after every finding is classified and every one you are fixing is
+   committed. Run the [build commands](#build-commands) validators that apply to the
+   files the round changed on the final tree first, so a failure is fixed before the push
+   and not after it. Don't amend or rebase
    mid-loop: rewriting reviewed commits detaches the review threads from the code they
    were raised against.
 5. **Reply on every thread, then resolve it**, valid or not. Name the fix's commit for a
@@ -118,7 +120,7 @@ unaddressed, and never push while a review of the branch is still pending.
 6. **Repeat from step 2 after the push** — the push triggers a fresh Copilot review that
    can raise new findings. The loop ends when Copilot has reviewed the latest commit and
    no review thread on the PR is unresolved. Resolving a thread does not delete its
-   comment, and a round with no valid finding pushes nothing (so no re-review follows),
+   comment, and a round with no fix pushes nothing (so no re-review follows),
    so end on thread state, not on the absence of comments.
 
 List and resolve review threads with `gh api graphql`:
