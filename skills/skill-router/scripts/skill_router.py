@@ -6,7 +6,7 @@ a directory that contains SKILL.md. Clones of skill repositories can sit in it a
 are, as real directories or as symlinks placed directly in the library. This script ranks the library against a query and prints the directory of each
 match, so an agent loads the one skill it needs instead of carrying every description.
 
-Standard-library Python only, so it runs wherever Python 3.9+ does.
+Standard-library Python only. It needs Python 3.12 or later.
 """
 
 from __future__ import annotations
@@ -21,6 +21,7 @@ import re
 import sys
 import tempfile
 
+MINIMUM_PYTHON = (3, 12)
 LIBRARY_ENV = "SKILL_ROUTER_LIBRARY"
 DEFAULT_LIBRARY = "~/.skill-library"
 INDEX_NAME = ".skill-router-index.json"
@@ -531,6 +532,10 @@ def main(argv: list[str] | None = None) -> int:
     for stream in (sys.stdout, sys.stderr):
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(encoding="utf-8", errors="replace")
+    if sys.version_info < MINIMUM_PYTHON:
+        required = ".".join(map(str, MINIMUM_PYTHON))
+        print(f"skill-router: needs Python {required} or later; this is {sys.version.split()[0]}", file=sys.stderr)
+        return 2
     args = build_parser().parse_args(argv)
     try:
         return args.run(args)

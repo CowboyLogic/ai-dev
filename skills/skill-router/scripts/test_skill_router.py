@@ -445,6 +445,12 @@ class CommandTests(LibraryTestCase):
         self.assertIn("no skill library at", err)
         self.assertIn(router.LIBRARY_ENV, err)
 
+    def test_older_python_is_refused(self) -> None:
+        with patch.object(router.sys, "version_info", (3, 11, 9)):
+            code, out, err = run(*self.library, "search", "terraform")
+        self.assertEqual((code, out), (2, ""))
+        self.assertIn("needs Python 3.12 or later", err)
+
     def test_unsearchable_query_is_reported(self) -> None:
         code, _, err = run(*self.library, "search", "the")
         self.assertEqual(code, 2)
