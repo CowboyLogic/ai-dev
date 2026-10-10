@@ -81,8 +81,10 @@ permission settings.
 
 ## Commands
 
-Run the script with `python3`, or `python` where that is the command name. The interpreter
-must be Python 3.12 or later; an older one stops with a message saying so.
+Run the script with `uv run`. The script's header declares that it needs Python 3.12 or
+later, and [uv](https://docs.astral.sh/uv/) finds or fetches one, so the system Python does
+not matter and no virtual environment is needed. Without `uv`, use a `python3` or `python`
+that is 3.12 or later; an older one stops with a message saying so.
 
 | Command | What it does |
 |---|---|
@@ -93,7 +95,7 @@ must be Python 3.12 or later; an older one stops with a message saying so.
 ### Check the library
 
 ```bash
-python3 ~/.claude/skills/skill-router/scripts/skill_router.py index
+uv run ~/.claude/skills/skill-router/scripts/skill_router.py index
 ```
 
 The report gives the skill count and lists three kinds of skill worth a look:
@@ -110,7 +112,7 @@ An agent searches only when it suspects a skill exists. To give it a reason, add
 library's most common name words to this skill's own description:
 
 ```bash
-python3 ~/.claude/skills/skill-router/scripts/skill_router.py topics --write
+uv run ~/.claude/skills/skill-router/scripts/skill_router.py topics --write
 ```
 
 This appends a sentence such as `Library topics include terraform, review, docker.` to the
@@ -173,5 +175,5 @@ different words before it concludes nothing is installed.
 ## Test
 
 ```bash
-python3 -m unittest discover -s skills/skill-router/scripts
+python -m unittest discover -s skills/skill-router/scripts
 ```

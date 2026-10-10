@@ -11,13 +11,14 @@ library that the harness does not scan, so that their descriptions cost nothing 
 one is needed. Search the library, then load the one skill that fits.
 
 The script is `scripts/skill_router.py` in this skill's directory. It is
-standard-library Python and needs Python 3.12 or later. Use `python` where `python3` is
-not the command name.
+standard-library Python and needs Python 3.12 or later. Run it with `uv run`, which picks
+a suitable Python whatever the system default is. Without `uv`, run it with a `python3` or
+`python` that is 3.12 or later.
 
 ## 1. Search
 
 ```bash
-python3 <this-skill-dir>/scripts/skill_router.py search <words describing the task>
+uv run <this-skill-dir>/scripts/skill_router.py search <words describing the task>
 ```
 
 Describe the task with the words a skill author would use: the tool, the file type, the

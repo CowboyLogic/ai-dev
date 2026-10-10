@@ -54,7 +54,7 @@ Set `SKILL_ROUTER_LIBRARY` to use a different directory.
 
 ```bash
 npx skills ls -g
-python3 ~/.claude/skills/skill-router/scripts/skill_router.py index
+uv run ~/.claude/skills/skill-router/scripts/skill_router.py index
 ```
 
 The second command prints how many skills the library holds. See the

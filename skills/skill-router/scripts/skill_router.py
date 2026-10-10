@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+# No dependencies. The header lets `uv run` pick a Python that is new enough.
+# /// script
+# requires-python = ">=3.12"
+# dependencies = []
+# ///
 """Find installed skills in a library kept outside every harness's discovery path.
 
 The library is one directory holding any number of skills, at any depth: a skill is
