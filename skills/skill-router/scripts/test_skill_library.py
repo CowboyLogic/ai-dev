@@ -358,6 +358,21 @@ class TrustTests(LifecycleTestCase):
         self.assertEqual(library.quoted("skills/alpha"), "skills/alpha")
         self.assertEqual(library.quoted("evil\x1b[2J"), "'\"evil\\u001b[2J\"'")
 
+    def test_a_script_without_an_extension_or_mode_is_marked_by_its_shebang(self) -> None:
+        folder = self.root / "probe"
+        folder.mkdir(parents=True)
+        shebang, plain = folder / "run", folder / "notes"
+        shebang.write_text("#!/usr/bin/env bash\necho hi\n", encoding="utf-8")
+        plain.write_text("just text\n", encoding="utf-8")
+        for path in (shebang, plain):
+            path.chmod(0o644)
+        self.assertTrue(library.is_script(shebang))
+        self.assertFalse(library.is_script(plain))
+
+    def test_a_source_on_another_host_is_shown_with_that_host(self) -> None:
+        self.assertEqual(library.source_url("acme/tools"), "https://github.com/acme/tools")
+        self.assertEqual(library.source_url("tenant.ghe.com/acme/tools"), "https://tenant.ghe.com/acme/tools")
+
     def test_a_script_past_the_file_cap_is_still_named(self) -> None:
         import contextlib
         import io
