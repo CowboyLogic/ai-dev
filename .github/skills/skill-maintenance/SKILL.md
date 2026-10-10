@@ -1,9 +1,9 @@
 ---
+name: skill-maintenance
 description: "Full skill maintenance cycle: research updates, run benchmark evals, create/update the docs/skills overview page, and propose a commit. Use when maintaining any skill in the skills/ folder of this repo."
-agent: "agent"
+disable-model-invocation: true
 argument-hint: "Skill folder name, e.g. client-config-copilotcli"
 ---
-
 # Skill Maintenance — CowboyLogic/ai-dev
 
 Run the full maintenance cycle for the skill named **`$input`** located at
