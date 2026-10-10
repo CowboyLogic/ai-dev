@@ -435,6 +435,12 @@ class CommandTests(LibraryTestCase):
         self.assertIn("4 skills indexed", out)
         self.assertIn("1 with no description", out)
         self.assertIn("terraform-review: copy/terraform-review, repo/terraform-review", out)
+
+    def test_index_reports_names_that_differ_only_by_case(self) -> None:
+        add_skill(self.root, "upper", "name: Docker-Images\ndescription: Another.")
+        _, out, _ = run(*self.library, "index")
+        self.assertIn("1 names used by more than one skill", out)
+        self.assertIn("docker-images: upper, docker-images", out)
         self.assertIn("repo/terraform-review: $ARGUMENTS", out)
 
 
@@ -491,6 +497,13 @@ class TopicsTests(LibraryTestCase):
         code, out, _ = run("--library", str(self.root), "topics")
         self.assertEqual(code, 0)
         self.assertEqual(out.strip(), "review, terraform, docker, plan")
+
+    def test_topics_command_tells_an_empty_list_from_an_empty_library(self) -> None:
+        _, out, _ = run("--library", str(self.root), "topics", "--max-chars", "1")
+        self.assertIn("no topic words fit in 1 characters", out)
+        with tempfile.TemporaryDirectory() as empty:
+            _, out, _ = run("--library", empty, "topics")
+        self.assertEqual(out.strip(), "(the library is empty)")
 
     def test_shipped_description_accepts_a_full_topics_list(self) -> None:
         shipped = Path(__file__).resolve().parent.parent / "SKILL.md"

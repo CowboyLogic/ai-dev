@@ -213,8 +213,9 @@ def valid_entry(entry: object) -> bool:
 def refresh_index(root: Path, rebuild: bool = False) -> list[dict]:
     """Return the library's skills, re-reading only SKILL.md files that changed.
 
-    The index file is a cache keyed on each SKILL.md's size and modification time, so
-    it cannot go stale: every call walks the library and repairs what differs.
+    The index file is a cache keyed on each SKILL.md's size and modification time.
+    Every call walks the library and repairs what differs. A change that keeps both
+    the same is not seen; `rebuild` reads every file again.
     """
     index_path = root / INDEX_NAME
     previous = [] if rebuild else load_index(index_path)
@@ -440,12 +441,13 @@ def command_index(args: argparse.Namespace) -> int:
         print(f"\n{len(undescribed)} with no description (found by name only):")
         for path in undescribed:
             print(f"  {path}")
-    names = Counter(skill["name"] for skill in skills)
+    # Names are compared as search compares them, without regard to case.
+    names = Counter(skill["name"].lower() for skill in skills)
     duplicates = sorted(name for name, count in names.items() if count > 1)
     if duplicates:
         print(f"\n{len(duplicates)} names used by more than one skill:")
         for name in duplicates:
-            paths = ", ".join(skill["dir"] for skill in skills if skill["name"] == name)
+            paths = ", ".join(skill["dir"] for skill in skills if skill["name"].lower() == name)
             print(f"  {name}: {paths}")
     dependent = [skill for skill in skills if skill["harness_variables"]]
     if dependent:
@@ -457,14 +459,20 @@ def command_index(args: argparse.Namespace) -> int:
 
 def command_topics(args: argparse.Namespace) -> int:
     root = resolve_library(args.library)
-    topics = library_topics(refresh_index(root), args.max_chars)
+    skills = refresh_index(root)
+    topics = library_topics(skills, args.max_chars)
     if args.write:
         skill_md = Path(__file__).resolve().parent.parent / "SKILL.md"
         description = write_topics(skill_md, topics)
         print(f"Updated {skill_md.as_posix()} ({len(description)} characters):")
         print(description)
         return 0
-    print(", ".join(topics) if topics else "(the library is empty)")
+    if topics:
+        print(", ".join(topics))
+    elif not skills:
+        print("(the library is empty)")
+    else:
+        print(f"(no topic words fit in {args.max_chars} characters, or every name is a generic word)")
     return 0
 
 
