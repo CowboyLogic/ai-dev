@@ -306,6 +306,29 @@ class IndexTests(LibraryTestCase):
             skills = router.refresh_index(self.root)
         self.assertEqual([(s["name"], s["dir"]) for s in skills], [("linked", "checkout/skills/linked")])
 
+    @unittest.skipIf(os.name == "nt", "creating symlinks needs elevation on Windows")
+    def test_symlink_inside_a_clone_is_not_followed(self) -> None:
+        add_skill(self.root, "clone/skills/real", "name: real\ndescription: R.")
+        with tempfile.TemporaryDirectory() as outside:
+            add_skill(Path(outside), "secret", "name: secret\ndescription: S.")
+            os.symlink(outside, self.root / "clone" / "escape")
+            os.symlink(Path(outside) / "secret", self.root / "clone" / "skills" / "linked-skill")
+            os.symlink(self.root, self.root / "clone" / "loop")
+            skills = router.refresh_index(self.root)
+        self.assertEqual([(s["name"], s["dir"]) for s in skills], [("real", "clone/skills/real")])
+
+    @unittest.skipIf(os.name == "nt", "creating symlinks needs elevation on Windows")
+    def test_top_level_symlinks_are_followed_once_and_pruned_names_skipped(self) -> None:
+        add_skill(self.root, "clone/skills/real", "name: real\ndescription: R.")
+        with tempfile.TemporaryDirectory() as outside:
+            add_skill(Path(outside), "one", "name: one\ndescription: O.")
+            os.symlink(Path(outside) / "one", self.root / "direct")
+            os.symlink(outside, self.root / "again")
+            os.symlink(outside, self.root / "node_modules")
+            os.symlink(self.root / "clone", self.root / "inner")
+            skills = router.refresh_index(self.root)
+        self.assertEqual([(s["name"], s["dir"]) for s in skills], [("one", "again/one"), ("real", "clone/skills/real")])
+
 
 class SearchTests(LibraryTestCase):
     def setUp(self) -> None:
