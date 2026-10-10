@@ -30,7 +30,7 @@ MINIMUM_PYTHON = (3, 12)
 LIBRARY_ENV = "SKILL_ROUTER_LIBRARY"
 DEFAULT_LIBRARY = "~/.skill-library"
 INDEX_NAME = ".skill-router-index.json"
-INDEX_VERSION = 2
+INDEX_VERSION = 3
 
 # Directories that never hold skills and can be large.
 PRUNED_DIRS = {".git", ".hg", ".svn", "node_modules", "__pycache__", ".venv", "venv"}
@@ -68,6 +68,10 @@ DOUBLE_QUOTE_ESCAPE = re.compile(r"\\(x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|U[0-9a-fA-
 # control characters are dropped. Any other escaped character stands for itself.
 WHITESPACE_ESCAPES = frozenset("nrtvfN_LP")
 CONTROL_ESCAPES = frozenset("0abe")
+# The fields `gh skill install` records under `metadata:` to say where a skill came from.
+SOURCE_KEYS = ("repo", "path", "ref", "tree_sha", "pinned")
+METADATA_KEY = re.compile(r"^metadata:\s*(#.*)?$")
+GITHUB_FIELD = re.compile(r"^\s+github-(repo|path|ref|tree-sha|pinned):(.*)$")
 
 
 class RouterError(Exception):
@@ -85,17 +89,7 @@ def read_frontmatter(text: str) -> dict[str, str]:
     This reads the subset of YAML that frontmatter uses: plain, quoted, folded, and
     literal scalars. Whitespace in a value is collapsed, which is all a search needs.
     """
-    lines = text.lstrip("﻿").splitlines()
-    if not lines or lines[0].rstrip() != "---":
-        return {}
-    block: list[str] = []
-    for line in lines[1:]:
-        if line.rstrip() in ("---", "..."):
-            break
-        block.append(line)
-    else:
-        return {}
-
+    block = _frontmatter_block(text)
     fields: dict[str, str] = {}
     key: str | None = None
     parts: list[str] = []
@@ -119,6 +113,52 @@ def read_frontmatter(text: str) -> dict[str, str]:
             parts.append(line.strip())
     flush()
     return fields
+
+
+def _frontmatter_block(text: str) -> list[str]:
+    """Return the lines between the frontmatter fences, or none when there is no block."""
+    lines = text.lstrip("\ufeff").splitlines()
+    if not lines or lines[0].rstrip() != "---":
+        return []
+    block: list[str] = []
+    for line in lines[1:]:
+        if line.rstrip() in ("---", "..."):
+            return block
+        block.append(line)
+    return []
+
+
+def read_source(text: str) -> dict[str, str] | None:
+    """Return where `gh skill install` says a skill came from, or None if it does not say.
+
+    The repository is reduced to `owner/repo` so that one skill has one identity
+    however its URL was written.
+    """
+    found: dict[str, str] = {}
+    inside = False
+    for line in _frontmatter_block(text):
+        if METADATA_KEY.match(line):
+            inside = True
+        elif inside and (match := GITHUB_FIELD.match(line)):
+            found[match.group(1)] = _flow_scalar(match.group(2).strip())
+        elif line.strip() and line[:1] not in (" ", "\t"):
+            inside = False
+    repo = repo_identity(found.get("repo", ""))
+    if "/" not in repo:
+        return None
+    return {
+        "repo": repo,
+        "path": found.get("path", "").strip("/"),
+        "ref": found.get("ref", ""),
+        "tree_sha": found.get("tree-sha", ""),
+        "pinned": found.get("pinned", ""),
+    }
+
+
+def repo_identity(text: str) -> str:
+    """Reduce a repository URL or `OWNER/REPO` to `owner/repo`, keeping a host other than github.com."""
+    repo = re.sub(r"^[a-z]+://", "", text.strip(), flags=re.IGNORECASE)
+    return re.sub(r"^github\.com/", "", repo, flags=re.IGNORECASE).strip("/").removesuffix(".git")
 
 
 def _flow_scalar(value: str) -> str:
@@ -204,6 +244,7 @@ def build_entry(root: Path, skill_dir: Path, stat: os.stat_result) -> dict:
         "description": fields.get("description", ""),
         "dir": skill_dir.relative_to(root).as_posix(),
         "harness_variables": sorted(set(HARNESS_VARIABLE.findall(text))),
+        "source": read_source(text),
         "mtime_ns": stat.st_mtime_ns,
         "ctime_ns": stat.st_ctime_ns,
         "size": stat.st_size,
@@ -250,6 +291,12 @@ def valid_entry(entry: object) -> bool:
         and isinstance(entry.get("dir"), str)
         and isinstance(entry.get("harness_variables"), list)
         and all(isinstance(variable, str) for variable in entry["harness_variables"])
+        and "source" in entry
+        and (
+            entry["source"] is None
+            or isinstance(entry["source"], dict)
+            and all(isinstance(entry["source"].get(key), str) for key in SOURCE_KEYS)
+        )
         and is_int(entry.get("mtime_ns"))
         and is_int(entry.get("ctime_ns"))
         and is_int(entry.get("size"))
@@ -296,17 +343,22 @@ def refresh_index(root: Path, rebuild: bool = False) -> list[dict]:
 
 
 def write_index(index_path: Path, skills: list[dict]) -> None:
-    payload = json.dumps({"version": INDEX_VERSION, "skills": skills}, indent=1)
     # A read-only library still searches; it just re-reads every file each time.
+    write_json(index_path, {"version": INDEX_VERSION, "skills": skills})
+
+
+def write_json(path: Path, data: dict) -> bool:
+    """Replace a file in the library with new JSON. Report failure and return False."""
+    payload = json.dumps(data, indent=1)
     try:
         # A new, uniquely named file: a fixed name could be a planted symlink, and two
         # commands running at once would write through each other.
         descriptor, temporary = tempfile.mkstemp(
-            dir=index_path.parent, prefix=index_path.name + ".", suffix=".tmp"
+            dir=path.parent, prefix=path.name + ".", suffix=".tmp"
         )
     except OSError as error:
-        warn(f"could not write {index_path}: {error}")
-        return
+        warn(f"could not write {path}: {error}")
+        return False
     try:
         try:
             handle = os.fdopen(descriptor, "w", encoding="utf-8")
@@ -319,13 +371,15 @@ def write_index(index_path: Path, skills: list[dict]) -> None:
             raise
         with handle:
             handle.write(payload + "\n")
-        os.replace(temporary, index_path)
+        os.replace(temporary, path)
     except OSError as error:
-        warn(f"could not write {index_path}: {error}")
+        warn(f"could not write {path}: {error}")
         try:
             os.unlink(temporary)
         except OSError:
             pass
+        return False
+    return True
 
 
 def tokenize(text: str) -> list[str]:
@@ -435,9 +489,14 @@ def positive_int(value: str) -> int:
     return number
 
 
-def resolve_library(option: str | None) -> Path:
+def resolve_library(option: str | None, create: bool = False) -> Path:
     raw = option or os.environ.get(LIBRARY_ENV) or DEFAULT_LIBRARY
     root = Path(raw).expanduser()
+    if create and not root.exists():
+        try:
+            root.mkdir(parents=True)
+        except OSError as error:
+            raise RouterError(f"could not create the skill library at {root.as_posix()}: {error}")
     if not root.is_dir():
         raise RouterError(
             f"no skill library at {root.as_posix()}. Create that directory and put skills "
@@ -446,9 +505,27 @@ def resolve_library(option: str | None) -> Path:
     return root.resolve()
 
 
+def reviewed_skills(root: Path) -> list[dict]:
+    """Return the library's skills that an approval covers, refreshing the index first."""
+    import skill_library
+
+    return skill_library.open_library(root).covered
+
+
+def lifecycle(name: str):
+    """Return a command that runs from skill_library, loaded only when it is used."""
+
+    def run(args: argparse.Namespace) -> int:
+        import skill_library
+
+        return getattr(skill_library, name)(args)
+
+    return run
+
+
 def command_search(args: argparse.Namespace) -> int:
     root = resolve_library(args.library)
-    skills = refresh_index(root)
+    skills = reviewed_skills(root)
     query = " ".join(args.query)
     ranked = search(skills, query, args.limit)
     if args.json:
@@ -492,6 +569,7 @@ def command_search(args: argparse.Namespace) -> int:
 def command_index(args: argparse.Namespace) -> int:
     root = resolve_library(args.library)
     skills = refresh_index(root, rebuild=args.rebuild)
+    reviewed_skills(root)
     print(f"{len(skills)} skills indexed in {root.as_posix()}")
     undescribed = [skill["dir"] for skill in skills if not skill["description"]]
     if undescribed:
@@ -516,7 +594,7 @@ def command_index(args: argparse.Namespace) -> int:
 
 def command_list(args: argparse.Namespace) -> int:
     root = resolve_library(args.library)
-    skills = refresh_index(root)
+    skills = reviewed_skills(root)
     print(f"{len(skills)} skills in {root.as_posix()}:")
     for skill in skills:
         print(f"  {skill['name']}")
@@ -525,7 +603,7 @@ def command_list(args: argparse.Namespace) -> int:
 
 def command_topics(args: argparse.Namespace) -> int:
     root = resolve_library(args.library)
-    skills = refresh_index(root)
+    skills = reviewed_skills(root)
     topics = library_topics(skills, args.max_chars)
     if args.write:
         skill_md = Path(__file__).resolve().parent.parent / "SKILL.md"
@@ -574,6 +652,52 @@ def build_parser() -> argparse.ArgumentParser:
         help="put the list in this skill's own SKILL.md description",
     )
     topics.set_defaults(run=command_topics)
+
+    install = commands.add_parser("install", help="install a skill from GitHub into the library, after approval")
+    install.add_argument("repository", help="the source repository, as OWNER/REPO")
+    install.add_argument("skill", nargs="?", help="skill name or path in the repository; omit with --all")
+    install.add_argument("--all", action="store_true", help="install every skill in the repository")
+    install.add_argument("--pin", metavar="REF", help="pin to a git tag or commit; update then skips the skill")
+    install.add_argument("--force", action="store_true", help="replace a skill already in the library")
+    install.add_argument("--reconsider", action="store_true", help="ask again about a skill that was denied")
+    decision = install.add_mutually_exclusive_group()
+    decision.add_argument(
+        "--approved-by-user",
+        action="store_true",
+        help="the user has seen the summary and approved it; needs --scope and --expect-tree",
+    )
+    decision.add_argument("--deny", action="store_true", help="the user refused; record it and install nothing new")
+    install.add_argument("--scope", choices=("skill", "repo", "owner"), help="what the approval covers")
+    install.add_argument("--expect-tree", metavar="SHA", help="the tree value the summary showed")
+    install.set_defaults(run=lifecycle("command_install"))
+
+    update = commands.add_parser("update", help="update the library's skills from their sources")
+    update.add_argument("skills", nargs="*", metavar="skill", help="skills to update (default: all)")
+    update.add_argument("--check", action="store_true", help="report available updates and change nothing")
+    update.set_defaults(run=lifecycle("command_update"))
+
+    remove = commands.add_parser("remove", help="delete a skill from the library")
+    remove.add_argument("skill", help="skill name, or its directory relative to the library")
+    remove.add_argument("--yes", action="store_true", help="delete without asking")
+    remove.set_defaults(run=lifecycle("command_remove"))
+
+    review = commands.add_parser("review", help="approve or delete skills that arrived without approval")
+    review.add_argument("--approve", nargs="+", default=[], metavar="SKILL", help="approve these skills")
+    review.add_argument(
+        "--approve-dir",
+        action="append",
+        default=[],
+        metavar="DIR",
+        help="approve every skill under this library directory, now and later",
+    )
+    review.add_argument("--approve-all", action="store_true", help="approve every skill waiting for review")
+    review.add_argument("--delete", nargs="+", default=[], metavar="SKILL", help="delete these skills")
+    review.add_argument("--json", action="store_true", help="print the waiting skills as JSON")
+    review.set_defaults(run=lifecycle("command_review"))
+
+    status = commands.add_parser("status", help="show each skill's source, version, and approval")
+    status.add_argument("--json", action="store_true", help="print as JSON")
+    status.set_defaults(run=lifecycle("command_status"))
     return parser
 
 
@@ -594,4 +718,6 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    # skill_library imports this module by name; give it this copy, not a second one.
+    sys.modules.setdefault("skill_router", sys.modules[__name__])
     sys.exit(main())
