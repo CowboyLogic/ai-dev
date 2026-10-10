@@ -332,7 +332,7 @@ def pick(skills: list[dict], wanted: str) -> dict:
         raise RouterError(f'no skill named "{wanted}" here; nothing was changed')
     if len(matches) > 1:
         paths = ", ".join(skill["dir"] for skill in matches)
-        raise RouterError(f'"{wanted}" names more than one skill ({paths}); give the directory instead')
+        raise RouterError(f'"{shown(wanted)}" names more than one skill ({shown(paths)}); give the directory instead')
     return matches[0]
 
 
@@ -409,6 +409,12 @@ def show_summary(skills: list[dict], tree: str) -> None:
             say(f"      {shown(name)}" + ("   <- script" if name in skill["scripts"] else ""))
         if len(skill["files"]) > SUMMARY_FILE_LIMIT:
             say(f"      ... and {len(skill['files']) - SUMMARY_FILE_LIMIT} more")
+            # The cap keeps the summary short. It must not be a place for a script to hide.
+            hidden = [name for name in skill["files"][SUMMARY_FILE_LIMIT:] if name in skill["scripts"]]
+            if hidden:
+                say(f"    scripts among those {len(skill['files']) - SUMMARY_FILE_LIMIT}:")
+                for name in hidden:
+                    say(f"      {shown(name)}   <- script")
         say(f"    read it first: gh skill preview {shown(source['repo'])} {shown(source['path'])}")
     say()
     say(f"Tree to approve: {tree}")
@@ -465,7 +471,7 @@ def denied_message(rule: dict) -> str:
     decided = rule.get("decided_at")
     when = f" on {decided[:10]}" if isinstance(decided, str) and decided else ""
     return (
-        f"{rule_name(rule) or rule['path']} from {rule['repo']} was denied{when} "
+        f"{shown(rule_name(rule) or rule['path'])} from {shown(rule['repo'])} was denied{when} "
         "and was not installed. Pass --reconsider to be asked again."
     )
 
@@ -557,7 +563,7 @@ def decide_and_install(args: argparse.Namespace, library: Library, staged: list[
         # The decision is on record before anything enters the library.
         trust.must_save()
         if scope is None:
-            say(f"Denied and recorded: {', '.join(skill['name'] for skill in undecided)}.")
+            say(f"Denied and recorded: {', '.join(shown(skill['name']) for skill in undecided)}.")
 
     for skill in wanted:
         destination = root / skill["dir"]
@@ -565,7 +571,7 @@ def decide_and_install(args: argparse.Namespace, library: Library, staged: list[
             delete_skill(root, skill["dir"])
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(stage / skill["dir"]), str(destination))
-        print(f"Installed {skill['name']} to {destination.as_posix()}")
+        print(f"Installed {shown(skill['name'])} to {shown(destination.as_posix())}")
     router.refresh_index(root)
     return 0
 
@@ -717,7 +723,7 @@ def command_remove(args: argparse.Namespace) -> int:
     root = router.resolve_library(args.library)
     library = open_library(root)
     skill = pick(library.skills, args.skill)
-    location = (root / skill["dir"]).as_posix()
+    location = shown((root / skill["dir"]).as_posix())
     if not args.yes:
         if not interactive():
             raise RouterError(f"removing {location} needs the user's yes; ask, then pass --yes")
@@ -727,7 +733,7 @@ def command_remove(args: argparse.Namespace) -> int:
     delete_skill(root, skill["dir"])
     router.refresh_index(root)
     # Its approval stays on record, so installing it again does not ask again.
-    print(f"Removed {skill['name']} ({location})")
+    print(f"Removed {shown(skill['name'])} ({location})")
     return 0
 
 
@@ -775,7 +781,7 @@ def command_review(args: argparse.Namespace) -> int:
     trust.must_save()
     for skill in deleting:
         delete_skill(root, skill["dir"])
-        print(f"Deleted {skill['name']} ({(root / skill['dir']).as_posix()})")
+        print(f"Deleted {shown(skill['name'])} ({shown((root / skill['dir']).as_posix())})")
     after = open_library(root, notice=False)
     newly = len(after.covered) - len(library.covered)
     print(f"{newly} skill(s) approved; {len(after.unreviewed)} still waiting for review.")
@@ -827,17 +833,17 @@ def command_status(args: argparse.Namespace) -> int:
         return 0
     print(f"{len(rows)} skills in {root.as_posix()}:")
     for row in rows:
-        print(f"  {row['name']}  [{row['approval']}]  {describe_source(row['source'])}")
+        print(f"  {shown(row['name'])}  [{row['approval']}]  {describe_source(row['source'])}")
     broad = [rule for rule in library.trust.rules if rule["scope"] in ("repo", "owner", "local-dir")]
     if broad:
         print("\nApprovals covering more than one skill:")
         for rule in broad:
-            print(f"  {rule['scope']}: {rule[RULE_FIELDS[rule['scope']][0]]}")
+            print(f"  {rule['scope']}: {shown(rule[RULE_FIELDS[rule['scope']][0]])}")
     denied = [rule for rule in library.trust.rules if rule["decision"] == "denied"]
     if denied:
         print("\nDenied, and not installed again unless reconsidered:")
         for rule in denied:
-            print(f"  {rule.get('name') or rule['path']} from {rule['repo']}")
+            print(f"  {shown(rule_name(rule) or rule['path'])} from {shown(rule['repo'])}")
     if library.unreviewed:
         print(f"\n{len(library.unreviewed)} unreviewed and left out of search. Run `review`.")
     return 0
