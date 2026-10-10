@@ -3,7 +3,7 @@
 
 The library is one directory holding any number of skills, at any depth: a skill is
 a directory that contains SKILL.md. Clones of skill repositories can sit in it as they
-are. This script ranks the library against a query and prints the directory of each
+are, as real directories or as symlinks placed directly in the library. This script ranks the library against a query and prints the directory of each
 match, so an agent loads the one skill it needs instead of carrying every description.
 
 Standard-library Python only, so it runs wherever Python 3.9+ does.
@@ -143,26 +143,45 @@ def _decode_escape(match: re.Match) -> str:
 
 
 def find_skill_dirs(root: Path) -> list[Path]:
-    """Return every directory under root that holds a SKILL.md, in a stable order."""
+    """Return every directory under root that holds a SKILL.md, in a stable order.
+
+    A symlink placed directly in the library is followed, because whoever owns the
+    library put it there. A symlink any deeper is not: it came with a clone, and a
+    checked-in link to `/` or a home directory would lead the search out of the library.
+    """
     found: list[Path] = []
     seen: set[str] = set()
 
     def unreadable(error: OSError) -> None:
         warn(f"cannot read {error.filename}: {error.strerror or error}")
 
-    for current, dirnames, filenames in os.walk(root, followlinks=True, onerror=unreadable):
-        real = os.path.realpath(current)
-        if real in seen:
-            # A symlink loop, or two links to one place.
-            dirnames[:] = []
-            continue
-        seen.add(real)
-        if "SKILL.md" in filenames:
-            found.append(Path(current))
-            # A skill's own subdirectories are its files, not more skills.
-            dirnames[:] = []
-            continue
-        dirnames[:] = sorted(d for d in dirnames if d not in PRUNED_DIRS)
+    def walk(top: Path) -> None:
+        for current, dirnames, filenames in os.walk(top, onerror=unreadable):
+            real = os.path.realpath(current)
+            if real in seen:
+                # Two links to one place, or a link back into the library.
+                dirnames[:] = []
+                continue
+            seen.add(real)
+            if "SKILL.md" in filenames:
+                found.append(Path(current))
+                # A skill's own subdirectories are its files, not more skills.
+                dirnames[:] = []
+                continue
+            dirnames[:] = sorted(d for d in dirnames if d not in PRUNED_DIRS)
+
+    walk(root)
+    try:
+        linked = sorted(
+            entry.name
+            for entry in os.scandir(root)
+            if entry.is_symlink() and entry.is_dir() and entry.name not in PRUNED_DIRS
+        )
+    except OSError:
+        # The walk above has already reported an unreadable library.
+        linked = []
+    for name in linked:
+        walk(root / name)
     return found
 
 
