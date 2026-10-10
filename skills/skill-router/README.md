@@ -17,7 +17,7 @@ carries one description and pays for a search only when it needs a skill.
 - **`scripts/skill_router.py`**: the script to run. Standard-library Python 3.12 or later,
   with no dependencies, on macOS, Linux, and Windows.
 - **`scripts/skill_library.py`**: the install, update, review, and remove commands, loaded
-  by the script above. `install` and `update` call the GitHub CLI.
+  by the script above. `find`, `install`, and `update` call the GitHub CLI.
 - **`scripts/test_skill_router.py`**, **`scripts/test_skill_library.py`**: the unit tests.
 
 ## How it works
@@ -29,8 +29,10 @@ carries one description and pays for a search only when it needs a skill.
 3. **The agent loads one skill.** It reads `SKILL.md` in the returned directory and treats
    that directory as the skill's base, so the skill's `references/` and `scripts/` paths
    resolve where the skill lives. Nothing is copied into the workspace.
-4. **On a miss, the agent searches once more** with different words, then tells you the
-   library has nothing for the task. It does not install anything on its own.
+4. **On a miss, the agent searches once more** with different words, then looks on GitHub
+   with `find`. That lists skills the library lacks and changes nothing. The agent shows
+   you the candidates and installs one only if you say so, and only after you approve its
+   source. If nothing fits, it tells you and carries on without one.
 
 ## Set up
 
@@ -96,7 +98,8 @@ load any library skill without a prompt:
 Running a script is the other, and a read rule does not cover it. That applies to the
 router's own script and to any script a library skill ships. Approve those commands
 when the harness asks, or add a narrowly scoped rule for them in your harness's
-permission settings. Keep such a rule to `search` and `list`. Leave `install`, `review`,
+permission settings. Keep such a rule to `search` and `list`. `find` changes nothing
+either, but it sends its query to GitHub, so allow it only if you accept that. Leave `install`, `review`,
 and `remove` to be asked about each time: the harness's prompt is what puts their
 approval in front of you and not only the agent.
 
@@ -113,6 +116,7 @@ In the commands below, `<skill-dir>` is where your harness installed this skill,
 | Command | What it does |
 |---|---|
 | `search <words>` | Print the best matches. `-n <count>` changes how many, and `--json` prints full descriptions. |
+| `find <words>` | Search GitHub for skills the library lacks, and print each with its `install` command. `--owner <name>` limits it to one user or organization, `-n <count>` changes how many, and `--json` prints JSON. |
 | `list` | Print the name of every skill in the library. |
 | `index` | Refresh the index and report on the library. `--rebuild` discards the cached index first. |
 | `topics` | Print the words most common across skill names. `--write` adds them to this skill's description. |
@@ -153,9 +157,34 @@ does.
 
 ## Manage the library
 
-`install` and `update` hand the fetching to the GitHub CLI's `gh skill` commands, pointed
-at the library with `--dir`. You need `gh` on your `PATH`, signed in, and recent enough to
-have `gh skill`. Search and the other commands work without it.
+`find`, `install`, and `update` use the GitHub CLI's `gh skill` commands: `install` and
+`update` are pointed at the library with `--dir`. You need `gh` on your `PATH`, signed in,
+and recent enough to have `gh skill`. Searching the library and the other commands work
+without it.
+
+### Find a skill on GitHub
+
+```bash
+uv run <skill-dir>/scripts/skill_router.py find <words describing the task>
+```
+
+The agent runs this when two searches of the library found nothing. It wraps
+`gh skill search`, which matches words in the names and descriptions of `SKILL.md` files
+in public repositories, and prints up to five skills with the repository, the path, the
+stars, the start of the description, and the `install` command that would add each one.
+Skills the library already holds and skills you refused are left out, and the output says
+how many.
+
+- **It installs nothing.** Installing is the `install` command below, which shows the
+  source and asks you first. The agent is told to show you the candidates and ask.
+- **The query goes to GitHub.** The agent is told to send the tool and the kind of work,
+  and no internal or client names. Read what it ran if that matters in your setting.
+- **The results are not trusted.** Descriptions are written by strangers. The output strips
+  control and invisible characters, shortens each description, and leaves out a result
+  whose repository or path does not look like one. The agent is told to treat what remains
+  as data.
+- **`gh skill search` is subject to GitHub's code-search rate limit.** A limit error is
+  passed on as `gh` printed it.
 
 ### Install, with approval
 
@@ -292,12 +321,13 @@ different words before it concludes nothing is installed.
   and literal values, with trailing comments and double-quote escapes. It does not read
   anchors, tags, or flow collections.
 - The ranking was tuned against this repository's own skills, not a library of hundreds.
-- Finding skills on remote sources is not part of this skill. `install` needs the
-  repository and the skill's name.
+- `find` searches GitHub only, through `gh skill search`, which sees public repositories
+  and matches words in a skill's name and description. A skill that describes itself
+  differently from your words can be missed, and one hosted elsewhere is not found.
 - `install` takes skills from GitHub only. Put a skill from anywhere else in the library
   by hand and approve it with `review`.
-- `gh skill` is a preview feature of the GitHub CLI and can change. `install` and `update`
-  depend on it; the rest of the skill does not.
+- `gh skill` is a preview feature of the GitHub CLI and can change. `find`, `install`, and
+  `update` depend on it; the rest of the skill does not.
 - `update` passes on what `gh` reports. `gh` gives no machine-readable result, so the
   command's exit status does not say whether updates were found.
 
