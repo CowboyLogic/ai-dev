@@ -29,11 +29,14 @@ library without an approval until you have reviewed it.
 
 ## Where it applies
 
-Use it when you keep many skills installed globally and most sessions use few of them. It
-works in any harness that can run a Python script and read files outside the project.
+Use it when you keep a large library of skills installed globally and most sessions use
+few of them. As a rough guide, it earns its place at 50 or more skills; with fewer than
+about 50 that you rely on routinely, it may not give you the value it is built for. A skill
+you use in every session is better left where the harness discovers it.
+
+It works in any harness that can run a Python script and read files outside the project.
 Finding skills on GitHub, installing, and updating need the GitHub CLI (`gh`) with its
-`gh skill` commands; searching the library does not. It is not worth the indirection for a handful of skills, and a skill you use in every session
-is better left where the harness discovers it.
+`gh skill` commands; searching the library does not.
 
 ---
 
