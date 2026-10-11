@@ -259,7 +259,7 @@ def validate_permissions(perms, path, scope):
                     validate_permission_rule(rule, f"{path}.{key}", key)
     if "defaultMode" in perms:
         mode = perms["defaultMode"]
-        if mode not in VALID_DEFAULT_MODES:
+        if not isinstance(mode, str) or mode not in VALID_DEFAULT_MODES:
             err(f"{path}.defaultMode: invalid value '{mode}'. Valid: {sorted(VALID_DEFAULT_MODES)}")
         elif mode in PROJECT_IGNORED_DEFAULT_MODES and scope in {"project", "local"}:
             warn(f"{path}.defaultMode: '{mode}' doesn't take effect from {scope} settings; set it in ~/.claude/settings.json")
@@ -283,8 +283,10 @@ def validate_hook_handler(handler, path, event):
     if not htype:
         err(f"{path}: missing required 'type' field")
         return
-    if htype not in VALID_HANDLER_TYPES:
+    if not isinstance(htype, str) or htype not in VALID_HANDLER_TYPES:
         err(f"{path}.type: invalid value '{htype}'. Valid: {' | '.join(sorted(VALID_HANDLER_TYPES))}")
+        if not isinstance(htype, str):
+            return
     if htype == "command" and "command" not in handler:
         err(f"{path}: command type requires 'command' field")
     if htype == "command" and "args" in handler and not isinstance(handler["args"], list):
@@ -521,12 +523,13 @@ def validate(data, scope):
 
     if "skillOverrides" in data and isinstance(data["skillOverrides"], dict):
         for name, val in data["skillOverrides"].items():
-            if val not in VALID_SKILL_OVERRIDES:
+            if not isinstance(val, str) or val not in VALID_SKILL_OVERRIDES:
                 err(f"skillOverrides.{name}: invalid value {val!r}. Valid: {sorted(VALID_SKILL_OVERRIDES)}")
 
     if "strictPluginOnlyCustomization" in data:
         v = data["strictPluginOnlyCustomization"]
-        if not (v is True or (isinstance(v, list) and set(v) <= VALID_STRICT_PLUGIN_KINDS)):
+        if not (v is True or (isinstance(v, list) and all(isinstance(k, str) for k in v)
+                              and set(v) <= VALID_STRICT_PLUGIN_KINDS)):
             err(f"strictPluginOnlyCustomization: must be true or a subset of {sorted(VALID_STRICT_PLUGIN_KINDS)}")
 
     if "worktree" in data and isinstance(data["worktree"], dict):
@@ -576,7 +579,7 @@ def validate(data, scope):
 
     if "fallbackModel" in data:
         v = data["fallbackModel"]
-        if not isinstance(v, list):
+        if not isinstance(v, list) or not all(isinstance(m, str) for m in v):
             err("fallbackModel: must be an array of model aliases or IDs")
         elif len(set(v)) > 3:
             warn("fallbackModel: only the first three distinct allowed models are used")
