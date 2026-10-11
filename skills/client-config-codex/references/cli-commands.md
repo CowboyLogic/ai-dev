@@ -197,7 +197,7 @@ in CI to capture progress and a final summary.
 | `codex features enable FEATURE` / `disable FEATURE` | Persist to `$CODEX_HOME/config.toml` for future sessions |
 | `codex debug models [--bundled]` | Raw model catalog as JSON; `--bundled` skips the remote refresh |
 | `codex debug prompt-input [PROMPT]` | Model-visible prompt input as JSON; use to debug instruction discovery |
-| `codex debug app-server send-message-v2 MESSAGE` | Send one V2 thread/turn through the built-in app-server test client |
+| `codex debug app-server send-message-v2 USER_MESSAGE` | Send one V2 thread/turn through the built-in app-server test client |
 | `codex update` | Update the CLI; debug builds tell you to install a release build |
 | `codex login status` | Exits `0` when credentials are present |
 | `codex logout` | Removes saved API-key and ChatGPT credentials |
