@@ -33,7 +33,8 @@ Basis: Claude Code 2.1.296 (npm `latest`; `stable` is 2.1.287), docs pages fetch
   adds the new managed-only, user-or-managed, any-file, and global-config keys; validates
   hook `onFailure` (value, handler type, events where it has no effect), the
   `availableModelsMatch`, `allowedProviders`, and `maxProseWidth` values, and reports a
-  non-string enum value as an error instead of raising `TypeError`.
+  wrong-typed value (a list or object where a string is expected) as an error instead of
+  raising `TypeError`.
 - `SKILL.md`: quick edits for the default mode and a fail-closed hook; the self-update
   procedure now records the Claude Code version checked.
 - Evals: new eval for making a hook fail closed with `onFailure`; not yet run (the README
