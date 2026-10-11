@@ -439,6 +439,8 @@ def main() -> int:
             nm = (yaml.safe_load(fm) or {}).get("name") if fm is not None else None
         except Exception:
             nm = None
+        if args.plugin and isinstance(nm, str) and len(nm) > NAME_MAX_LENGTH:
+            nm = None  # a plugin file's overlong name is ignored, so it cannot collide
         if isinstance(nm, str):
             if nm in seen:
                 rep.error(f"duplicate name '{nm}' also used by {seen[nm]}: only one loads")
