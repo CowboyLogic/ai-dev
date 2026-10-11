@@ -23,9 +23,8 @@ opencode auth import creds.json          # import a file produced by `auth expor
 ```
 
 `auth export` takes an optional integration ID or name (all integrations when omitted). `auth import` needs a file
-argument or piped stdin, so `opencode auth export | opencode auth import --server <url>` moves credentials to
-another server. Both appear in `opencode auth --help` on 2.0.26 but not in the V2 docs. Treat the exported file as
-a secret and delete it after use.
+argument or piped stdin (`opencode auth export | opencode auth import`). Both appear in `opencode auth --help` on
+2.0.26 but not in the V2 docs. Treat the exported file as a secret and delete it after use.
 
 Saved keys and OAuth tokens live in the server's SQLite database (usually `~/.local/share/opencode/opencode.db`;
 `opencode debug paths db` prints it). V2 imports the legacy `auth.json` once and never writes back to it. Never
