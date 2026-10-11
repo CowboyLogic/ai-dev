@@ -2,6 +2,34 @@
 
 Changes to the `client-config-opencode` skill, newest first.
 
+## 2026-10-11 — v2.1 (verified against V2 2.0.26 and V1 1.19.0)
+
+Baselines: V2 2.0.16 → 2.0.26 and V1 1.18.29 → 1.19.0. V2 publishes no release notes, so V2
+changes come from a tag-to-tag diff of the V2 docs source, the published `cli.json` schema, and the
+2.0.26 binary. V1 changes come from the 1.19.0 release notes and a tag-to-tag diff of the V1 docs.
+
+- V1 `references/config-schema.md`: `autoupdate` now only checks and notifies; updates are never
+  installed automatically (`/update` or `opencode upgrade` installs). The published JSON schema
+  description still says `true` auto-updates, and the note says so.
+- `references/v2/cli.md`: `diffs.source` accepts `turn`; `prompt.queue` is `<leader>return` and
+  `input.newline` also accepts `alt+return`; added `queued_prompt.undo`, `theme.switch`, and
+  `terminal.toggle`; the `permission.mode`, `plugins.install`, and `dialog.plugins.install` keybind IDs
+  are no longer in the docs or schema.
+- `references/v2/config-schema.md`: compaction `buffer` defaults to 10% of the limit (the 2.0.16
+  docs said `20000`); skill frontmatter gains `disable-model-invocation` and drops `slash` and
+  `metadata.opencode/slash` from the docs; formatter `{}` preserves inherited settings while `true`
+  resets them; `tinyfish` web search provider; `opencode service set disabled true`.
+- `references/v2/providers.md`: provider-wide `headerTimeout`, `chunkTimeout`, and `timeout`
+  (defaults and retry behavior); Azure deployment discovery and `resourceName` precedence;
+  `opencode auth export` and `auth import` (in `--help`, not in the docs).
+- `references/v2/migration.md`: V1 `autoupdate: true` maps to `update: "auto"`, which is more
+  aggressive than V1 1.19.0; compaction `reserved` carries over only when set explicitly.
+- `references/v2/plugins.md`: the V1 object entrypoint is supported in `1.18.29` and newer.
+- `references/v2/migration.md`: noted that the V1 1.19.0 docs list `opencode upgrade --major`, which
+  upgrades to OpenCode 2 and removes OpenCode 1.
+- `{file:...}` substitution in agent `system` re-verified on 2.0.26 with `opencode debug config`.
+- `sources.json`: added the V2 CLI index page, which documents the background service.
+
 ## 2026-09-24 — v2.0 (OpenCode V2 support)
 
 - `SKILL.md`: rewritten with a format-selection step (read first; no file → V2; V1-shaped

@@ -52,6 +52,7 @@
     "references/v2/config-schema.md": {
       "urls": [
         "https://opencode.ai/v2/docs/config/",
+        "https://opencode.ai/v2/docs/cli/",
         "https://opencode.ai/v2/docs/commands/",
         "https://opencode.ai/v2/docs/skills/",
         "https://opencode.ai/v2/docs/formatters/",
