@@ -18,14 +18,15 @@ opencode auth login anthropic --method key
 opencode auth list
 opencode auth switch anthropic work      # switch active saved account
 opencode auth logout anthropic work
-(umask 077; opencode auth export > creds.json)   # stored credentials, INCLUDING SECRETS, as an owner-only file
+(umask 077; rm -f creds.json; opencode auth export > creds.json)   # stored credentials, INCLUDING SECRETS
 opencode auth import creds.json          # import a file produced by `auth export` (reads stdin when omitted)
 ```
 
 `auth export` takes an optional integration ID or name (all integrations when omitted). `auth import` needs a file
 argument or piped stdin (`opencode auth export | opencode auth import`). Both appear in `opencode auth --help` on
 2.0.26 but not in the V2 docs. Treat the exported file as a secret and delete it after use. Create it owner-only
-(the `umask 077` above): a plain `>` uses the caller's umask, often `022`, which makes the file world-readable.
+(the `umask 077` above): a plain `>` uses the caller's umask, often `022`, which makes the file world-readable. The
+`rm -f` matters on a rerun, because redirecting onto an existing file keeps that file's mode.
 
 Saved keys and OAuth tokens live in the server's SQLite database (usually `~/.local/share/opencode/opencode.db`;
 `opencode debug paths db` prints it). V2 imports the legacy `auth.json` once and never writes back to it. Never
