@@ -189,7 +189,9 @@ above as frontmatter and the body as the template.
 - Top-level `permissions` apply to every agent. Each agent's own rules are appended after
   them, so agent rules can refine global ones.
 - `update` is `"disable"`, `"notify"` (default), or `"auto"`, and is honored only in the
-  global config. It replaces V1 `autoupdate`.
+  global config. It replaces V1 `autoupdate`. V1 1.19.0 no longer installs updates
+  automatically (`autoupdate: true` only notifies), so `"notify"`, not `"auto"`, is the
+  V2 setting that matches it.
 - `share` is accepted, but session sharing is not supported yet in V2.
 - `theme` and keybinds are not `opencode.json` fields in V2. They live in the terminal
   client config, `~/.config/opencode/cli.json`, which V2 migrates from `tui.json` on
