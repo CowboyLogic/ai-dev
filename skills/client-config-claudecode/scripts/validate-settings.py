@@ -46,6 +46,7 @@ ENUMS = {
     "workflowSizeGuideline": {"unrestricted", "small", "medium", "large"},
     "crossSessionInbound": {"accept", "hold", "refuse"},
     "forceLoginMethod": {"claudeai", "console", "gateway"},
+    "availableModelsMatch": {"prefix", "exact"},
     "managedSourcesBehavior": {"first-wins", "merge"},
     "parentSettingsBehavior": {"first-wins", "merge"},
     "disableAutoMode": {"disable"},
