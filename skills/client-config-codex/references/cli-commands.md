@@ -213,9 +213,11 @@ in CI to capture progress and a final summary.
 
 > [!NOTE]
 > The docs list separate `macos`, `linux`, and `windows` sandbox subcommands (with `seatbelt` and
-> `landlock` aliases), a `--permissions-profile` flag, and `sandbox` under `codex debug`. None of that
-> exists in 0.162.1: `codex debug` has only `models`, `app-server`, and `prompt-input`, and the flag is
-> `-P/--permission-profile`. Check `codex sandbox -h` on the target platform.
+> `landlock` aliases) and `sandbox` under `codex debug`. Neither exists in 0.162.1: `codex sandbox`
+> has only `uninstall`, and `codex debug` has only `models`, `app-server`, and `prompt-input`. The
+> canonical flag is `-P/--permission-profile`; the docs' plural `--permissions-profile` is still
+> accepted as a hidden legacy alias that `-h` does not show. Check `codex sandbox -h` on the target
+> platform.
 
 `codex features enable`/`disable` edit `config.toml`; run them only for a persistent change and use
 `--enable`/`--disable` for a one-off run.

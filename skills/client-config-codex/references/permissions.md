@@ -429,10 +429,11 @@ machine-wide accounts and network rules.
 
 > [!NOTE]
 > The docs show per-platform subcommands (`codex sandbox macos|linux|windows`, with aliases
-> `seatbelt` and `landlock`), a `--permissions-profile` flag, and `sandbox` available under
-> `codex debug`. The installed 0.162.1 CLI has a flat `codex sandbox [OPTIONS] [COMMAND]...` whose
-> only subcommand is `uninstall`, with `-P/--permission-profile`, and `codex debug` has only
-> `models`, `app-server`, and `prompt-input`. Check `codex help sandbox` on the target machine.
+> `seatbelt` and `landlock`) and `sandbox` available under `codex debug`. The installed 0.162.1 CLI
+> has a flat `codex sandbox [OPTIONS] [COMMAND]...` whose only subcommand is `uninstall`, and
+> `codex debug` has only `models`, `app-server`, and `prompt-input`. The canonical profile flag is
+> `-P/--permission-profile`; the docs' plural `--permissions-profile` is still accepted as a hidden
+> legacy alias that `-h` does not list. Check `codex help sandbox` on the target machine.
 
 `codex doctor` reports the effective posture (for example "restricted fs + restricted network ·
 approval OnRequest"); `--summary` shortens it and `--json` emits a redacted report.
