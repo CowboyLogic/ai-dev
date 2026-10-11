@@ -156,8 +156,8 @@ on the provider's `settings` (provider-wide; not per model or variant), in milli
 { "providers": { "anthropic": { "settings": { "headerTimeout": 600000, "chunkTimeout": false } } } }
 ```
 
-| Setting | Default | Bounds |
-|---------|---------|--------|
+| Setting | Default | What it limits |
+|---------|---------|----------------|
 | `headerTimeout` | 5 minutes | Wait for response headers |
 | `chunkTimeout` | 5 minutes (30 minutes on a WebSocket transport, where it bounds the gap between frames) | Gap between streamed chunks |
 | `timeout` | none | The whole request, from send until the response completes |
