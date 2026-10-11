@@ -16,8 +16,9 @@ Evaluation results for the `client-config-claudecode` skill. The skill itself is
 Benchmark run: **2026-04-26 · iteration 1** · 3 scenarios · 6 total runs
 
 These results predate the 2026-09-24 v2.0 refresh and the 2026-10-11 v2.1 update.
-[evals/evals.json](evals/evals.json) holds the eval cases; it also includes a case added in
-v2.0 that this run did not cover.
+[evals/evals.json](evals/evals.json) holds the eval cases; it also includes two cases that
+this run did not cover: `default-mode-scope` (added in v2.0) and `hook-fail-closed` (added
+in v2.1).
 
 ### Overall
 
