@@ -18,12 +18,14 @@ opencode auth login anthropic --method key
 opencode auth list
 opencode auth switch anthropic work      # switch active saved account
 opencode auth logout anthropic work
-opencode auth export                     # print stored credentials, INCLUDING SECRETS, as JSON
-opencode auth import                     # import credentials produced by `auth export`
+opencode auth export > creds.json        # print stored credentials, INCLUDING SECRETS, as JSON
+opencode auth import creds.json          # import a file produced by `auth export` (reads stdin when omitted)
 ```
 
-`auth export` and `auth import` appear in `opencode auth --help` on 2.0.26 but not in the V2 docs. Treat the export
-output as a secret.
+`auth export` takes an optional integration ID or name (all integrations when omitted). `auth import` needs a file
+argument or piped stdin, so `opencode auth export | opencode auth import --server <url>` moves credentials to
+another server. Both appear in `opencode auth --help` on 2.0.26 but not in the V2 docs. Treat the exported file as
+a secret and delete it after use.
 
 Saved keys and OAuth tokens live in the server's SQLite database (usually `~/.local/share/opencode/opencode.db`;
 `opencode debug paths db` prints it). V2 imports the legacy `auth.json` once and never writes back to it. Never
