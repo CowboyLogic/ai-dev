@@ -2,7 +2,7 @@
 
 Load this file when configuring the `tools` property in an agent profile.
 
-**Sources (last verified September 2026):**
+**Sources (last verified October 2026):**
 
 - GitHub configuration reference, Tools section: <https://docs.github.com/en/copilot/reference/custom-agents-configuration#tools>
 - VS Code tools and context reference: <https://code.visualstudio.com/docs/agents/reference/tools-reference>

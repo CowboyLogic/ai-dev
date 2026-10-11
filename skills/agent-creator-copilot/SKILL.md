@@ -9,7 +9,7 @@ license: MIT
 Custom agents for GitHub Copilot are defined in `.agent.md` Markdown files called **agent profiles**. They encode a role, behavioral instructions, tool access, and optionally a model, without requiring extension development. The same profile can be used by Copilot cloud agent on GitHub.com, GitHub Copilot CLI, VS Code, JetBrains IDEs, Eclipse, and Xcode, but some properties only work on some surfaces.
 
 > [!IMPORTANT]
-> Always verify against the official docs before relying on a property. The canonical references are:
+> This skill was last verified in October 2026 against GitHub Copilot CLI v1.0.95. Always verify against the official docs before relying on a property. The canonical references are:
 >
 > - [Custom agents configuration (GitHub)](https://docs.github.com/en/copilot/reference/custom-agents-configuration)
 > - [Custom agents in VS Code](https://code.visualstudio.com/docs/agent-customization/custom-agents)
@@ -73,8 +73,8 @@ You are a documentation specialist focused on README files. ...
 
 The filename (minus `.md` / `.agent.md`) is the agent's ID and is used for deduplication. On name conflicts the lowest (most specific) level wins: repository over organization, organization over enterprise.
 
-> [!WARNING]
-> The Copilot CLI docs disagree on user vs. project precedence: the how-to says the home-directory agent wins, the command reference says project-level agents win. Avoid duplicate names across scopes.
+> [!NOTE]
+> In Copilot CLI, a user-level agent (`~/.copilot/agents/`) overrides a project agent with the same ID. The full priority order is in `references/frontmatter-reference.md`.
 
 ---
 
