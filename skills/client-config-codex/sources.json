@@ -58,7 +58,7 @@
         "https://learn.chatgpt.com/docs/plugins.md",
         "https://learn.chatgpt.com/docs/build-plugins.md"
       ],
-      "covers": "Subagents and the [agents] table, custom agent TOML files, plugins, marketplaces, plugin.json, codex plugin commands, [plugins.*] enablement"
+      "covers": "Subagents and the [agents] table, custom agent TOML files, plugins, marketplaces, the ChatGPT no-code plugin guide (build-plugins.md is not the plugin.json or marketplace schema; those and the codex plugin commands come from cli-commands.md and config-schema.md), [plugins.*] enablement"
     },
     "references/instructions.md": {
       "urls": [
