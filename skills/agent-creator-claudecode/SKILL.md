@@ -152,7 +152,7 @@ the same family, including any `[1m]` context suffix.
 |---|---|
 | `permissionMode` | `default` (alias `manual`), `acceptEdits`, `auto`, `dontAsk`, `bypassPermissions`, `plan`. The parent session's mode can override it |
 | `maxTurns` | Stop after N agentic turns; output is returned marked partial and can be resumed |
-| `skills` | Skill names whose full content is preloaded at startup |
+| `skills` | Skill names whose full content is preloaded at startup (first 32 distinct names) |
 | `mcpServers` | Server names (shared connection) or inline definitions (scoped to this agent) |
 | `hooks` | `PreToolUse`, `PostToolUse`, `Stop` (becomes `SubagentStop`) scoped to this agent |
 | `memory` | `user`, `project`, or `local` persistent memory directory |
@@ -163,6 +163,7 @@ the same family, including any `[1m]` context suffix.
 | `color` | `red`, `blue`, `green`, `yellow`, `purple`, `orange`, `pink`, `cyan` |
 | `initialPrompt` | First user turn when the file runs as the main session agent |
 | `experimental` | `{cacheTtl: 5m \| 1h}` prompt cache lifetime |
+| `autoCompactWindow` | Auto-compact earlier than the main conversation's window (v2.1.296; changelog only, not yet in the docs table) |
 
 Plugin agents ignore `hooks`, `mcpServers`, `permissionMode`, and `initialPrompt`. Copy the
 file into `.claude/agents/` if you need them.

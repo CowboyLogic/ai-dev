@@ -2,6 +2,13 @@
 
 A skill for creating and troubleshooting custom subagents for Claude Code.
 
+> [!NOTE]
+> **Claude Code version:** verified against [Claude Code 2.1.296](https://github.com/anthropics/claude-code/releases/tag/v2.1.296)
+> (released 2026-10-09; the npm `latest` tag on 2026-10-11, with `stable` at 2.1.287).
+> Field behavior comes from <https://code.claude.com/docs/en/sub-agents>, checked against the
+> changelog through 2.1.296. Where only the changelog supports a claim (`autoCompactWindow`),
+> the reference says so. Re-verify when Claude Code ships a new release.
+
 ## Overview
 
 Claude Code agents are Markdown files with YAML frontmatter in `.claude/agents/` or
@@ -43,7 +50,8 @@ Requires `pyyaml`. It flags: missing `name` or `description`, an opening `---` t
 line 1, `name` values Claude Code skips, YAML that does not parse, unknown and mis-cased fields
 (`disallowed-tools` becomes a "did you mean `disallowedTools`" error), Copilot or OpenCode
 fields that Claude Code ignores, invalid enum values, `tools`/`disallowedTools` conflicts,
-fields ignored for plugin agents, and duplicate names within the scanned set.
+names over 256 characters, more than 32 preloaded skills, fields ignored for plugin agents,
+and duplicate names within the scanned set.
 
 It cannot know whether a tool name exists in your Claude Code build; check names against the
 tools reference.
