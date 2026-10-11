@@ -3,7 +3,7 @@
 Model ID format, variants, and common provider values for OpenCode agents. Applies
 to both V1 and V2; syntax differences are called out.
 
-**Sources (checked 2026-09-24):**
+**Sources (checked 2026-10-11):**
 
 - <https://docs.github.com/en/copilot/reference/ai-models/supported-models>
 - <https://docs.github.com/en/copilot/reference/ai-models/model-comparison>
@@ -26,8 +26,8 @@ property behavior and inheritance rules, load `v2/agents.md` or
 - The provider ends at the first `/`. The model ID may contain further `/`
   (for example `openrouter/anthropic/claude-sonnet-4.5`). IDs are case-sensitive.
 - V2 JSON also accepts `{ "providerID": "...", "model": "...", "variant": "..." }`.
-- List IDs with `opencode models` (V1 CLI) or `/models` inside a session (V1 and
-  V2). Availability depends on plan, org model policy, and provider auth.
+- List IDs with `opencode models` (V1 and V2 CLI) or `/models` inside a session.
+  Availability depends on plan, org model policy, and provider auth.
 
 ## Variants
 
@@ -77,7 +77,7 @@ OpenCode IDs use the `github-copilot/` provider prefix.
 
 > [!NOTE]
 > The table lists models on GitHub's supported-models page whose IDs also appear
-> under `github-copilot` in the models.dev catalog (2026-09-24). Model
+> under `github-copilot` in the models.dev catalog (2026-10-11). Model
 > availability changes often. Re-check with `/models` or `opencode models`
 > before hard-coding a model on an agent.
 
@@ -94,11 +94,14 @@ OpenCode IDs use the `github-copilot/` provider prefix.
 | `github-copilot/gpt-5.6-terra` | GPT-5.6 Terra | Balanced everyday interactive and agentic coding |
 | `github-copilot/gpt-6-luna` | GPT-6 Luna | Quick, cost-efficient smaller tasks |
 | `github-copilot/gpt-6-sol` | GPT-6 Sol | Development tasks that need careful multistep validation |
+| `github-copilot/gpt-6.1-sol` | GPT-6.1 Sol | Complex coding tasks; advanced, efficient reasoning |
 | `github-copilot/claude-haiku-4.5` | Claude Haiku 4.5 | Fast, cheap analysis and lightweight subagents |
+| `github-copilot/claude-haiku-5.5` | Claude Haiku 5.5 | Fast, reliable answers to lightweight coding questions; simple or repetitive tasks |
 | `github-copilot/claude-opus-4.8` | Claude Opus 4.8 | Deep reasoning and debugging |
 | `github-copilot/claude-opus-5` | Claude Opus 5 | Deep reasoning and debugging |
 | `github-copilot/claude-opus-5.5` | Claude Opus 5.5 | Long-running agentic coding and knowledge work |
 | `github-copilot/claude-sonnet-5` | Claude Sonnet 5 | Orchestrators, general coding and agent tasks |
+| `github-copilot/claude-sonnet-5.5` | Claude Sonnet 5.5 | General-purpose coding and agent tasks; completes tasks with fewer steps, tokens, and tool calls |
 | `github-copilot/gemini-3.7-flash` | Gemini 3.7 Flash | Fast, cheap analysis subagents |
 | `github-copilot/gemini-3.8-flash` | Gemini 3.8 Flash | Fast, cheap analysis subagents |
 | `github-copilot/mai-code-1.1-flash` | MAI-Code-1.1-Flash | Fast code completions, explanations, tool use |
@@ -107,18 +110,22 @@ OpenCode IDs use the `github-copilot/` provider prefix.
 | `github-copilot/grok-4.6` | Grok 4.6 | General-purpose coding and agent tasks |
 | `github-copilot/grok-4.7` | Grok 4.7 | Agentic coding and complex multistep workflows |
 
-### Retiring or retired — avoid for new agents
+### Retired — avoid for new agents
 
-| Model ID | Status on GitHub (2026-09-24) | Suggested replacement |
+| Model ID | Status on GitHub (2026-10-11) | Suggested replacement |
 |---|---|---|
-| `github-copilot/claude-opus-4.7` | Retires 2026-10-02 | `claude-opus-5` |
-| `github-copilot/gemini-3.5-flash` | Retires 2026-10-02 | `gemini-3.8-flash` |
-| `github-copilot/gemini-3.6-flash` | Retires 2026-10-02 | `gemini-3.8-flash` |
-| `github-copilot/kimi-k2.7-code` | Retires 2026-10-02 | `kimi-k3` |
-| `github-copilot/claude-sonnet-4.6` | Retired 2026-09-01 except annual Pro/Pro+ subscribers | `claude-sonnet-5` |
+| `github-copilot/claude-opus-4.7` | Retired 2026-10-02 | `claude-opus-5.5` |
+| `github-copilot/gemini-3.5-flash` | Retired 2026-10-02 | `gemini-3.8-flash` |
+| `github-copilot/gemini-3.6-flash` | Retired 2026-10-02 | `gemini-3.8-flash` |
+| `github-copilot/kimi-k2.7-code` | Retired 2026-10-02 | `kimi-k3` |
+| `github-copilot/claude-sonnet-4.6` | Retired 2026-09-01 except annual Pro/Pro+ subscribers | `claude-sonnet-5.5` |
 | `github-copilot/mai-code-1-flash-picker` | MAI-Code-1-Flash retired 2026-09-10 | `mai-code-1.1-flash` |
-| `claude-opus-4.5`, `claude-opus-4.6`, `claude-sonnet-4.5`, `gemini-3.1-pro-preview` | Retired 2026-09-01 | `claude-opus-5`, `claude-sonnet-5`, `gemini-3.6-flash` |
+| `claude-opus-4.5`, `claude-opus-4.6`, `claude-sonnet-4.5`, `gemini-3.1-pro-preview` | Retired 2026-09-01 | `claude-opus-5.5`, `claude-sonnet-5.5`, `gemini-3.8-flash` |
 | `gpt-4.1`, `gpt-5.2`, `gpt-5.2-codex`, `claude-sonnet-4`, `gemini-2.5-pro`, Raptor mini | Retired | See GitHub's retirement table |
+
+The models.dev catalog can lag GitHub: on 2026-10-11 it still listed `claude-opus-4.7`, `gemini-3.5-flash`,
+`gemini-3.6-flash`, `kimi-k2.7-code`, and `mai-code-1-flash-picker` under `github-copilot` after GitHub retired
+them. Check GitHub's retirement table, not the catalog, before choosing a model that looks old.
 
 ### Extreme-cost models — do not auto-select
 
@@ -158,24 +165,27 @@ OpenCode IDs use the `github-copilot/` provider prefix.
 
 | Agent role | Good starting models |
 |---|---|
-| Orchestrator / primary | `claude-sonnet-5`, `gpt-5.6-terra` |
+| Orchestrator / primary | `claude-sonnet-5.5`, `claude-sonnet-5`, `gpt-5.6-terra` |
 | Complex reasoning / architecture | `claude-opus-5`, `claude-opus-5.5`, `gpt-5.6-sol` |
-| Code generation / agentic coding | `gpt-5.3-codex`, `claude-sonnet-5` |
-| Fast / cheap subagent | `claude-haiku-4.5`, `gpt-5.6-luna`, `gemini-3.8-flash` |
-| Read-only review / analysis | `gpt-5.6-terra`, `claude-sonnet-5`, `gpt-5.4-mini` |
+| Code generation / agentic coding | `gpt-5.3-codex`, `claude-sonnet-5.5`, `gpt-6.1-sol` |
+| Fast / cheap subagent | `claude-haiku-5.5`, `gpt-5.6-luna`, `gemini-3.8-flash` |
+| Read-only review / analysis | `gpt-5.6-terra`, `claude-sonnet-5.5`, `gpt-5.4-mini` |
 
 ---
 
 ## Other common providers
 
-IDs below appear in the models.dev catalog on 2026-09-24.
+IDs below appear in the models.dev catalog on 2026-10-11.
 
 | Provider | Example model IDs |
 |---|---|
-| Anthropic | `anthropic/claude-sonnet-5`, `anthropic/claude-sonnet-4-5`, `anthropic/claude-haiku-4-5` |
-| OpenAI | `openai/gpt-5.5`, `openai/gpt-5.3-codex`, `openai/gpt-5-mini` |
-| OpenCode Zen | `opencode/gpt-5.3-codex`, `opencode/claude-sonnet-5` |
+| Anthropic | `anthropic/claude-sonnet-5`, `anthropic/claude-sonnet-5-5`, `anthropic/claude-sonnet-4-5`, `anthropic/claude-haiku-5-5`, `anthropic/claude-haiku-4-5` |
+| OpenAI | `openai/gpt-6.1-sol`, `openai/gpt-5.5`, `openai/gpt-5.3-codex`, `openai/gpt-5-mini` |
+| OpenCode Zen | `opencode/gpt-5.3-codex`, `opencode/claude-sonnet-5`, `opencode/claude-sonnet-5-5` |
 | Local (V2 auto-discovery) | `ollama/<model>`, `lmstudio/<model>`, `vllm/<model>` |
+
+ID spelling differs by provider: `github-copilot/claude-sonnet-5.5` uses a dot, while `anthropic/claude-sonnet-5-5`
+and `opencode/claude-sonnet-5-5` use a hyphen. Copy the ID from `/models` rather than converting one by hand.
 
 The same extreme-cost rules apply to Fable and fast-mode IDs from any provider.
 
