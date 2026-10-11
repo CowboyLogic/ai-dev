@@ -184,8 +184,10 @@ Template syntax:
   and project `.opencode/skills`, `.claude/skills`, `.agents/skills` from cwd up to the project root.
 - A source holds root-level `*.md` files or `SKILL.md` at any depth. The **path** determines the skill ID
   (`git-release/SKILL.md` → `git-release`); frontmatter `name` is a display label only.
-- Frontmatter: `name`, `description` (required for the model to see it), `slash` (`false` hides from command
-  catalogs), `metadata.opencode/slash`, `metadata.opencode/autoinvoke` (`false` hides from the model's list).
+- Frontmatter: `name`, `description` (required for the model to see it), `metadata.opencode/autoinvoke` (`false`
+  hides the skill from the model's list), and `disable-model-invocation` (`true` has the same effect; if both are
+  set, `opencode/autoinvoke` wins). The skill stays registered and can still be loaded explicitly by ID, or in a
+  prompt as `@skill-id`. The `slash` and `metadata.opencode/slash` fields are no longer in the 2.0.26 docs.
 - Precedence (low → high): built-ins, `.claude/skills`, `.agents/skills`, `~/.config/opencode/skills`, project
   `.opencode/skills`, explicit `skills` entries.
 - Gate loading with the `skill` permission action (resource = skill ID).
@@ -194,7 +196,10 @@ Template syntax:
 
 ## Formatters
 
-Disabled by default. `true` (or `{}`) enables every built-in whose requirements are met; `false` disables all.
+Disabled unless a config file sets `formatter`. `true` enables every built-in whose requirements are met and resets
+inherited formatter settings to the built-ins. An object also enables the built-ins; an empty object `{}`
+**preserves** inherited formatter settings rather than resetting them. `false` disables all, including formatting
+that a lower-priority config file enabled.
 
 ```jsonc
 {
@@ -224,18 +229,24 @@ Built-ins: `gofmt`, `mix`, `oxfmt`, `prettier`, `biome`, `zig`, `clang-format`, 
 ## Compaction
 
 ```jsonc
-{ "compaction": { "auto": true, "keep": { "tokens": 15000 }, "buffer": 20000 } }
+{ "compaction": { "auto": true, "keep": { "tokens": 15000 } } }
 ```
 
 | Field | Default | Behavior |
 |-------|---------|----------|
-| `auto` | `true` | Preflight auto-compaction plus one overflow-recovery retry; does not affect manual compaction |
-| `keep.tokens` | `15000` | Recent context retained beside the summary |
-| `buffer` | `20000` | Safety margin below the input limit; larger starts compaction earlier |
+| `auto` | `true` | Compact automatically near the context limit, and recover once when a provider rejects a request as too long; manual compaction always works |
+| `keep.tokens` | `15000` | Approximate recent conversation kept beside the summary |
+| `buffer` | 10% of the limit | Tokens kept free below the model's limit; larger starts compaction earlier |
+
+`keep.tokens` and `buffer` accept non-negative integers. The 2.0.16 docs gave `buffer` a fixed default of `20000`;
+the 2.0.26 docs say 10% of the limit, so set it explicitly if you depend on a specific value.
 
 Native provider compaction is opt-in per provider or model:
-`providers.<id>.settings.compaction.type` = `"native"` or `"summary"` (model setting overrides provider).
-There is no separate compaction model.
+`providers.<id>.settings.compaction.type` = `"native"` or `"summary"` (model setting overrides provider). Native
+compaction supports OpenAI Responses models, and its encrypted checkpoint only works with the same provider, model,
+and endpoint. Compaction uses the session's model; there is no separate compaction model.
+
+Request compaction on demand with `opencode api post /api/session/<session-id>/compact --data '{}'`.
 
 ---
 
@@ -254,11 +265,12 @@ the model); 20 MiB per item.
 ## Web search
 
 ```jsonc
-{ "websearch": { "provider": "tavily" } }   // "exa" | "firecrawl" | "parallel" | "tavily" | "random"
+{ "websearch": { "provider": "tavily" } }   // "exa" | "firecrawl" | "parallel" | "tavily" | "tinyfish" | "random"
 { "websearch": false }                      // remove the tool
 ```
 
-Credentials: `/connect` or `EXA_API_KEY`, `FIRECRAWL_API_KEY`, `PARALLEL_API_KEY`, `TAVILY_API_KEY`.
+Credentials: `/connect` or `EXA_API_KEY`, `FIRECRAWL_API_KEY`, `PARALLEL_API_KEY`, `TAVILY_API_KEY`, and
+`TINYFISH_API_KEY` (optional for TinyFish).
 `random` rotates to another provider on HTTP 429.
 
 ---
@@ -335,6 +347,11 @@ opencode service unset env ANTHROPIC_API_KEY
 opencode --standalone                                   # private server that uses the current shell env
 ```
 
+To make private servers the default instead of starting the shared one, run `opencode service set disabled true`
+(this stops the running service; undo with `opencode service unset disabled`). `--server` still reaches an explicit
+server, `opencode service start` still starts the shared service, and `opencode pair` needs the shared service, so
+it is unavailable while it is disabled.
+
 | Variable | Purpose |
 |----------|---------|
 | `OPENCODE_LOG_LEVEL` | Log level (replaces V1 `logLevel`) |
@@ -353,8 +370,9 @@ Useful diagnostics: `opencode debug config` (list configuration sources), `openc
 `opencode reload` (reload configuration without restarting the server), `opencode service status`.
 
 Variable substitution: V2 docs use `{env:NAME}` throughout. `{file:path}` is not shown in V2 docs,
-but works: on OpenCode 2.0.16 an agent's `"system": "{file:./prompts/plan.txt}"` resolved to the
-file's contents, relative to the config file. Treat it as undocumented behavior.
+but works: on OpenCode 2.0.26 an agent's `"system": "{file:./prompts/plan.txt}"` resolved to the
+file's contents, relative to the config file, as shown by `opencode debug config` run two directories below the
+config file. Treat it as undocumented behavior.
 
 ---
 
