@@ -434,6 +434,12 @@ def validate(data, scope):
         if key in data and (not isinstance(data[key], str) or data[key] not in valid):
             err(f"{key}: invalid value {data[key]!r}. Valid: {sorted(valid)}")
 
+    if "maxProseWidth" in data:
+        mpw = data["maxProseWidth"]
+        whole = isinstance(mpw, int) or (isinstance(mpw, float) and mpw.is_integer())
+        if isinstance(mpw, bool) or not whole or mpw < 40:
+            warn(f"maxProseWidth: {mpw!r} is ignored; must be a whole number of at least 40")
+
     if "allowedProviders" in data:
         ap = data["allowedProviders"]
         if not isinstance(ap, list):
