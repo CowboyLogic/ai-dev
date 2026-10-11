@@ -10,8 +10,8 @@ scanned set. Directories are scanned recursively, as Codex does. Warns on keys C
 but ignores in a role file. Uses only the standard library (Python 3.11+).
 Exit status is 1 when any error is found (or any warning with --strict).
 
-Field list and load rules verified September 2026 by running `codex exec` against test files
-on codex-cli 0.158.0, plus https://developers.openai.com/codex/subagents.
+Field list and load rules verified October 2026 with `codex doctor` against test files on
+codex-cli 0.162.1, plus https://developers.openai.com/codex/subagents.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ except ImportError:  # pragma: no cover
     sys.exit("Python 3.11+ is required (tomllib)")
 
 REQUIRED = ("name", "description", "developer_instructions")
-# Keys Codex applies from a role file (codex-rs/core/src/agent/role.rs, rust-v0.158.0).
+# Keys Codex applies from a role file (codex-rs/core/src/agent/role.rs, rust-v0.162.1).
 APPLIED_KEYS = set(REQUIRED) | {
     "nickname_candidates", "model", "model_reasoning_effort", "model_reasoning_summary",
     "model_verbosity", "personality", "service_tier", "features", "skills",

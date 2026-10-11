@@ -2,6 +2,11 @@
 
 A skill for creating and troubleshooting custom subagents for OpenAI Codex.
 
+> [!NOTE]
+> **Codex version:** verified against [Codex CLI 0.162.1](https://github.com/openai/codex/releases/tag/rust-v0.162.1)
+> (released 2026-10-09). Role-file behavior comes from the Codex source at tag `rust-v0.162.1`
+> and from running that CLI. Re-verify when Codex ships a new release.
+
 ## Overview
 
 Codex custom agents are standalone TOML files in `.codex/agents/` or `~/.codex/agents/`. Each
@@ -9,7 +14,9 @@ file needs `name`, `description`, and `developer_instructions`. There is no Mark
 Two behaviors surprise people coming from other tools: Codex delegates only when asked, and a
 role file can only customize the child, never widen or narrow the parent's authority. Codex
 applies a bounded set of keys; `sandbox_mode`, `approval_policy`, and `mcp_servers` parse but
-are ignored, because the child inherits the parent's sandbox, approvals, and MCP servers.
+are ignored, because the child inherits the parent's sandbox, approvals, and MCP servers. (The
+official subagents page implies otherwise for `sandbox_mode` and `mcp_servers`; the skill
+follows the source and its tests, and says so.)
 
 This skill covers:
 
@@ -30,7 +37,9 @@ This skill covers:
 1. Create `.codex/agents/<name>.toml` with `name`, `description`, and `developer_instructions`.
 2. Start the parent session with the sandbox the role needs (`codex --sandbox read-only`); the role file cannot set it.
 3. Validate: `python scripts/validate-agent.py .codex/agents/`
-4. Start a new Codex session and ask for the agent by name.
+4. Run `codex doctor` to see any `Ignoring malformed agent role definition` startup warnings
+   without starting a session.
+5. Start a new Codex session and ask for the agent by name.
 
 ## Validator
 

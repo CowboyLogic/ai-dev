@@ -7,22 +7,22 @@ causes below, except project trust.
 
 Codex does not abort on a bad agent file. It prints
 `warning: Ignoring malformed agent role definition: <reason>` at session start and continues
-without that agent. Messages below were observed on codex-cli 0.158.0; run `codex exec "hi"`
-in the project to see them without spending a real task.
+without that agent. Messages below were observed on codex-cli 0.162.1 with `codex doctor`,
+which lists them as `startup warning` lines without starting a session or calling a model.
 
 | Symptom (warning text, abridged) | Cause | Fix |
 |---|---|---|
-| `failed to parse agent role file ...: TOML parse error` | TOML does not parse | Check quotes, `"""` pairing, and that arrays and tables are closed |
-| `must define a non-empty 'name'` | `name` missing or `""` | Add it |
-| `agent role 'x' must define a description` | `description` missing | Add it |
-| `must define 'developer_instructions'` or `cannot be blank` | Missing, empty, or whitespace-only | Add real instructions |
-| `unknown field 'key'` | A key Codex does not recognize, often a camelCase key or a Claude Code / Copilot field | Rename to the `snake_case` Codex key or delete it |
+| `failed to parse agent role file at <path>: TOML parse error at line N, column M` | TOML does not parse | Check quotes, `"""` pairing, and that arrays and tables are closed |
+| ``must define a non-empty `name` `` | `name` missing or `""` | Add it |
+| ``agent role `x` must define a description`` | `description` missing | Add it |
+| ``must define `developer_instructions` `` or `developer_instructions cannot be blank` | Missing, empty, or whitespace-only | Add real instructions |
+| ``unknown field `key` `` | A key Codex does not recognize, often a camelCase key or a Claude Code / Copilot field | Rename to the `snake_case` Codex key or delete it |
 | `data did not match any variant of untagged enum WebSearchToolConfigInput` | `tools = [...]` written as a list. `tools` is a table in Codex, and there is no tool allowlist | Delete it. To restrict what the agent can do, set the sandbox on the parent session (`codex --sandbox read-only`) and configure MCP servers and their `enabled_tools` in the parent's `config.toml`; a role file can only disable features such as `features.shell_tool = false` |
-| `unknown variant 'x', expected one of 'read-only', ...` | Invalid `sandbox_mode` | Use `read-only`, `workspace-write`, or `danger-full-access` |
-| `duplicate agent role name 'x' discovered in <dir>` | Two files in one directory share a `name` | Rename one. The duplicate is dropped |
+| ``unknown variant `x`, expected one of `read-only`, ...`` | Invalid `sandbox_mode` | Use `read-only`, `workspace-write`, or `danger-full-access` |
+| ``duplicate agent role name `x` discovered in <dir>`` | Two files in one directory share a `name` | Rename one. The duplicate is dropped |
 | `agents.x.config_file must point to an existing file at <path>` | `[agents.x]` path is wrong | Fix the path. It resolves relative to the config file that declares it |
 | No warning, project agent absent | The project is not trusted; project-scope agents load only for trusted projects | Trust the project (`[projects."<path>"] trust_level = "trusted"`) |
-| Fatal `Error loading config.toml: invalid type: integer, expected struct AgentRoleToml` | An unknown scalar key under `[agents]` (for example `max_thread = 3`) is parsed as a role table | Fix the key name. Known keys: `enabled`, `max_concurrent_threads_per_session`, `max_threads`, `max_depth`, `job_max_runtime_seconds`, `default_subagent_model`, `default_subagent_reasoning_effort`, `interrupt_message` |
+| Fatal ``failed to load bootstrap configuration`` caused by ``invalid type: integer `3`, expected struct AgentRoleToml in `agents` `` | An unknown scalar key under `[agents]` (for example `max_thread = 3`) is parsed as a role table | Fix the key name. Known keys: `enabled`, `max_concurrent_threads_per_session`, `max_threads`, `max_depth`, `job_max_runtime_seconds`, `default_subagent_model`, `default_subagent_reasoning_effort`, `interrupt_message` |
 | Agent absent after adding the file | Session started before the file existed | Start a new session |
 
 Not caught at load, so a bad value here produces no warning: an unrecognized
