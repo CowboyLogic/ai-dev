@@ -132,6 +132,10 @@
           "description": "Notes that onFailure requires Claude Code v2.1.295 or later"
         },
         {
+          "id": "exit-2-blocks",
+          "description": "Notes that exit code 2 is the blocking exit code, so a script that exits 2 blocks the action without onFailure"
+        },
+        {
           "id": "valid-hook-shape",
           "description": "Hook JSON nests the handler inside a matcher group under hooks.PreToolUse with a valid type"
         }
