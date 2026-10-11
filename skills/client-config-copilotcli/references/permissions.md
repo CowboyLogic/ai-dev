@@ -305,6 +305,10 @@ agent network requests:
 { "permissions": { "limitTo": ["github.com", "*.github.com"] } }
 ```
 
+- The docs say only `Domain(...)` entries are supported, but their own example (shown above) lists
+  bare hosts, and `deny`/`ask`/`allow` rules use `Domain(...)`. The accepted entry form isn't
+  verified here; test a policy before deploying it, because an invalid entry is enforced as an
+  empty list and denies every domain request.
 - Requests to domains outside the list are denied without prompting; user rules, saved approvals,
   and allow-all modes can't widen it. URLs found in shell commands count as `Domain` requests.
 - It doesn't restrict `shell`, `read`, or `write` by itself. `deny` still wins; `ask`/`allow` only
