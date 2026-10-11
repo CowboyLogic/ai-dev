@@ -1,12 +1,14 @@
 # CLI Commands, Options, and Slash Commands
 
 Run `codex --help` or `codex <command> -h` for built-in help. Run `/` in a session to open the
-slash-command popup. Flag tables below were verified against `codex-cli 0.158.0`; slash commands come
-from the Codex docs and cannot be listed from the terminal.
+slash-command popup. Flag tables below were verified against `codex-cli 0.162.1`; slash commands come
+from the Codex docs and release notes and cannot be listed from the terminal.
 
 > [!NOTE]
-> Prefer local `-h` output over the docs when they differ. In `0.158.0`, `codex <group> <sub> --help`
-> can print the root help; use `-h` instead.
+> Prefer local `-h` output over the docs when they differ. The upstream developer-commands page
+> renders its flag tables as components, so most flag-level detail here comes from `-h`. In 0.162.1,
+> `codex <group> <sub> --help` and `-h` both print the subcommand help; a single quoted string such
+> as `codex 'mcp list' --help` is parsed as a prompt and prints the root help.
 
 The CLI reads defaults from `~/.codex/config.toml`. Any `-c key=value` override applies to that one
 invocation and wins over the file.
@@ -23,19 +25,33 @@ invocation and wins over the file.
 | `codex archive` / `unarchive` / `delete` | Manage saved sessions |
 | `codex login` / `logout` | Authenticate / remove stored credentials |
 | `codex mcp list\|get\|add\|remove\|login\|logout` | Manage MCP servers (see `mcp.md`) |
-| `codex plugin add\|list\|remove\|marketplace` | Manage plugins and marketplaces |
+| `codex plugin add\|list\|remove\|marketplace` | Manage plugins and marketplaces (`add`/`remove PLUGIN[@MARKETPLACE]` or `-m MARKETPLACE`; `list [--available] [--json]`; `marketplace add SOURCE [--ref REF] [--sparse PATH]\|list\|upgrade [NAME]\|remove NAME`) |
 | `codex features list\|enable\|disable` | Inspect or persist feature flags |
 | `codex doctor` | Diagnose installation, config, auth, and runtime health |
 | `codex debug models\|prompt-input\|app-server` | Debugging tools |
-| `codex sandbox [COMMAND]...` | Run a command under the Codex sandbox |
-| `codex execpolicy check -r RULES...` | Check execpolicy rule files against a command (preview) |
+| `codex sandbox [COMMAND]...` | Run a command under the Codex sandbox; `codex sandbox uninstall` removes the legacy Windows sandbox's machine-wide accounts and network rules |
+| `codex execpolicy check -r RULES... COMMAND...` | Check execpolicy rule files against a command (preview; not listed in `codex --help`, but `codex help execpolicy` works). Flags: `--pretty`, `--resolve-host-executables` |
+| `codex agents` | Browse all agent sessions on the shared local app-server daemon (the agent command center). Takes `--remote`, `--remote-auth-token-env`, `-C`, `--no-alt-screen` |
+| `codex migrate-rollouts [--apply]` | Report, or with `--apply` migrate, legacy local sessions to paginated thread history. Also `--thread ID`, `--max-mib-per-second N`, `--json`, `--verbose` |
+| `codex app [PATH]` | Open a workspace in the ChatGPT desktop app (macOS, Windows); offers the installer when missing |
 | `codex apply TASK_ID` (`codex a`) | Apply the latest diff from a Codex cloud task with `git apply` |
-| `codex cloud [list\|exec\|status\|apply\|diff]` | Browse and submit Codex cloud tasks (experimental) |
+| `codex cloud [list\|exec\|status\|apply\|diff]` | Browse and submit Codex cloud tasks (experimental). `exec --env ENV_ID [--attempts N] [--branch B] [QUERY]`; `list [--env ID] [--limit N] [--cursor C] [--json]`; `status TASK_ID`; `apply`/`diff TASK_ID [--attempt N]` |
 | `codex completion [SHELL]` | Shell completion script: `bash` (default), `elvish`, `fish`, `powershell`, `zsh` |
 | `codex update` | Self-update when the installed release supports it |
 | `codex app-server`, `codex remote-control`, `codex exec-server` | Experimental server tooling; may change without notice |
 
-`codex mcp-server` was removed (the docs point to the Codex app server); `0.158.0` confirms it is gone.
+`codex mcp-server` was removed (the docs point to the Codex app server); `0.162.1` confirms it is gone.
+
+Experimental server tooling, from `-h` on 0.162.1:
+
+- `codex app-server` takes `--listen stdio://|unix://[PATH]|ws://IP:PORT|off`, `--code-mode-host`, and
+  `--ws-*` authentication options, and has subcommands `daemon`, `proxy`, `generate-ts`, and
+  `generate-json-schema`.
+- `codex remote-control [start|stop|pair]` starts or stops the app-server daemon with remote control
+  enabled; `pair` prints a short-lived pairing code. `--json` emits JSON and `--no-daemon` runs an
+  embedded server in the foreground.
+- `codex exec-server [--listen URL]` runs the standalone exec-server; `exec-server forward` registers
+  an existing WebSocket exec-server as a remote environment.
 
 ---
 
@@ -59,7 +75,7 @@ codex --enable unified_exec --profile review
 ```
 
 > [!NOTE]
-> The docs describe `--profile` only as "profiles" in config. The `0.158.0` CLI defines `-p, --profile`
+> The docs describe `--profile` only as "profiles" in config. The `0.162.1` CLI defines `-p, --profile`
 > as a separate file layer, `$CODEX_HOME/<name>.config.toml`. Note also that `-p` means `--profile`,
 > not `--prompt`. `codex features` does not accept `--profile`.
 
@@ -154,10 +170,16 @@ Piped stdin plus a prompt argument is appended as a `<stdin>` block. Default out
 | `--ignore-rules` | Skip user and project execpolicy `.rules` files |
 | `--thread-source SOURCE` | Source classification for new or forked threads |
 
-`exec` also takes `-m`, `-p`, `-s`, `-C`, `-i`, `--add-dir`, `--oss`, `--worktree`, `--approve-for-me`,
-`-c`, `--enable`, `--disable`, and `--strict-config`. `exec resume` takes `[SESSION_ID] [PROMPT]`,
-`--last`, and `--all`. Pair `--json` with `--output-last-message` in CI to capture progress and a
-final summary.
+| `--cyber-access-program standard\|daybreak_blue\|daybreak_red` | Per-turn Cyber access program (OpenAI provider only; not supported with `review`; `fork` requires a prompt). Added in 0.161.0 |
+
+`exec` also takes `-m`, `-p`, `-s`, `-C`, `-i`, `--add-dir`, `--oss`, `--local-provider`, `--worktree`,
+`--approve-for-me`, `--dangerously-bypass-approvals-and-sandbox`, `--dangerously-bypass-hook-trust`,
+`-c`, `--enable`, `--disable`, and `--strict-config`. `exec resume` adds `[SESSION_ID] [PROMPT]`,
+`--last`, and `--all`; `exec resume`, `exec fork SESSION_ID [PROMPT]`, and `exec review` take the
+model and output options (`-m`, `-i` except on `review`, `--json`, `-o`, `--output-schema`,
+`--ephemeral`, `--skip-git-repo-check`, `--ignore-*`, `--worktree`) but not `-p`, `-s`, `-C`,
+`--add-dir`, `--oss`, `--approve-for-me`, or `--color`. Pair `--json` with `--output-last-message`
+in CI to capture progress and a final summary.
 
 ### Review
 
@@ -175,6 +197,7 @@ final summary.
 | `codex features enable FEATURE` / `disable FEATURE` | Persist to `$CODEX_HOME/config.toml` for future sessions |
 | `codex debug models [--bundled]` | Raw model catalog as JSON; `--bundled` skips the remote refresh |
 | `codex debug prompt-input [PROMPT]` | Model-visible prompt input as JSON; use to debug instruction discovery |
+| `codex debug app-server send-message-v2 MESSAGE` | Send one V2 thread/turn through the built-in app-server test client |
 | `codex update` | Update the CLI; debug builds tell you to install a release build |
 | `codex login status` | Exits `0` when credentials are present |
 | `codex logout` | Removes saved API-key and ChatGPT credentials |
@@ -182,14 +205,17 @@ final summary.
 `codex login` opens a browser for ChatGPT OAuth by default. Alternatives: `--device-auth`,
 `--with-api-key` (reads the key from stdin, for example `printenv OPENAI_API_KEY | codex login --with-api-key`), and `--with-access-token` (reads the token from stdin).
 
-`codex sandbox` runs a command under the same policy Codex uses. The `0.158.0` CLI has a single form,
+`codex sandbox` runs a command under the same policy Codex uses. The `0.162.1` CLI has one run form,
 `codex sandbox [OPTIONS] [COMMAND]...`, with `-P`/`--permission-profile NAME`, `-p`/`--profile`,
-`-C`/`--cd`, `--allow-unix-socket PATH`, `--log-denials`, and `--sandbox-state-*` options.
+`-C`/`--cd`, `--include-managed-config`, `--allow-unix-socket PATH` (repeatable), `--log-denials`
+(macOS), and `--sandbox-state-json`, `--sandbox-state-readable-root`, and
+`--sandbox-state-disable-network`. Its only subcommand is `codex sandbox uninstall` (added in 0.162.0).
 
 > [!NOTE]
-> The docs list separate macOS, Linux, and Windows sandbox subcommands. The local macOS build shows one
-> `codex sandbox` command whose help says "run under seatbelt". Check `codex sandbox -h` on the target
-> platform.
+> The docs list separate `macos`, `linux`, and `windows` sandbox subcommands (with `seatbelt` and
+> `landlock` aliases), a `--permissions-profile` flag, and `sandbox` under `codex debug`. None of that
+> exists in 0.162.1: `codex debug` has only `models`, `app-server`, and `prompt-input`, and the flag is
+> `-P/--permission-profile`. Check `codex sandbox -h` on the target platform.
 
 `codex features enable`/`disable` edit `config.toml`; run them only for a persistent change and use
 `--enable`/`--disable` for a one-off run.
@@ -204,6 +230,11 @@ final summary.
 | `!` prefix | Run a local shell command under the current approval and sandbox settings |
 | Tab while working | Queue a prompt, slash command, or shell command for the next turn |
 | Enter while working | Inject new instructions into the current turn |
+| Up / Down | Restore draft history |
+| Ctrl+R | Search prompt history; Enter uses a match, Escape cancels |
+| Ctrl+O or `/copy` | Copy the latest completed output; Ctrl+Insert copies a selection (0.162.0 release notes) |
+| Escape twice with an empty composer | Edit the previous user message and fork the chat from that point |
+| Ctrl+L | Clear the terminal view only; the chat continues (unlike `/clear`) |
 | Ctrl+G | Open `VISUAL` (else `EDITOR`) for a long prompt |
 | Ctrl+C, `/exit`, or `/quit` | Close the session; save or commit first |
 
@@ -237,6 +268,7 @@ model, platform, and state. Codex hides `/fast` when the model lacks support.
 | `/goal [OBJECTIVE\|edit\|pause\|resume\|clear]` | Persistent task goal, max 4,000 characters |
 | `/memories` | Toggle memory use and generation |
 | `/experimental` | Toggle experimental features; may need a restart |
+| `/personality` | Choose `friendly`, `pragmatic`, or `none`; hidden when the model lacks support. The `personality` feature is `removed` in 0.162.1, so treat this as legacy |
 
 ### Permissions and safety
 
@@ -253,7 +285,7 @@ model, platform, and state. Codex hides `/fast` when the model lacks support.
 |---------|---------|
 | `/mention PATH` | Attach a file to the chat |
 | `/ide` | Include IDE selection and open files |
-| `/mcp [verbose]` | List configured MCP servers and tools; any other argument prints usage |
+| `/mcp [verbose\|login NAME]` | List configured MCP servers and tools; `verbose` adds diagnostics; `login NAME` signs in to a server from the session (0.161.0 release notes; the docs still say any other argument prints usage) |
 | `/apps` | Insert an app (connector) as `$app-slug` |
 | `/plugins` | Browse installed and discoverable plugins; Space toggles an installed plugin |
 | `/skills` | Browse and apply skills |
@@ -278,8 +310,9 @@ model, platform, and state. Codex hides `/fast` when the model lacks support.
 `/theme` (`tui.theme`; custom `.tmTheme` files go in `$CODEX_HOME/themes`), `/statusline`
 (`tui.status_line`), `/title` (`tui.terminal_title`), `/keymap` (`tui.keymap`; context bindings
 override `tui.keymap.global`), `/vim` (default via `tui.vim_mode_default = true`), `/raw [on|off]`
-(default via `tui.raw_output_mode = true`), `/pets [off]` (`/pet`). Each picker persists its choice
-to `config.toml`.
+(default via `tui.raw_output_mode = true`), `/pets [off]` (`/pet`). The `/theme`, `/statusline`,
+`/title`, `/keymap`, and `/pets` pickers persist their choice to `config.toml`; `/vim` and `/raw`
+toggle for the current session only (Alt+R also toggles raw mode).
 
 ---
 
