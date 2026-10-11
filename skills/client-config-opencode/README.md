@@ -3,6 +3,14 @@
 Evaluation results for the `client-config-opencode` skill. The skill itself is
 [SKILL.md](SKILL.md), and its history is in [CHANGELOG.md](CHANGELOG.md).
 
+> [!NOTE]
+> **OpenCode version:** references verified against OpenCode V2
+> [2.0.26](https://github.com/anomalyco/opencode/tree/v2.0.26) (tagged 2026-10-08) and V1
+> [1.19.0](https://github.com/anomalyco/opencode/releases/tag/v1.19.0) (released 2026-10-11),
+> checked 2026-10-11. V2 ships as git tags and binaries rather than GitHub Releases, so its version
+> is the tag. Re-verify when either line ships a new release; what changed is in
+> [CHANGELOG.md](CHANGELOG.md).
+
 ## Evaluation results
 
 Benchmark run: **2026-04-26** · 4 scenarios · 8 total runs

@@ -4,6 +4,15 @@ Skill for creating and configuring custom AI agents for the [OpenCode CLI](https
 Native OpenCode V2 is the default output; V1 is still supported when the user is
 on V1 or their existing files are V1-shaped.
 
+> [!NOTE]
+> **OpenCode version:** verified against OpenCode V2
+> [2.0.26](https://github.com/anomalyco/opencode/tree/v2.0.26) (tagged 2026-10-08) and V1
+> [1.19.0](https://github.com/anomalyco/opencode/releases/tag/v1.19.0) (released 2026-10-11),
+> checked 2026-10-11. The agents and permissions docs (both lines) and the V2 migration guide are
+> identical to the previous baselines (V2 2.0.16, V1 1.18.29). The Copilot model tables in
+> `references/models.md` were re-derived from GitHub's supported-models page and the models.dev
+> catalog on the same date. Re-verify when either line ships a new release.
+
 ## When to Load This Skill
 
 Load this skill when:
