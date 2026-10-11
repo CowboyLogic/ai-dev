@@ -18,7 +18,12 @@ opencode auth login anthropic --method key
 opencode auth list
 opencode auth switch anthropic work      # switch active saved account
 opencode auth logout anthropic work
+opencode auth export                     # print stored credentials, INCLUDING SECRETS, as JSON
+opencode auth import                     # import credentials produced by `auth export`
 ```
+
+`auth export` and `auth import` appear in `opencode auth --help` on 2.0.26 but not in the V2 docs. Treat the export
+output as a secret.
 
 Saved keys and OAuth tokens live in the server's SQLite database (usually `~/.local/share/opencode/opencode.db`;
 `opencode debug paths db` prints it). V2 imports the legacy `auth.json` once and never writes back to it. Never
@@ -140,6 +145,23 @@ Unknown models default to tools on, text+image in, text out, 200,000 context, 32
 Options apply provider → model → variant; `settings` and `body` deep-merge, arrays/scalars replace, headers match
 case-insensitively.
 
+## Timeouts
+
+Requests wait up to five minutes for response headers and up to five minutes between streamed chunks. Set these
+on the provider's `settings` (provider-wide; not per model or variant), in milliseconds, or `false` to disable a limit:
+
+```jsonc
+{ "providers": { "anthropic": { "settings": { "headerTimeout": 600000, "chunkTimeout": false } } } }
+```
+
+| Setting | Default | Bounds |
+|---------|---------|--------|
+| `headerTimeout` | 5 minutes | Wait for response headers |
+| `chunkTimeout` | 5 minutes (30 minutes on a WebSocket transport, where it bounds the gap between frames) | Gap between streamed chunks |
+| `timeout` | none | The whole request, from send until the response completes |
+
+A request that exceeds a limit fails with a transport error; OpenCode retries a timed-out request up to three times.
+
 ## Model references
 
 ```text
@@ -184,11 +206,27 @@ covers Gemini, Anthropic, and OpenAI-compatible Vertex models; `google-vertex-an
 ### Azure
 
 ```jsonc
-{ "providers": { "azure": { "settings": { "resourceName": "my-models" }, "models": { "gpt-5-mini": { "modelID": "gpt-production" } } } } }
+{ "providers": { "azure": { "settings": { "resourceName": "my-models" } } } }
 ```
 
 Or `AZURE_RESOURCE_NAME` (legacy `AZURE_COGNITIVE_SERVICES_RESOURCE_NAME`). Entra ID via `az login`, then choose
-Microsoft Entra ID in `/connect`. The V1 ID `azure-cognitive-services` is rejected — use `azure`.
+Microsoft Entra ID (Azure CLI) in `/connect`; it uses the account selected in the Azure CLI, so select a tenant and
+subscription explicitly (`az login --tenant`, `az account set --subscription`) for another one. A resource name
+entered when connecting is saved with the connection and takes precedence over configuration; connect again to
+change it. The V1 ID `azure-cognitive-services` is rejected — use `azure`.
+
+**Deployments.** Azure serves a model only through a deployment, so OpenCode lists your resource's deployments in
+the background (after startup, connecting, and switching accounts) and shows those instead of the whole catalog.
+The whole catalog stays available until the list loads or if it fails. Deployment names become lowercase model IDs
+(`azure/gpt-production`); a deployment named after its model (`gpt-5-mini`) keeps the catalog ID. Restart OpenCode
+or connect again to pick up a new deployment. A custom `settings.baseURL` keeps the catalog.
+
+Configure a deployment explicitly when its model is not in the catalog (a fine-tuned model), or to map a model ID to
+a deployment yourself; explicitly configured models are always kept:
+
+```jsonc
+{ "providers": { "azure": { "models": { "gpt-5-mini": { "modelID": "gpt-production" } } } } }
+```
 
 ### GitHub Copilot
 

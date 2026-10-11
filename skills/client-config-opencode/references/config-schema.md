@@ -36,7 +36,7 @@ TUI schema: `https://opencode.ai/tui.json`
 | `default_agent` | string | Default primary agent (must be `primary` mode; falls back to `build` with a warning if invalid). Applies across TUI, `opencode run`, desktop app, GitHub Action | `"build"` |
 | `subagent_depth` | integer | Max subagent nesting depth (default `1`: primary can launch subagents, they can't launch more; `0` blocks all subagent launches) | `2` |
 | `share` | enum | `"manual"` (default) \| `"auto"` \| `"disabled"` | `"manual"` |
-| `autoupdate` | bool \| `"notify"` | Auto-update behavior (only works if not installed via a package manager such as Homebrew) | `"notify"` |
+| `autoupdate` | bool \| `"notify"` | Update checks and notices. Since 1.19.0 updates are never installed automatically: `true` and `"notify"` keep the default (a notice, installed with `/update` or `opencode upgrade`); `false` turns checks and notices off. The published JSON schema description still says `true` auto-updates; the docs and release notes say otherwise | `"notify"` |
 | `snapshot` | boolean | Track filesystem changes for undo/revert (default `true`); disable on large repos to avoid slow indexing | `true` |
 | `logLevel` | enum | `"DEBUG"` \| `"INFO"` \| `"WARN"` \| `"ERROR"` | `"INFO"` |
 | `username` | string | Custom display name instead of the system username | `"alice"` |

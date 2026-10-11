@@ -125,8 +125,8 @@ These are migration destinations, not exact renames. The V1 context maps as: `di
 ## Supporting V1 and V2 from one package
 
 Default-export an object that spreads `Plugin.define({...})` (V2 reads `id` + `setup`) and adds a V1 `server()`
-function (V1 calls it and uses the returned hooks). The docs say this object form works in V1 `1.18.29`; older V1
-releases may expect function exports.
+function (V1 calls it and uses the returned hooks). The migration guide says V1 object entrypoints are supported in
+OpenCode `1.18.29` and newer; for older V1 releases use separate function exports.
 
 ## Publishing
 

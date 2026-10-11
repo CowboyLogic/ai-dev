@@ -61,7 +61,7 @@ Sources: <https://opencode.ai/v2/docs/cli/config/>, <https://opencode.ai/v2/docs
 | `tabs.scope` | `cwd` \| `global` | |
 | `tabs.layout` | `horizontal` \| `vertical` | |
 | `tabs.indicators` | `status` \| `numbers` | |
-| `diffs.source` | `branch` \| `committed` \| `working` | Initial `/diff` scope |
+| `diffs.source` | `branch` \| `committed` \| `working` \| `turn` | Initial `/diff` scope; `turn` is the session's last turn and falls back to `branch` outside a session |
 | `diffs.wrap` | `word` \| `none` | |
 | `diffs.tree` / `diffs.single` | boolean | File tree / single-patch view |
 | `diffs.view` | `auto` \| `split` \| `unified` | |
@@ -130,7 +130,6 @@ Common IDs and defaults:
 | `app.exit` | `ctrl+c,ctrl+d,<leader>q` |
 | `command.palette.show` | `ctrl+p` |
 | `opencode.settings` | `none` |
-| `permission.mode` | `none` (toggle auto-approve) |
 | `session.new` | `<leader>n` |
 | `session.list` | `<leader>l` |
 | `session.rename` | `ctrl+r` |
@@ -142,11 +141,25 @@ Common IDs and defaults:
 | `agent.list` | `<leader>a` |
 | `agent.cycle` / `agent.cycle.reverse` | `shift+tab` / `none` |
 | `messages.copy` | `<leader>y` |
+| `prompt.queue` | `<leader>return` |
+| `queued_prompt.undo` | `ctrl+u` |
+| `input.newline` | `shift+return,ctrl+return,alt+return,ctrl+j` |
+| `theme.switch` | `none` |
+| `terminal.toggle` | `<leader>t` |
 | `app.clear` (mini only) | `ctrl+l` |
+
+While OpenCode is working, **Enter** steers the active session and `prompt.queue` (**Ctrl+X** then **Enter** by
+default) queues the prompt.
 
 For the full list (diff viewer, input editing, composer, dialogs, which-key), see
 <https://opencode.ai/v2/docs/cli/keybinds/>. Retired diff IDs (`diff.toggle`, `diff.expand`, `diff.expand_all`,
 `diff.collapse`, `diff.switch_focus`) are accepted but register nothing.
+
+> [!NOTE]
+> The `permission.mode` keybind (auto-approve toggle) and the plugin install IDs `plugins.install` and
+> `dialog.plugins.install` are absent from the 2.0.26 docs and `cli.json` schema. To auto-approve, set
+> `session.permissions: "autoaccept"` or start with `--auto`, which auto-approves permissions that are not
+> explicitly denied.
 
 ## Themes
 
