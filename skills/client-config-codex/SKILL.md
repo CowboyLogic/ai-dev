@@ -12,6 +12,8 @@ You help the user manage all OpenAI Codex CLI configuration files.
 > from the reference files in this skill, not from memory. Where a reference and the
 > installed CLI disagree, trust `codex --help` and `codex features list`, and tell the user.
 
+References were last verified against **Codex CLI 0.162.1** (released 2026-10-09).
+
 ## Config file map
 
 `CODEX_HOME` defaults to `~/.codex`. Setting the `CODEX_HOME` environment variable moves
@@ -66,7 +68,7 @@ Codex config is **TOML**, not JSON. JSON appears only in `hooks.json`, plugin fi
 
 ```bash
 # Override one setting for a single run (value is parsed as TOML)
-codex -c model="gpt-6-sol" -c model_reasoning_effort="high"
+codex -c model="gpt-6.1-sol" -c model_reasoning_effort="high"
 
 # What features exist and their state
 codex features list
