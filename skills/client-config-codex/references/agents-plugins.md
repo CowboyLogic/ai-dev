@@ -1,7 +1,7 @@
 # Agents and Plugins Reference
 
 Plugins package reusable capabilities. Subagents delegate work to parallel agents. Verified
-against codex-cli 0.158.0.
+against codex-cli 0.162.1.
 
 ## Plugins
 
@@ -21,7 +21,7 @@ new session before expecting them.
 
 ```bash
 codex plugin list [--marketplace NAME] [--available] [--json]
-codex plugin add PLUGIN@MARKETPLACE            # or: codex plugin add PLUGIN --marketplace NAME
+codex plugin add PLUGIN@MARKETPLACE            # or: codex plugin add PLUGIN -m NAME
 codex plugin remove PLUGIN@MARKETPLACE         # uninstalls and removes the local cache
 codex plugin marketplace list [--json]
 codex plugin marketplace add SOURCE [--ref REF] [--sparse PATH]... [--json]
@@ -33,8 +33,12 @@ codex plugin marketplace remove NAME [--json]
   URL. `--sparse` (repeatable) does a sparse checkout for Git sources.
 - `plugin list --json` prints `installed` and `available` arrays; `--available` adds uninstalled
   marketplace plugins to the JSON. Entries carry `pluginId`, `name`, `marketplaceName`, `version`,
-  `installed`, `enabled`, `source`, `installPolicy`, and `authPolicy`.
-- `plugin add --json` prints `installedPath` among its fields.
+  `installed`, `enabled`, `source`, `marketplaceSource` (`sourceType`, `source`), `installPolicy`,
+  and `authPolicy`. `marketplace list --json` returns `{"marketplaces": [...]}` with `name`, `root`,
+  and `marketplaceSource` per entry.
+- `plugin add --json` prints `pluginId`, `name`, `marketplaceName`, `version`, `installedPath`, and
+  `authPolicy`; `plugin remove --json` prints `pluginId`, `name`, and `marketplaceName` (field names
+  from the upstream command reference; not run here, because both commands install or uninstall).
 - There is **no** `plugin enable` or `plugin disable` subcommand. Toggle in the CLI with
   `/plugins` (select an installed plugin and press Space), or set `enabled` in `config.toml`.
 - `/plugins` in a session opens the plugin browser, grouped by marketplace tabs.
@@ -74,7 +78,15 @@ approval_mode = "approve"
   policy, not the transport command.
 - Admins can pin `[features].plugins` and `[features].remote_plugin` in `requirements.toml`, and
   set `features.plugin_sharing = false` to block workspace sharing. Under
-  `allow_managed_hooks_only = true`, plugin hooks are skipped.
+  `allow_managed_hooks_only = true`, plugin hooks are skipped. `[features].plugins = false` disables
+  plugins, including for API-key sign-in.
+- `requirements.toml` can also restrict marketplace sources and plugin MCP servers (documented in the
+  config reference, not exercised here):
+  `[marketplaces] restrict_to_allowed_sources = true` with
+  `[marketplaces.allowed_sources.<name>]` entries whose `source` is `git` (`url`, optional `ref`),
+  `host_pattern` (`host_pattern`), or `local` (`path`); and
+  `[plugins.<plugin>.mcp_servers.<server>]` with an `identity` (`command` or `url`), where
+  plugin-bundled servers without a matching entry are disabled.
 
 ### Manifest and marketplace files
 
@@ -88,18 +100,20 @@ approval_mode = "approve"
 > The fetched docs do not document the manifest or catalog schemas. They defer to
 > <https://developers.openai.com/plugins/build/plugins> (local scaffolding, marketplace setup,
 > manifests, packaging), which is not part of this reference. Fields seen in the plugins that ship
-> with 0.158.0: `plugin.json` has `name`, `version`, `description`, `author`, `homepage`,
-> `repository`, `license`, `keywords`, `skills` (for example `"./skills/"`), `hooks`, and
-> `interface`. `marketplace.json` has `name`, `interface.displayName`, and a `plugins` array whose
-> entries have `name`, `source` (`{"source": "local", "path": "./plugins/x"}`), `policy`
-> (`installation`, `authentication`), and `category`. Treat these as observations, not a contract.
+> with 0.162.1: `plugin.json` has `name`, `version`, `description`, `author`, `homepage`,
+> `repository`, `license`, `keywords`, `skills` (for example `"./skills/"`), `hooks`, `mcpServers`
+> (for example `"./.mcp.json"`), `apps` (for example `"./.app.json"`), and `interface`.
+> `marketplace.json` has `name`, `interface.displayName`, and a `plugins` array whose entries have
+> `name`, `source` (`{"source": "local", "path": "./plugins/x"}`), `policy` (`installation`, for
+> example `AVAILABLE`; `authentication`, for example `ON_INSTALL`), and `category`. Treat these as
+> observations, not a contract.
 > Fetch the developer guide before authoring one.
 
 ### Where plugins live
 
 - `codex plugin list` shows each plugin's `SOURCE` path, and `plugin add --json` returns
   `installedPath`. Use those, not assumptions.
-- On 0.158.0, installed copies sit under
+- On 0.162.1, installed copies sit under
   `~/.codex/plugins/cache/<marketplace>/<plugin>/<version>/` (observed, not documented).
   Marketplace roots for bundled and curated catalogs sit under `~/.codex/.tmp/` and
   `~/.cache/codex-runtimes/`. Do not hand-edit any of these. Remove with `codex plugin remove`.
@@ -135,7 +149,8 @@ runs cost noticeably more tokens than a single-agent run.
   needs new approval fails.
 - `/agent` (alias `/subagents`) switches between active agent threads.
 - If no subagent model or `model_reasoning_effort` is configured, the subagent inherits the
-  parent's model and effort.
+  parent's model and effort. If an explicit spawn request or an `[agents]` default selects a model
+  without an effort, the subagent uses that model's default reasoning effort.
 
 ### Built-in agents
 
@@ -160,7 +175,10 @@ A custom agent with the same `name` overrides a built-in.
 Explicit spawn values override the `default_*` keys. Any other key directly under `[agents]` is
 read as a role table (`[agents.<name>]` with `description`, `config_file`,
 `nickname_candidates`), so a misspelled scalar such as `max_thread = 3` fails config loading.
-`multi_agent` is a stable feature flag, on by default (`codex features list`).
+`multi_agent` is a stable feature flag, on by default (`codex features list`). `multi_agent_v2` is a
+separate stable flag that is off by default. From the 0.162.1 config source (not documented
+upstream): an enabled `features.multi_agent_v2` takes precedence over `agents.enabled`, and
+`agents.max_depth` is ignored by V2.
 
 ### Custom agent files
 
