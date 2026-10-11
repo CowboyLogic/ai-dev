@@ -146,7 +146,7 @@ For a plugin agent that needs a rule its frontmatter cannot carry, either copy t
 
 | Agent | Purpose | Default model |
 |---|---|---|
-| `Explore` | Read-only codebase search; skips CLAUDE.md and git status | Inherits, capped at Opus on the Claude API |
+| `Explore` | Read-only codebase search; skips CLAUDE.md and git status | The main conversation's model; when that is Fable, Opus on a subscription, Console account, or `ANTHROPIC_BASE_URL` gateway, and unchanged on Bedrock, Vertex, Foundry, Claude Platform on AWS, or a Claude apps gateway |
 | `Plan` | Read-only research during plan mode | Inherits |
 | `general-purpose` | Multi-step tasks needing exploration and action | Follows the model order |
 | `claude` | Catch-all with every tool | Follows the model order |
@@ -154,5 +154,6 @@ For a plugin agent that needs a rule its frontmatter cannot carry, either copy t
 
 Defining your own agent named `Explore` (for example with `model: haiku`) replaces the
 built-in and keeps exploration cheap. Environment switches:
-`CLAUDE_CODE_DISABLE_EXPLORE_PLAN_AGENTS=1`, `CLAUDE_CODE_AGENT_SDK_DISABLE_BUILTIN_AGENTS=1`
-(non-interactive and SDK).
+`CLAUDE_CODE_DISABLE_EXPLORE_PLAN_AGENTS=1` (removes only Explore and Plan; v2.1.198+) and
+`CLAUDE_AGENT_SDK_DISABLE_BUILTIN_AGENTS=1` (removes every built-in type; non-interactive
+mode and the Agent SDK only).

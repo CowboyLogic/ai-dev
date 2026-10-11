@@ -8,8 +8,9 @@ Reports the conditions under which Claude Code silently skips an agent file, plu
 unknown or mis-cased fields, bad enum values, and fields ignored in a given scope.
 Requires PyYAML. Exit status is 1 when any error is found (or any warning with --strict).
 
-Field list last verified September 2026 against
+Field list last verified 2026-10-11 against Claude Code 2.1.296:
 https://code.claude.com/docs/en/sub-agents#supported-frontmatter-fields
+(`autoCompactWindow` comes from the v2.1.296 changelog; the docs table does not list it yet.)
 """
 
 from __future__ import annotations
@@ -29,6 +30,7 @@ KNOWN_FIELDS = {
     "name", "description", "tools", "disallowedTools", "model", "permissionMode",
     "maxTurns", "skills", "mcpServers", "hooks", "memory", "background",
     "omitClaudeMd", "effort", "isolation", "color", "initialPrompt", "experimental",
+    "autoCompactWindow",
 }
 PLUGIN_IGNORED = {"hooks", "mcpServers", "permissionMode", "initialPrompt"}
 MODEL_ALIASES = {"sonnet", "opus", "haiku", "fable", "inherit"}
@@ -58,7 +60,10 @@ FOREIGN_FIELDS = {
 MIN_VERSIONS = {
     "omitClaudeMd": "v2.1.271",
     "experimental": "v2.1.248",
+    "autoCompactWindow": "v2.1.296",
 }
+NAME_MAX_LENGTH = 256   # longer names are skipped (docs: "Subagent files Claude Code skips")
+SKILLS_PRELOAD_MAX = 32  # only the first 32 distinct names are preloaded
 TOOL_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(\(.*\))?$")
 CASE_INSENSITIVE = {f.lower(): f for f in KNOWN_FIELDS}
 
@@ -212,6 +217,9 @@ def validate(path: Path, plugin: bool) -> Report:
         if ":" in name:
             rep.error(f"name '{name}' contains ':' (reserved for plugin scoping): the file "
                       "is skipped (v2.1.218+)")
+        if len(name) > NAME_MAX_LENGTH:
+            rep.error(f"name is {len(name)} characters; names over {NAME_MAX_LENGTH} are "
+                      "skipped")
         if re.search(r"[^\w .-]", name) and ":" not in name:
             rep.warn(f"name '{name}' has unusual characters; prefer lowercase-with-hyphens")
 
@@ -321,6 +329,13 @@ def validate(path: Path, plugin: bool) -> Report:
     skills = data.get("skills")
     if skills is not None and not (isinstance(skills, list) and all(isinstance(s, str) for s in skills)):
         rep.error("skills: must be a YAML list of skill names")
+    elif skills and len(dict.fromkeys(skills)) > SKILLS_PRELOAD_MAX:
+        rep.warn(f"skills: only the first {SKILLS_PRELOAD_MAX} distinct names are preloaded; "
+                 "the agent can still invoke the rest through the Skill tool")
+
+    acw = data.get("autoCompactWindow")
+    if acw is not None and (isinstance(acw, bool) or not isinstance(acw, int) or acw < 1):
+        rep.error("autoCompactWindow: must be a positive integer number of tokens")
 
     mcp = data.get("mcpServers")
     if mcp is not None:

@@ -16,6 +16,9 @@ Most load problems are **not reported in the session**. They appear only in the 
 claude --debug
 ```
 
+From v2.1.296 the debug output also names each unrecognized frontmatter field in a custom
+agent file, with a hint for likely typos (per the changelog).
+
 Also run the bundled validator (`scripts/validate-agent.py <file-or-dir>`) and Claude
 Code's own YAML check: `claude plugin validate .claude/agents` (v2.1.233+). The Claude Code
 check reports files whose YAML does not parse, but **not** a file that parses and has no
@@ -33,6 +36,7 @@ Claude Code skips the file, without telling the session, when any of these is tr
 | Opening `---` is not line 1 (blank line, BOM, comment above it) | Reads the file as having no frontmatter | Make `---` the very first line |
 | `name` starts with `-` | Skips, logs an error | Rename |
 | `name` contains `:` | Skips, logs an error (since v2.1.218) | Remove the colon; `:` is reserved for plugin scoping |
+| `name` longer than 256 characters | Skips, logs an error (limit added in v2.1.292) | Shorten it |
 | `name` but no `description` | Skips, logs the reason | Add `description` |
 | YAML does not parse | Reads no fields, skips, logs the parse error | Fix the YAML (see next table) |
 

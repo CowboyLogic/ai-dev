@@ -3,8 +3,12 @@
 Reference for the YAML frontmatter fields of Claude Code agent files. Load this file when
 writing, reviewing, or debugging agent frontmatter.
 
-**Source (last verified September 2026; the docs reference versions up to v2.1.281):**
+**Source (last verified 2026-10-11 against Claude Code 2.1.296; the docs page references
+versions up to v2.1.292):**
 <https://code.claude.com/docs/en/sub-agents#supported-frontmatter-fields>
+
+`autoCompactWindow` is the one field here that only the v2.1.296 changelog supports; the
+docs table does not list it yet.
 
 Field names are camelCase and case-sensitive. **Unrecognized fields are ignored without an
 error**, so a misspelling looks exactly like a working file.
@@ -41,6 +45,7 @@ color: blue
 initialPrompt: "Start by reading TODO.md"   # main-session use only
 experimental:                        # v2.1.248+
   cacheTtl: 5m
+autoCompactWindow: 200000            # v2.1.296+ (changelog only)
 ---
 ```
 
@@ -52,8 +57,9 @@ experimental:                        # v2.1.248+
 
 | Rule | Detail |
 |---|---|
-| Format | Unique identifier such as `code-reviewer` or `reviewer-v2` |
+| Format | Unique identifier of at most 256 characters, such as `code-reviewer` or `reviewer-v2` |
 | Must not start with `-` | The file is skipped and an error goes to the debug log |
+| At most 256 characters | A longer name is skipped with an error in the debug log (v2.1.292+; a skill or plugin file `name` over 256 is ignored) |
 | Must not contain `:` | Reserved for plugin-scoped names (`my-plugin:reviewer`). Skipped since v2.1.218; earlier versions accepted it |
 | Filename | Does not have to match `name` |
 | Hooks | `SubagentStart`/`SubagentStop` matchers and the `agent_type` input use this value |
@@ -134,7 +140,8 @@ Claude can resume it to continue.
 
 ### `skills`
 
-List of skill names. The **full** skill content is injected at startup. The agent can still
+List of skill names. The **full** skill content is injected at startup, for the first 32
+distinct names in the list (each once; v2.1.295+). The agent can still
 invoke unlisted skills through the Skill tool unless `Skill` is omitted from `tools` or
 listed in `disallowedTools`. Skills with `disable-model-invocation: true` cannot be
 preloaded. A missing or policy-disabled skill is skipped with a debug-log warning.
@@ -216,6 +223,15 @@ Submitted as the first user turn when the file runs as the main session agent (`
 the `agent` setting); commands and skills in it are processed and it is prepended to any
 user prompt. Ignored for plugin agents. Does nothing when the file is used as a subagent.
 
+### `autoCompactWindow`
+
+Lets this agent auto-compact earlier than the main conversation's window (added in v2.1.296;
+supported in frontmatter and `--agents` definitions). Same key name as the
+`autoCompactWindow` setting, a token count, which the settings reference documents as 100000
+to 1000000. The v2.1.296
+changelog entry does not state the range or precedence for the frontmatter field, so verify
+against the sub-agents docs page before relying on either.
+
 ### `experimental`
 
 Map, read only from subagent files. `cacheTtl: 5m | 1h` sets the prompt-cache lifetime
@@ -243,7 +259,8 @@ under `experimental`, not a top-level key. Not accepted in `--agents` JSON.
 Session-only agents, not saved to disk. Each top-level key is the name; the value takes
 `prompt` plus these fields: `description`, `tools`, `disallowedTools`, `model`,
 `permissionMode`, `mcpServers`, `hooks`, `maxTurns`, `skills`, `initialPrompt`, `memory`,
-`effort`, `background`, `omitClaudeMd`, `isolation`.
+`effort`, `background`, `omitClaudeMd`, `isolation`, and (v2.1.296, changelog only)
+`autoCompactWindow`.
 
 ```bash
 claude --agents '{
