@@ -126,6 +126,7 @@ The `if` field holds exactly one permission rule (no `&&`/`||`/lists) and is onl
   "async": false,
   "asyncRewake": false,
   "shell": "bash",
+  "onFailure": "continue",
   "timeout": 600
 }
 ```
@@ -134,6 +135,7 @@ The `if` field holds exactly one permission rule (no `&&`/`||`/lists) and is onl
 - `asyncRewake: true` — run in background, wake Claude on exit code 2
 - `shell` — `"bash"` (default; `"powershell"` on Windows without Git Bash) or `"powershell"`; ignored when `args` is set
 - `args` — **exec form**: when present, `command` is spawned directly as an executable with `args` as argv (no shell, no quoting issues). Omit `args` for shell form (pipes, `&&`, globs)
+- `onFailure` — `"continue"` (default) or `"block"`; see [Block the action when a hook fails](#block-the-action-when-a-hook-fails) (v2.1.295+; `command` and `http` only)
 
 ```json
 { "type": "command", "command": "node", "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/format.js", "--fix"] }
@@ -144,7 +146,7 @@ The `if` field holds exactly one permission rule (no `&&`/`||`/lists) and is onl
 - `$CLAUDE_PROJECT_DIR` — project root
 - `${CLAUDE_PLUGIN_ROOT}` — plugin install dir
 - `${CLAUDE_PLUGIN_DATA}` — plugin data dir
-- `$CLAUDE_ENV_FILE` — only for `SessionStart`, `Setup`, `CwdChanged`, `FileChanged`; append `export` lines to persist env vars into later Bash commands
+- `$CLAUDE_ENV_FILE` — only for `SessionStart`, `Setup`, `CwdChanged`, `FileChanged`; append `export` lines to persist env vars into later Bash commands. PowerShell commands receive the variables too from v2.1.296, but PowerShell never runs the file: Claude Code copies the assignments across only when every line is a blank line, a `#` comment, or a plain `export NAME=value` / `declare -x NAME=value` / `NAME=value` with a simple quoted-or-unquoted value
 - `$CLAUDE_CODE_REMOTE` — `"true"` in remote web environments
 
 ### `http`
@@ -155,9 +157,12 @@ The `if` field holds exactly one permission rule (no `&&`/`||`/lists) and is onl
   "url": "http://localhost:8080/hooks/pre-tool-use",
   "headers": { "Authorization": "Bearer $MY_TOKEN" },
   "allowedEnvVars": ["MY_TOKEN"],
+  "onFailure": "block",
   "timeout": 30
 }
 ```
+
+`onFailure` is optional (`"continue"` by default); an HTTP failure is a connection error, a non-2xx status, or a 2xx body that is neither empty nor a JSON object.
 
 ### `mcp_tool` (call a tool on a connected MCP server)
 
@@ -215,6 +220,23 @@ Same response schema as `prompt`. Agent can use Read, Grep, Glob to inspect the 
 
 Stdout is parsed as JSON on every exit code when it starts with `{` and ends with `}`. For most events plain stdout only goes to the debug log; for `UserPromptSubmit`, `UserPromptExpansion`, `SessionStart`, and `PostModelSwitch` plain stdout is added as context for Claude.
 
+### Block the action when a hook fails
+
+Requires v2.1.295+. By default a hook that can't start, times out, or exits with a code other than 0 or 2 is a **non-blocking** error — the action goes ahead, so a policy hook with a mistyped path lets everything through. Set `"onFailure": "block"` on a `command` or `http` hook to make a failure do what exit code 2 does on that event (on `PermissionRequest` it denies the request).
+
+```json
+{
+  "type": "command",
+  "command": "node",
+  "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/check-command.js"],
+  "onFailure": "block"
+}
+```
+
+A failure is: the hook can't start; exit code other than 0 or 2 (even if it printed JSON that allows the action — exit 0 to return a JSON decision); an HTTP connection failure or non-2xx status; a timeout; or JSON output that can't be parsed or fails schema validation. Plain-text stdout from a command hook is not a failure.
+
+`onFailure` has no effect on `Stop`, `SubagentStop`, `TaskCompleted`, and `TeammateIdle` hooks (exit 2 there sends Claude back to work, and Claude can't repair a hook that won't run) or on background command hooks (`async`/`asyncRewake`). A timed-out `command`/`http`/`mcp_tool` hook on `PreToolUse` does **not** block the call unless `onFailure: "block"` is set.
+
 ---
 
 ## JSON output from hooks
@@ -230,9 +252,11 @@ Return JSON on stdout (exit 0) for structured control. Key fields:
 | `systemMessage` | Warning string shown to the user |
 | `terminalSequence` | Terminal escape sequence Claude Code emits on your behalf (desktop notif, title, bell). Only OSC `0`/`1`/`2`/`9`/`99`/`777` and bare BEL allowed — anything else is silently ignored. Use instead of writing to `/dev/tty` (unavailable to hooks) |
 
-All hook output strings (`additionalContext`, `systemMessage`, `initialUserMessage`, plain stdout) are capped at 10,000 chars; overflow is saved to a file and Claude gets the path plus a 2,000-char preview.
+All hook output strings (`additionalContext`, `systemMessage`, `initialUserMessage`, plain stdout) are capped at 10,000 chars; overflow is saved to a file and Claude gets the path plus a 2,000-char preview. A literal `<system-reminder>` or `</system-reminder>` tag in `additionalContext` has its `<` replaced with `&lt;`.
 
-**Other event-specific outputs** (`hookSpecificOutput`): `PostToolUse` → `updatedToolOutput` (replaces what Claude sees; the tool already ran); `SessionStart` → `additionalContext`, `initialUserMessage`, `watchPaths`, `sessionTitle`, `reloadSkills`; `SubagentStart`/`PostModelSwitch` → `additionalContext`; `MessageDisplay` → `displayContent` (display-only); `PreModelSwitch` → `permissionDecision` (`allow`/`deny`/`ask`); `PermissionRequest` `allow` → optional `updatedPermissions`.
+An **async** hook's JSON response must be alone on stdout or on one line of its own; multi-line (pretty-printed) JSON alone on stdout needs v2.1.295+ (earlier versions ignore it). Fields with the wrong type are dropped, and `--debug` names each one.
+
+**Other event-specific outputs** (`hookSpecificOutput`): `PostToolUse` → `updatedToolOutput` (replaces what Claude sees; the tool already ran; `updatedMCPToolOutput` does the same for MCP tools only — prefer `updatedToolOutput`); `SessionStart` → `additionalContext`, `initialUserMessage`, `watchPaths`, `sessionTitle`, `reloadSkills`; `SubagentStart`/`PostModelSwitch` → `additionalContext`; `MessageDisplay` → `displayContent` (display-only); `PreModelSwitch` → `permissionDecision` (`allow`/`deny`/`ask`); `PermissionRequest` `allow` → optional `updatedPermissions`.
 
 ### PreToolUse decisions (use `hookSpecificOutput`)
 
@@ -268,7 +292,7 @@ All hook output strings (`additionalContext`, `systemMessage`, `initialUserMessa
 { "hookSpecificOutput": { "hookEventName": "PermissionDenied", "retry": true } }
 ```
 
-### Elicitation (accept/decline without showing dialog)
+### Elicitation (answer without showing the dialog)
 
 ```json
 {
@@ -279,6 +303,8 @@ All hook output strings (`additionalContext`, `systemMessage`, `initialUserMessa
   }
 }
 ```
+
+`action` is `"accept"` (with form values in `content`, keyed by the request's `requested_schema` property names), `"decline"`, or `"cancel"`; the server receives it and no dialog appears. No output and exit 0 leaves the request to the user. Exit code 2, or a top-level `"decision": "block"`, also declines (the block overrides an `action` in the same output; `decision: "block"` was ignored from v2.1.105 until the fix in v2.1.284). `reason`, `systemMessage`, and `continue` are discarded. When several hooks match, a decline overrides an accept or cancel.
 
 ### WorktreeCreate (hook must print the worktree path to stdout)
 
@@ -419,3 +445,7 @@ Also turns off a custom `statusLine`, `subagentStatusLine`, and `fileSuggestion`
 ## View configured hooks
 
 Type `/hooks` inside Claude Code for a read-only browser of all configured hooks, labeled by type and source (`User Settings`, `Project Settings`, `Local Settings`, `Plugin Hooks`, `Session Hooks`). Direct edits to settings files are normally picked up by the file watcher.
+
+## Debug a slow hook
+
+Run with `--debug` (or `CLAUDE_CODE_DEBUG_LOG_LEVEL=verbose` for matcher counts) and search the log for `Hooks:` lines. From v2.1.296 each command hook on a tool event, `UserPromptSubmit`, `SessionStart`, `Stop`, and several other events logs one when it finishes, e.g. `Hooks: PostToolUse:Write [.claude/hooks/log-write.sh] finished with status 0 (31ms)`. A run can also end as `timed out after <N>ms`, `cancelled`, `moved to the background`, or `failed to start`. On some events (`Notification`, `SessionEnd`, `PreCompact`) the line is `completed with status` without a duration.

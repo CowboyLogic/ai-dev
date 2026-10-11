@@ -2,6 +2,41 @@
 
 Changes to the `client-config-claudecode` skill, newest first.
 
+## 2026-10-11 — v2.1 (verified against Claude Code 2.1.296)
+
+Basis: Claude Code 2.1.296 (npm `latest`; `stable` is 2.1.287), docs pages fetched with
+`scripts/update-references.py --all`, and the changelog for 2.1.282–2.1.296.
+
+- `references/settings-schema.md`: adds `availableModelsMatch` and `deniedModels` (v2.1.283),
+  `allowedProviders` (v2.1.285), `maxProseWidth` and `allowClaudeInChromeWithManagedMcp`
+  (v2.1.282), `prependPlugins` / `appendPlugins`, `bashEditDiffEnabled`,
+  `awaySummaryEnabled`, and the global-config keys `claudeInChromeDefaultEnabled`,
+  `copyFullResponse`, `defaultToAgentsView`, `leftArrowOpensAgents`, and
+  `prStatusFooterEnabled`. `forceLoginGatewayUrl` is now *User or managed*: v2.1.295 also
+  reads it, and `forceLoginMethod: "gateway"`, from user settings on a machine with no managed
+  settings.
+- `references/hooks.md`: adds `onFailure: "block"` (v2.1.295) with the failures it covers and
+  the events it doesn't, multi-line async JSON (v2.1.295), the full Elicitation
+  accept/decline/cancel contract and the v2.1.284 `decision: "block"` fix, `CLAUDE_ENV_FILE`
+  in PowerShell commands (v2.1.296), the v2.1.296 hook duration debug lines, and
+  `updatedMCPToolOutput`.
+- `references/permissions.md`: adds which permission mode a session starts in (`auto` for
+  terminal and VS Code from v2.1.283; `-p`/SDK rules from v2.1.285) and the v2.1.292
+  network-path read behavior.
+- `references/mcp.md`: adds a tool loading, limits, and runtime section: `alwaysLoad: false`
+  (v2.1.287), per-tool `anthropic/alwaysLoad`, `CLAUDE_CODE_MAX_MCP_DESCRIPTION_LENGTH`,
+  `/mcp reconnect all` (v2.1.284), `MCP_SDK_GENERATION`, and `MCP_PROTOCOL_NEGOTIATION`.
+  Claims the docs pages don't yet carry (4,096-character default, 16,384-character search
+  cut, 16 MiB WebSocket limit, `bareElicitationCapability`, reserved `widgets` name) are
+  labeled as changelog-only.
+- `scripts/validate-settings.py`: corrects `forceLoginGatewayUrl` scope (was managed-only);
+  adds the new managed-only, user-or-managed, any-file, and global-config keys; validates
+  hook `onFailure` (value, handler type, events where it has no effect).
+- `SKILL.md`: quick edits for the default mode and a fail-closed hook; the self-update
+  procedure now records the Claude Code version checked.
+- Evals: new eval for making a hook fail closed with `onFailure`; not yet run (the README
+  results predate it).
+
 ## 2026-09-24 — v2.0 (upstream refresh)
 
 - Sources: the full key reference moved upstream to `settings-reference.md`; it is now

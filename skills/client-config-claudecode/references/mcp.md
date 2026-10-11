@@ -107,14 +107,31 @@ A JSON entry with a `url` but no `type` is an error — Claude Code reads it as 
 
 - `timeout` — per-server tool-call timeout in ms (values < 1000 ignored; overrides `MCP_TOOL_TIMEOUT`). Startup timeout is the `MCP_TIMEOUT` env var.
 - `headersHelper` — script that generates auth headers at connect time (project `.mcp.json` helpers run only after workspace trust).
-- `alwaysLoad` — skip tool-search deferral; all the server's tools load at session start.
+- `alwaysLoad` — `true` skips tool-search deferral (all the server's tools load at session start; valid on every server type, `ws` included); `false` keeps all of the server's tools deferred (v2.1.287+). See [Tool loading, limits, and runtime](#tool-loading-limits-and-runtime).
 - `oauth` — `{clientId, callbackPort, authServerMetadataUrl, scopes}`; pass a secret with `claude mcp add-json ... --client-secret`.
+
+`widgets` is a reserved server name in cloud sessions and on self-hosted runners — rename a server of that name (v2.1.285; changelog only).
 
 Stdio servers receive `CLAUDE_PROJECT_DIR` (project root) in their environment. Referencing it in `command`/`args` of `.mcp.json` or `~/.claude.json` entries needs a default: `${CLAUDE_PROJECT_DIR:-.}` (plugin configs substitute it directly).
 
 ### Environment variable expansion
 
 `${VAR}` and `${VAR:-default}` expand in `command`, `args`, `env`, `url`, and `headers`. An unset variable with no default is left as literal `${VAR}` with a warning in `claude mcp list`. In a remote server's `url`/`headers`, credential variables such as `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, `AWS_BEARER_TOKEN_BEDROCK`, `HTTPS_PROXY`, and `NPM_TOKEN` always read as empty — copy the value into a variable with your own name.
+
+---
+
+## Tool loading, limits, and runtime
+
+Tool search is on by default: a server's tools are deferred and found on demand.
+
+- **`alwaysLoad: true`** (server entry) loads all of that server's tools upfront. Startup then waits for the server's tools, capped at the 5-second connect timeout, unless a valid `cached` entry supplies them. Other servers connect in the background; `MCP_CONNECTION_NONBLOCKING=0` makes startup wait for them too.
+- **`alwaysLoad: false`** (server entry) defers every tool of that server, including tools its author marked to load upfront (v2.1.287+).
+- **Per-tool `_meta["anthropic/alwaysLoad"]`** (set by the server author): `true` loads that tool upfront. `false` keeps it deferred when the user's config sets `alwaysLoad: true` for a server passed with `--mcp-config`, supplied by an Agent SDK app, or provided by a plugin (v2.1.285+).
+- **Description limits**: each tool description and each server's instructions are truncated at a default character limit; `CLAUDE_CODE_MAX_MCP_DESCRIPTION_LENGTH` (v2.1.280+) sets it for every server. The MCP docs page states the default as 2,048 characters; the v2.1.296 changelog says the default changed from 2,048 to 4,096, so treat the docs page as lagging. Per the v2.1.295 changelog, tool descriptions loaded through tool search are cut at 16,384 characters.
+- **Retry failed servers**: `/mcp reconnect all` retries every server that failed or needs authentication. In the interactive terminal it needs v2.1.284+; earlier versions print `MCP server "all" not found`.
+- **Client runtime**: Claude Code picks the v1 or v2 MCP client runtime at startup. `MCP_SDK_GENERATION` (`v1` | `v2`) forces one. `MCP_PROTOCOL_NEGOTIATION` (`auto` | `legacy`) decides whether Claude Code asks servers for protocol revision 2026-07-28; `legacy` keeps every server on the earlier handshake.
+- **URL elicitation** (changelog, v2.1.287): servers on the 2025-11-25 protocol can send URL prompts. A server that stops connecting after that update can be given `"bareElicitationCapability": true` in its config entry. This key is not in the MCP docs page.
+- **WebSocket limit** (changelog, v2.1.295): a `ws` message over 16 MiB is no longer parsed and closes the connection, the same limit the other transports already have.
 
 ---
 
@@ -159,6 +176,7 @@ These control MCP behavior; the servers themselves are in `~/.claude.json` / `.m
 | `allowManagedMcpServersOnly` | (managed) Only managed servers allowed |
 | `disableClaudeAiConnectors` | Disable claude.ai connectors entirely. Any-source-true: a `true` in any scope wins over a `false` elsewhere. `--mcp-config` servers unaffected |
 | `allowAllClaudeAiMcps` | (managed) Load claude.ai connectors alongside a deployed `managed-mcp.json`, which otherwise suppresses them |
+| `allowClaudeInChromeWithManagedMcp` | (managed, on-machine) Let the built-in Claude in Chrome server run alongside a deployed `managed-mcp.json`, which otherwise blocks it in terminal sessions (v2.1.282+) |
 | `managedMcpServers` | (managed) Provide remote `http`/`sse` servers (`https://` URL required) to every user; users can't edit/remove them (v2.1.259+) |
 
 `enableAllProjectMcpServers` and `enabledMcpjsonServers` in a repo's `.claude/settings.json` are ignored until you trust the folder. `claude -p`, SDK, and cloud sessions load `.mcp.json` servers without asking — use `disabledMcpjsonServers`, `--setting-sources`, or `--strict-mcp-config` to keep one out.

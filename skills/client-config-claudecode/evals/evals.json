@@ -112,6 +112,30 @@
           "description": "Any JSON shown uses permissions.defaultMode with valid syntax"
         }
       ]
+    },
+    {
+      "id": 5,
+      "name": "hook-fail-closed",
+      "prompt": "My PreToolUse hook in .claude/settings.json runs a policy script before every Bash command. I noticed that when the script path was mistyped, Bash commands still ran. Make the hook block the command when the script fails instead.",
+      "expected_output": "Sets onFailure: \"block\" on the command hook (v2.1.295+), explains that a hook that can't start, times out, or exits with a code other than 0 or 2 otherwise lets the action through, and notes exit 2 is the blocking exit code",
+      "assertions": [
+        {
+          "id": "on-failure-block",
+          "description": "Adds \"onFailure\": \"block\" to the command hook handler"
+        },
+        {
+          "id": "default-non-blocking",
+          "description": "Explains that without it a failed, missing, or timed-out hook is a non-blocking error and the action proceeds"
+        },
+        {
+          "id": "version-gate",
+          "description": "Notes that onFailure requires Claude Code v2.1.295 or later"
+        },
+        {
+          "id": "valid-hook-shape",
+          "description": "Hook JSON nests the handler inside a matcher group under hooks.PreToolUse with a valid type"
+        }
+      ]
     }
   ]
 }

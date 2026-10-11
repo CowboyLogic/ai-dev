@@ -70,6 +70,8 @@ NO_MATCHER_EVENTS = {
     "UserPromptSubmit", "PostToolBatch", "Stop", "TeammateIdle", "TaskCreated", "TaskCompleted",
     "WorktreeCreate", "WorktreeRemove", "MessageDisplay", "CwdChanged",
 }
+# onFailure: "block" has no effect on these events (exit 2 there re-engages Claude instead)
+ONFAILURE_NO_EFFECT_EVENTS = {"Stop", "SubagentStop", "TaskCompleted", "TeammateIdle"}
 TOOL_EVENTS = {"PreToolUse", "PostToolUse", "PostToolUseFailure", "PermissionRequest", "PermissionDenied"}
 
 # ---------------------------------------------------------------------------
@@ -91,8 +93,8 @@ ANY_FILE_KEYS = {
     "fastMode", "fastModePerSessionOptIn", "feedbackSurveyRate", "fileCheckpointingEnabled",
     "fileSuggestion", "forceLoginMethod", "forceLoginOrgUUID", "gcpAuthRefresh", "hooks",
     "httpHookAllowedEnvVars", "includeGitInstructions", "inputNeededNotifEnabled",
-    "isolatePeerMachines", "language", "maxEffortLevel", "minimumVersion", "model",
-    "modelOverrides", "modelSettings", "otelHeadersHelper", "outputStyle", "permissions",
+    "isolatePeerMachines", "language", "maxEffortLevel", "maxProseWidth", "minimumVersion",
+    "model", "modelOverrides", "modelSettings", "otelHeadersHelper", "outputStyle", "permissions",
     "plansDirectory", "prUrlTemplate", "preferredNotifChannel", "prefersReducedMotion",
     "promptCacheTtl", "promptSuggestionEnabled", "remote", "remoteControlAtStartup",
     "respectGitignore", "respondToBashCommands", "sandbox", "showClearContextOnPlanAccept",
@@ -106,10 +108,11 @@ ANY_FILE_KEYS = {
 }
 # Read only from user settings, --settings, and managed settings
 USER_OR_MANAGED_KEYS = {
-    "askUserQuestionTimeout", "autoContinueAtUsageLimit", "autoMode", "bashEditDiffEnabled",
-    "desktopSessionCleanupPeriodDays", "dialogExpiry", "feedbackDrafts", "footerLinksRegexes",
-    "modelPicker", "pluginConfigs", "processWrapper", "skipAutoPermissionPrompt", "spellcheck",
-    "sshConfigs", "vimInsertModeRemaps",
+    "appendPlugins", "askUserQuestionTimeout", "autoContinueAtUsageLimit", "autoMode",
+    "bashEditDiffEnabled", "desktopSessionCleanupPeriodDays", "dialogExpiry", "feedbackDrafts",
+    "footerLinksRegexes", "forceLoginGatewayUrl", "modelPicker", "pluginConfigs",
+    "prependPlugins", "processWrapper", "skipAutoPermissionPrompt", "spellcheck", "sshConfigs",
+    "vimInsertModeRemaps",
 }
 # Read from user, local, managed (and --settings) — not from shared project settings
 USER_LOCAL_OR_MANAGED_KEYS = {
@@ -117,15 +120,16 @@ USER_LOCAL_OR_MANAGED_KEYS = {
     "useAutoModeDuringPlan",
 }
 MANAGED_ONLY_KEYS = {
-    "allowAllClaudeAiMcps", "allowManagedHooksOnly", "allowManagedMcpServersOnly",
-    "allowManagedPermissionRulesOnly", "allowedChannelPlugins", "blockedMarketplaces",
-    "browserExternalPageTools", "channelsEnabled", "claudeMd", "disableBrowserExternalNavigation",
+    "allowAllClaudeAiMcps", "allowClaudeInChromeWithManagedMcp", "allowManagedHooksOnly",
+    "allowManagedMcpServersOnly", "allowManagedPermissionRulesOnly", "allowedChannelPlugins",
+    "allowedProviders", "availableModelsMatch", "blockedMarketplaces", "browserExternalPageTools",
+    "channelsEnabled", "claudeMd", "deniedModels", "disableBrowserExternalNavigation",
     "disableCommandPluginSources", "disableDesktopLocalSessions", "disableMobileSimulatorTools",
-    "disableSideloadFlags", "forceLoginGatewayUrl", "forceRemoteSettingsRefresh",
-    "gatewayInternalNetworks", "managedMcpServers", "managedSourcesBehavior", "modelPricing",
-    "parentSettingsBehavior", "pluginSuggestionMarketplaces", "pluginTrustMessage", "policyHelper",
-    "requiredMaximumVersion", "requiredMinimumVersion", "sshHostAllowlist",
-    "strictKnownMarketplaces", "strictPluginOnlyCustomization", "wslInheritsWindowsSettings",
+    "disableSideloadFlags", "forceRemoteSettingsRefresh", "gatewayInternalNetworks",
+    "managedMcpServers", "managedSourcesBehavior", "modelPricing", "parentSettingsBehavior",
+    "pluginSuggestionMarketplaces", "pluginTrustMessage", "policyHelper", "requiredMaximumVersion",
+    "requiredMinimumVersion", "sshHostAllowlist", "strictKnownMarketplaces",
+    "strictPluginOnlyCustomization", "wslInheritsWindowsSettings",
 }
 MANAGED_ONLY_SANDBOX_PATHS = {
     ("filesystem", "allowManagedReadPathsOnly"), ("network", "allowManagedDomainsOnly"),
@@ -147,7 +151,9 @@ REMOVED_KEYS = {
     "taskOutputMaxChars": "removed in v2.1.277 with the TaskOutput tool; has no effect",
 }
 GLOBAL_CONFIG_ONLY_KEYS = {
-    "autoConnectIde", "autoInstallIdeExtension", "copyOnSelect", "diffTool", "externalEditorContext",
+    "autoConnectIde", "autoInstallIdeExtension", "claudeInChromeDefaultEnabled", "copyFullResponse",
+    "copyOnSelect", "defaultToAgentsView", "diffTool", "externalEditorContext",
+    "leftArrowOpensAgents", "prStatusFooterEnabled",
 }
 REMOVED_GLOBAL_CONFIG_KEYS = {
     "permissionExplainerEnabled": "removed in v2.1.257",
@@ -296,6 +302,15 @@ def validate_hook_handler(handler, path, event):
         warn(f"{path}.if: 'if' is only evaluated on tool events; this handler will never run on {event}")
     if "timeout" in handler and not isinstance(handler["timeout"], (int, float)):
         err(f"{path}.timeout: must be a number of seconds")
+    if "onFailure" in handler:
+        if handler["onFailure"] not in ("continue", "block"):
+            err(f"{path}.onFailure: must be \"continue\" or \"block\"")
+        elif htype not in {"command", "http"}:
+            warn(f"{path}.onFailure: only command and http hooks accept it (v2.1.295+); ignored on {htype}")
+        elif handler["onFailure"] == "block" and event in ONFAILURE_NO_EFFECT_EVENTS:
+            warn(f"{path}.onFailure: has no effect on {event} hooks")
+        elif handler["onFailure"] == "block" and (handler.get("async") or handler.get("asyncRewake")):
+            warn(f"{path}.onFailure: has no effect on background (async/asyncRewake) command hooks")
     if handler.get("once") is not None:
         warn(f"{path}.once: only honored in skill frontmatter; ignored in settings files")
     if "suppressOutput" in handler:
@@ -400,7 +415,7 @@ def validate(data, scope):
             warn(f"'{key}' is managed-only; ignored in {scope} settings")
     if scope in {"project", "local"}:
         for key in sorted(USER_OR_MANAGED_KEYS & set(data)):
-            warn(f"'{key}' is read only from user/managed/--settings; ignored in {scope} settings")
+            warn(f"'{key}' is read only from user or managed settings; ignored in {scope} settings")
     if scope == "project":
         for key in sorted(USER_LOCAL_OR_MANAGED_KEYS & set(data)):
             warn(f"'{key}' is ignored in shared project settings (.claude/settings.json)")
