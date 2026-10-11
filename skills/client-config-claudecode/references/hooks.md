@@ -235,7 +235,7 @@ Requires v2.1.295+. By default a hook that can't start, times out, or exits with
 
 A failure is: the hook can't start; exit code other than 0 or 2 (even if it printed JSON that allows the action — exit 0 to return a JSON decision); an HTTP connection failure or non-2xx status; a timeout; or JSON output that can't be parsed or fails schema validation. Plain-text stdout from a command hook is not a failure.
 
-`onFailure` has no effect on `Stop`, `SubagentStop`, `TaskCompleted`, and `TeammateIdle` hooks (exit 2 there sends Claude back to work, and Claude can't repair a hook that won't run) or on background command hooks (`async`/`asyncRewake`). A timed-out `command`/`http`/`mcp_tool` hook on `PreToolUse` does **not** block the call unless `onFailure: "block"` is set.
+`onFailure` has no effect on `Stop`, `SubagentStop`, `TaskCompleted`, and `TeammateIdle` hooks (exit 2 there sends Claude back to work, and Claude can't repair a hook that won't run) or on background command hooks (`async`/`asyncRewake`). A timed-out `command`, `http`, or `mcp_tool` hook on `PreToolUse` does **not** block the call. Set `onFailure: "block"` on a `command` or `http` hook to make a timeout block; `mcp_tool` hooks don't accept `onFailure`, so a timed-out one always lets the call continue.
 
 ---
 
