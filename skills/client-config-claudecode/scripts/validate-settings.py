@@ -429,7 +429,7 @@ def validate(data, scope):
         validate_sandbox(data["sandbox"], scope)
 
     for key, valid in ENUMS.items():
-        if key in data and data[key] not in valid:
+        if key in data and (not isinstance(data[key], str) or data[key] not in valid):
             err(f"{key}: invalid value {data[key]!r}. Valid: {sorted(valid)}")
 
     if "theme" in data:
@@ -451,9 +451,11 @@ def validate(data, scope):
                 if not isinstance(entry, dict):
                     err(f"modelSettings.{model}: must be an object")
                     continue
-                if "effortLevel" in entry and entry["effortLevel"] not in VALID_EFFORT_LEVELS:
+                if "effortLevel" in entry and (not isinstance(entry["effortLevel"], str)
+                                               or entry["effortLevel"] not in VALID_EFFORT_LEVELS):
                     err(f"modelSettings.{model}.effortLevel: invalid value {entry['effortLevel']!r}")
-                if "maxEffortLevel" in entry and entry["maxEffortLevel"] not in VALID_MAX_EFFORT_LEVELS:
+                if "maxEffortLevel" in entry and (not isinstance(entry["maxEffortLevel"], str)
+                                                  or entry["maxEffortLevel"] not in VALID_MAX_EFFORT_LEVELS):
                     err(f"modelSettings.{model}.maxEffortLevel: invalid value {entry['maxEffortLevel']!r}")
 
     if "autoMode" in data:
