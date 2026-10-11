@@ -62,7 +62,7 @@ MIN_VERSIONS = {
     "experimental": "v2.1.248",
     "autoCompactWindow": "v2.1.296",
 }
-NAME_MAX_LENGTH = 256   # longer names are skipped (docs: "Subagent files Claude Code skips")
+NAME_MAX_LENGTH = 256   # longer names are skipped (docs: "Subagent files Claude Code skips"); a plugin file's is ignored (v2.1.292 changelog)
 SKILLS_PRELOAD_MAX = 32  # only the first 32 distinct names are preloaded
 TOOL_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(\(.*\))?$")
 CASE_INSENSITIVE = {f.lower(): f for f in KNOWN_FIELDS}
@@ -218,8 +218,12 @@ def validate(path: Path, plugin: bool) -> Report:
             rep.error(f"name '{name}' contains ':' (reserved for plugin scoping): the file "
                       "is skipped (v2.1.218+)")
         if len(name) > NAME_MAX_LENGTH:
-            rep.error(f"name is {len(name)} characters; names over {NAME_MAX_LENGTH} are "
-                      "skipped")
+            if plugin:
+                rep.warn(f"name is {len(name)} characters; a plugin file's name over "
+                         f"{NAME_MAX_LENGTH} is ignored (v2.1.292 changelog)")
+            else:
+                rep.error(f"name is {len(name)} characters; names over {NAME_MAX_LENGTH} are "
+                          "skipped")
         if re.search(r"[^\w .-]", name) and ":" not in name:
             rep.warn(f"name '{name}' has unusual characters; prefer lowercase-with-hyphens")
 
