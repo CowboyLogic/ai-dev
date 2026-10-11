@@ -18,7 +18,7 @@ skill's directory are available to the agent.
 | `COPILOT_SKILLS_DIRS` (comma-separated) and the `skillDirectories` setting | Custom |
 | `.github/skills/` under `--add-dir` / `/add-dir` / SDK `additionalDirectories` | Added root (a trust decision: runs with project-skill trust) |
 | Bundled with the CLI | Built-in (lowest; overridable by any other source) |
-| Org/enterprise remote skills | Remote (projected via the AHP relay, fetched on invocation; same name-based priority as local skills) |
+| Org/enterprise remote skills | Remote — listed last in the docs, but not given a rank: the docs say remote skills follow the same name-based priority as local skills, so whether one overrides a built-in with the same name isn't stated. Projected via the AHP relay and fetched on invocation |
 
 The `ignoredSkillsLocations` setting (`string[]`, `~` paths allowed) excludes directories and their
 descendants from discovery regardless of which location would surface them.
