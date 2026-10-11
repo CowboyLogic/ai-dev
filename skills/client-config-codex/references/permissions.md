@@ -42,10 +42,12 @@ actual workspace directories.
 | `on-failure` | **Deprecated** per the config reference; use `on-request` or `never` |
 
 Granular keys: `sandbox_approval`, `rules`, `mcp_elicitations`, `request_permissions`,
-`skill_approval` (booleans; `true` keeps that prompt interactive).
+`skill_approval` (booleans; `true` keeps that prompt interactive). On 0.162.1 `sandbox_approval`,
+`rules`, and `mcp_elicitations` are required (a missing one is a config error);
+`request_permissions` and `skill_approval` are optional.
 
 > [!NOTE]
-> The installed CLI (0.158.0) accepts only `on-request` and `never` for `--ask-for-approval`
+> The installed CLI (0.162.1) accepts only `on-request` and `never` for `--ask-for-approval`
 > (`untrusted`, `on-failure`, and `granular` are rejected as flag values). `granular` works only in
 > `config.toml`.
 
@@ -91,9 +93,10 @@ allow_login_shell = false   # optional hardening: no login shells for shell-base
 > [!NOTE]
 > The docs call `--yolo` an alias of `--dangerously-bypass-approvals-and-sandbox`. The installed CLI
 > accepts `--yolo` but hides it from `--help`. The docs say `codex exec --full-auto` remains as a
-> deprecated compatibility path; the CLI rejects `--full-auto` on bare `codex` and does not list it
-> under `exec --help`. Do not recommend either flag. Use explicit `--sandbox` and
-> `--ask-for-approval` instead.
+> deprecated compatibility path; 0.162.1 rejects `--full-auto` on both bare `codex` and
+> `codex exec` (`unexpected argument`). Do not recommend either flag. Use explicit `--sandbox` and
+> `--ask-for-approval` instead. `codex exec` has no `-a/--ask-for-approval` flag; set
+> `-c approval_policy=...` there instead.
 
 ### Common combinations
 
@@ -101,7 +104,7 @@ allow_login_shell = false   # optional hardening: no login shells for shell-base
 |--------|----------|
 | Auto (default preset) | `--sandbox workspace-write --ask-for-approval on-request` |
 | Read-only browsing | `--sandbox read-only --ask-for-approval on-request` |
-| Read-only CI | `--sandbox read-only --ask-for-approval never` |
+| Read-only CI | `codex --sandbox read-only --ask-for-approval never`, or `codex exec --sandbox read-only -c approval_policy=never` (`codex exec` has no `-a`) |
 | Auto-review | Auto preset plus `-c approvals_reviewer=auto_review` (or `--approve-for-me`) |
 | Non-interactive edits | `codex exec --sandbox workspace-write` |
 
@@ -139,6 +142,12 @@ Inside every writable root these stay **read-only, recursively**, even under `wo
 - `.git` (directory or file; if it is a `gitdir:` pointer file, the resolved Git directory too)
 - `.agents` (when it is a directory)
 - `.codex` (when it is a directory)
+- `.aws` (a directory under a writable root; protected by default since 0.159.0 per the release
+  notes, though the docs page does not list it yet)
+
+Approving a filesystem escalation can grant broader write access, but explicit denied reads and
+network restrictions stay in force (0.159.0, 0.161.0 release notes); background tasks keep the
+permissions of the turn that started them.
 
 Edits to these need approval or a different profile. Do not tell the user to work around this by
 loosening `sandbox_mode`.
@@ -170,8 +179,10 @@ One-off: `codex -c 'features.network_proxy=true' -c 'sandbox_workspace_write.net
 | on | off | Unrestricted direct outbound |
 | on | on | Outbound constrained by the domain policy |
 
-The proxy enforces rules only; it never grants access. `network_proxy` is `experimental` and off by
-default in 0.158.0 (`codex features list`).
+The proxy enforces rules only; it never grants access. Where policy permits full sandbox
+escalation and it is approved, that execution can bypass the command proxy; a narrow network
+grant is not the same thing. `network_proxy` is `experimental` and off by
+default in 0.162.1 (`codex features list`).
 
 Domain rules: exact host matches itself; `*.example.com` matches subdomains only;
 `**.example.com` matches apex plus subdomains; bare `*` is allow-only and broad. `deny` always wins.
@@ -207,6 +218,10 @@ Named policies combining filesystem rules and network rules. Beta; the format ma
 > Profiles do **not** compose with the older settings. If `sandbox_mode` appears in any loaded
 > config file, `--sandbox` is passed, or the selected config profile file sets `sandbox_mode`, Codex
 > uses the older settings and ignores `default_permissions`. Configure one system or the other.
+> The exception is a managed `allowed_permission_profiles` requirement, which makes Codex use
+> permission profiles: remove `sandbox_mode` and `[sandbox_workspace_write]` before deploying it.
+> Once it is present, every profile not listed is denied, including omitted built-ins and
+> profiles added in future Codex versions.
 
 Built-ins: `:read-only`, `:workspace` (writes in workspace roots and temp dirs; keeps `.codex`
 read-only), `:danger-full-access`. Select with `default_permissions`, or `/permissions` in the TUI.
@@ -270,6 +285,11 @@ Config layers can add entries to the same profile name independently.
 | `network.proxy_url` | `http://127.0.0.1:3128` | HTTP proxy listener |
 | `network.socks_url` | `http://127.0.0.1:8081` | SOCKS5 listener |
 | `network.allow_local_binding` | `false` | Local/private guard, as above |
+| `network.enable_socks5` | `true` | SOCKS5 listener used for `ALL_PROXY` and FTP proxy variables |
+| `network.enable_socks5_udp` | `true` | UDP over SOCKS5 when the SOCKS5 listener is enabled |
+| `network.allow_upstream_proxy` | `true` | Honor upstream `HTTP(S)_PROXY` and `ALL_PROXY` for outbound requests |
+| `network.dangerously_allow_non_loopback_proxy` | `false` | Lets proxy listeners bind non-loopback addresses |
+| `network.dangerously_allow_all_unix_sockets` | `false` | Bypasses the Unix socket allowlist where socket proxying is supported |
 
 Domain rules take effect only with `features.network_proxy = true` (or admin-managed
 `[experimental_network]`). Omit it and `network.enabled = true` gives unrestricted direct access.
@@ -350,10 +370,15 @@ flow, the whole `["bash", "-lc", "<script>"]` is matched as one command. Allowin
 codex execpolicy check --pretty --rules ~/.codex/rules/default.rules -- gh pr view 7888
 ```
 
-`--rules` is required and repeatable; `--pretty` formats the JSON. Output has `matchedRules` and a
+`--rules` (`-r`) is required and repeatable; `--pretty` formats the JSON. Multiple rules files
+combine, and the strictest decision wins. `check` matches the exact token list you give it and does
+not split shell wrappers: `bash -lc "git add . && rm -rf /"` returns no match even when both
+`["git","add"]` and `["rm"]` have rules, so test the inner commands separately. Output has `matchedRules` and a
 `decision` field. With no match, the output is `{"matchedRules":[]}` and has no `decision`. The CLI
 also offers `--resolve-host-executables` (resolve absolute program paths against basename rules,
-gated by `host_executable()` definitions); the fetched docs do not cover it.
+gated by `host_executable()` definitions); the fetched docs do not cover it. Without the flag an
+absolute path such as `/usr/bin/git` does not match a `["git", ...]` rule; with it, the match
+carries `resolvedProgram`.
 
 `codex exec --ignore-rules` skips user and project `.rules` files for that run.
 
@@ -370,8 +395,9 @@ trust_level = "trusted"   # or "untrusted"
 
 An `untrusted` project skips project-scoped `.codex/` layers: project `config.toml`, hooks, and
 rules. User and system layers still load. Untrusted also makes commands require approval unless a
-rule allows them (see the `untrusted` migration above). Trust may also apply to worktrees. Do not
-mark broad directories such as `$HOME` trusted.
+rule allows them (see the `untrusted` migration above). Managed Git worktree tools (0.162.0,
+`worktrees` feature) are offered only for trusted local projects. Do not mark broad directories
+such as `$HOME` trusted.
 
 ---
 
@@ -380,8 +406,8 @@ mark broad directories such as `$HOME` trusted.
 | Platform | Mechanism | Notes |
 |----------|-----------|-------|
 | macOS | Seatbelt via `sandbox-exec` | Works out of the box. If the policy cannot be enforced, Codex refuses to run the command |
-| Linux, WSL2 | `bwrap` (bubblewrap) + seccomp, Landlock as compatibility fallback | Install `bubblewrap`. Codex uses the first `bwrap` on `PATH`, else a bundled helper needing unprivileged user namespaces. Ubuntu 24.04 may need the `bwrap-userns-restrict` AppArmor profile. WSL1 is unsupported since 0.115 |
-| Native Windows | Windows sandbox | `[windows] sandbox = "elevated"` (strongest) or `"unelevated"` (weaker network isolation; refuses policies it cannot enforce); config reference also lists `mxc`. `sandbox_private_desktop = true` by default |
+| Linux, WSL2 | `bwrap` (bubblewrap) + seccomp, Landlock as compatibility fallback | Install `bubblewrap`. Codex uses the first `bwrap` on `PATH` (0.162.0 rejects a `bwrap` that is writable from inside the sandbox), else a bundled helper needing unprivileged user namespaces. Ubuntu 24.04 may need the `bwrap-userns-restrict` AppArmor profile. WSL1 is unsupported since 0.115 |
+| Native Windows | MXC, with `elevated` and `unelevated` as legacy fallbacks | `[windows] sandbox = "mxc"`, `"elevated"`, or `"unelevated"` (weaker network isolation; refuses policies it cannot enforce). The docs say to prefer MXC with `[features] prefer_mxc = true` (`under development` in 0.162.1) and keep a legacy value as fallback. Managed requirements can disable MXC (0.161.0) |
 
 In Docker or other containers the sandbox may fail if the host blocks namespaces, setuid `bwrap`, or
 seccomp. Then provide isolation in the container and run with `--sandbox danger-full-access`. The
@@ -393,15 +419,20 @@ docs point to the Codex secure devcontainer example (firewalled egress plus `bub
 codex sandbox -P <profile> --log-denials -- <command> [args...]
 ```
 
-Runs a command under the sandbox without starting a session. Options in 0.158.0: `-P`,
-`--permission-profile <NAME>`, `--log-denials` (macOS: print sandbox denials after exit),
-`--allow-unix-socket <PATH>`, `-C`, `-p`.
+Runs a command under the sandbox without starting a session. Options in 0.162.1: `-P`,
+`--permission-profile <NAME>`, `--include-managed-config` (include managed requirements when
+resolving an explicit profile), `--log-denials` (macOS: print sandbox denials after exit),
+`--allow-unix-socket <PATH>` (repeatable), `-C`, `-p`, `-c`, `--enable`/`--disable`, and the
+lower-level `--sandbox-state-json`, `--sandbox-state-readable-root`, and
+`--sandbox-state-disable-network`. `codex sandbox uninstall` removes the legacy Windows sandbox's
+machine-wide accounts and network rules.
 
 > [!NOTE]
-> The docs show per-platform subcommands (`codex sandbox macos|linux|windows`) and a
-> `--permissions-profile` flag. The installed macOS build has a flat `codex sandbox [COMMAND]...`
-> (help text: "run under seatbelt") with `-P/--permission-profile`. Running `codex sandbox macos`
-> here tries to execute a program named `macos`. Check `codex help sandbox` on the target machine.
+> The docs show per-platform subcommands (`codex sandbox macos|linux|windows`, with aliases
+> `seatbelt` and `landlock`), a `--permissions-profile` flag, and `sandbox` available under
+> `codex debug`. The installed 0.162.1 CLI has a flat `codex sandbox [OPTIONS] [COMMAND]...` whose
+> only subcommand is `uninstall`, with `-P/--permission-profile`, and `codex debug` has only
+> `models`, `app-server`, and `prompt-input`. Check `codex help sandbox` on the target machine.
 
 `codex doctor` reports the effective posture (for example "restricted fs + restricted network ·
 approval OnRequest"); `--summary` shortens it and `--json` emits a redacted report.
