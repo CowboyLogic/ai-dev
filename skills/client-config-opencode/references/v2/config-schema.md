@@ -81,7 +81,7 @@ Settings merge; non-conflicting keys are preserved. Exceptions to "closest wins"
 | `formatter` | boolean or object | Disabled unless set | [Formatters](#formatters) |
 | `media` | object | `media.image` resize limits | [Media](#media-image-limits) |
 | `tool_output` | object | `max_lines`, `max_bytes` retained from a tool result (docs example: `2000`, `51200`) | — |
-| `websearch` | object or `false` | `{ "provider": "exa" \| "firecrawl" \| "parallel" \| "tavily" \| "random" }` | [Web search](#web-search) |
+| `websearch` | object or `false` | `{ "provider": "exa" \| "firecrawl" \| "parallel" \| "tavily" \| "tinyfish" \| "random" }` | [Web search](#web-search) |
 | `compaction` | object | `auto`, `keep.tokens`, `buffer` | [Compaction](#compaction) |
 | `warming` | boolean or object | Disabled by default | [Warming](#warming) |
 | `references` | object | Named local dirs or Git repos | [References](#references) |
