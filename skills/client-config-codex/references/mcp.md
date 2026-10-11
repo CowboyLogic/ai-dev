@@ -149,8 +149,13 @@ codex mcp add example --url https://mcp.example.com --oauth-client-id my-client
 | `--no-browser` | Print the authorization URL and accept the callback URL without opening a browser |
 | `--oauth-client-registration auto\|cimd\|dcr` | Registration strategy for this login only |
 
-In the TUI, `/mcp` lists active servers and tools; `/mcp verbose` adds server diagnostics. Any other
-argument prints usage.
+In the TUI, `/mcp` lists active servers and tools; `/mcp verbose` adds server diagnostics, and
+`/mcp login NAME` starts the OAuth login for a server without leaving the session (added in 0.161.0
+per the release notes; the upstream docs still say any other argument prints usage).
+
+Codex reads the `instructions` field a server returns at initialization and uses it as server-wide
+guidance alongside the server's tools. When writing a server, keep the first 512 characters
+self-contained.
 
 ## OAuth
 
@@ -196,7 +201,9 @@ Callback rules that matter when editing:
   portless URL or set the same port in both places. A proxied callback may use a different external
   port. Local callback URLs bind locally; non-local ones bind to `0.0.0.0`.
 - A mismatched `iss`, or a missing `iss` when issuer support is advertised, rejects the response with no
-  code exchange and no callback fallback.
+  code exchange and no callback fallback. A malformed callback URL, or issuer support advertised
+  without a metadata `issuer`, is also a hard failure.
+- Custom callback hosts, paths, or query parameters require DCR or a configured OAuth client ID.
 
 ## Plugin-provided servers
 
