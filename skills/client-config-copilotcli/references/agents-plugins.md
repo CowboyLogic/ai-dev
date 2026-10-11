@@ -2,27 +2,28 @@
 
 ## Custom agents
 
-A custom agent is a Markdown file with YAML frontmatter. The filename minus `.agent.md` (or `.md`)
-is the agent ID. When Copilot delegates to an agent it runs as a subagent with its own context
-window.
+A custom agent is a Markdown file with YAML frontmatter. For user, project, and added-root agents
+the agent ID is the file's path relative to the `agents` directory, minus `.agent.md` (or `.md`),
+with directory separators replaced by `--` (`agents/team/reviewer.agent.md` → `team--reviewer`).
+When Copilot delegates to an agent it runs as a subagent with its own context window.
 
 ### Locations
 
-| Scope | Location |
-|-------|----------|
-| Project | `.github/agents/` or `.claude/agents/` — walked from cwd up to the Git root, all levels loaded |
-| User | `~/.copilot/agents/` |
-| Plugin | `<plugin>/agents/` (lowest) |
-| Added root | `.github/agents/` under `--add-dir` / `/add-dir` directories (trusted) |
-| Remote | Org/enterprise agents (skip with `customAgents.defaultLocalOnly: true`) |
+Priority order (first loaded wins when IDs match):
 
-At the same level `.github/agents/` beats `.claude/agents/`; the deepest `.github/agents/` wins.
+| Priority | Scope | Location |
+|----------|-------|----------|
+| 1 (highest) | User | `~/.copilot/agents/` |
+| 2 | Project | `.github/agents/`, from cwd up to the Git root |
+| 3 | Project | `.claude/agents/`, from cwd up to the Git root |
+| 4 | Added root | `.github/agents/` under `--add-dir` / `/add-dir` / SDK `additionalDirectories` (a trust decision: loaded as trusted configuration) |
+| 5 | Plugin | `<plugin>/agents/` |
+| 6 (lowest) | Remote | Org/enterprise agents (skip with `customAgents.defaultLocalOnly: true`) |
 
-> [!WARNING]
-> The upstream docs conflict on user vs project precedence. The command reference and
-> configuration-directory reference say **project beats user**; the "create custom agents" how-to
-> and the plugin-reference loading diagram say the **user** (`~/.copilot/agents/`) copy wins. Avoid
-> same-named agents in both places.
+Within a project row the deepest directory wins, and every project `.github/agents/` is loaded
+before any `.claude/agents/`. The `name` field does not affect deduplication: agents with the same
+`name` but different IDs both load, and `--agent` picks the first match on ID or `name` in priority
+order.
 
 Create interactively with `/agent` → **Create new agent** (Project or User), then restart the CLI.
 
@@ -43,7 +44,7 @@ You are a security expert. Check code for exposed secrets, XSS, SQL injection, .
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `description` | string | Yes | Shown in the agent list and `task` tool; drives inference |
-| `name` | string | No | Display name (defaults to filename) |
+| `name` | string | No | Display name; also usable with `--agent` (defaults to the agent ID) |
 | `tools` | string[] | No | Default `["*"]`; any `*` in the list grants all tools |
 | `model` | string | No | Model for this agent (inherits when unset; ignored when the session model is Auto) |
 | `models` | string[] | No | Priority list; first model the plan allows; overrides `model` |
@@ -88,15 +89,34 @@ inference from `description`.
 
 - `subagents.agents.<name>`: `model`, `modelPolicy`, `effortLevel`, `contextTier`
   (`"default"`, `"long_context"`, `"inherit"`); `"inherit"` uses the parent's value.
-- `maxConcurrency` / `maxDepth` apply only to usage-based billing (caps `32` / `256`). Default
-  concurrency by plan: Free/Education 2, Pro/Pro+ 4, Max 8, Business 16, Enterprise 32.
+- `maxConcurrency` / `maxDepth` apply only to usage-based billing (caps `32` / `256`; ignored on
+  other plans). Default depth `6`; default concurrency by plan: Free/Education 2, Pro/Pro+ 4,
+  Max 8, Business 16, Enterprise and usage-based 32.
 - Configure interactively with `/subagents` (alias `/agents`).
 
 ### Built-in agents
 
-`code-review`, `explore`, `general-purpose`, `research`, `rubber-duck`, `security-review`, `task`.
-All except `rubber-duck` can be disabled via `subagents.disabledSubagents`;
-`builtInAgents.rubberDuck: false` disables rubber-duck.
+| Agent | Default model (per the command reference) |
+|-------|-------------------------------------------|
+| `code-review`, `general-purpose`, `security-review` | `claude-sonnet-4.6` |
+| `explore` | `gpt-5.4-mini` |
+| `research` | `claude-haiku-4.5` |
+| `rubber-duck` | A complementary model |
+| `task` | `gpt-5.6-luna` (falls back to `gpt-5.4-mini`, then `claude-haiku-4.5`) |
+
+These defaults are as documented and may lag the model roster; confirm with `/subagents`.
+
+- Turn built-ins on or off with `subagents.disabledSubagents` or the `/subagents` picker.
+  Proactive rubber-duck consultation is `subagents.agents["rubber-duck"].autoInvoke` (default
+  `false`).
+- `code-review` and `security-review` perform the review themselves rather than delegating a full
+  review to another review agent; `code-review` hands security-focused portions to `security-review`.
+- Only the root agent can call `store_memory` / `vote_memory`; subagents keep read access through
+  `read_memories`.
+- `list_agents` and `write_agent` let agents coordinate. `list_agents` takes a `scope`
+  (`siblings`, `children`, `all`) and `write_agent` takes `scope` `"siblings"` or `"children"` to
+  broadcast; scoped messaging works only from a subagent in a session with shared sibling
+  communication enabled, otherwise use explicit `agent_id` values.
 
 ### Sidekick agents
 

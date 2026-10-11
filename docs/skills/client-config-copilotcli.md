@@ -6,6 +6,7 @@ hooks, skills, custom agents, custom instructions, BYOK models, authentication,
 and session management.
 
 - **Skill name:** `client-config-copilotcli`
+- **Associated Copilot CLI version:** v1.0.95
 - **Source:** [skills/client-config-copilotcli](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-copilotcli)
 
 ---
@@ -19,8 +20,8 @@ config file the task requires, rather than loading everything at once.
 
 It covers the CLI's global and project-level configuration, including settings, MCP and
 LSP servers, hooks, skills, custom agents, plugins, custom instructions, bring-your-own-key
-providers, and session management. It also bundles a script that shows the current
-configuration.
+providers, sandboxing and permissions, and session management. It also bundles a script
+that shows the current configuration.
 
 ## Where it applies
 

@@ -11,6 +11,9 @@ session for the full slash-command list.
 | `copilot` | Interactive UI |
 | `copilot login [--host H] [--web-flow\|--device-code\|--with-token]` | Authenticate |
 | `copilot init` | Generate or improve `.github/copilot-instructions.md` |
+| `copilot config [KEY] [VALUE]` | Read or change settings outside a session (see below) |
+| `copilot sandbox ca status\|create\|trust [CA.PEM]\|rotate\|remove` | Manage the sandbox proxy certificate authority without a session (see `permissions.md`) |
+| `copilot workflow run WORKFLOW-NAME [--args JSON\|@PATH] [--result-file PATH] [-s] [--output-format text\|json]` | Run a dynamic workflow registered by an extension, without a chat prompt; can't be combined with `-p`, `-i`, `--agent`, `--fleet`, `--autopilot`, `--resume`, or `--continue` |
 | `copilot mcp list\|get\|add\|enable\|disable\|remove` | Manage MCP servers (see `mcp.md`) |
 | `copilot skill list\|add\|remove\|enable\|disable` | Manage skills (see `skills.md`) |
 | `copilot plugin ...` | Manage plugins and marketplaces (`copilot plugins` is a legacy alias; see `agents-plugins.md`) |
@@ -22,6 +25,28 @@ session for the full slash-command list.
 | `copilot app` | Open the GitHub Copilot app in the current directory |
 
 Custom agents and session-scoped hooks have no terminal subcommand — they need a live session.
+
+### `copilot config`
+
+Non-interactive counterpart to `/settings`. Keys use dot notation.
+
+```bash
+copilot config theme                       # print a setting
+copilot config footer.showQuota off        # set a nested value
+copilot config allowedUrls github.com      # append to a list (only if absent)
+copilot config --rm allowedUrls github.com # remove one list item (--rm KEY removes the key)
+copilot config --repo --list --json        # list repo-overridable settings as JSON
+```
+
+| Option | Purpose |
+|--------|---------|
+| `--list` | List `key=value` lines (conflicts with `KEY`/`VALUE`/`--rm`) |
+| `--json` | JSON output for `--list` |
+| `--rm` | Remove the key or one list item; requires `KEY` |
+| `--global` (default) / `--repo` / `--local` | User `settings.json`, `.github/copilot/settings.json`, or `.github/copilot/settings.local.json`; `--repo` and `--local` accept only repo-overridable settings |
+
+Booleans take `on`/`off` or `true`/`false`. An unset key exits `1`; secret values are redacted. Put
+`--` before a value that starts with a dash. Run `copilot help config` for the available settings.
 
 ---
 
@@ -68,7 +93,9 @@ Custom agents and session-scoped hooks have no terminal subcommand — they need
 | `--disable-mcp-server=NAME` / `--enable-mcp-server=NAME` | Per-session toggle |
 | `--add-github-mcp-tool=TOOL` / `--add-github-mcp-toolset=TOOLSET` / `--enable-all-github-mcp-tools` | Widen GitHub MCP tool set |
 | `--allow-all-mcp-server-instructions` | Put all MCP server instructions in the system prompt |
+| `--mcp-github-auth` | Scope GitHub account auth to approved MCP server origins (v1.0.90 release notes; not in the docs reference — run `copilot --help` for exact semantics) |
 | `--plugin-dir=DIRECTORY` | Load a plugin from a local directory |
+| `--extension-sdk-path=DIRECTORY` | Override the bundled `@github/copilot-sdk` injected into extension subprocesses (invalid paths fall back to the bundled SDK) |
 | `--no-custom-instructions` | Skip `AGENTS.md` and related instruction files |
 | `--enable-memory` | Enable memory in prompt mode |
 
@@ -150,7 +177,8 @@ and `/instructions`.
 
 `/permissions [default|assisted|allow-all|show|reset]`, `/allow-all`, `/yolo`,
 `/reset-allowed-tools`, `/add-dir PATH`, `/list-dirs`, `/cwd`, `/cd [PATH]`,
-`/sandbox [config|status|policy|enable|disable]` (experimental).
+`/sandbox [config|status|policy [COMMAND]|enable|disable]`, `/sandbox ca [create|trust|rotate|remove]`
+(see `permissions.md`).
 
 ### Work
 
@@ -173,9 +201,12 @@ and `/instructions`.
 | `/chronicle <standup\|tips\|improve\|reindex\|skills ...>` | Session-history insights |
 | `/usage` | Usage and AI credits |
 | `/diagnose [PROMPT]` | Analyze the session log |
+| `/refine TEXT` | Rewrite a rough prompt into a clear one for review (no argument: clean up the input box) |
+| `/workflows` | Observe workflow runs, phases, agents, and progress (needs a token-based-billing plan) |
 
 ### Account and app
 
 `/login`, `/logout`, `/user [show|list|switch]`, `/remote [on|off]`, `/ide`, `/app`,
 `/feedback` (`/bug`), `/changelog`, `/update` (`/upgrade`), `/version`, `/voice`, `/copy`,
-`/search`, `/exit` (`/quit`).
+`/search` (`/find`), `/downgrade VERSION` (team accounts), `/clikit [COMPONENT]` (preview CLI business
+components), `/exit` (`/quit`).

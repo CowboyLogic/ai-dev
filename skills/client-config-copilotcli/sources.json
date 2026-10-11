@@ -18,9 +18,11 @@
         "https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli/allowing-tools",
         "https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/configure-copilot-cli",
         "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-config-dir-reference",
-        "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
+        "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference",
+        "https://docs.github.com/en/copilot/how-tos/cloud-and-local-sandboxes/configuring-local-sandbox-settings",
+        "https://docs.github.com/en/copilot/concepts/about-cloud-and-local-sandboxes"
       ],
-      "covers": "Trusted directories, tool/path/URL permission flags, permission patterns, tool names, approval prompts and modes, permissions-config.json schema, sandbox settings, allow-all restriction, managed permission rules"
+      "covers": "Trusted directories, tool/path/URL permission flags, permission patterns, tool names, approval prompts and modes, permissions-config.json schema, local and cloud sandboxing and sandbox settings, allow-all restriction, managed permission rules"
     },
     "references/cli-commands.md": {
       "urls": [

@@ -1,14 +1,26 @@
 # Copilot Configuration Manager
 
-Evaluation results for the `client-config-copilotcli` skill. The skill itself is
+Manages GitHub Copilot CLI configuration: settings, permissions and sandboxing, MCP and LSP
+servers, hooks, skills, custom agents, plugins, and instructions. The skill itself is
 [SKILL.md](SKILL.md), and its history is in [CHANGELOG.md](CHANGELOG.md).
+
+## Associated Copilot CLI version
+
+| | |
+|---|---|
+| GitHub Copilot CLI | **v1.0.95** (released 2026-10-09) |
+| References last refreshed | 2026-10-11 |
+| Sources | docs.github.com Copilot CLI documentation (see [sources.json](sources.json)) and the [github/copilot-cli release notes](https://github.com/github/copilot-cli/releases) |
+
+Claims that rest only on release notes, and not on the documentation, are labeled as such in the
+reference files.
 
 ## Evaluation results
 
 Benchmark run: **2026-04-26 · iteration 1** · 4 scenarios · 8 total runs
 
-These results predate the 2026-09-24 v2.0 refresh. The eval cases for this benchmark are not
-stored in the skill folder.
+These results predate the 2026-09-24 v2.0 refresh and the 2026-10-11 refresh, and no benchmark has
+been re-run since. The eval cases for this benchmark are not stored in the skill folder.
 
 ### Overall
 

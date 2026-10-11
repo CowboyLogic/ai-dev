@@ -33,8 +33,8 @@ You help the user manage all GitHub Copilot CLI configuration files.
 | Model allowlist | `.github/allowed_models.txt` | Project |
 
 **Config directory override**: set `COPILOT_HOME` to replace `~/.copilot` entirely
-(`--config-dir` is deprecated). User preferences belong in `settings.json`, not `config.json` —
-the CLI migrates old `config.json` settings automatically.
+(`--config-dir` is deprecated). User preferences belong in `settings.json`; user-setting keys left
+in `config.json` are ignored, and `config.json` keeps only internal state such as trusted folders.
 
 ## Workflow
 
@@ -69,6 +69,11 @@ the CLI migrates old `config.json` settings automatically.
 /settings                     # editor; /settings KEY VALUE sets inline
 /settings show model
 
+# Read or change a setting from the terminal (user file by default; --repo / --local available)
+copilot config theme
+copilot config footer.showQuota off
+copilot config --list
+
 # Check auth
 /user show                    # inside a session; copilot login to sign in
 
@@ -84,6 +89,9 @@ copilot skill list            # terminal; /skills list inside a session
 # Permissions for this session
 copilot --allow-tool='shell(git:*)' --deny-tool='shell(git push)'
 /allow-all                    # alias for /permissions allow-all
+
+# Sandbox shell commands (macOS, Linux, Windows)
+copilot --sandbox             # this session only; /sandbox enable saves the setting
 
 # Offline mode (BYOK only, no GitHub contact)
 export COPILOT_OFFLINE=true
