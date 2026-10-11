@@ -2,6 +2,17 @@
 
 A skill for creating custom agents for GitHub Copilot: Copilot cloud agent on GitHub.com, GitHub Copilot CLI, VS Code, and other supported IDEs.
 
+## Associated Copilot CLI version
+
+| | |
+|---|---|
+| GitHub Copilot CLI | **v1.0.95** (released 2026-10-09) |
+| References last verified | 2026-10-11 |
+| Sources | docs.github.com Copilot custom-agent and CLI documentation, the supported-models page, and VS Code documentation at code.visualstudio.com (see the reference files for URLs) |
+
+The model roster and retirement dates change often; check the supported-models page before
+pinning a model.
+
 ## Overview
 
 Custom agents are specialized Copilot configurations defined in `.agent.md` Markdown files called **agent profiles**. They encode a domain role, behavioral instructions, tool access, and optionally a model into a reusable, shareable file, without requiring any extension development.

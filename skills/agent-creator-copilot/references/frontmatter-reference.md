@@ -2,7 +2,7 @@
 
 Reference for the YAML frontmatter properties in custom agent profiles (`.agent.md`). Load this file when writing or modifying agent frontmatter.
 
-**Sources (last verified September 2026):**
+**Sources (last verified October 2026, against GitHub Copilot CLI v1.0.95):**
 
 - GitHub configuration reference: <https://docs.github.com/en/copilot/reference/custom-agents-configuration>
 - VS Code: <https://code.visualstudio.com/docs/agent-customization/custom-agents>
@@ -18,6 +18,7 @@ Reference for the YAML frontmatter properties in custom agent profiles (`.agent.
 Custom agents are used by several products that each read the profile differently:
 
 - **Copilot cloud agent on GitHub.com**: agents tab/panel, issue assignment, pull requests
+- **GitHub Copilot app**: listed by GitHub as a place custom agents are available
 - **GitHub Copilot CLI**: `/agent`, `--agent`, or inferred delegation to a subagent
 - **VS Code** (and JetBrains IDEs, Eclipse, Xcode, which are in public preview for custom agents): the agents dropdown in chat. VS Code has several harnesses (**Local**, **Copilot**, Claude, Codex, Cloud); some properties only work with **Local**.
 
@@ -184,10 +185,10 @@ model: gpt-5.6-luna
 - **GitHub.com cloud agent:** ambiguous. The configuration reference lists `model` without restriction ("Model to use when this custom agent executes"), but the create how-to says `model` applies "if you are creating and using the agent profile in VS Code, JetBrains IDEs, Eclipse, or Xcode". Don't rely on `model` to select the cloud agent's model.
 - **Handoff `model`** uses the qualified format `Model Name (vendor)`, for example `GPT-5.5 (copilot)`.
 
-**Current model names (from the supported-models page, September 2026):** GPT-5 mini, GPT-5.3-Codex, GPT-5.4, GPT-5.4 mini, GPT-5.5, GPT-5.6 Luna, GPT-5.6 Sol, GPT-5.6 Terra, GPT-6 Astra, GPT-6 Luna, GPT-6 Sol, Claude Fable 5, Claude Fable 5.1, Claude Haiku 4.5, Claude Opus 4.7, Claude Opus 4.8, Claude Opus 5, Claude Opus 5.5, Claude Sonnet 4.6, Claude Sonnet 5, Gemini 3.5–3.8 Flash, MAI-Code-1.1-Flash, Kimi K2.7 Code, Kimi K3, Grok 4.5–4.7. Availability differs by client. For example, Gemini and Grok models are not available on GitHub.com.
+**Current model names (from the supported-models page, October 2026):** GPT-5 mini, GPT-5.3-Codex, GPT-5.4, GPT-5.4 mini, GPT-5.4 nano (only in the Codex VS Code extension, Pro+), GPT-5.5, GPT-5.6 Luna, GPT-5.6 Sol, GPT-5.6 Terra, GPT-6 Astra, GPT-6 Luna, GPT-6 Sol, GPT-6.1 Sol, Claude Fable 5, Claude Fable 5.1, Claude Haiku 4.5, Claude Haiku 5.5, Claude Opus 4.8 (and a preview fast mode), Claude Opus 5, Claude Opus 5.5, Claude Sonnet 4.6, Claude Sonnet 5, Claude Sonnet 5.5, Gemini 3.7 Flash, Gemini 3.8 Flash, MAI-Code-1.1-Flash, Kimi K3, Grok 4.5–4.7. Availability differs by client. In the page's per-client table, Gemini, Grok, and GPT-5 mini are not available on GitHub.com; Claude Sonnet 4.6 is not available in Eclipse, Xcode, or JetBrains IDEs; the GPT-5.6 models are not available in Eclipse, Xcode, or JetBrains IDEs; and Claude Opus 4.8 fast mode is not available on GitHub.com. GPT-6.1 Sol is listed but doesn't appear in the per-client table.
 
 > [!WARNING]
-> Retired models no longer resolve. Retired as of 2026-09-01: Claude Sonnet 4.5, Claude Opus 4.5, Claude Opus 4.6, Claude Sonnet 4.6 (still available to individual subscribers on annual plans), and Gemini 3.1 Pro. GPT-5.2 and GPT-5.2-Codex were retired 2026-06-05, and GPT-4.1 on 2026-06-01. Claude Opus 4.7, Gemini 3.5/3.6 Flash, and Kimi K2.7 Code are scheduled for 2026-10-02. Many community examples (including awesome-copilot and VS Code's own doc samples) still pin retired models such as `GPT-4.1`, `GPT-5.2`, or `Claude Sonnet 4.5`. Check the retirement table before copying one.
+> Retired models no longer resolve. Retired 2026-10-02: Claude Opus 4.7, Gemini 3.5 Flash, Gemini 3.6 Flash, and Kimi K2.7 Code. MAI-Code-1-Flash was retired 2026-09-10. Retired 2026-09-01: Claude Sonnet 4.5, Claude Opus 4.5, Claude Opus 4.6, Claude Sonnet 4.6 (still available to individual subscribers on annual plans), Gemini 3.1 Pro, and Raptor mini. GPT-5.2 and GPT-5.2-Codex were retired 2026-06-05, and GPT-4.1 on 2026-06-01. Many community examples (including awesome-copilot and VS Code's own doc samples) still pin retired models such as `GPT-4.1`, `GPT-5.2`, or `Claude Sonnet 4.5`. Check the retirement table before copying one.
 
 ---
 
@@ -337,7 +338,7 @@ Common workflows:
 **Platforms:** VS Code **Local** harness only
 **Requires:** `chat.useHooks` (on by default) and a trusted workspace
 
-Hook commands that run only while this agent is active (user-selected or as a subagent), in addition to user, workspace, and plugin hooks. Use PascalCase event names: `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `SubagentStart`, `SubagentStop`, `Stop`. When the agent runs as a subagent, its `Stop` hook is treated as `SubagentStop`.
+Hook commands that run only while this agent is active (user-selected or as a subagent), in addition to user, workspace, and plugin hooks. Use PascalCase event names: `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `SubagentStart`, `SubagentStop`, `Stop`. The VS Code hooks reference also lists a `PreCompact` event for Local hooks; it doesn't state whether agent-scoped hooks accept it, so test before relying on it. When the agent runs as a subagent, its `Stop` hook is treated as `SubagentStop`.
 
 ```yaml
 hooks:
@@ -399,7 +400,7 @@ metadata:
 
 ## Claude Agent Format (`.claude/agents/`)
 
-VS Code and Copilot CLI both load agents from `.claude/agents/` (plain `.md` files in the [Claude sub-agents format](https://code.claude.com/docs/en/sub-agents)). VS Code also reads `~/.claude/agents/` at user level.
+VS Code and Copilot CLI both load agents from `.claude/agents/` (plain `.md` files in the [Claude sub-agents format](https://code.claude.com/docs/en/sub-agents)). VS Code also reads `~/.claude/agents/` at user level. For sessions that run on the Agent Host (such as the Copilot harness), VS Code reads user-level agents from the selected host's folder (`~/.copilot/agents` or `~/.claude/agents`), not from VS Code profile user data.
 
 | Property | `.agent.md` format | Claude format |
 |---|---|---|
@@ -429,10 +430,7 @@ VS Code maps Claude tool names to the corresponding VS Code tools. In the CLI, `
 
 The filename (minus `.md` / `.agent.md`) identifies the agent. The lowest-level configuration wins: repository over organization, organization over enterprise.
 
-**Copilot CLI specifics:** the CLI walks up from the current directory to the Git root and loads every `.github/agents/` and `.claude/agents/` on the way. The deepest directory wins, and `.github/agents/` beats `.claude/agents/` at the same level. Plugin agents have the lowest priority.
-
-> [!WARNING]
-> The CLI docs contradict each other on user vs. project priority. The CLI how-to says "the one in your home directory will be used", while the CLI command reference says "User-level agents have lower priority than project-level agents". Avoid reusing a name across the two scopes.
+**Copilot CLI specifics:** the agent ID is the file's path relative to the `agents` directory with directory separators replaced by `--` (`agents/team/reviewer.agent.md` is `team--reviewer`). Priority, first loaded wins: user (`~/.copilot/agents/`), then project `.github/agents/` (every level from the current directory up to the Git root, deepest first), then project `.claude/agents/`, then directories added with `--add-dir` / `/add-dir`, then plugin agents, then remote organization/enterprise agents. A personal agent therefore overrides a repository agent with the same ID. The `name` field does not affect deduplication: agents with the same `name` but different IDs both load.
 
 ### Versioning (GitHub.com)
 
