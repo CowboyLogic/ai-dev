@@ -59,6 +59,8 @@ Managed system dirs: macOS `/Library/Application Support/ClaudeCode/`, Linux/WSL
 | `showThinkingSummaries` | Show thinking block summaries (default `false`) | `true` |
 | `availableModels` | Restrict model picker options; managed list is applied as-is | `["sonnet", "haiku"]` |
 | `enforceAvailableModels` | Extend `availableModels` to the Default option when the default isn't allowlisted (default `false`) | `true` |
+| `availableModelsMatch` | *(Managed only)* `"prefix"` (default) or `"exact"`. With `"exact"`, a model-ID entry in `availableModels` permits only the version it names, so a newer release stays blocked until listed (v2.1.283+) | `"exact"` |
+| `deniedModels` | *(Managed only)* Block models or aliases even when `availableModels` permits them; a family alias (`"opus"`) blocks the family, an ID without a minor version also blocks later minors (v2.1.283+) | `["claude-opus-5-5"]` |
 | `modelOverrides` | Map Anthropic model IDs to provider IDs (Bedrock ARNs etc.) | `{"claude-opus-4-6": "arn:aws:bedrock:..."}` |
 | `modelPicker` | *(User or managed)* Custom `/model` picker rows: `{options: [{model, label?, description?}], replaceBuiltInOptions?}` (v2.1.242+) | see upstream |
 | `modelPricing` | *(Managed only)* Contracted rates for cost display: `{multiplier?, overrides?}` (v2.1.242+) | see upstream |
@@ -123,6 +125,8 @@ claude auto-mode critique   # AI review of your custom rules
 | `verbose` | Full tool output (default `false`) | `true` |
 | `axScreenReader` | Screen-reader friendly flat output; forces classic renderer | `true` |
 | `editorMode` | `"normal"` (default) \| `"vim"` | `"vim"` |
+| `maxProseWidth` | Wrap response prose at this many columns (whole number, minimum `40`; tables and code blocks keep the full width) (v2.1.282+) | `80` |
+| `awaySummaryEnabled` | One-line session recap when you return after a few minutes away (unset = on); `CLAUDE_CODE_ENABLE_AWAY_SUMMARY` overrides it per session | `false` |
 | `vimInsertModeRemaps` | *(User or managed)* Two-key INSERT sequences → `"<Esc>"` | `{"jj": "<Esc>"}` |
 | `prefersReducedMotion` | Reduce UI animations (default `false`) | `true` |
 | `spinnerTipsEnabled` | Show tips in spinner (default `true`) | `false` |
@@ -202,14 +206,16 @@ claude auto-mode critique   # AI review of your custom rules
 | `awsCredentialExport` | Command that outputs AWS credentials JSON | `"/bin/gen_aws.sh"` |
 | `gcpAuthRefresh` | Command that refreshes GCP ADC | `"gcloud auth application-default login"` |
 | `otelHeadersHelper` | Script for dynamic OpenTelemetry headers | `"/bin/gen_otel.sh"` |
-| `forceLoginMethod` | `"claudeai"` \| `"console"` \| `"gateway"` (`"gateway"` only from an on-machine managed source) | `"claudeai"` |
+| `forceLoginMethod` | `"claudeai"` \| `"console"` \| `"gateway"`. `"gateway"` is honored only from the sources `forceLoginGatewayUrl` is read from and is treated as unset elsewhere (user settings count from v2.1.295 on a machine with no managed settings) | `"claudeai"` |
 | `forceLoginOrgUUID` | UUID string or array; only managed sources enforce it | `"uuid-here"` |
-| `forceLoginGatewayUrl` | *(Managed only, on-machine)* Pre-fill/lock the `/login` Cloud gateway URL | `"https://claude-gateway.example.com"` |
+| `forceLoginGatewayUrl` | *(User or managed)* Pre-fill the `/login` Cloud gateway URL. Read from an on-machine managed source (`managed-settings.json`, plist, HKLM, policy helper); v2.1.295+ also reads it from user settings on a machine with none. Ignored in HKCU and server-managed settings | `"https://claude-gateway.example.com"` |
 | `gatewayInternalNetworks` | *(Managed only, on-machine)* Up to four public IPv4 CIDRs where `/login` accepts a gateway (v2.1.268+) | `["203.0.113.0/24"]` |
+| `allowedProviders` | *(Managed only)* Providers a machine may reach Claude through, from `"anthropic"`, `"bedrock"`, `"vertex"`, `"foundry"`, `"anthropicAws"`, `"mantle"`, `"customEndpoint"`, `"gateway"`. Unlisted providers are refused; an empty list refuses all (v2.1.285+) | `["anthropic", "bedrock"]` |
 | `fileSuggestion` | Custom `@` autocomplete: `{type: "command", command}` | `{"type": "command", "command": "~/.claude/suggest.sh"}` |
 | `defaultShell` | `"bash"` (default) \| `"powershell"` | `"powershell"` |
 | `voice` | `{enabled, mode: "hold"\|"tap", autoSubmit}`; `mode` defaults to `"hold"`; `autoSubmit` applies in hold mode only. `/voice` writes it | `{"enabled": true, "mode": "tap"}` |
 | `skipWebFetchPreflight` | Skip the WebFetch domain safety check | `true` |
+| `bashEditDiffEnabled` | *(User or managed)* `true` records which files a Bash command changed in every permission mode; a `true` in project/local settings doesn't count. Unset = recorded only in auto and `bypassPermissions` modes. `CLAUDE_CODE_BASH_EDIT_DIFF` overrides per session (v2.1.269+) | `true` |
 | `sshConfigs` | *(User or managed)* Desktop SSH connections `{id, name, sshHost, sshPort?, sshIdentityFile?}` | `[{"id": "dev-vm", "name": "Dev VM", "sshHost": "user@dev.example.com"}]` |
 | `prUrlTemplate` | PR badge URL with `{host}`, `{owner}`, `{repo}`, `{number}`, `{url}` | `"https://reviews.example.com/{owner}/{repo}/pull/{number}"` |
 | `processWrapper` | *(User or managed)* Launcher prefix for background processes | `"/opt/corp/launcher --profile claude"` |
@@ -247,6 +253,8 @@ Plugins extend Claude Code with skills, agents, hooks, and MCP servers. Manage v
 | `enabledPlugins` | `"plugin@marketplace": bool` (unset = plugin's `defaultEnabled`) | `{"formatter@acme-tools": true}` |
 | `extraKnownMarketplaces` | Marketplace name → `{source, autoUpdate?}`; repo entries honored only after workspace trust | see above |
 | `pluginConfigs` | *(User or managed)* Non-sensitive `userConfig` answers, keyed by plugin ID; Claude Code writes it | — |
+| `prependPlugins` | *(User or managed)* Managed plugins whose mods run before every user-installed mod, in listed order. Read from managed settings, or from user settings only on a machine with no managed settings for a user not on Team/Enterprise; ignored in project, local, and `--settings` | `["sec-default@builtin"]` |
+| `appendPlugins` | *(User or managed)* Same scoping as `prependPlugins`; the listed plugins' mods run after every user-installed mod. An id in both lists is prepended | `["audit-mods@acme-tools"]` |
 | `syncClaudeAiSkills` | *(User, local, managed)* `false` stops syncing claude.ai skills to `~/.claude/skills/synced/` (`true` = unset) | `false` |
 | `syncClaudeAiPlugins` | *(User, local, managed)* `false` stops syncing claude.ai plugins to `~/.claude/plugins/synced/` (v2.1.273+) | `false` |
 | `disableBundledSkills` | Hide bundled skills/workflows from the model | `true` |
@@ -409,6 +417,7 @@ See `https://code.claude.com/docs/en/sub-agents.md` for the file format.
 | `disableMobileSimulatorTools` | *(Managed only)* Block iOS Simulator pane tools | `true` |
 | `disableDesktopLocalSessions` | *(Managed only)* Turn off on-device Desktop Code sessions | `true` |
 | `sshHostAllowlist` | *(Managed only, Desktop only)* SSH host patterns; `[]` disables SSH sessions | `["*.example.com"]` |
+| `allowClaudeInChromeWithManagedMcp` | *(Managed only, on-machine)* `true` lets the built-in Claude in Chrome server run alongside a deployed `managed-mcp.json`, which otherwise blocks it in terminal sessions (v2.1.282+). Ignored in server-managed settings, HKCU, user, and project settings | `true` |
 | `allowAllClaudeAiMcps` / `managedMcpServers` | *(Managed only)* See `references/mcp.md` | — |
 
 ---
@@ -441,6 +450,11 @@ These go in `~/.claude.json`, NOT in `settings.json`. `~/.claude.json` also hold
 | `copyOnSelect` | Copy mouse selections in fullscreen/agent view (default `true`) | `false` |
 | `diffTool` | `"auto"` (default, IDE diff viewer) or `"terminal"` | `"terminal"` |
 | `externalEditorContext` | Prepend Claude's last response as comments in `Ctrl+G` editor (default `false`) | `true` |
+| `claudeInChromeDefaultEnabled` | Start every interactive CLI session with Chrome integration on, without `--chrome` (also applies to VS Code extension sessions from v2.1.287). `--chrome` / `--no-chrome` override per session; `/chrome` → **Enabled by default** writes it | `true` |
+| `copyFullResponse` | `/copy` copies the full response without showing the picker (default `false`) | `true` |
+| `defaultToAgentsView` | `claude` with no arguments opens agent view instead of a new conversation (default `false`) | `true` |
+| `leftArrowOpensAgents` | `←` on an empty prompt backgrounds the session and opens agent view (default `true`) | `false` |
+| `prStatusFooterEnabled` | Footer badge for the current branch's open pull/merge request (default `true`) | `false` |
 
 ---
 

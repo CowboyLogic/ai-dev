@@ -169,12 +169,24 @@ One parameter per rule; `*` wildcard supported; omitted params never match. A to
 | `acceptEdits` | Auto-accepts file edits + common fs commands (`mkdir`, `touch`, `mv`, `cp`) in working/additional dirs |
 | `plan` | Reads and runs read-only commands; no source edits until you approve a plan |
 | `auto` | Auto-approves with background classifier safety checks |
-| `dontAsk` | Auto-denies anything that would prompt; reads and pre-approved tools still run. `AskUserQuestion` and `requiresUserInteraction` MCP tools are denied |
+| `dontAsk` | Auto-denies anything that would prompt; reads inside working dirs and pre-approved tools still run. `AskUserQuestion` and `requiresUserInteraction` MCP tools are denied, as are reads from network paths |
 | `bypassPermissions` | Skips prompts, including writes to protected paths like `.git` and `.claude` — DANGEROUS, isolated environments only |
 
 - `auto` and `bypassPermissions` do NOT take effect as `defaultMode` from project or local settings (v2.1.257+) — set them in `~/.claude/settings.json`.
 - `--permission-mode` / `--dangerously-skip-permissions` override `defaultMode` for one session.
+- **Network paths** (UNC `\\server\share\file` on Windows, `/net/...` automounts on macOS/Linux): from v2.1.292 a file-tool read of one keeps its prompt even with a matching allow rule, an `"allow"` from a `PreToolUse` hook, or auto mode (the classifier doesn't decide it); `dontAsk` denies it. `bypassPermissions` runs it without the prompt.
 - In cloud sessions only `acceptEdits`, `plan`, `default`, and `auto` are honored.
+
+**Which mode a session starts in** when `defaultMode` and `--permission-mode` are unset (first matching row wins):
+
+| Session | Starts in |
+| --- | --- |
+| Any settings file sets `disableAutoMode: "disable"` | `default` |
+| `claude -p` or the Agent SDK | `default` in sessions that fetch feature flags. Where flags aren't fetched (third-party provider, telemetry off): `auto` from v2.1.285, `default` before |
+| Org HIPAA configuration applied and the session is eligible | `default` from v2.1.285 (auto mode stays available to switch to) |
+| Terminal or VS Code extension | `auto` from v2.1.283; earlier: `auto` on Pro/Max/Team in sessions that fetch flags, `default` otherwise |
+
+When `auto` is selected but unavailable to the session (a settings file turned it off, an unsupported model, or Anthropic disabled it server-side), the session starts in Manual. The first session after an install or upgrade can choose its mode before flags arrive and so can differ from this table.
 
 **Actions no mode auto-approves** (even `bypassPermissions`): explicit `ask` rules; org connector tools set to `ask`; `AskUserQuestion` and MCP tools marked `requiresUserInteraction`; `rm`/`rmdir` targeting a critical path (circuit breaker — no allow rule or hook `"allow"` approves it; `dontAsk` denies it, `auto` sends it to the classifier); cross-session messaging safeguards; reads outside working dirs while `blockReadsOutsideWorkingDirectories` is on.
 

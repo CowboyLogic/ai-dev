@@ -3,12 +3,21 @@
 Evaluation results for the `client-config-claudecode` skill. The skill itself is
 [SKILL.md](SKILL.md), and its history is in [CHANGELOG.md](CHANGELOG.md).
 
+> [!NOTE]
+> **Claude Code version:** verified against [Claude Code 2.1.296](https://github.com/anthropics/claude-code/releases/tag/v2.1.296)
+> (released 2026-10-09; the npm `latest` tag on 2026-10-11, with `stable` at 2.1.287).
+> References come from the `code.claude.com/docs` pages listed in
+> [assets/sources.json](assets/sources.json), checked against the changelog through 2.1.296.
+> Where only the changelog supports a claim, the reference says so. Re-verify when Claude
+> Code ships a new release.
+
 ## Evaluation results
 
 Benchmark run: **2026-04-26 · iteration 1** · 3 scenarios · 6 total runs
 
-These results predate the 2026-09-24 v2.0 refresh. [evals/evals.json](evals/evals.json) holds
-the eval cases; it also includes a case added in v2.0 that this run did not cover.
+These results predate the 2026-09-24 v2.0 refresh and the 2026-10-11 v2.1 update.
+[evals/evals.json](evals/evals.json) holds the eval cases; it also includes a case added in
+v2.0 that this run did not cover.
 
 ### Overall
 
