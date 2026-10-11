@@ -6,6 +6,7 @@ MCP servers, model configuration, sandbox isolation, auto mode, voice, and plugi
 
 - **Skill name:** `client-config-claudecode`
 - **Source:** [skills/client-config-claudecode](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-claudecode)
+- **Claude Code version:** verified against [Claude Code 2.1.296](https://github.com/anthropics/claude-code/releases/tag/v2.1.296) (released 2026-10-09)
 
 ---
 
@@ -59,8 +60,8 @@ npx skills ls -g --agent claude-code
 ## Evaluation and history
 
 In a benchmark run on 2026-04-26, the skill raised the assertion pass rate from 80% to
-100%, with the gain concentrated on settings that postdate the model's training. The
-detail is in the [skill README](https://github.com/CowboyLogic/ai-dev/blob/main/skills/client-config-claudecode/README.md),
+100%, with the gain concentrated on settings that postdate the model's training. That run
+predates the 2026-09-24 and 2026-10-11 reference refreshes. The detail is in the [skill README](https://github.com/CowboyLogic/ai-dev/blob/main/skills/client-config-claudecode/README.md),
 and the version history is in the
 [CHANGELOG](https://github.com/CowboyLogic/ai-dev/blob/main/skills/client-config-claudecode/CHANGELOG.md).
 
