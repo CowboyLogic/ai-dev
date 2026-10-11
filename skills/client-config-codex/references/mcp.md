@@ -153,9 +153,11 @@ In the TUI, `/mcp` lists active servers and tools; `/mcp verbose` adds server di
 `/mcp login NAME` starts the OAuth login for a server without leaving the session (added in 0.161.0
 per the release notes; the upstream docs still say any other argument prints usage).
 
-Codex reads the `instructions` field a server returns at initialization and uses it as server-wide
-guidance alongside the server's tools. When writing a server, keep the first 512 characters
-self-contained.
+Codex reads the `instructions` field a server returns at initialization and uses it as the
+model-visible description of the server's tool namespace (connector servers use the connector
+description instead). The upstream docs advise keeping the first 512 characters self-contained; that
+is guidance, not a limit. In the 0.162.1 source the description is cut at 512 KiB (524,288 bytes)
+for ordinary MCP servers and at 1,000 bytes for MCP servers loaded through the agent-plugin path.
 
 ## OAuth
 
