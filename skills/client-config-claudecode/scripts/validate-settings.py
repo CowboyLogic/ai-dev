@@ -309,7 +309,7 @@ def validate_hook_handler(handler, path, event):
             warn(f"{path}.onFailure: only command and http hooks accept it (v2.1.295+); ignored on {htype}")
         elif handler["onFailure"] == "block" and event in ONFAILURE_NO_EFFECT_EVENTS:
             warn(f"{path}.onFailure: has no effect on {event} hooks")
-        elif handler["onFailure"] == "block" and (handler.get("async") or handler.get("asyncRewake")):
+        elif handler["onFailure"] == "block" and htype == "command" and (handler.get("async") or handler.get("asyncRewake")):
             warn(f"{path}.onFailure: has no effect on background (async/asyncRewake) command hooks")
     if handler.get("once") is not None:
         warn(f"{path}.once: only honored in skill frontmatter; ignored in settings files")
