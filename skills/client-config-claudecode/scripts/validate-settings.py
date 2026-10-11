@@ -57,6 +57,8 @@ VALID_TIME_FORMAT_PRESETS = {"auto", "12-hour", "24-hour", "24-hour-utc"}
 VALID_SKILL_OVERRIDES = {"on", "name-only", "user-invocable-only", "off"}
 VALID_HANDLER_TYPES = {"command", "http", "mcp_tool", "prompt", "agent"}
 VALID_STRICT_PLUGIN_KINDS = {"skills", "agents", "hooks", "mcp"}
+VALID_PROVIDERS = {"anthropic", "bedrock", "vertex", "foundry", "anthropicAws", "mantle",
+                   "customEndpoint", "gateway"}
 
 HOOK_EVENTS = {
     "SessionStart", "Setup", "InstructionsLoaded", "UserPromptSubmit", "UserPromptExpansion",
@@ -431,6 +433,21 @@ def validate(data, scope):
     for key, valid in ENUMS.items():
         if key in data and (not isinstance(data[key], str) or data[key] not in valid):
             err(f"{key}: invalid value {data[key]!r}. Valid: {sorted(valid)}")
+
+    if "allowedProviders" in data:
+        ap = data["allowedProviders"]
+        if not isinstance(ap, list):
+            err("allowedProviders: must be an array of provider names")
+        else:
+            bad = [p for p in ap if not isinstance(p, str) or p not in VALID_PROVIDERS]
+            for p in bad:
+                warn(f"allowedProviders: unrecognized provider {p!r} is dropped. "
+                     f"Valid: {sorted(VALID_PROVIDERS)}")
+            if ap and len(bad) == len(ap):
+                err("allowedProviders: every entry is unrecognized, so Claude Code refuses every "
+                    "provider and does not start on the machine")
+            elif not ap:
+                warn("allowedProviders: an empty list refuses every provider")
 
     if "theme" in data:
         t = data["theme"]
