@@ -36,7 +36,7 @@ Claude Code skips the file, without telling the session, when any of these is tr
 | Opening `---` is not line 1 (blank line, BOM, comment above it) | Reads the file as having no frontmatter | Make `---` the very first line |
 | `name` starts with `-` | Skips, logs an error | Rename |
 | `name` contains `:` | Skips, logs an error (since v2.1.218) | Remove the colon; `:` is reserved for plugin scoping |
-| `name` longer than 256 characters | Skips, logs an error (limit added in v2.1.292); a plugin file's `name` over 256 is ignored instead | Shorten it |
+| `name` longer than 256 characters | Skips, logs an error (limit added in v2.1.292) | Shorten it |
 | `name` but no `description` | Skips, logs the reason | Add `description` |
 | YAML does not parse | Reads no fields, skips, logs the parse error | Fix the YAML (see next table) |
 

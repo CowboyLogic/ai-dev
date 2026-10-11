@@ -59,7 +59,7 @@ autoCompactWindow: 200000            # v2.1.296+ (changelog only)
 |---|---|
 | Format | Unique identifier of at most 256 characters, such as `code-reviewer` or `reviewer-v2` |
 | Must not start with `-` | The file is skipped and an error goes to the debug log |
-| At most 256 characters | A longer name is skipped with an error in the debug log (v2.1.292+; a skill or plugin file `name` over 256 is ignored) |
+| At most 256 characters | A longer name is skipped with an error in the debug log (v2.1.292+) |
 | Must not contain `:` | Reserved for plugin-scoped names (`my-plugin:reviewer`). Skipped since v2.1.218; earlier versions accepted it |
 | Filename | Does not have to match `name` |
 | Hooks | `SubagentStart`/`SubagentStop` matchers and the `agent_type` input use this value |
