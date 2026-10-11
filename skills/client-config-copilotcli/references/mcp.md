@@ -73,7 +73,10 @@ inherited automatically.
 | `timeout` | No | Tool discovery / call timeout in ms (default `30000`) |
 | `deferTools` | No | `"auto"` (default) or `"never"` (always visible under tool search) |
 | `disableToolCache` | No | `true` skips the tool snapshot cache for this server |
-| `slowConnectionThresholdMs` | No | Warn after this many ms connecting (default `10000`; warning only) |
+| `slowConnectionThresholdMs` | No | Warn after this many ms connecting (default `10000`; warning only; positive integer ≤ `2147483647`) |
+
+`timeout` sets the real connection budget (floored at `60000` ms); `slowConnectionThresholdMs` only
+controls when the slow-connection warning prints.
 
 ### Remote server fields
 
@@ -84,6 +87,7 @@ inherited automatically.
 | `tools` | Yes | Tools to enable |
 | `headers` | No | HTTP headers (expansion supported) |
 | `oauthClientId` | No | Static OAuth client ID (skips dynamic registration) |
+| `oauthScopes` | No | Non-empty array of scopes to request; requires `oauthClientId`. A scope in the server's `WWW-Authenticate` challenge still wins; otherwise this overrides discovered `scopes_supported` |
 | `oauthPublicClient` | No | Default `true`; `false` for confidential clients |
 | `oauthGrantType` | No | `"authorization_code"` (default) or `"client_credentials"` (headless) |
 | `oidc` | No | `true` injects GitHub OIDC tokens (`GITHUB_COPILOT_OIDC_MCP_TOKEN[_SUFFIX]` in `env`, or Bearer header for remote) |
@@ -94,6 +98,11 @@ Optional `filterMapping` controls output processing: `none`, `markdown`, or `hid
 
 Headless OAuth (`client_credentials`) also needs `oauthPublicClient: false` and a `client_secret`
 stored in the system keychain (set via the `/mcp` UI).
+
+Entra-protected remote servers authenticate through the OS broker on Windows; on Linux and macOS the
+CLI tries to mint a token silently from the Entra account signed in via `/login`, and falls back to
+the browser flow (`--device-code` bypasses the broker). Signing in with Entra also surfaces a hosted
+WorkIQ server in `/mcp`, disabled by default (`/mcp enable WorkIQ`).
 
 ---
 
@@ -164,6 +173,8 @@ pre-fills the add form. Requires `--experimental` or `/experimental on`.
 | `copilot mcp enable NAME` / `disable NAME` | Persisted toggle |
 | `copilot mcp remove NAME` | Remove from user config (workspace servers: edit the file) |
 
+Disabled servers show `(disabled)` in `list` output (`"enabled": false` with `--json`).
+
 Settings: `disabledMcpServers` (configured but not started), `enabledMcpServers` (turn on built-ins
 that are off by default). Flags: `--disable-builtin-mcps`, `--disable-mcp-server=NAME`,
 `--enable-mcp-server=NAME` (session only).
@@ -177,10 +188,16 @@ that are off by default). Flags: `--disable-builtin-mcps`, `--disable-mcp-server
   64 characters.
 - Every MCP tool call requires permission. Pre-approve with `--allow-tool='SERVER'` or
   `--allow-tool='SERVER(tool_name)'`; block with `--deny-tool='SERVER(tool_name)'`.
-- Local stdio servers can run sandboxed and show `connected (sandboxed)`.
+- Local stdio servers that spawn inside the sandbox show `connected (sandboxed)`; toggling
+  `/sandbox` restarts only local servers. Remote servers aren't locally sandboxed, though the
+  sandbox network policy can restrict the CLI's connections to them.
 - Stdio servers must write logs to **stderr**; non-JSON stdout lines are dropped.
 - Tool snapshots are cached; disable per server with `disableToolCache` or globally with
   `COPILOT_MCP_TOOL_CACHE=false`.
+- Per the v1.0.89–v1.0.93 release notes (not in the docs reference): `server/tool` and
+  `server/*` tool filters match MCP tool names that contain a slash, and MCP server configuration
+  changes apply between turns without restarting the session. v1.0.90 added `--mcp-github-auth` to
+  scope GitHub account auth to approved MCP server origins.
 
 ## Governance
 

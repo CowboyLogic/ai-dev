@@ -2,6 +2,42 @@
 
 Changes to the `client-config-copilotcli` skill, newest first.
 
+## 2026-10-11 — v2.1 (refresh to Copilot CLI v1.0.95)
+
+Basis: GitHub Copilot CLI **v1.0.95** (released 2026-10-09); previous refresh covered
+roughly v1.0.88. Each claim comes from the current docs.github.com documentation. Items that
+appear only in the github/copilot-cli release notes are labeled as such.
+
+- `references/permissions.md`: sandboxing section rewritten — command sandboxing is available to
+  all users (v1.0.93 release notes); `allowLocalNetwork` default is `false`;
+  `sandbox.userPolicy.filesystem.deniedPaths`, `sandbox.auth.git`/`gh`,
+  `sandbox.credentials.envVars` masking, proxy settings, `/sandbox ca` and `copilot sandbox ca`,
+  `--sandbox`/`--no-sandbox`, bypass semantics, and the managed floor. Added the managed
+  `permissions.limitTo` domain boundary. Removed the "public preview" and "experimental-mode"
+  labels on local sandboxing; only cloud sandboxing is documented as public preview.
+- `references/config-schema.md`: user settings in `config.json` are ignored (v1.0.93 release
+  notes); new keys `autoTier`, `connectors`, `ignoredSkillsLocations`, `terminalNotifications`,
+  `worktreePathTemplate`, rubber-duck `autoInvoke`; managed keys; `TGREP_FILE_COUNT_THRESHOLD`;
+  model-usage and BYOK examples updated. Removed `builtInAgents.*` keys and other claims the
+  current documentation doesn't support.
+- `references/cli-commands.md`: added `copilot config`, `copilot sandbox ca`,
+  `copilot workflow run`, `--extension-sdk-path`, `/refine`, `/workflows`, `/downgrade`,
+  `/clikit`, `/find`, `/sandbox ca`; dropped the "experimental" label on `/sandbox`.
+- `references/mcp.md`: `oauthScopes`, the `timeout` floor, Entra/WorkIQ authentication, sandboxed
+  stdio servers; release-notes-only items (`--mcp-github-auth`, config changes between turns,
+  slash-containing tool filters) attributed.
+- `references/hooks.md`: sandboxed-session behavior; `config.json` no longer read for hooks.
+- `references/skills.md`: name character set, `ignoredSkillsLocations`, remote skills, added-root
+  trust, plugin-qualified names.
+- `references/agents-plugins.md`: resolved the user-vs-project agent precedence conflict (User >
+  `.github/agents` > `.claude/agents` > added root > plugin > remote), agent ID derivation, built-in
+  agent default models, agent communication, memory-write limits, subagent limits.
+- `SKILL.md`: `copilot config` and `--sandbox` quick operations; corrected the `config.json`
+  migration claim.
+- `sources.json`: added the local-sandbox settings and cloud/local sandbox concept pages.
+- `README.md`: records the associated Copilot CLI version.
+- Not done: the benchmark in `README.md` was not re-run.
+
 ## 2026-09-24 — v2.0 (upstream refresh)
 
 - Sources: docs are fetched as Markdown through the docs.github.com article API;

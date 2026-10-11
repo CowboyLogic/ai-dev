@@ -13,7 +13,7 @@ All sources are combined; when the same event appears in several, every entry ru
 | Repository hook files | `.github/hooks/*.json` — any number of files, name each after its purpose |
 | User hook files | `~/.copilot/hooks/*.json` (`$COPILOT_HOME/hooks/` if set; Windows `%USERPROFILE%\.copilot\hooks\`) |
 | Repository inline | `hooks` key in `.github/copilot/settings.json` or `.github/copilot/settings.local.json` (also `.claude/settings.json` / `.claude/settings.local.json`) |
-| User inline | `hooks` key in `~/.copilot/settings.json` |
+| User inline | `hooks` key in `~/.copilot/settings.json` (`~/.copilot/config.json` is no longer read for hooks) |
 | Plugins | Each plugin's `hooks.json` or `hooks/hooks.json` |
 
 - Hook config changes load when the CLI starts — restart after editing.
@@ -235,6 +235,21 @@ matches everything; `Bash` or `Edit|Write` match Claude tool names (`bash`/`powe
 | Timeout | Always fail-open, even for `preToolUse` and policy hooks |
 
 HTTP `preToolUse` hooks are fail-open on network errors, timeouts, and non-2xx responses.
+
+---
+
+## Sandboxed sessions
+
+When the session sandbox is enabled, command hooks from the repository, user settings, and plugins
+run inside it with the same access as the agent's shell commands. A hook can also read the
+directory it was loaded from, and a plugin hook can write to `$COPILOT_PLUGIN_DATA`.
+
+- A hook's `cwd` and `env` don't widen access: a `cwd` outside the session's grants gives the hook
+  no access there, and `TMPDIR`/`PATH` set in `env` grant nothing.
+- A hook that fails in the sandbox shows a warning once per hook and session. To give it more
+  access, add paths to `sandbox.userPolicy` in your settings (see `permissions.md`).
+- Policy hooks always run on the host, outside the sandbox — a policy hook shouldn't run scripts
+  from the workspace.
 
 ---
 

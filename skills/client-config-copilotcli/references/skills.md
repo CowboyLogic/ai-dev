@@ -16,13 +16,17 @@ skill's directory are available to the agent.
 | `~/.agents/skills/<name>/SKILL.md` | Personal |
 | Plugin `skills/` directories | Plugin |
 | `COPILOT_SKILLS_DIRS` (comma-separated) and the `skillDirectories` setting | Custom |
-| `.github/skills/` under `--add-dir` / `/add-dir` directories | Added root (trusted like project skills) |
-| Bundled with the CLI | Built-in (lowest) |
-| Org/enterprise remote skills | Remote (fetched on invocation) |
+| `.github/skills/` under `--add-dir` / `/add-dir` / SDK `additionalDirectories` | Added root (a trust decision: runs with project-skill trust) |
+| Bundled with the CLI | Built-in (lowest; overridable by any other source) |
+| Org/enterprise remote skills | Remote (projected via the AHP relay, fetched on invocation; same name-based priority as local skills) |
+
+The `ignoredSkillsLocations` setting (`string[]`, `~` paths allowed) excludes directories and their
+descendants from discovery regardless of which location would surface them.
 
 `~/.claude/skills/` is not a documented location — only the project-level `.claude/skills/` is.
 Skill directory names should be lowercase with hyphens. Two plugins with the same skill name
-coexist as `/plugin-a/search` and `/plugin-b/search`.
+coexist as `/plugin-a/search` and `/plugin-b/search`; the bare name routes to the higher-priority
+plugin (skills only — commands keep tier-based dedup).
 
 **Commands** (alternative format): individual `.md` files in `.claude/commands/`; the filename is
 the command name; they support `argument-hint`, `description`, `allowed-tools`, and
@@ -47,9 +51,9 @@ directory, passing the input SVG path as the first argument.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `name` | string | Yes | Letters, numbers, hyphens; max 64 chars; usually matches the directory |
+| `name` | string | Yes | Starts with a letter or number; letters, numbers, hyphens, underscores, dots, colons, spaces; max 64 chars. Colons allow namespaced names (`my-plugin:search`). Lowercase-with-hyphens is the documented convention and usually matches the directory |
 | `description` | string | Yes | What it does and when to use it; max 1024 chars; drives auto-activation |
-| `license` | string | No | License text or identifier |
+| `license` | string | No | Description of the license that applies to the skill |
 | `argument-hint` | string | No | Hint shown in the skill picker, e.g. `"[target] [mode]"` |
 | `allowed-tools` | string or string[] | No | Tools auto-allowed while the skill is active (comma list or YAML array; `"*"` for all) |
 | `user-invocable` | boolean | No | Allow `/SKILL-NAME` (default `true`) |

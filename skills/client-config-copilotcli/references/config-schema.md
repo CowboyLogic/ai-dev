@@ -79,8 +79,8 @@ the shared cross-tool subset (such as `companyAnnouncements`, `disableAllHooks`,
   `Ctrl+E` in the `/settings` editor to open the file.
 - Invalid values or unknown top-level keys are ignored and listed in the **Problems** tab of
   `/settings`. `$schema` is tolerated.
-- User settings previously lived in `config.json`; they are migrated to `settings.json`
-  automatically on startup.
+- User settings used to live in `config.json`. Settings left there are **ignored** — `config.json`
+  now holds only internal state such as installed plugins and trusted folders.
 - If `settings.json` is a symlink (dotfiles), `/settings` writes follow the symlink.
 - A few settings (for example, `experimental` and proxy settings) need a restart.
 
@@ -103,17 +103,17 @@ the shared cross-tool subset (such as `companyAnnouncements`, `disableAllHooks`,
 |-----|---------------|---------|---------|
 | `allowedUrls` | `string[]` | `[]` | URLs/domains allowed without prompting; supports `*.github.com` |
 | `askUser` | boolean | `true` | Allow clarifying questions (`--no-ask-user` disables) |
+| `autoTier` | `"efficiency"` \| `"balance"` \| `"intelligence"` | unset | Default Auto routing tier when `model` is `auto` (see `/model auto TIER`); `"fast"` is no longer selectable and falls back to `"balance"` |
 | `autoUpdate` | boolean | `true` | Auto-download CLI updates and update first-party plugins |
 | `autoUpdatesChannel` | `"stable"` \| `"prerelease"` | `"stable"` | Update channel |
 | `banner` | `"always"` \| `"once"` \| `"never"` | `"once"` | Startup banner frequency |
 | `bashEnv` | boolean | `false` | `BASH_ENV` support |
 | `beep` / `beepOnSchedule` | boolean | `true` | Audible beep on attention / scheduled run finished |
-| `builtInAgents.rubberDuck` | boolean | `true` | Enable rubber-duck subagent |
-| `builtInAgents.rubberDuckAutoInvoke` | boolean | `false` | Extra proactive rubber-duck nudges |
 | `colorMode` | theme values | `"github"` | **Deprecated** alias for `theme` |
 | `commandHistoryMaxSize` | number (1–1000) | `50` | Retained prompt history |
 | `compactPaste` | boolean | `true` | Collapse pastes over 10 lines |
 | `companyAnnouncements` | `string[]` | `[]` | Random startup messages |
+| `connectors` | boolean | `true` | Enable Copilot Connectors when available |
 | `continueOnAutoMode` | boolean | `false` | Switch to auto mode on eligible rate limits (not global limits or BYOK) |
 | `copyOnSelect` | boolean | `true` macOS, else `false` | Copy mouse selection to clipboard |
 | `customAgents.defaultLocalOnly` | boolean | `false` | Only local custom agents (no org/enterprise agents) |
@@ -131,6 +131,7 @@ the shared cross-tool subset (such as `companyAnnouncements`, `disableAllHooks`,
 | `footer` | object | — | Status-line items: `showModelEffort`, `showDirectory`, `showBranch`, `showContextWindow`, `showQuota`, `showAgent`, `showAiUsed`, `showCodeChanges`, `showUsername`, `showSandbox`, `showYolo`, `showCustom` (managed by `/statusline`) |
 | `hooks` | object | — | Inline hooks keyed by event (same schema as hook files) |
 | `ide.autoConnect` / `ide.openDiffOnEdit` | boolean | `true` | IDE auto-connect / show edit diffs in IDE |
+| `ignoredSkillsLocations` | `string[]` | `[]` | Skill directories (and descendants) excluded from discovery; `~`-relative paths supported |
 | `includeCoAuthoredBy` | boolean | `true` | `Co-authored-by` trailer on agent commits |
 | `keepAlive` | `"on"` \| `"off"` \| `"busy"` | `"off"` | Prevent system sleep |
 | `logLevel` | `"none"` \| `"error"` \| `"warning"` \| `"info"` \| `"debug"` \| `"all"` \| `"default"` | `"default"` | Log verbosity |
@@ -145,7 +146,7 @@ the shared cross-tool subset (such as `companyAnnouncements`, `disableAllHooks`,
 | `remoteExport` | boolean | `true` | Export sessions remotely when sync is available |
 | `renderHexColors` / `renderMarkdown` | boolean | `true` | Terminal rendering |
 | `respectGitignore` | boolean | `true` | Hide gitignored files from `@` picker |
-| `sandbox.*` | object | — | Local sandbox settings (see `permissions.md`) |
+| `sandbox.*` | object | — | Local sandbox: `enabled`, `allowBypass`, `auth.git`, `auth.gh`, `credentials.envVars`, `userPolicy.*` (see `permissions.md`) |
 | `screenReader` | boolean | `false` | Screen reader optimizations |
 | `scrollbar` | boolean | `true` | Scrollbar in scrollable views |
 | `shellShortcut` | boolean | `true` | Lone `$` + `Enter` opens a shell (user/managed scope only) |
@@ -158,16 +159,19 @@ the shared cross-tool subset (such as `companyAnnouncements`, `disableAllHooks`,
 | `stream` | boolean | `true` | Streaming responses |
 | `streamerMode` | boolean | `false` | Hide model names, quota, timestamps for screen sharing |
 | `subagents.agents` | object | `{}` | Per-agent `model`, `modelPolicy`, `effortLevel`, `contextTier` (see `agents-plugins.md`) |
-| `subagents.disabledSubagents` | `string[]` | `[]` | Agents that can't be dispatched (not `rubber-duck`) |
+| `subagents.agents["rubber-duck"].autoInvoke` | boolean | `false` | Let Copilot consult the rubber-duck agent proactively (toggle in `/subagents` → **Proactive invocation**) |
+| `subagents.disabledSubagents` | `string[]` | `[]` | Names of subagents that are turned off (manage with `/subagents`) |
 | `subagents.maxConcurrency` / `subagents.maxDepth` | number | plan-based / `6` | Usage-based billing only; capped at `32` / `256` |
 | `tabs.enabled` / `tabs.hide` / `tabs.sort` | boolean / `string[]` | `true` / `[]` / `[]` | Home tab bar (`copilot`, `agents`, `issues`, `pull-requests`, `gists`) |
 | `taskbarPresence` | boolean | `true` | Windows taskbar presence |
+| `terminalNotifications` | boolean | `false` | Prefer terminal-owned OSC 777 notifications (Ghostty, WezTerm) when desktop notifications are enabled |
 | `terminalProgress` | boolean | `true` | OSC 9;4 progress indicators |
 | `theme` | `"default"` \| `"github"` \| `"dim"` \| `"high-contrast"` \| `"colorblind"` | `"github"` | Color palette |
 | `toolSearch` | boolean | model-dependent | `false` opts out of deferred tool loading |
 | `transcriptView` | `"default"` \| `"concise"` | `"default"` | Timeline grouping |
 | `updateTerminalTitle` | boolean | `true` | Show intent in terminal title |
 | `worktreeBaseRef` | `"head"` \| `"defaultBranch"` | `"head"` | Base for `/worktree` and `--worktree` |
+| `worktreePathTemplate` | string | unset | Where worktrees are created, e.g. `~/src/worktrees/{repo}/{branch}`; placeholders `{repoPath}`, `{repo}`, `{branch}`, `{branchSlug}`. Default layout is `<repo>.worktrees/` |
 
 `trustedFolders` is **not** a `settings.json` key — it lives in `config.json`.
 
@@ -208,7 +212,8 @@ Plain text, one rule per line, resolved from the repository root:
 
 ```text
 # .github/allowed_models.txt
-fallback: gpt-5.4
+fallback: gpt-6-astra
+gpt-6-astra
 gpt-5.4
 claude-sonnet-*
 ```
@@ -262,11 +267,18 @@ Long-running sessions re-apply managed settings hourly.
 On POSIX, file-based managed settings are rejected if they are symlinks, not owned by root, or
 world-writable.
 
-Supported keys: `allowedMcpServers`, `deniedMcpServers`, `enabledPlugins`,
+Supported keys: `allowedMcpServers`, `autoTier`, `deniedMcpServers`, `enabledPlugins`,
 `extraKnownMarketplaces`, `forceLoginOrgs`, `forceRemoteSettingsRefresh`, `model`, `permissions`
-(including `disableBypassPermissionsMode` and `deny`/`ask`/`allow` rules), `policyHelper`,
-`remoteControl`, `sandbox`, `shellShortcut`, `strictKnownMarketplaces`, `telemetry`. See
-`permissions.md` for managed permission rules and `mcp.md` for the MCP allow/deny list.
+(including `disableBypassPermissionsMode`, `deny`/`ask`/`allow` rules, and `limitTo`),
+`policyHelper`, `remoteControl`, `sandbox`, `shellShortcut`, `strictKnownMarketplaces`,
+`telemetry`. See `permissions.md` for managed permission rules and `mcp.md` for the MCP
+allow/deny list.
+
+- `model` is a top-level key; the legacy nested `permissions.model` still works as a fallback.
+- `autoTier` as a bare string locks the tier; `{"overridable": "TIER"}` sets an organization
+  default users and repositories may still override.
+- `policyHelper` registrations are validated, but the docs say the runtime doesn't yet invoke the
+  helper.
 
 ---
 
@@ -306,6 +318,7 @@ Supported keys: `allowedMcpServers`, `deniedMcpServers`, `enabledPlugins`,
 | `PLAIN_DIFF` | `true` disables rich diffs |
 | `USE_BUILTIN_RIPGREP` | `false` uses system ripgrep |
 | `USE_TGREP` | `true`/`false` forces tgrep / ripgrep |
+| `TGREP_FILE_COUNT_THRESHOLD` | Minimum file count for automatic tgrep search (default `10000` on Windows, `50000` elsewhere) |
 
 > [!NOTE]
 > The upstream docs disagree on subagent defaults: the environment-variable table lists
@@ -428,7 +441,7 @@ export COPILOT_MODEL=YOUR-DEPLOYMENT-NAME
 export COPILOT_PROVIDER_TYPE=anthropic
 export COPILOT_PROVIDER_BASE_URL=https://api.anthropic.com
 export COPILOT_PROVIDER_API_KEY=YOUR-ANTHROPIC-API-KEY
-export COPILOT_MODEL=claude-opus-4-5
+export COPILOT_MODEL=YOUR-MODEL-NAME
 ```
 
 ---
@@ -443,4 +456,8 @@ export COPILOT_MODEL=claude-opus-4-5
   `max` is Anthropic-only) or the `effortLevel` setting.
 - Context tier: `--context default|long_context`. Latest models offer a 1M-token extended context
   and configurable reasoning; both consume more AI credits, so default to regular settings.
-- The docs' supported-model table (subject to change) lists `claude-sonnet-4.6` as the default.
+- Auto routing tier: `autoTier` setting or `/model auto TIER` (`efficiency`, `balance`,
+  `intelligence`).
+- The supported-model roster changes often and retired models stop resolving; check the
+  [supported models](https://docs.github.com/en/copilot/reference/ai-models/supported-models)
+  page (including its retirement table) before pinning a model ID.
