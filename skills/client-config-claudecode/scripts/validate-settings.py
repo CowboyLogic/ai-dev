@@ -577,6 +577,11 @@ def validate(data, scope):
         if not isinstance(v, (int, float)) or isinstance(v, bool) or not (0 < v <= 1):
             err(f"skillListingBudgetFraction: must be > 0 and <= 1, got {v!r}")
 
+    for key in ("availableModels", "deniedModels"):
+        if key in data and (not isinstance(data[key], list)
+                            or not all(isinstance(m, str) for m in data[key])):
+            err(f"{key}: must be an array of model aliases or IDs")
+
     if "fallbackModel" in data:
         v = data["fallbackModel"]
         if not isinstance(v, list) or not all(isinstance(m, str) for m in v):
