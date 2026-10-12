@@ -2,7 +2,7 @@
 
 Native V2 agent fields, file locations, defaults, and merge rules.
 
-**Sources (checked 2026-09-24):** <https://opencode.ai/v2/docs/agents/> ·
+**Sources (checked 2026-10-12):** <https://opencode.ai/v2/docs/agents/> ·
 <https://opencode.ai/v2/docs/config/> · <https://opencode.ai/v2/docs/models/> ·
 <https://opencode.ai/v2/docs/tools/> · <https://opencode.ai/v2/docs/migrate-v1/>
 
