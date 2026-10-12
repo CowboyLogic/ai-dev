@@ -207,6 +207,34 @@ to the main repo root; submodules use their own directory) or the normalized cwd
 
 ---
 
+## Built-in safety checks
+
+These apply independently of the permission flags above.
+
+- **Command safety analysis.** Shell commands are analyzed before execution for patterns such as
+  file deletion (`rm -rf`), system modification (`sudo`, `chmod 777`), network exfiltration (`curl`
+  with sensitive paths), credential access (reading `.env` or SSH keys), and inline assignment of
+  dangerous environment variables (`PATH=...`, `LD_PRELOAD=...`). High-risk commands show extra
+  warnings and need explicit confirmation.
+- **Environment variable denylist.** Inline assignment of variables that can run arbitrary code is
+  blocked even in otherwise read-only commands: `LD_*` and `DYLD_*`; `GIT_CONFIG`,
+  `GIT_CONFIG_GLOBAL`, `GIT_CONFIG_SYSTEM`, and the `GIT_CONFIG_COUNT` / `GIT_CONFIG_KEY_*` /
+  `GIT_CONFIG_VALUE_*` family; `GIT_EXTERNAL_DIFF`, `GIT_PROXY_COMMAND`; `PATH`, `BASH_ENV`, `ENV`;
+  and `PAGER`, `GIT_PAGER`, `GIT_EDITOR`, `VISUAL`, `EDITOR`, `GIT_SSH`, `GIT_SSH_COMMAND`,
+  `GIT_ASKPASS`, `BROWSER`, `GH_BROWSER`.
+- **`web_fetch` SSRF protection.** Only `http://` and `https://` URLs are allowed. Loopback
+  addresses, RFC 1918 private ranges, and cloud metadata endpoints (such as `169.254.169.254`) are
+  blocked by IP-literal check and DNS pre-resolution. Redirects are followed up to 10 hops within a
+  60-second budget, each hop re-validated; a redirect to a different origin needs permission. Set
+  `COPILOT_WEB_FETCH_ALLOW_LOCALHOST=1` to let `web_fetch` reach `localhost` during development.
+- **Plan mode** (`/plan`) blocks edits, patches, and file-changing shell commands in the project
+  workspace, including from delegated helper sessions, while still allowing Copilot to write its
+  own plan workspace. The docs call it a safety net, not a guarantee: shell commands whose effect
+  can't be determined in advance and calls to connected external/MCP tools are intentionally let
+  through.
+
+---
+
 ## Sandboxing
 
 Restricts filesystem, network, and credential access for shell commands (and, by default, MCP and
@@ -236,6 +264,14 @@ status|create|trust|rotate|remove`. Run `copilot help sandbox` for the full refe
 - Read/write to the working directory; in a Git repo also read/write to `.git` and read access to
   the rest of the repository. "Allow dev tool access" (default on) adds read access to toolchain
   directories and some shared caches.
+- **Tool directory grants:** for each sandboxed command the CLI grants **read-only** access to
+  every absolute, existing directory on `PATH` and in named toolchain variables (single directories
+  such as `JAVA_HOME`, `GOROOT`, `DOTNET_ROOT`, `PYENV_ROOT`, `VIRTUAL_ENV`, `CONDA_PREFIX`,
+  `RUSTUP_HOME`, `VCPKG_ROOT`, and path lists such as `GOPATH`, `NODE_PATH`, `PYTHONPATH`,
+  `PSModulePath`). Relative paths, missing paths, filesystem roots, and system-critical locations
+  (for example `/bin`, `/usr/bin`, `/proc`, `/sys`, `/dev`) are excluded. A symlink's target is not
+  added automatically — grant the real target if access through a link is blocked. Run
+  `/sandbox policy` (optionally with a command) to see the resolved grants by source.
 - **Allow sandbox bypass** (default on): when a command is blocked, the CLI prompts to re-run it
   outside the sandbox. Approval covers that attempt; the prompt can also disable sandboxing for the
   rest of the session. A bypass removes only Copilot's sandbox limits, not your OS permissions.

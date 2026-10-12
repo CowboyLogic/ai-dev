@@ -2,6 +2,30 @@
 
 Changes to the `client-config-copilotcli` skill, newest first.
 
+## 2026-10-12 — v2.2 (gap-fill against Copilot CLI v1.0.95)
+
+Basis: GitHub Copilot CLI **v1.0.95** (released 2026-10-09), still the latest stable release; the
+newer v1.0.96-0 through v1.0.96-2 tags are prereleases and were not used. The docs.github.com pages
+listed in `sources.json` were re-fetched and compared with the references. None of those pages
+changed in github/docs after 2026-10-09 (the last change, to the CLI command reference, predates
+the previous refresh), so this pass fills gaps that refresh left. Each addition comes from the
+current documentation.
+
+- `references/cli-commands.md`: `/collect-debug-logs [file|gist|share] [PATH]` and its consent
+  behavior, the `/release-notes` alias and arguments of `/changelog`, `/tuikit`, and a new
+  OpenTelemetry monitoring section (activation conditions, environment variables, signals,
+  content-capture warning, `nano_aiu` guidance).
+- `references/permissions.md`: new built-in safety checks section (command safety analysis,
+  environment variable denylist, `web_fetch` SSRF protection, plan mode limits) and the sandbox
+  tool directory grants.
+- `references/mcp.md`: private npm registry `args`, trust levels by source, the 1 MB stdio filter
+  exception, and how the enterprise allowlist fingerprints servers.
+- `references/hooks.md`: cloud agent execution environment (filesystem, working directory,
+  environment variables, network, interactivity).
+- `SKILL.md`, `sources.json`: reference map and `covers` entries updated for the additions.
+- `README.md`: references-last-refreshed date.
+- Not done: the benchmark in `README.md` was not re-run.
+
 ## 2026-10-11 — v2.1 (refresh to Copilot CLI v1.0.95)
 
 Basis: GitHub Copilot CLI **v1.0.95** (released 2026-10-09); previous refresh covered
