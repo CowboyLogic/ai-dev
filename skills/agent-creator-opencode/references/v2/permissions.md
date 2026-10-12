@@ -3,7 +3,7 @@
 The native V2 `permissions` array: rule shape, matching, actions, defaults, and
 policies.
 
-**Sources (checked 2026-09-24):** <https://opencode.ai/v2/docs/permissions/> ·
+**Sources (checked 2026-10-12):** <https://opencode.ai/v2/docs/permissions/> ·
 <https://opencode.ai/v2/docs/tools/> · <https://opencode.ai/v2/docs/policies/> ·
 <https://opencode.ai/v2/docs/skills/>
 
