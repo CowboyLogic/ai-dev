@@ -181,7 +181,7 @@ instructions (`AGENTS.md`), skills, and references are still added.
 
 > [!NOTE]
 > The V2 docs do not document `{file:...}` substitution for `system`, but it works:
-> verified on OpenCode 2.0.26 with `opencode debug config`, where
+> verified on OpenCode 2.0.27 with `opencode debug config`, where
 > `"system": "{file:./prompts/plan.txt}"` resolved to the file's contents, relative to
 > the config file, including when OpenCode was started from a subdirectory. Because
 > the behavior is undocumented, a Markdown agent file (body = prompt) is still the

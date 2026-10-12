@@ -3,7 +3,7 @@
 Model ID format, variants, and common provider values for OpenCode agents. Applies
 to both V1 and V2; syntax differences are called out.
 
-**Sources (checked 2026-10-11):**
+**Sources (checked 2026-10-12):**
 
 - <https://docs.github.com/en/copilot/reference/ai-models/supported-models>
 - <https://docs.github.com/en/copilot/reference/ai-models/model-comparison>
@@ -77,7 +77,7 @@ OpenCode IDs use the `github-copilot/` provider prefix.
 
 > [!NOTE]
 > The table lists models on GitHub's supported-models page whose IDs also appear
-> under `github-copilot` in the models.dev catalog (2026-10-11). Model
+> under `github-copilot` in the models.dev catalog (2026-10-12). Model
 > availability changes often. Re-check with `/models` or `opencode models`
 > before hard-coding a model on an agent.
 
@@ -112,7 +112,7 @@ OpenCode IDs use the `github-copilot/` provider prefix.
 
 ### Retired — avoid for new agents
 
-| Model ID | Status on GitHub (2026-10-11) | Suggested replacement |
+| Model ID | Status on GitHub (2026-10-12) | Suggested replacement |
 |---|---|---|
 | `github-copilot/claude-opus-4.7` | Retired 2026-10-02 | `claude-opus-5.5` |
 | `github-copilot/gemini-3.5-flash` | Retired 2026-10-02 | `gemini-3.8-flash` |
@@ -123,7 +123,7 @@ OpenCode IDs use the `github-copilot/` provider prefix.
 | `claude-opus-4.5`, `claude-opus-4.6`, `claude-sonnet-4.5`, `gemini-3.1-pro-preview` | Retired 2026-09-01 | `claude-opus-5.5`, `claude-sonnet-5.5`, `gemini-3.8-flash` |
 | `gpt-4.1`, `gpt-5.2`, `gpt-5.2-codex`, `claude-sonnet-4`, `gemini-2.5-pro`, Raptor mini | Retired | See GitHub's retirement table |
 
-The models.dev catalog can lag GitHub: on 2026-10-11 it still listed `claude-opus-4.7`, `gemini-3.5-flash`,
+The models.dev catalog can lag GitHub: on 2026-10-12 it still listed `claude-opus-4.7`, `gemini-3.5-flash`,
 `gemini-3.6-flash`, `kimi-k2.7-code`, and `mai-code-1-flash-picker` under `github-copilot` after GitHub retired
 them. Check GitHub's retirement table, not the catalog, before choosing a model that looks old.
 
@@ -175,7 +175,7 @@ them. Check GitHub's retirement table, not the catalog, before choosing a model 
 
 ## Other common providers
 
-IDs below appear in the models.dev catalog on 2026-10-11.
+IDs below appear in the models.dev catalog on 2026-10-12.
 
 | Provider | Example model IDs |
 |---|---|
