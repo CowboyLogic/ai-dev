@@ -132,3 +132,7 @@ OpenCode `1.18.29` and newer; for older V1 releases use separate function export
 
 `package.json` with `"type": "module"`, an `exports["."]` entrypoint, and a dependency on a compatible
 `@opencode/plugin` version. An optional `./rpc` export publishes a shared RPC contract.
+
+An Effect plugin declares `effect` as a `peerDependency`: the 2.0.27 docs use `"effect": "^4.0.0"` (the 2.0.26 docs
+had `">=4.0.0-rc.112"`), and OpenCode redirects `effect` imports to the host's copy. Effect 4 import paths moved from
+`effect/unstable/http` to `effect/http` in the 2.0.27 docs examples.

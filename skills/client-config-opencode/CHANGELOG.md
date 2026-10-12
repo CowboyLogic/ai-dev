@@ -2,6 +2,35 @@
 
 Changes to the `client-config-opencode` skill, newest first.
 
+## 2026-10-12 — v2.2 (verified against V2 2.0.27 and V1 1.19.0)
+
+Baselines: V2 2.0.26 → 2.0.27; V1 1.19.0 is unchanged (no V1 release since 2026-10-11). V2 now
+publishes release notes in the repository's `CHANGELOG.md`, so this update uses them together with a
+tag-to-tag diff of the V2 docs source, the published `cli.json` schema, and the 2.0.27 binary. The
+notes for 2.0.26 first appeared in that file after the 2.0.26 tag.
+
+- `references/v2/permissions.md`: the tools page lists Code Mode worktree utilities
+  (`worktree_create`, `worktree_list`, `worktree_remove`); `worktree_remove` requests `edit` with the
+  worktree directory as its resource, and the other two request no built-in permission action.
+- `references/v2/cli.md`: `session.verbosity` (`low` | `medium` | `high`) is in the published
+  `cli.json` schema but not on the V2 settings page; `FORCE_HYPERLINK=1` forces OSC 8 hyperlinks when
+  terminal detection does not enable them (2.0.26 release notes).
+- `references/v2/providers.md`: `/connect` → Vertex offers Google Cloud credentials (gcloud auth or
+  environment) since 2.0.26; ADC honors `CLOUDSDK_CONFIG` since 2.0.27.
+- `references/v2/config-schema.md`: `opencode pair --remote` asks for confirmation the first time it
+  enables remote access, and `--yes` accepts for non-interactive use; the remote URL is a persistent
+  random subdomain and a new one is issued when remote access is turned off and on again.
+- `references/v2/plugins.md`: Effect plugins declare `effect` as a `peerDependency`, now
+  `^4.0.0` in the docs (was `>=4.0.0-rc.112`).
+- Re-verified on 2.0.27: `{file:...}` substitution in agent `system` (`opencode debug config`),
+  `opencode auth export` and `auth import` appear in `auth --help` but not in the V2 docs, `opencode
+  upgrade --help` has no `--major`, and `permission.mode`, `plugins.install`, and
+  `dialog.plugins.install` are still absent from the published `cli.json` schema.
+- `sources.json`: added the V2 CLI `commands` and `web` pages, the Effect plugin page, and the V2
+  `CHANGELOG.md`.
+- Not changed: the V1 references, and the V2 agents and MCP references (their docs pages are identical
+  between 2.0.26 and 2.0.27).
+
 ## 2026-10-11 — v2.1 (verified against V2 2.0.26 and V1 1.19.0)
 
 Baselines: V2 2.0.16 → 2.0.26 and V1 1.18.29 → 1.19.0. V2 publishes no release notes, so V2
