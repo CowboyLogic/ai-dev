@@ -7,7 +7,7 @@ A skill for creating custom agents for GitHub Copilot: Copilot cloud agent on Gi
 | | |
 |---|---|
 | GitHub Copilot CLI | **v1.0.95** (released 2026-10-09) |
-| References last verified | 2026-10-11 |
+| References last verified | 2026-10-12 |
 | Sources | docs.github.com Copilot custom-agent and CLI documentation, the supported-models page, and VS Code documentation at code.visualstudio.com (see the reference files for URLs) |
 
 The model roster and retirement dates change often; check the supported-models page before
@@ -76,5 +76,6 @@ Alternatives: run `/agent` → **Create new agent** in Copilot CLI, or use **Cre
 | Configuration reference | <https://docs.github.com/en/copilot/reference/custom-agents-configuration> |
 | Custom agents for Copilot CLI | <https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/create-custom-agents-for-cli> |
 | Custom agents in VS Code | <https://code.visualstudio.com/docs/agent-customization/custom-agents> |
+| Migrate Copilot customizations in VS Code | <https://code.visualstudio.com/docs/agent-customization/migrate-customizations> |
 | Supported AI models | <https://docs.github.com/en/copilot/reference/ai-models/supported-models> |
 | Awesome Copilot agents | <https://github.com/github/awesome-copilot/tree/main/agents> |

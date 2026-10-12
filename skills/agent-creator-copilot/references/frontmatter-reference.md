@@ -7,6 +7,7 @@ Reference for the YAML frontmatter properties in custom agent profiles (`.agent.
 - GitHub configuration reference: <https://docs.github.com/en/copilot/reference/custom-agents-configuration>
 - VS Code: <https://code.visualstudio.com/docs/agent-customization/custom-agents>
 - VS Code subagents: <https://code.visualstudio.com/docs/agents/run/subagents>
+- VS Code customization migration: <https://code.visualstudio.com/docs/agent-customization/migrate-customizations>
 - VS Code hooks: <https://code.visualstudio.com/docs/agent-customization/hooks>
 - Copilot CLI: <https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference#custom-agents-reference>
 - Models: <https://docs.github.com/en/copilot/reference/ai-models/supported-models>
@@ -439,6 +440,14 @@ Versioning follows Git commit SHAs of the profile file. An assigned task uses th
 ### File detection (VS Code)
 
 VS Code treats **any** `.md` file in `.github/agents/` as a custom agent. The settings `chat.agentFilesLocations` and `chat.modeFilesLocations` are deprecated (Local agent only). Legacy `.chatmode.md` files should be renamed to `.agent.md`.
+
+### Moving a Local agent to the Copilot harness (VS Code)
+
+VS Code's migration guide describes what changes when a custom agent that worked in a Local session is used in a Copilot (Agent Host) session:
+
+- The Copilot harness doesn't read custom agents from VS Code profile user data or from the `chat.agentFilesLocations`, `chat.modeFilesLocations`, `chat.instructionsFilesLocations`, or `chat.agentSkillsLocations` settings. The migration list moves agents to `.github/agents` (workspace) or `~/.copilot/agents` (user), and the migrated user files aren't included in Settings Sync.
+- Prompt files (`*.prompt.md`) aren't loaded in Copilot sessions. The migration converts them to skills with `disable-model-invocation: true`; the prompt's `agent`, `model`, and `tools` aren't carried over.
+- Agents that depend on Local tool names, tool sets, or hooks need semantic changes. VS Code has no automatic migration for hooks or tool-set files, and the Copilot harness doesn't support VS Code tool-set files; the guide says to review the tools directly in the custom agent or the chat tools picker. It points to **Migrate with Agent** (which uses Copilot credits) for guided conversions.
 
 ---
 
