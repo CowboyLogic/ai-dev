@@ -321,6 +321,12 @@ approvals_reviewer = "auto_review"   # default is "user"
 - Low- and medium-risk actions can proceed; critical-risk is denied; failures fail closed.
 - Custom policy: local `[auto_review].policy = """..."""` replaces (does not merge with) the default
   policy; copy the full default first. Managed `guardian_policy_config` takes precedence.
+  `[auto_review].extra_policy` adds policy text alongside the main policy; managed
+  `guardian_extra_policy` takes precedence over it.
+- Other `[auto_review]` keys in the 0.162.1 schema: `circuit_break_action` (default `default`; a
+  strict mode writes structured errors that older clients may not recognize when reading shared
+  history) and `conversation_history_max_output_tokens` (default 4,000 estimated tokens per
+  history-tool response).
 - It uses extra model calls and adds to usage. It is not a deterministic guarantee.
 - Reduce review volume by adding narrow `writable_roots` and narrow prefix rules such as
   `["cargo", "test"]`, never broad ones such as `["python"]` or `["curl"]`.
