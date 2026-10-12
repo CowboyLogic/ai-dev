@@ -25,6 +25,9 @@ Files in `.github/agents/` and `~/.copilot/agents/` use the `.agent.md` extensio
 file in `.github/agents/`. Files in `.claude/agents/` are in Claude Code's format and are plain `.md` files, so do not
 rename them. A legacy `.chatmode.md` file should be renamed to `.agent.md`. Commit the workspace folder to share agents with your team.
 
+Copilot (Agent Host) sessions read user-level agents from the host's `~/.copilot/agents/` or `~/.claude/agents/`,
+not from VS Code profile user data. VS Code's migration list can move existing agents there.
+
 An organization can publish agents that VS Code detects for its members once you set
 `github.copilot.chat.organizationCustomAgents.enabled` to `true`.
 

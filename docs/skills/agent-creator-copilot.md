@@ -26,6 +26,7 @@ testing a profile, and loads detailed reference material only when the task need
 - Model selection
 - Handoffs, subagents, `user-invocable`, and `disable-model-invocation`
 - Fields that only some surfaces support
+- Which locations and files VS Code's Copilot harness reads, compared with the Local agent
 - MCP server configuration and secrets for the cloud agent
 - Writing effective prompts and descriptions
 
