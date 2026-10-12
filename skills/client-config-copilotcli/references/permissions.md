@@ -227,6 +227,10 @@ These apply independently of the permission flags above.
   blocked by IP-literal check and DNS pre-resolution. Redirects are followed up to 10 hops within a
   60-second budget, each hop re-validated; a redirect to a different origin needs permission. Set
   `COPILOT_WEB_FETCH_ALLOW_LOCALHOST=1` to let `web_fetch` reach `localhost` during development.
+  With sandboxing on, requests are also checked against the sandbox network policy, so
+  `sandbox.userPolicy.network.allowLocalNetwork` (default `false`) must be enabled too. Per the
+  sandbox docs it lets `web_fetch` reach localhost but does not lift the restrictions on other
+  private-network addresses.
 - **Plan mode** (`/plan`) blocks edits, patches, and file-changing shell commands in the project
   workspace, including from delegated helper sessions, while still allowing Copilot to write its
   own plan workspace. The docs call it a safety net, not a guarantee: shell commands whose effect
