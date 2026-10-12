@@ -418,9 +418,10 @@ The `apps` feature flag (stable, on by default in 0.162.1) gates app integration
 | `destructive_enabled` | Whether tools with `destructive_hint = true` are allowed |
 | `open_world_enabled` | Whether tools with `open_world_hint = true` are allowed |
 | `default_tools_enabled` | Per app only: whether tools are enabled by default |
-| `default_tools_approval_mode` | `auto` \| `prompt` \| `writes` \| `approve`; applies unless a per-app or per-tool setting overrides it |
-| `approvals_reviewer` | Reviewer for this app's approval prompts; overrides the thread default |
+| `default_tools_approval_mode` | `auto` \| `prompt` \| `writes` \| `approve`; applies unless a per-account (link) or per-tool setting overrides it |
+| `approvals_reviewer` | Reviewer for this app's approval prompts; overrides the thread default, and a per-account (link) value overrides it |
 | `tools.<tool>.enabled`, `tools.<tool>.approval_mode` | Per app only: per-tool switches; `approval_mode` takes the same four values |
+| `links.<link>.default_tools_approval_mode`, `links.<link>.approvals_reviewer` | Per app only: approval settings for one connected account of the app, keyed by link ID. The first overrides the app's `default_tools_approval_mode` for that account unless a per-tool override exists; the second overrides the app's `approvals_reviewer` for that account |
 
 ## Telemetry and notifications
 
