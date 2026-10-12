@@ -201,12 +201,68 @@ and `/instructions`.
 | `/chronicle <standup\|tips\|improve\|reindex\|skills ...>` | Session-history insights |
 | `/usage` | Usage and AI credits |
 | `/diagnose [PROMPT]` | Analyze the session log |
+| `/collect-debug-logs [file\|gist\|share] [PATH]` | Collect debug logs into a local archive (`file`, at `PATH` when given), a secret GitHub gist (`gist`), or a local archive that is then uploaded to GitHub (`share`) |
 | `/refine TEXT` | Rewrite a rough prompt into a clear one for review (no argument: clean up the input box) |
 | `/workflows` | Observe workflow runs, phases, agents, and progress (needs a token-based-billing plan) |
 
 ### Account and app
 
 `/login`, `/logout`, `/user [show|list|switch]`, `/remote [on|off]`, `/ide`, `/app`,
-`/feedback` (`/bug`), `/changelog`, `/update` (`/upgrade`), `/version`, `/voice`, `/copy`,
-`/search` (`/find`), `/downgrade VERSION` (team accounts), `/clikit [COMPONENT]` (preview CLI business
-components), `/exit` (`/quit`).
+`/feedback` (`/bug`), `/changelog [summarize] [VERSION|last N|since VERSION]` (`/release-notes`),
+`/update` (`/upgrade`), `/version`, `/voice`, `/copy`, `/search` (`/find`),
+`/downgrade VERSION` (team accounts), `/clikit [COMPONENT]` (preview CLI business components),
+`/tuikit [colors|icons|select|tabbar]` (preview TUIkit design-system components and color tokens),
+`/exit` (`/quit`).
+
+### Debug logs
+
+`/collect-debug-logs` and the feedback-with-logs route offered from `/feedback` first save a local
+archive. `share` and the feedback route then ask for fresh consent, defaulting to **No**, before
+uploading to GitHub. Per the docs, uploading is currently available only to GitHub staff and
+internal users; everyone else uses the `file` and `gist` routes and the existing public feedback
+route.
+
+## OpenTelemetry monitoring
+
+Copilot CLI can export OpenTelemetry (OTel) traces and metrics, following the OTel GenAI Semantic
+Conventions. It is off by default and has no overhead until one of these is set:
+`COPILOT_OTEL_ENABLED=true`, `OTEL_EXPORTER_OTLP_ENDPOINT`, or `COPILOT_OTEL_FILE_EXPORTER_PATH`.
+The docs also say OTel can be configured in VS Code or in an enterprise `managed-settings.json`.
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `COPILOT_OTEL_ENABLED` | `false` | Enable OTel explicitly (not needed when the endpoint variable is set) |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | — | OTLP endpoint URL; setting it enables OTel |
+| `COPILOT_OTEL_EXPORTER_TYPE` | `otlp-http` | `otlp-http` or `file`; `file` is selected automatically when the file path is set |
+| `COPILOT_OTEL_FILE_EXPORTER_PATH` | — | Write all signals to this file as JSON lines; setting it enables OTel |
+| `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/json` | `http/json` or `http/protobuf` (`otlp-http` exporter only) |
+| `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL`, `OTEL_EXPORTER_OTLP_METRICS_PROTOCOL` | — | Per-signal override of the protocol |
+| `OTEL_EXPORTER_OTLP_HEADERS` | — | Auth headers for the exporter, such as `Authorization=Bearer token` |
+| `OTEL_SERVICE_NAME` | `github-copilot` | `service.name` resource attribute |
+| `OTEL_RESOURCE_ATTRIBUTES` | — | Extra resource attributes as comma-separated `key=value` pairs (percent-encode special characters) |
+| `COPILOT_OTEL_SOURCE_NAME` | `github.copilot` | Instrumentation scope name for the tracer and meter |
+| `OTEL_LOG_LEVEL` | — | OTel diagnostic log level: `NONE`, `ERROR`, `WARN`, `INFO`, `DEBUG`, `VERBOSE`, `ALL` |
+| `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` | `false` | Capture full prompts, responses, system instructions, tool definitions, and tool arguments/results |
+
+### Signals
+
+- **Traces:** an `invoke_agent` root span per agent invocation, with `chat` (one per LLM request)
+  and `execute_tool` child spans. Subagent invocations also use `invoke_agent` spans.
+- **Metrics:** `gen_ai.client.operation.duration`, `gen_ai.client.token.usage`,
+  `gen_ai.client.operation.time_to_first_chunk`, `gen_ai.client.operation.time_per_output_chunk`,
+  `gen_ai.invoke_agent.duration`, `gen_ai.invoke_agent.inference_calls`,
+  `gen_ai.invoke_agent.tool_calls`, `gen_ai.invoke_workflow.duration`, plus
+  `github.copilot.tool.call.count`, `github.copilot.tool.call.duration`,
+  `github.copilot.agent.turn.count`, `github.copilot.mcp.server.connection.count`,
+  `github.copilot.code.lines_added`, and `github.copilot.code.lines_removed`.
+- **Span events** on `chat` / `invoke_agent` spans: `github.copilot.hook.start`, `.hook.end`,
+  `.hook.error`, `.session.truncation`, `.session.compaction_start`, `.session.compaction_complete`,
+  `.skill.invoked`, `.session.shutdown`, `.session.abort`, and `exception`.
+
+> [!WARNING]
+> By default only metadata (model names, token counts, durations) is captured. Content capture can
+> include code, file contents, and prompts; enable it only in trusted environments.
+
+To measure AI-unit consumption, read `github.copilot.nano_aiu` from the root `invoke_agent` span
+only: it is also stamped on child `chat` spans, so summing across spans double-counts.
+`github.copilot.cost` is a per-request model multiplier used for billing, not a monetary value.
