@@ -67,7 +67,7 @@ In VS Code, `read`, `search`, `edit`, `execute`, `web`, and `agent` are also nam
 
 ## VS Code Tool Sets and Tool Names
 
-VS Code accepts tool sets, individual `set/tool` names, MCP tools, and extension tools in `tools`. Names from the current VS Code reference:
+VS Code accepts tool sets, individual `set/tool` names, MCP tools, and extension tools in `tools`. The Copilot harness (Agent Host sessions) doesn't support VS Code tool-set files; VS Code's migration guide says to review the tools directly in the custom agent or the chat tools picker instead. Names from the current VS Code reference:
 
 | Tool set | Individual tools |
 |---|---|
