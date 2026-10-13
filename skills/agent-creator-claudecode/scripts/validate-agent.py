@@ -8,7 +8,7 @@ Reports the conditions under which Claude Code silently skips an agent file, plu
 unknown or mis-cased fields, bad enum values, and fields ignored in a given scope.
 Requires PyYAML. Exit status is 1 when any error is found (or any warning with --strict).
 
-Field list last verified 2026-10-11 against Claude Code 2.1.296:
+Field list last verified 2026-10-13 against Claude Code 2.1.296:
 https://code.claude.com/docs/en/sub-agents#supported-frontmatter-fields
 (`autoCompactWindow` comes from the v2.1.296 changelog; the docs table does not list it yet.)
 """
