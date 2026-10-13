@@ -17,7 +17,7 @@ import json
 import os
 import re
 import sys
-from pathlib import Path, PurePosixPath, PureWindowsPath
+from pathlib import Path, PurePosixPath
 
 # ---------------------------------------------------------------------------
 # Enumerations
@@ -540,10 +540,9 @@ def validate(data, scope):
             err("worktree.bgIsolation: must be \"worktree\" or \"none\"")
         if "location" in wt:
             loc = wt["location"]
-            if not isinstance(loc, str) or not (
-                loc.startswith("~/") or PurePosixPath(loc).is_absolute() or PureWindowsPath(loc).is_absolute()
-            ):
-                err("worktree.location: must be an absolute path or start with \"~/\"")
+            # Evaluated on the SSH host, which Claude Desktop requires to run Linux or macOS.
+            if not isinstance(loc, str) or not (loc.startswith("~/") or PurePosixPath(loc).is_absolute()):
+                err("worktree.location: must be a POSIX absolute path or start with \"~/\"")
             if scope in {"project", "local", "managed"}:
                 warn(f"'worktree.location' is read only from user settings; ignored in {scope} settings")
 
