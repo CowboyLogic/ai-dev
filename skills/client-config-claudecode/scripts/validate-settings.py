@@ -17,7 +17,7 @@ import json
 import os
 import re
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 # ---------------------------------------------------------------------------
 # Enumerations
@@ -538,6 +538,14 @@ def validate(data, scope):
             err("worktree.baseRef: must be \"fresh\" or \"head\"")
         if wt.get("bgIsolation") not in (None, "worktree", "none"):
             err("worktree.bgIsolation: must be \"worktree\" or \"none\"")
+        if "location" in wt:
+            loc = wt["location"]
+            if not isinstance(loc, str) or not (
+                loc.startswith("~/") or PurePosixPath(loc).is_absolute() or PureWindowsPath(loc).is_absolute()
+            ):
+                err("worktree.location: must be an absolute path or start with \"~/\"")
+            if scope in {"project", "local", "managed"}:
+                warn(f"'worktree.location' is read only from user settings; ignored in {scope} settings")
 
     for key in ("statusLine", "subagentStatusLine", "fileSuggestion"):
         if key in data:
