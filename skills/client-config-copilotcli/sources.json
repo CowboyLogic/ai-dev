@@ -9,9 +9,10 @@
         "https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/configure-copilot-cli",
         "https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/authenticate-copilot-cli",
         "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/use-byok-models",
-        "https://docs.github.com/en/copilot/concepts/agents/copilot-cli/about-copilot-cli"
+        "https://docs.github.com/en/copilot/concepts/agents/copilot-cli/about-copilot-cli",
+        "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
       ],
-      "covers": "~/.copilot directory layout, settings.json (user/repo/local keys and precedence), config.json (trustedFolders), allowed_models.txt, MDM managed settings, environment variables, authentication, BYOK providers and providers.json, model usage"
+      "covers": "~/.copilot directory layout, settings.json (user/repo/local keys and precedence), config.json (trustedFolders), allowed_models.txt, MDM managed settings, environment variables, authentication, BYOK providers and providers.json, model usage, OpenTelemetry monitoring (environment variables and content capture), supported model IDs"
     },
     "references/permissions.md": {
       "urls": [
@@ -22,13 +23,13 @@
         "https://docs.github.com/en/copilot/how-tos/cloud-and-local-sandboxes/configuring-local-sandbox-settings",
         "https://docs.github.com/en/copilot/concepts/about-cloud-and-local-sandboxes"
       ],
-      "covers": "Trusted directories, tool/path/URL permission flags, permission patterns, tool names, approval prompts and modes, permissions-config.json schema, local and cloud sandboxing and sandbox settings, allow-all restriction, managed permission rules"
+      "covers": "Trusted directories, tool/path/URL permission flags, permission patterns, tool names, approval prompts and modes, permissions-config.json schema, local and cloud sandboxing and sandbox settings, allow-all restriction, managed permission rules, plan mode and shell safety checks (command analysis, environment-variable denylist, web_fetch SSRF protection), sandbox tool-directory grants"
     },
     "references/cli-commands.md": {
       "urls": [
         "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
       ],
-      "covers": "Terminal subcommands, command-line options, session management, slash commands"
+      "covers": "Terminal subcommands, command-line options, session management, slash commands, supported model IDs"
     },
     "references/mcp.md": {
       "urls": [

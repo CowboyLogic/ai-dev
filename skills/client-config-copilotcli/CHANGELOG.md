@@ -2,6 +2,31 @@
 
 Changes to the `client-config-copilotcli` skill, newest first.
 
+## 2026-10-13 — v2.2 (refresh to Copilot CLI v1.0.96)
+
+Basis: GitHub Copilot CLI **v1.0.96** (released 2026-10-12, the latest stable release; the
+v1.0.97 tags are prereleases); previous refresh covered v1.0.95. Each claim comes from the current
+docs.github.com documentation. Items that appear only in the github/copilot-cli v1.0.96 release
+notes are labeled as such.
+
+- `references/permissions.md`: new "Built-in safety checks" section (plan-mode enforcement,
+  command safety analysis, environment-variable denylist, `web_fetch` SSRF protection) and
+  "Sandbox grants and bypass details" (tool-directory grants, bypass prompt behavior, Windows
+  denial capture); `/add-dir` grants sandbox access for the session; the `/sandbox` dialog suggests
+  secrets and masking hosts (v1.0.96).
+- `references/config-schema.md`: new "OpenTelemetry monitoring" section (`COPILOT_OTEL_*` and
+  `OTEL_*` variables, content capture); managed `sandbox`, `telemetry`, and `remoteControl`
+  fields; `inlineImages`; model IDs are case-insensitive (v1.0.96).
+- `references/cli-commands.md`: supported model IDs table from the command reference;
+  `/model ... auto TIER`; `/release-notes`, `/collect-debug-logs`, and `/tuikit`.
+- `references/hooks.md`: complete runtime-to-Claude tool-name mapping and matcher regex rules;
+  cloud agent hook environment variables.
+- v1.0.96 release-notes-only items, labeled in place: `/user list` authentication source,
+  permission-decision attribution in the timeline, `/allow-all` during startup policy resolution.
+- `SKILL.md`: routing rows for OpenTelemetry, the safety checks, and the model table.
+- `README.md`: associated Copilot CLI version and refresh date.
+- Not done: the benchmark in `README.md` was not re-run.
+
 ## 2026-10-11 — v2.1 (refresh to Copilot CLI v1.0.95)
 
 Basis: GitHub Copilot CLI **v1.0.95** (released 2026-10-09); previous refresh covered

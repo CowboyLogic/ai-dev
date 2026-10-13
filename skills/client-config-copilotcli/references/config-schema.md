@@ -133,6 +133,7 @@ the shared cross-tool subset (such as `companyAnnouncements`, `disableAllHooks`,
 | `ide.autoConnect` / `ide.openDiffOnEdit` | boolean | `true` | IDE auto-connect / show edit diffs in IDE |
 | `ignoredSkillsLocations` | `string[]` | `[]` | Skill directories (and descendants) excluded from discovery; `~`-relative paths supported |
 | `includeCoAuthoredBy` | boolean | `true` | `Co-authored-by` trailer on agent commits |
+| `inlineImages` | boolean | `true` | Render images inline with the Kitty graphics protocol (Ghostty, kitty, or WezTerm); otherwise image attachments show a text placeholder |
 | `keepAlive` | `"on"` \| `"off"` \| `"busy"` | `"off"` | Prevent system sleep |
 | `logLevel` | `"none"` \| `"error"` \| `"warning"` \| `"info"` \| `"debug"` \| `"all"` \| `"default"` | `"default"` | Log verbosity |
 | `mergeStrategy` | `"rebase"` \| `"merge"` | — | Strategy for `/pr fix conflicts` |
@@ -279,6 +280,20 @@ allow/deny list.
   default users and repositories may still override.
 - `policyHelper` registrations are validated, but the docs say the runtime doesn't yet invoke the
   helper.
+- `sandbox` sets a policy floor users can't relax. Supported fields: `enabled`,
+  `failIfUnavailable`, `allowBypass`, `addCurrentWorkingDirectory`, `sandboxMcpServers`,
+  `sandboxLspServers`, `auth.git`, `auth.gh`, `allowDevToolAccess`, `learningMode`, and the
+  `userPolicy.*` filesystem and network rules. The managed value wins in the safer direction;
+  sandboxing, `failIfUnavailable`, and sandboxed MCP/LSP servers can't be turned off. `learningMode`
+  is Windows-only and honored only from native MDM (a `managed-settings.json` value is ignored).
+- `telemetry` pushes baseline OpenTelemetry export settings: `enabled`, `endpoint`, `protocol`,
+  `headers`, `resourceAttributes`, `captureContent`, `lockCaptureContent`, and `serviceName` (see
+  [OpenTelemetry monitoring](#opentelemetry-monitoring)).
+- `remoteControl.mode` is `"enabled"`, `"disabled"`, or `"requireSSO"`; `requireSSO` needs
+  `remoteControl.githubDotComOrganizations`, and the client must be SSO-authorized for at least one
+  listed organization.
+- Most managed keys lock the whole row. `enabledPlugins` and `extraKnownMarketplaces` are the
+  exception: the managed layer merges those maps field by field with the user's entries.
 
 ---
 
@@ -326,6 +341,34 @@ allow/deny list.
 > while the subagent-limits table and `subagents.*` settings list depth default `6` (cap `256`)
 > and plan-based concurrency (cap `32`). Treat the settings values as authoritative for
 > `settings.json`.
+
+---
+
+## OpenTelemetry monitoring
+
+Copilot CLI can export OpenTelemetry traces and metrics that follow the OTel GenAI semantic
+conventions. Export is off by default and turns on when `COPILOT_OTEL_ENABLED=true`,
+`OTEL_EXPORTER_OTLP_ENDPOINT` is set, or `COPILOT_OTEL_FILE_EXPORTER_PATH` is set. Enterprise
+administrators can push a baseline through the managed `telemetry` key.
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `COPILOT_OTEL_ENABLED` | `false` | Explicitly enable export (not needed when an endpoint is set) |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | — | OTLP endpoint URL; setting it enables export |
+| `COPILOT_OTEL_EXPORTER_TYPE` | `otlp-http` | `otlp-http` or `file`; `file` is chosen automatically when `COPILOT_OTEL_FILE_EXPORTER_PATH` is set |
+| `COPILOT_OTEL_FILE_EXPORTER_PATH` | — | Write all signals to this file as JSON lines; setting it enables export |
+| `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/json` | `http/json` or `http/protobuf` (`otlp-http` only); `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL` / `OTEL_EXPORTER_OTLP_METRICS_PROTOCOL` override it per signal |
+| `OTEL_EXPORTER_OTLP_HEADERS` | — | Auth headers for the exporter |
+| `OTEL_SERVICE_NAME` | `github-copilot` | `service.name` resource attribute |
+| `OTEL_RESOURCE_ATTRIBUTES` | — | Extra resource attributes, comma-separated `key=value` (percent-encode special characters) |
+| `COPILOT_OTEL_SOURCE_NAME` | `github.copilot` | Instrumentation scope name for the tracer and meter |
+| `OTEL_LOG_LEVEL` | — | Diagnostic level: `NONE`, `ERROR`, `WARN`, `INFO`, `DEBUG`, `VERBOSE`, `ALL` |
+| `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` | `false` | Capture full prompts, responses, tool schemas, and tool arguments and results |
+
+By default only metadata is captured (model names, token counts, durations). Content capture can
+include code, file contents, and prompts, so enable it only in trusted environments. The span,
+metric, and event catalog (`invoke_agent`, `chat`, and `execute_tool` spans) is in the
+[command reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference#opentelemetry-monitoring).
 
 ---
 
@@ -450,6 +493,7 @@ export COPILOT_MODEL=YOUR-MODEL-NAME
 
 - Select with `/model` (alias `/models`), `--model=MODEL`, `COPILOT_MODEL`, or the `model` setting.
   `auto` lets Copilot choose.
+  Model IDs are case-insensitive and the canonical ID is saved (`/model` and `/config model`).
 - `/model` scope flags: `--session`/`-s` (default, current session only), `--global` (saved default),
   `--repo`/`--local` (pins in repository settings).
 - Reasoning effort: `--effort`/`--reasoning-effort` (`low`, `medium`, `high`, `xhigh`, `max`;

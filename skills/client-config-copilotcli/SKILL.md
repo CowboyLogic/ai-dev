@@ -50,10 +50,11 @@ in `config.json` are ignored, and `config.json` keeps only internal state such a
 | `settings.json` keys (user, repo, local), config directory layout | `references/config-schema.md` |
 | Trusted folders, `config.json` | `references/config-schema.md` §config.json |
 | Environment variables | `references/config-schema.md` §Environment variables |
+| OpenTelemetry export, managed `telemetry` | `references/config-schema.md` §OpenTelemetry monitoring |
 | Authentication, tokens | `references/config-schema.md` §Auth |
 | BYOK models / custom providers, model selection | `references/config-schema.md` §BYOK, §Model usage |
-| Tool/path/URL permissions, `permissions-config.json`, sandbox | `references/permissions.md` |
-| CLI flags, slash commands, sessions (`--name`, `--resume`) | `references/cli-commands.md` |
+| Tool/path/URL permissions, `permissions-config.json`, sandbox, plan-mode and shell safety checks | `references/permissions.md` |
+| CLI flags, slash commands, supported model IDs, sessions (`--name`, `--resume`) | `references/cli-commands.md` |
 | MCP servers, LSP servers | `references/mcp.md` |
 | Hooks | `references/hooks.md` |
 | Skills | `references/skills.md` |

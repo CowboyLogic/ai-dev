@@ -8,8 +8,8 @@ servers, hooks, skills, custom agents, plugins, and instructions. The skill itse
 
 | | |
 |---|---|
-| GitHub Copilot CLI | **v1.0.95** (released 2026-10-09) |
-| References last refreshed | 2026-10-11 |
+| GitHub Copilot CLI | **v1.0.96** (released 2026-10-12) |
+| References last refreshed | 2026-10-13 |
 | Sources | docs.github.com Copilot CLI documentation (see [sources.json](sources.json)) and the [github/copilot-cli release notes](https://github.com/github/copilot-cli/releases) |
 
 Claims that rest only on release notes, and not on the documentation, are labeled as such in the
@@ -19,7 +19,7 @@ reference files.
 
 Benchmark run: **2026-04-26 · iteration 1** · 4 scenarios · 8 total runs
 
-These results predate the 2026-09-24 v2.0 refresh and the 2026-10-11 refresh, and no benchmark has
+These results predate the 2026-09-24 v2.0 refresh and the 2026-10-11 and 2026-10-13 refreshes, and no benchmark has
 been re-run since. The eval cases for this benchmark are not stored in the skill folder.
 
 ### Overall

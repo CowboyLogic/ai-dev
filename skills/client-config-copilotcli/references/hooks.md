@@ -23,7 +23,9 @@ All sources are combined; when the same event appears in several, every entry ru
   set, or `GITHUB_COPILOT_PROMPT_MODE_REPO_HOOKS=true`.
 - Cloud agent reads only `.github/hooks/*.json` from the cloned repo (must be on the default
   branch), runs on Linux, honors only `bash` (or `command`) entries, and has a firewall-restricted
-  network.
+  network. Its filesystem is ephemeral (send hook output with an `http` entry to keep it), `HOME` is
+  `/root`, `GITHUB_COPILOT_API_TOKEN` and `GITHUB_COPILOT_GIT_TOKEN` are set (`GITHUB_TOKEN` is not),
+  and `COPILOT_AGENT_PROMPT` holds the job's prompt.
 - Windows: the docs' example hooks need PowerShell 7+ (`pwsh`) — `winget install Microsoft.PowerShell`.
 
 ## File structure
@@ -221,7 +223,11 @@ Tool names: `ask_user`, `bash`, `create`, `edit`, `glob`, `grep`, `powershell`, 
 PascalCase `PreToolUse` / `PermissionRequest` use Claude-style matchers: `*`, `**`, or empty
 matches everything; `Bash` or `Edit|Write` match Claude tool names (`bash`/`powershell` → `Bash`,
 `view` → `Read`, `create` → `Write`, `edit`/`apply_patch` → `Edit`, `grep` → `Grep`, `glob` →
-`Glob`, `web_fetch` → `WebFetch`, `task` → `Agent`).
+`Glob`, `web_fetch` → `WebFetch`, `web_search` → `WebSearch`, `ask_user` → `AskUserQuestion`,
+`update_todo` → `TodoWrite`, `task` → `Agent`, `str_replace_editor` → `Edit`, `rg` → `Grep`). Any
+other regex is case-sensitive and anchored (`^(?:PATTERN)$`) against the Claude tool name, or the
+runtime name when a tool has no Claude equivalent. Tools with no Claude equivalent keep their
+runtime names.
 
 ---
 

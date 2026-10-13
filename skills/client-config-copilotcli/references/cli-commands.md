@@ -50,6 +50,27 @@ Booleans take `on`/`off` or `true`/`false`. An unset key exits `1`; secret value
 
 ---
 
+## Supported models
+
+`--model=MODEL` or `COPILOT_MODEL` selects the model; `auto` lets Copilot choose. The command
+reference lists these IDs:
+
+| Model | Best for |
+|-------|----------|
+| `claude-sonnet-5.5` | General-purpose coding (default) |
+| `gpt-5.4` | Complex reasoning tasks |
+| `gpt-6.1-sol`, `gpt-6-astra`, `gpt-6-luna` | Recommended, opt-in (not the automatic default) |
+| `claude-opus-5.5` | Recommended, high-capability complex tasks |
+| `claude-haiku-5.5`, `claude-haiku-4.5` | Fast, lightweight operations |
+| `gpt-5.3-codex` | Code-focused tasks |
+| `gemini-3.7-flash`, `gemini-3.8-flash` | Fast Google Gemini responses |
+
+The roster and retirement dates change often; the
+[supported models](https://docs.github.com/en/copilot/reference/ai-models/supported-models) page is
+the authority.
+
+---
+
 ## Command-line options
 
 ### Session and mode
@@ -146,7 +167,7 @@ Session history lives in `~/.copilot/session-state/`.
 | Command | Purpose |
 |---------|---------|
 | `/settings [--repo\|--local] [show KEY\|KEY\|KEY VALUE]`, `/config` | Settings editor or inline set |
-| `/model [--session\|--global\|--repo\|--local] [MODEL]`, `/models` | Choose model, effort, context |
+| `/model [--session\|--global\|--repo\|--local] [MODEL\|auto TIER]`, `/models` | Choose model, effort, context, or an Auto tier. Model IDs are case-insensitive; the canonical ID is saved |
 | `/theme [default\|github\|dim\|high-contrast\|colorblind]` | Color theme |
 | `/statusline`, `/footer` | Status-line items |
 | `/experimental [on\|off\|show]` | Experimental features |
@@ -206,7 +227,12 @@ and `/instructions`.
 
 ### Account and app
 
-`/login`, `/logout`, `/user [show|list|switch]`, `/remote [on|off]`, `/ide`, `/app`,
-`/feedback` (`/bug`), `/changelog`, `/update` (`/upgrade`), `/version`, `/voice`, `/copy`,
-`/search` (`/find`), `/downgrade VERSION` (team accounts), `/clikit [COMPONENT]` (preview CLI business
-components), `/exit` (`/quit`).
+`/login`, `/logout`, `/user [show|list|switch]` (`/user list` shows the authentication source of
+each signed-in account, per the v1.0.96 release notes), `/remote [on|off]`, `/ide`, `/app`,
+`/feedback` (`/bug`), `/changelog [summarize] [VERSION|last N|since VERSION]` (`/release-notes`),
+`/update` (`/upgrade`), `/version`, `/voice`, `/copy`, `/search` (`/find`),
+`/downgrade VERSION` (team accounts), `/collect-debug-logs [file|gist|share] [PATH]` (archive,
+gist, or `share`, which saves an archive and then asks for fresh consent before uploading; upload
+is currently available only to GitHub staff), `/clikit [COMPONENT]` (preview CLI business
+components), `/tuikit [colors|icons|select|tabbar]` (preview TUIkit design-system components),
+`/exit` (`/quit`).
