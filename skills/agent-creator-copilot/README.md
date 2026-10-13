@@ -6,8 +6,8 @@ A skill for creating custom agents for GitHub Copilot: Copilot cloud agent on Gi
 
 | | |
 |---|---|
-| GitHub Copilot CLI | **v1.0.95** (released 2026-10-09) |
-| References last verified | 2026-10-11 |
+| GitHub Copilot CLI | **v1.0.96** (released 2026-10-12) |
+| References last verified | 2026-10-13 |
 | Sources | docs.github.com Copilot custom-agent and CLI documentation, the supported-models page, and VS Code documentation at code.visualstudio.com (see the reference files for URLs) |
 
 The model roster and retirement dates change often; check the supported-models page before

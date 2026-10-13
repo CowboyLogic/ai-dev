@@ -2,7 +2,7 @@
 
 Reference for the YAML frontmatter properties in custom agent profiles (`.agent.md`). Load this file when writing or modifying agent frontmatter.
 
-**Sources (last verified October 2026, against GitHub Copilot CLI v1.0.95):**
+**Sources (last verified October 2026, against GitHub Copilot CLI v1.0.96):**
 
 - GitHub configuration reference: <https://docs.github.com/en/copilot/reference/custom-agents-configuration>
 - VS Code: <https://code.visualstudio.com/docs/agent-customization/custom-agents>
@@ -181,7 +181,7 @@ model: gpt-5.6-luna
 **Surface notes:**
 
 - **VS Code:** accepts a model name or a prioritized array. For subagents, the order is: explicit model from the `runSubagent` call, then the agent's `model`, then the main conversation's model. A subagent model above the main model's cost tier does not run.
-- **Copilot CLI:** uses lowercase IDs (the CLI docs show `claude-sonnet-4.6`, `claude-haiku-4.5`, `gpt-5.4-mini`, `gpt-5.6-luna`, `gpt-6-astra`, `gemini-3.7-flash`). When the session model is `Auto`, subagents always use the resolved session model and ignore this field. See also `models`, `modelPolicy`, and `reasoningEffort` below.
+- **Copilot CLI:** uses lowercase IDs (the CLI docs show `claude-sonnet-5.5` as the default and list `claude-opus-5.5`, `claude-haiku-5.5`, `gpt-6.1-sol`, `gpt-6-astra`, `gpt-6-luna`, `gpt-5.3-codex`, `gemini-3.7-flash`, and `gemini-3.8-flash`; the built-in agents use `claude-sonnet-4.6`, `claude-haiku-4.5`, and `gpt-5.4-mini`). When the session model is `Auto`, subagents always use the resolved session model and ignore this field. See also `models`, `modelPolicy`, and `reasoningEffort` below.
 - **GitHub.com cloud agent:** ambiguous. The configuration reference lists `model` without restriction ("Model to use when this custom agent executes"), but the create how-to says `model` applies "if you are creating and using the agent profile in VS Code, JetBrains IDEs, Eclipse, or Xcode". Don't rely on `model` to select the cloud agent's model.
 - **Handoff `model`** uses the qualified format `Model Name (vendor)`, for example `GPT-5.5 (copilot)`.
 
