@@ -95,7 +95,7 @@ ANY_FILE_KEYS = {
     "enabledPlugins", "enforceAvailableModels", "env", "extraKnownMarketplaces", "fallbackModel",
     "fastMode", "fastModePerSessionOptIn", "feedbackSurveyRate", "fileCheckpointingEnabled",
     "fileSuggestion", "forceLoginMethod", "forceLoginOrgUUID", "gcpAuthRefresh", "hooks",
-    "httpHookAllowedEnvVars", "includeGitInstructions", "inputNeededNotifEnabled",
+    "httpHookAllowedEnvVars", "idleCompaction", "includeGitInstructions", "inputNeededNotifEnabled",
     "isolatePeerMachines", "language", "maxEffortLevel", "maxProseWidth", "minimumVersion",
     "model", "modelOverrides", "modelSettings", "otelHeadersHelper", "outputStyle", "permissions",
     "plansDirectory", "prUrlTemplate", "preferredNotifChannel", "prefersReducedMotion",

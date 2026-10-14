@@ -164,6 +164,7 @@ claude auto-mode critique   # AI review of your custom rules
 | `autoMemoryDirectory` | Absolute or `~/` path (default `~/.claude/projects/<project>/memory/`) | `"~/my-memory-dir"` |
 | `autoCompactEnabled` | Auto-compact near context limit (default `true`) | `false` |
 | `autoCompactWindow` | Tokens before auto-compact, `100000`–`1000000`, capped at model window | `400000` |
+| `idleCompaction` | Compact a long conversation that sat idle, shortly before its prompt cache expires (default `true`; v2.1.290+). Applies only to interactive terminal sessions on the one-hour cache TTL with feature flags fetched, once the context reaches 200,000 tokens (`CLAUDE_CODE_IDLE_COMPACT_MIN_TOKENS` raises or lowers it; values below `100000` are raised to `100000`) and about 54 minutes have passed since the last request. `autoCompactEnabled: false` and `DISABLE_AUTO_COMPACT` also turn it off | `false` |
 | `bashOutputMaxChars` | Inline Bash/PowerShell output limit, clamped `4000`–`128000` (default 30,000; v2.1.261+) | `60000` |
 | `claudeMdExcludes` | Globs/absolute paths of CLAUDE.md files to skip (not managed memory) | `["**/vendor/**/CLAUDE.md"]` |
 | `fileCheckpointingEnabled` | Snapshot files so `/rewind` can restore them (default `true`) | `false` |
@@ -226,6 +227,21 @@ claude auto-mode critique   # AI review of your custom rules
 | `agentPushNotifEnabled` | Proactive push notifications via Remote Control (default `false`) | `true` |
 | `inputNeededNotifEnabled` | Push when a prompt/question needs input (default `false`) | `true` |
 | `preferredNotifChannel` | `"auto"` (default)\|`"terminal_bell"`\|`"iterm2"`\|`"iterm2_with_bell"`\|`"kitty"`\|`"ghostty"`\|`"notifications_disabled"` | `"terminal_bell"` |
+
+### Variables Claude Code ignores in `env`
+
+Project and local settings can't set variables a checked-out repository shouldn't control. Claude Code drops each one (a value that turns telemetry off, such as `none` for an exporter selector or `0` for `OTEL_LOG_USER_PROMPTS`, still applies) and logs a warning visible with `claude --debug`; `/status` and `claude doctor` list the names it ignored. Set these in your shell, user settings, or managed settings instead:
+
+- Where Claude Code writes its files: `CLAUDE_CONFIG_DIR`, `CLAUDE_CODE_TMPDIR`, and OS directory variables (`HOME`, `TMPDIR`, `TMP`, `TEMP`, the `XDG_*` family).
+- Windows variables that pick programs or machine-wide configuration (`SystemRoot`, `ComSpec`, `ProgramData`, `LOCALAPPDATA`, `PATHEXT`, `PSModulePath`, the `ProgramFiles` family).
+- Session-content export: `OTEL_LOG_RAW_API_BODIES`, `ENABLE_BETA_TRACING_DETAILED`, `BETA_TRACING_ENDPOINT`.
+- OpenTelemetry exporter variables that turn telemetry on, choose where it goes, or choose what it captures (`CLAUDE_CODE_ENABLE_TELEMETRY`, the `OTEL_*_EXPORTER` selectors, `OTEL_LOG_USER_PROMPTS` and the other content variables, `OTEL_EXPORTER_OTLP_*` endpoint/header/protocol/certificate variables, `OTEL_EXPORTER_PROMETHEUS_HOST`/`_PORT`). Needs v2.1.282+.
+- Startup and sync: `CLAUDE_CODE_PROCESS_WRAPPER`, `CLAUDE_CODE_SYNC_SKILLS`, `CLAUDE_CODE_SYNC_PLUGINS`, `CLAUDE_CODE_PLUGIN_CACHE_DIR`, `CLAUDE_CODE_PLUGIN_SEED_DIR`.
+- Unanswered-dialog timers (`CLAUDE_CODE_USER_DIALOG_TIMEOUT_MS`, `CLAUDE_AFK_TIMEOUT_MS`, `CLAUDE_AFK_COUNTDOWN_MS`), `CLAUDE_CODE_DISABLE_ATTACHMENTS`, and `CLAUDE_CODE_DISABLE_FILE_MENTIONS` (stops `@` mention expansion; the variable is new in v2.1.299). The timers and `CLAUDE_CODE_DISABLE_ATTACHMENTS` became ignored in project and local settings in v2.1.290.
+
+Variables ignored from every settings file (launch environment only): identity variables such as `CLAUDE_CODE_REMOTE` and `CLAUDE_CODE_ACCOUNT_UUID`, `CLAUDE_CODE_MESSAGING_SOCKET`, `CLAUDE_CODE_MESSAGING_TOKEN`, `CLAUDE_CODE_PROJECT_DIR_NAME`, `CLAUDE_CODE_RESTRICTED`, `CLAUDE_CODE_DISABLE_POWERSHELL_CMD_RM_DENY`, `CLAUDE_CODE_DISABLE_DANGEROUS_RM_TIMEOUT`, `CLAUDE_CODE_DISABLE_SUBSTITUTION_RM_PROMPT`, and `CLAUDE_CODE_DISABLE_INLINE_SHELL_RM_PROMPT`.
+
+Source: the `env` section of the settings reference.
 
 ---
 
