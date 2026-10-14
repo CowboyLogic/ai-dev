@@ -6,7 +6,7 @@ MCP servers, model configuration, sandbox isolation, auto mode, voice, and plugi
 
 - **Skill name:** `client-config-claudecode`
 - **Source:** [skills/client-config-claudecode](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-claudecode)
-- **Claude Code version:** verified against [Claude Code 2.1.296](https://github.com/anthropics/claude-code/releases/tag/v2.1.296) (released 2026-10-09), last re-verified 2026-10-13
+- **Claude Code version:** verified against [Claude Code 2.1.299](https://github.com/anthropics/claude-code/releases/tag/v2.1.299) (released 2026-10-14), last re-verified 2026-10-14
 
 ---
 
