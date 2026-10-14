@@ -122,7 +122,8 @@ the authority.
 
 ### Output and UI
 
-`--output-format=text|json` (JSONL), `-s`/`--silent`, `--stream=on|off`, `--share=PATH`,
+`--output-format=text|json` (JSONL; v1.0.97 release notes: secrets are redacted in JSON output
+while valid variable references are preserved), `-s`/`--silent`, `--stream=on|off`, `--share=PATH`,
 `--share-gist`, `--attachment PATH`, `--log-dir`, `--log-level`, `--banner`/`--no-banner`,
 `--no-color`, `--plain-diff`, `--screen-reader`, `--mouse[=on|off]`/`--no-mouse`,
 `--experimental`/`--no-experimental`, `--no-auto-update`, `--bash-env`/`--no-bash-env`,
@@ -220,7 +221,7 @@ and `/instructions`.
 | `/ask QUESTION`, `/btw` | Side question outside history |
 | `/compact [FOCUS]` / `/context` | Compress / inspect context |
 | `/chronicle <standup\|tips\|improve\|reindex\|skills ...>` | Session-history insights |
-| `/usage` | Usage and AI credits |
+| `/usage` | Usage and AI credits (v1.0.97 release notes: shows billed AI Credits for token-billed sessions, including after resume) |
 | `/diagnose [PROMPT]` | Analyze the session log |
 | `/refine TEXT` | Rewrite a rough prompt into a clear one for review (no argument: clean up the input box) |
 | `/workflows` | Observe workflow runs, phases, agents, and progress (needs a token-based-billing plan) |

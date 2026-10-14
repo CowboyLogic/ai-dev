@@ -27,6 +27,38 @@ All sources are combined; when the same event appears in several, every entry ru
   `/root`, `GITHUB_COPILOT_API_TOKEN` and `GITHUB_COPILOT_GIT_TOKEN` are set (`GITHUB_TOKEN` is not),
   and `COPILOT_AGENT_PROMPT` holds the job's prompt.
 - Windows: the docs' example hooks need PowerShell 7+ (`pwsh`) — `winget install Microsoft.PowerShell`.
+- **v1.0.97 release notes only:** after `--resume`, hooks from repository-local marketplace
+  plugins keep running, and hooks from plugins your configuration disabled no longer come back.
+
+### Agent-scoped hooks (CLI only)
+
+A custom agent's frontmatter can carry a `hooks` event map. The hooks run only while that agent is
+selected, in addition to session, user, repository, plugin, and policy hooks. Added in v1.0.97
+(release notes); documented in the hooks reference.
+
+```yaml
+---
+name: formatter
+description: Formats changed files
+hooks:
+  PostToolUse:
+    - type: command
+      command: ./scripts/format-changed-files.sh
+      windows: ./scripts/format-changed-files.ps1
+---
+Format the files you change.
+```
+
+| Behavior | Details |
+|----------|---------|
+| Event names | Runtime names such as `postToolUse` and aliases such as `PostToolUse` are accepted |
+| Commands | `command` is the fallback; `windows`, `linux`, and `osx` override it per platform; paths resolve from the repository root |
+| Subagent `Stop` | A subagent's scoped `Stop` (`agentStop`) hooks run at `SubagentStop`; after eight consecutive scoped blocks, further blocks are ignored |
+| Trust | Repository and inherited-agent hooks require workspace admission; hook-disable settings, enterprise restrictions, and timeouts still apply |
+| Unsupported | Remote or organization-hosted agent definitions don't run scoped hooks |
+
+The hooks reference scopes this feature to Copilot CLI. It's the `hooks` frontmatter field of a
+custom agent, not a field of the hook files above (see `agents-plugins.md`).
 
 ## File structure
 
@@ -175,7 +207,7 @@ Every payload includes `sessionId`, `timestamp` (epoch ms), and `cwd`. Additiona
 
 | Field | Values |
 |-------|--------|
-| `permissionDecision` | `"allow"`, `"deny"`, `"ask"` (cloud agent treats `"ask"` as deny) |
+| `permissionDecision` | `"allow"`, `"deny"`, `"ask"` (cloud agent treats `"ask"` as deny; in CLI autopilot mode no prompt is shown and `"ask"` is denied, so the agent sees the CLI couldn't ask the user) |
 | `permissionDecisionReason` | Required when denying; shown to the agent |
 | `modifiedArgs` | Replacement tool arguments |
 

@@ -333,7 +333,9 @@ disable` turns sandboxing off for the current session only.
 
 ## Managed permission rules (administrators)
 
-MDM/server managed `permissions` may contain `deny`, `ask`, and `allow` arrays:
+MDM/server managed `permissions` may contain `deny`, `ask`, and `allow` arrays. (v1.0.97 release
+notes: in `/config`, managed permission rules are read-only and hidden unless your organization
+set them.)
 
 ```json
 {

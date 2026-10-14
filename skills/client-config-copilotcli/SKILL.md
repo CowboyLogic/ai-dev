@@ -56,7 +56,7 @@ in `config.json` are ignored, and `config.json` keeps only internal state such a
 | Tool/path/URL permissions, `permissions-config.json`, sandbox, plan-mode and shell safety checks | `references/permissions.md` |
 | CLI flags, slash commands, supported model IDs, sessions (`--name`, `--resume`) | `references/cli-commands.md` |
 | MCP servers, LSP servers | `references/mcp.md` |
-| Hooks | `references/hooks.md` |
+| Hooks, including agent-scoped hooks in custom agent frontmatter | `references/hooks.md` |
 | Skills | `references/skills.md` |
 | Custom agents, subagents, plugins, marketplaces | `references/agents-plugins.md` |
 | Custom instructions | `references/instructions.md` |

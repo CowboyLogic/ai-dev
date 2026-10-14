@@ -25,6 +25,9 @@ before any `.claude/agents/`. The `name` field does not affect deduplication: ag
 `name` but different IDs both load, and `--agent` picks the first match on ID or `name` in priority
 order.
 
+**v1.0.97 release notes only:** discovery now finds all custom agents even when a repository
+defines more than 100 or nests agent files deeply.
+
 Create interactively with `/agent` → **Create new agent** (Project or User), then restart the CLI.
 
 ### Frontmatter
@@ -34,7 +37,7 @@ Create interactively with `/agent` → **Create new agent** (Project or User), t
 name: security-auditor
 description: Reviews code for security issues. Use for security reviews or "seccheck".
 tools: ["view", "grep", "glob", "bash"]
-model: claude-sonnet-5
+model: claude-sonnet-5.5
 include-custom-instructions: true
 ---
 
@@ -52,6 +55,7 @@ You are a security expert. Check code for exposed secrets, XSS, SQL injection, .
 | `reasoningEffort` | string | No | e.g. `"low"`, `"medium"`, `"high"` |
 | `include-custom-instructions` | boolean | No | Give the subagent repository instruction files (default `false`) |
 | `mcp-servers` | object | No | Agent-scoped MCP servers (same schema as `mcp-config.json`) |
+| `hooks` | object | No | Agent-scoped hooks that run only while this agent is selected (CLI only; v1.0.97). Documented in the hooks reference, not in the command reference's frontmatter table — see `hooks.md` |
 | `infer` | boolean | No | Allow auto-delegation (default `true`) — see note |
 | `sidekick` | object | No | Run automatically in the background (see below) |
 
@@ -158,8 +162,13 @@ copilot plugin marketplace remove NAME [--force]
 
 Install specs: `plugin@marketplace`, `OWNER/REPO`, `OWNER/REPO:PATH/TO/PLUGIN`, a Git URL, or a
 local path. In a session use `/plugin` (dashboard) or `/plugin install|update|uninstall|list|marketplace ...`.
-`--plugin-dir=DIR` loads a local plugin for one session. The old cross-kind flags
+`--plugin-dir=DIR` loads a local plugin for one session (v1.0.97 release notes: its skills and
+custom agents now reach autocomplete and invocation). The old cross-kind flags
 (`--kind`, `--scope`, `--mcp`, `--skill`) were removed — use `copilot mcp|skill|instruction|lsp`.
+
+When HTTPS authentication fails for a remote marketplace or plugin fetch, the CLI retries once
+with your signed-in GitHub token; if that also fails, run `/login` (plugin reference; v1.0.97
+release notes).
 
 ### Declarative plugins (settings)
 

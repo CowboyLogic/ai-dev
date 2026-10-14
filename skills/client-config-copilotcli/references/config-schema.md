@@ -133,7 +133,7 @@ the shared cross-tool subset (such as `companyAnnouncements`, `disableAllHooks`,
 | `ide.autoConnect` / `ide.openDiffOnEdit` | boolean | `true` | IDE auto-connect / show edit diffs in IDE |
 | `ignoredSkillsLocations` | `string[]` | `[]` | Skill directories (and descendants) excluded from discovery; `~`-relative paths supported |
 | `includeCoAuthoredBy` | boolean | `true` | `Co-authored-by` trailer on agent commits |
-| `inlineImages` | boolean | `true` | Render images inline with the Kitty graphics protocol (Ghostty, kitty, or WezTerm); otherwise image attachments show a text placeholder |
+| `inlineImages` | boolean | `true` | Render images inline with the Kitty graphics protocol (Ghostty, kitty, or WezTerm); otherwise image attachments show a text placeholder. v1.0.97 release notes: renders by default on supported terminals without experimental mode; turn off with `/settings inlineImages false` |
 | `keepAlive` | `"on"` \| `"off"` \| `"busy"` | `"off"` | Prevent system sleep |
 | `logLevel` | `"none"` \| `"error"` \| `"warning"` \| `"info"` \| `"debug"` \| `"all"` \| `"default"` | `"default"` | Log verbosity |
 | `mergeStrategy` | `"rebase"` \| `"merge"` | — | Strategy for `/pr fix conflicts` |
@@ -230,7 +230,9 @@ claude-sonnet-*
 
 **Location**: `~/.copilot/config.json` (or `$COPILOT_HOME/config.json`). Automatically managed
 application state (auth data, installed plugin metadata, `loggedInUsers`, `installedPlugins`,
-`firstLaunchAt`, `staff`). Put user preferences in `settings.json`, not here.
+`firstLaunchAt`, `staff`). Put user preferences in `settings.json`, not here. (v1.0.97 release
+notes: one invalid entry in `config.json` no longer resets the saved settings, such as dismissed
+prompts, trusted folders, and sign-ins, on every launch.)
 
 ### trustedFolders (array)
 
@@ -286,6 +288,17 @@ allow/deny list.
   `userPolicy.*` filesystem and network rules. The managed value wins in the safer direction;
   sandboxing, `failIfUnavailable`, and sandboxed MCP/LSP servers can't be turned off. `learningMode`
   is Windows-only and honored only from native MDM (a `managed-settings.json` value is ignored).
+  The managed `sandbox` key blocks connections from clients older than the minimum version that
+  supports local sandbox: Copilot CLI 1.0.93, VS Code 1.141.0, GitHub Copilot app 1.1.26
+  (enterprise managed settings reference).
+- `forceRemoteSettingsRefresh: true` requires a fresh server-managed settings download at startup
+  (Copilot CLI, VS Code, and the GitHub Copilot app). In the CLI and the app it skips the one-hour
+  cache and doesn't fall back to an older cached policy: if the fetch fails, affected operations
+  stay restricted until current policy is confirmed. In VS Code, Copilot features are blocked until
+  the refresh succeeds. The MDM value takes precedence over a cached server value. To apply from a
+  device's first startup, deliver it through MDM or file-based settings; policy helper scripts
+  can't set it. In the Windows registry or macOS managed preferences, store it as a string
+  `true`/`false`, not a DWORD or native Boolean.
 - `telemetry` pushes baseline OpenTelemetry export settings: `enabled`, `endpoint`, `protocol`,
   `headers`, `resourceAttributes`, `captureContent`, `lockCaptureContent`, and `serviceName` (see
   [OpenTelemetry monitoring](#opentelemetry-monitoring)).
