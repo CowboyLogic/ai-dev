@@ -89,7 +89,7 @@ Array settings such as `permissions.allow` merge across files; scalars take the 
 For complex operations, use the helper scripts in `scripts/`:
 
 - `scripts/show-settings.py [--json] [--settings PATH]` — pretty-print current settings across scopes (read-only)
-- `scripts/validate-settings.py [path]` — validate JSON structure, flag bad values, unknown/deprecated keys, and user-or-managed keys placed in project files (read-only)
+- `scripts/validate-settings.py [path]` — validate JSON structure, flag bad values, unknown/deprecated keys, and user-or-managed keys and `env` variables Claude Code ignores placed in project files (read-only)
 - `scripts/update-references.py` — fetch latest upstream docs (used during self-update)
 
 Run with: `python scripts/<script>.py` from the skill directory, or with absolute paths.

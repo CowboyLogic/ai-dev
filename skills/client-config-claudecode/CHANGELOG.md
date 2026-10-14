@@ -21,7 +21,10 @@ docs pages fetched with `scripts/update-references.py --all`.
 - `references/permissions.md`: changelog-only note that an MCP allow rule `mcp__a` no longer
   reaches a server named `a__b` or `a_`, and that deny and ask rules now apply to servers
   whose normalized name contains `__`.
-- `scripts/validate-settings.py`: `idleCompaction` is a known any-file key.
+- `scripts/validate-settings.py`: `idleCompaction` is a known any-file key; warns on an `env`
+  entry Claude Code drops: the always-ignored identity and `*_RM_*` variables in any file, and
+  the project/local list in project and local settings (a value that turns telemetry off
+  still applies, so it isn't flagged).
 - Checked and unchanged: every row of the settings reference index other than
   `idleCompaction` is already in the references and validator.
 - Evals: new `idle-compaction` eval; not yet run (the README results predate it).
