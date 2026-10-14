@@ -53,6 +53,8 @@
       "urls": [
         "https://opencode.ai/v2/docs/config/",
         "https://opencode.ai/v2/docs/cli/",
+        "https://opencode.ai/v2/docs/cli/commands/",
+        "https://opencode.ai/v2/docs/cli/web/",
         "https://opencode.ai/v2/docs/commands/",
         "https://opencode.ai/v2/docs/skills/",
         "https://opencode.ai/v2/docs/formatters/",
@@ -65,9 +67,10 @@
         "https://opencode.ai/v2/docs/instructions/",
         "https://opencode.ai/v2/docs/network/",
         "https://opencode.ai/v2/docs/troubleshooting/",
-        "https://opencode.ai/v2/docs/sharing/"
+        "https://opencode.ai/v2/docs/sharing/",
+        "https://raw.githubusercontent.com/anomalyco/opencode/dev/CHANGELOG.md"
       ],
-      "covers": "V2: config locations/precedence, all top-level fields, ignored V1 fields, commands, skills, formatters, compaction, media, websearch, warming, references, worktree, instructions, service env"
+      "covers": "V2: config locations/precedence, all top-level fields, ignored V1 fields, commands, skills, formatters, compaction, media, websearch, warming, references, worktree, instructions, service env, background service and remote pairing, V2 release notes (CHANGELOG.md)"
     },
     "references/v2/permissions.md": {
       "urls": [
@@ -108,6 +111,7 @@
       "urls": [
         "https://opencode.ai/v2/docs/plugins/",
         "https://opencode.ai/v2/docs/build/plugins/",
+        "https://opencode.ai/v2/docs/build/plugins/effect/",
         "https://opencode.ai/v2/docs/build/plugins/migrate-v1/"
       ],
       "covers": "V2: plugins config and discovery, enable/disable directives, plugin CLI, Plugin.define API, V1 hook mapping"

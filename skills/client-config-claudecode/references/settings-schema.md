@@ -392,6 +392,7 @@ See `https://code.claude.com/docs/en/sub-agents.md` for the file format.
 | `worktree.symlinkDirectories` | Dirs (repo-relative) symlinked into each worktree | `["node_modules"]` |
 | `worktree.sparsePaths` | Sparse-checkout dirs (unset = whole tree) | `["packages/my-app"]` |
 | `worktree.bgIsolation` | Background sessions: `"worktree"` (default) or `"none"` | `"none"` |
+| `worktree.location` | Folder on a remote machine where Claude Desktop SSH sessions create worktrees, instead of `<project-root>/.claude/worktrees/`. Absolute path or `~/…`; **user scope only**, in `~/.claude/settings.json` on the remote machine. Only the desktop app reads it (`--worktree`, `EnterWorktree`, isolated subagents, and background sessions ignore it; needs Claude Desktop v1.44121.0+). A **Worktree folder** set on the SSH connection in Desktop takes precedence | `"~/worktrees"` |
 
 ---
 

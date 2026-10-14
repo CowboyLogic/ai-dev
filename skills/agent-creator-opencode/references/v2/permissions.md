@@ -3,7 +3,7 @@
 The native V2 `permissions` array: rule shape, matching, actions, defaults, and
 policies.
 
-**Sources (checked 2026-09-24):** <https://opencode.ai/v2/docs/permissions/> ·
+**Sources (checked 2026-10-12):** <https://opencode.ai/v2/docs/permissions/> ·
 <https://opencode.ai/v2/docs/tools/> · <https://opencode.ai/v2/docs/policies/> ·
 <https://opencode.ai/v2/docs/skills/>
 
@@ -106,6 +106,11 @@ string.
   pages checked. Do not emit rules for them in native V2.
 - The tools page says a `browser` deny rule with resource `*` removes the browser
   Code Mode catalog; it is not in the permissions page's action table.
+- The tools page (2.0.27) lists Code Mode worktree utilities. `worktree_remove`
+  uses `edit` with the worktree directory as the resource, so an `edit` rule that
+  denies that directory blocks it for the agent (`force: true` can discard
+  modified or untracked files). `worktree_create` and `worktree_list` request no
+  built-in permission action.
 - `skill` effects: `allow` advertises and loads; `ask` advertises and asks before
   loading; `deny` hides the skill from the model and rejects loading.
 - `subagent` approvals save the agent ID; shell approvals save command prefixes.

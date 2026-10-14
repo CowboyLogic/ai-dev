@@ -140,6 +140,34 @@
           "description": "Hook JSON nests the handler inside a matcher group under hooks.PreToolUse with a valid type"
         }
       ]
+    },
+    {
+      "id": 6,
+      "name": "stop-hook-loop-cap",
+      "prompt": "I have a Stop hook that blocks Claude from finishing until the test suite passes. It works, but after a while Claude just stops even though the tests are still failing. Why does that happen, and how do I let it keep trying longer?",
+      "expected_output": "Explains Claude Code's cap of 8 consecutive stop-hook continuations, that the count resets when Claude calls a tool, and that CLAUDE_CODE_STOP_HOOK_BLOCK_CAP raises it (0 disables it), set in the env block of settings.json",
+      "assertions": [
+        {
+          "id": "eight-cap",
+          "description": "States that after 8 consecutive continuations from stop hooks Claude Code overrides the next block and ends the turn"
+        },
+        {
+          "id": "counter-resets",
+          "description": "Notes that the count resets each time Claude calls a tool"
+        },
+        {
+          "id": "block-cap-variable",
+          "description": "Names CLAUDE_CODE_STOP_HOOK_BLOCK_CAP as the way to raise the cap, with 0 disabling it"
+        },
+        {
+          "id": "stop-hook-active",
+          "description": "Recommends the hook check stop_hook_active so it does not block on a condition that never resolves"
+        },
+        {
+          "id": "env-block",
+          "description": "If it shows configuration, sets the variable under the env key of settings.json with valid JSON"
+        }
+      ]
     }
   ]
 }

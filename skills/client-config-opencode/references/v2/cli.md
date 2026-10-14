@@ -52,6 +52,7 @@ Sources: <https://opencode.ai/v2/docs/cli/config/>, <https://opencode.ai/v2/docs
 | `session.scrollbar` | boolean | |
 | `session.thinking` | `show` \| `hide` | Model reasoning visibility |
 | `session.grouping` | `auto` \| `none` | |
+| `session.verbosity` | `low` \| `medium` \| `high` | Transcript detail: `low` summarizes each run of tools and thoughts, `high` opens exploration and instruction groups. Not in the V2 settings page; it is in the published schema |
 | `session.image_preview` | boolean | |
 | `session.tps` | boolean | Output tokens/sec in footers |
 | `session.markdown` | `source` \| `rendered` | |
@@ -82,6 +83,9 @@ Sources: <https://opencode.ai/v2/docs/cli/config/>, <https://opencode.ai/v2/docs
 
 > [!NOTE]
 > V2 `attention` has no `enabled` flag (V1 `tui.json` did). Set `notifications` and `sound` directly.
+
+Transcript hyperlinks use OSC 8 and work in more terminals since 2.0.26. When automatic detection does not enable
+them, start OpenCode with `FORCE_HYPERLINK=1` (from the 2.0.26 release notes, not the V2 docs).
 
 ## V1 `tui.json` → V2 `cli.json` key map
 
@@ -157,7 +161,7 @@ For the full list (diff viewer, input editing, composer, dialogs, which-key), se
 
 > [!NOTE]
 > The `permission.mode` keybind (auto-approve toggle) and the plugin install IDs `plugins.install` and
-> `dialog.plugins.install` are absent from the 2.0.26 docs and `cli.json` schema. To auto-approve, set
+> `dialog.plugins.install` are absent from the 2.0.27 docs and published `cli.json` schema. To auto-approve, set
 > `session.permissions: "autoaccept"` or start with `--auto`, which auto-approves permissions that are not
 > explicitly denied.
 

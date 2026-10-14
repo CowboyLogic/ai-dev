@@ -19,7 +19,7 @@ fields in memory without rewriting the file**. Converting to native V2 is option
 > converted to native V2-only shapes. Keep a copy of the V1 setup until V2 is verified.
 >
 > The V1 1.19.0 CLI docs list `opencode upgrade --major`, described as "Upgrade to OpenCode 2 and remove
-> OpenCode 1". That flag is not in the V1 1.18.29 docs or in the 2.0.26 `opencode upgrade --help`. Back up the
+> OpenCode 1". That flag is not in the V1 1.18.29 docs or in the 2.0.27 `opencode upgrade --help`. Back up the
 > V1 config and any V1 plugins before running it.
 
 ## Mixing rules

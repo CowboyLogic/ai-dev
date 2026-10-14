@@ -187,7 +187,7 @@ Template syntax:
 - Frontmatter: `name`, `description` (required for the model to see it), `metadata.opencode/autoinvoke` (`false`
   hides the skill from the model's list), and `disable-model-invocation` (`true` has the same effect; if both are
   set, `opencode/autoinvoke` wins). The skill stays registered and can still be loaded explicitly by ID, or in a
-  prompt as `@skill-id`. The `slash` and `metadata.opencode/slash` fields are no longer in the 2.0.26 docs.
+  prompt as `@skill-id`. The `slash` and `metadata.opencode/slash` fields are no longer in the 2.0.27 docs.
 - Precedence (low → high): built-ins, `.claude/skills`, `.agents/skills`, `~/.config/opencode/skills`, project
   `.opencode/skills`, explicit `skills` entries.
 - Gate loading with the `skill` permission action (resource = skill ID).
@@ -239,7 +239,7 @@ Built-ins: `gofmt`, `mix`, `oxfmt`, `prettier`, `biome`, `zig`, `clang-format`, 
 | `buffer` | 10% of the limit | Tokens kept free below the model's limit; larger starts compaction earlier |
 
 `keep.tokens` and `buffer` accept non-negative integers. The 2.0.16 docs gave `buffer` a fixed default of `20000`;
-the 2.0.26 docs say 10% of the limit, so set it explicitly if you depend on a specific value.
+the 2.0.27 docs say 10% of the limit, so set it explicitly if you depend on a specific value.
 
 Native provider compaction is opt-in per provider or model:
 `providers.<id>.settings.compaction.type` = `"native"` or `"summary"` (model setting overrides provider). Native
@@ -352,6 +352,13 @@ To make private servers the default instead of starting the shared one, run `ope
 server, `opencode service start` still starts the shared service, and `opencode pair` needs the shared service, so
 it is unavailable while it is disabled.
 
+Remote access: `opencode pair --remote` pairs through an OpenTunnel address and turns remote access on if it is off.
+That exposes the server to the internet, so the first time it asks you to accept; without an interactive terminal it
+fails unless you also pass `--yes`. Once accepted, later runs skip the prompt, even after
+`opencode service set remote false`. The remote URL is a random subdomain that persists across restarts; turning
+remote access off and on again issues a new one (2.0.26 release notes). Both flags are in the 2.0.27
+`opencode pair --help` and the V2 CLI docs.
+
 | Variable | Purpose |
 |----------|---------|
 | `OPENCODE_LOG_LEVEL` | Log level (replaces V1 `logLevel`) |
@@ -370,7 +377,7 @@ Useful diagnostics: `opencode debug config` (list configuration sources), `openc
 `opencode reload` (reload configuration without restarting the server), `opencode service status`.
 
 Variable substitution: V2 docs use `{env:NAME}` throughout. `{file:path}` is not shown in V2 docs,
-but works: on OpenCode 2.0.26 an agent's `"system": "{file:./prompts/plan.txt}"` resolved to the
+but works: on OpenCode 2.0.27 an agent's `"system": "{file:./prompts/plan.txt}"` resolved to the
 file's contents, relative to the config file, as shown by `opencode debug config` run two directories below the
 config file. Treat it as undocumented behavior.
 

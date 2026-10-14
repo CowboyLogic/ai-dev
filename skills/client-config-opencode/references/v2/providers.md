@@ -24,7 +24,7 @@ opencode auth import creds.json          # import a file produced by `auth expor
 
 `auth export` takes an optional integration ID or name (all integrations when omitted). `auth import` needs a file
 argument or piped stdin (`opencode auth export | opencode auth import`). Both appear in `opencode auth --help` on
-2.0.26 but not in the V2 docs. Treat the exported file as a secret and delete it after use. Create it owner-only
+2.0.27 but not in the V2 docs. Treat the exported file as a secret and delete it after use. Create it owner-only
 (the `umask 077` above): a plain `>` uses the caller's umask, often `022`, which makes the file world-readable. The
 `rm -f` matters on a rerun, because redirecting onto an existing file keeps that file's mode.
 
@@ -201,7 +201,11 @@ VPC endpoint: `settings.baseURL`. Bedrock API keys use `AWS_BEARER_TOKEN_BEDROCK
 { "providers": { "google-vertex": { "settings": { "project": "my-project", "location": "us-central1" } } } }
 ```
 
-Auth via ADC (`gcloud auth application-default login` or `GOOGLE_APPLICATION_CREDENTIALS`). Project env fallback:
+Auth via ADC (`gcloud auth application-default login` or `GOOGLE_APPLICATION_CREDENTIALS`). Since 2.0.26 `/connect` →
+Vertex also offers **Google Cloud credentials (gcloud auth or environment)**, which uses ADC and lets you pick or
+enter the project and location (2.0.26 release notes; the V2 providers page does not mention it). ADC also works when
+`CLOUDSDK_CONFIG` points to a custom gcloud configuration directory (fixed in 2.0.27, per its release notes). Project env
+fallback:
 `GOOGLE_VERTEX_PROJECT`, `GOOGLE_CLOUD_PROJECT`, `GCP_PROJECT`, `GCLOUD_PROJECT`. Location fallback:
 `GOOGLE_VERTEX_LOCATION`, `GOOGLE_CLOUD_LOCATION`, `VERTEX_LOCATION`, default `us-central1`. One `google-vertex` ID
 covers Gemini, Anthropic, and OpenAI-compatible Vertex models; `google-vertex-anthropic` is rejected in V2.
