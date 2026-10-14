@@ -197,6 +197,44 @@ def user_settings_path() -> Path:
     return (Path(home).expanduser() if home else Path.home() / ".claude") / "settings.json"
 
 
+# `env` variables Claude Code drops (settings reference, "Variables Claude Code ignores in `env`")
+ENV_IGNORED_EVERYWHERE = {
+    "CLAUDE_CODE_REMOTE", "CLAUDE_CODE_ACCOUNT_UUID", "CLAUDE_CODE_MESSAGING_SOCKET",
+    "CLAUDE_CODE_MESSAGING_TOKEN", "CLAUDE_CODE_PROJECT_DIR_NAME", "CLAUDE_CODE_RESTRICTED",
+    "CLAUDE_CODE_DISABLE_POWERSHELL_CMD_RM_DENY", "CLAUDE_CODE_DISABLE_DANGEROUS_RM_TIMEOUT",
+    "CLAUDE_CODE_DISABLE_SUBSTITUTION_RM_PROMPT", "CLAUDE_CODE_DISABLE_INLINE_SHELL_RM_PROMPT",
+}
+ENV_IGNORED_IN_PROJECT_LOCAL = {
+    "CLAUDE_CONFIG_DIR", "CLAUDE_CODE_TMPDIR", "HOME", "TMPDIR", "TMP", "TEMP",
+    "SystemRoot", "ComSpec", "ProgramData", "LOCALAPPDATA", "PATHEXT", "PSModulePath",
+    "OTEL_LOG_RAW_API_BODIES", "ENABLE_BETA_TRACING_DETAILED", "BETA_TRACING_ENDPOINT",
+    "CLAUDE_CODE_ENABLE_TELEMETRY", "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA",
+    "ENABLE_ENHANCED_TELEMETRY_BETA", "OTEL_LOGS_EXPORTER", "OTEL_METRICS_EXPORTER",
+    "OTEL_TRACES_EXPORTER", "OTEL_LOG_USER_PROMPTS", "OTEL_LOG_ASSISTANT_RESPONSES",
+    "OTEL_LOG_TOOL_CONTENT", "OTEL_LOG_TOOL_DETAILS", "OTEL_EXPORTER_PROMETHEUS_HOST",
+    "OTEL_EXPORTER_PROMETHEUS_PORT", "CLAUDE_CODE_PROCESS_WRAPPER", "CLAUDE_CODE_SYNC_SKILLS",
+    "CLAUDE_CODE_SYNC_PLUGINS", "CLAUDE_CODE_PLUGIN_CACHE_DIR", "CLAUDE_CODE_PLUGIN_SEED_DIR",
+    "CLAUDE_CODE_USER_DIALOG_TIMEOUT_MS", "CLAUDE_AFK_TIMEOUT_MS", "CLAUDE_AFK_COUNTDOWN_MS",
+    "CLAUDE_CODE_DISABLE_ATTACHMENTS", "CLAUDE_CODE_DISABLE_FILE_MENTIONS",
+}
+ENV_IGNORED_PREFIXES = ("XDG_", "ProgramFiles")
+ENV_OTLP_SUFFIXES = ("_ENDPOINT", "_HEADERS", "_PROTOCOL", "_CERTIFICATE", "_CLIENT_KEY", "_INSECURE")
+# A value that turns telemetry off still applies from project and local settings.
+ENV_TELEMETRY_OFF_NAMES = {
+    "OTEL_LOGS_EXPORTER", "OTEL_METRICS_EXPORTER", "OTEL_TRACES_EXPORTER",
+    "OTEL_LOG_USER_PROMPTS", "OTEL_LOG_TOOL_CONTENT", "OTEL_LOG_TOOL_DETAILS",
+}
+ENV_OFF_VALUES = {"", "0", "false", "no", "off", "none"}
+
+
+def env_ignored_in_project_local(name: str, value) -> bool:
+    if name in ENV_TELEMETRY_OFF_NAMES and str(value).strip().lower() in ENV_OFF_VALUES:
+        return False
+    if name in ENV_IGNORED_IN_PROJECT_LOCAL or name.startswith(ENV_IGNORED_PREFIXES):
+        return True
+    return name.startswith("OTEL_EXPORTER_OTLP_") and name.endswith(ENV_OTLP_SUFFIXES)
+
+
 def infer_scope(path: Path) -> str:
     resolved = path.expanduser().resolve()
     if resolved.name == "managed-settings.json" or resolved.parent.name == "managed-settings.d":
@@ -603,6 +641,10 @@ def validate(data, scope):
             for k, v in data["env"].items():
                 if not isinstance(v, str):
                     err(f"env.{k}: value must be a string, got {type(v).__name__}")
+                if k in ENV_IGNORED_EVERYWHERE:
+                    warn(f"env.{k}: ignored from every settings file; Claude Code reads it from the launch environment only")
+                elif scope in {"project", "local"} and env_ignored_in_project_local(k, v):
+                    warn(f"env.{k}: ignored in {scope} settings; set it in your shell, user settings, or managed settings")
 
     if "mcpServers" in data:
         warn("mcpServers: MCP servers belong in ~/.claude.json or .mcp.json, not settings.json")
