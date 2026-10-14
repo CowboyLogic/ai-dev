@@ -71,6 +71,7 @@ Sources: <https://opencode.ai/v2/docs/cli/config/>, <https://opencode.ai/v2/docs
 | `attention.volume` | `0`–`1` | |
 | `attention.sound_pack` | string | e.g. `opencode.default` |
 | `attention.sounds` | object | Overrides for `default`, `question`, `permission`, `error`, `done`, `subagent_done` |
+| `highlights` | boolean | Show the release highlights once after an update (default on); `false` stops the home-screen dialog. `/highlights` reopens them. Top-level key, not under `attention` (2.0.28) |
 | `terminal.title` | boolean | Update window title |
 | `terminal.copy` | `manual` \| `select` | Default `manual` on Windows, `select` elsewhere |
 | `mini.*` | see docs | `thinking`, `tools`, `shell_output`, `turn_summary`, `footer`, `splash` (`show`/`hide`), `work_spinner`, `mono`, `replay`, `replay_limit` (default `200`) |
@@ -161,7 +162,7 @@ For the full list (diff viewer, input editing, composer, dialogs, which-key), se
 
 > [!NOTE]
 > The `permission.mode` keybind (auto-approve toggle) and the plugin install IDs `plugins.install` and
-> `dialog.plugins.install` are absent from the 2.0.27 docs and published `cli.json` schema. To auto-approve, set
+> `dialog.plugins.install` are absent from the 2.0.29 docs and published `cli.json` schema. To auto-approve, set
 > `session.permissions: "autoaccept"` or start with `--auto`, which auto-approves permissions that are not
 > explicitly denied.
 

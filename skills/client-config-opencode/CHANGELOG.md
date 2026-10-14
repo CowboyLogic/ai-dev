@@ -2,6 +2,35 @@
 
 Changes to the `client-config-opencode` skill, newest first.
 
+## 2026-10-14 — v2.3 (verified against V2 2.0.29 and V1 1.19.0)
+
+Baselines: V2 2.0.27 → 2.0.29 (108 commits; 11 docs pages changed); V1 1.19.0 is unchanged. Sources are
+the tag-to-tag diff `v2.0.27...v2.0.29` of the V2 docs source and the config schema/core source, the V2
+`CHANGELOG.md` (2.0.28 at the 2.0.29 tag, 2.0.29 on `dev`), and the published `cli.json` schema. The
+2.0.29 binary was **not** run, so binary-dependent claims keep their 2.0.27 basis.
+
+- `references/v2/permissions.md`: policies live under top-level `policies` (2.0.29); `experimental.policies`
+  still works and merges in. The `permission` policy action in earlier versions of this skill is not a valid
+  value in the 2.0.27 or 2.0.29 schema; the actions are `provider.use`, `tool.use`, and `integration.use`.
+  Documented `integration.use` (`mcp:`, `skill:`, `plugin:` resources) and the full policy precedence
+  table (Console, macOS managed preferences, system directory, global, project).
+- `references/v2/config-schema.md`: system configuration directory (macOS, Linux, Windows) and macOS managed
+  preferences with highest precedence; the "MDM managed settings are V1-only" note no longer applies to those
+  two. Added the top-level `policies` row. Re-baselined unchanged docs claims to 2.0.29.
+- `references/v2/providers.md`: new Compatibility section (provider-level `compatibility`, the full field list
+  from the schema, `cacheFormat` for Claude models behind OpenAI-compatible proxies); new Request encoding
+  section (`settings.encoding`); streamed-chunk timeout default is 15 minutes since 2.0.28 (the docs page still
+  says five).
+- `references/v2/cli.md`: top-level `highlights` boolean in `cli.json` (release highlights dialog, `/highlights`).
+- `references/v2/plugins.md`: `ctx.credential.activate` and `ctx.permission.assert`.
+- `references/v2/migration.md`: `enabled_providers` / `disabled_providers` map to `policies`; V1
+  `options.setCacheKey` maps to `compatibility.supportsPromptCacheKey`; the V2 CLI source defines no
+  `upgrade --major` option.
+- `SKILL.md`: system/managed row in the file map and the `policies` quick edit.
+- `sources.json`: `covers` text for the permissions, config, and providers references.
+- Not changed: V1 references (no V1 release since 1.19.0), `references/v2/agents.md`, and `references/v2/mcp.md`
+  (their docs pages are identical between 2.0.27 and 2.0.29).
+
 ## 2026-10-12 — v2.2 (verified against V2 2.0.27 and V1 1.19.0)
 
 Baselines: V2 2.0.26 → 2.0.27; V1 1.19.0 is unchanged (no V1 release since 2026-10-11). V2 now

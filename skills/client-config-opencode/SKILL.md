@@ -35,6 +35,7 @@ You help the user manage OpenCode configuration. OpenCode has two config formats
 
 | What | V2 | V1 |
 |------|----|----|
+| Core settings (system, managed) | macOS `/Library/Application Support/opencode`, Linux `/etc/opencode`, Windows `%ProgramData%\opencode`; highest precedence (2.0.29 docs) | same directories; see `references/config-schema.md` (Managed / enterprise) |
 | Core settings (global) | `~/.config/opencode/opencode.json(c)` | same |
 | Core settings (project) | `opencode.json(c)` and `.opencode/opencode.json(c)`, searched cwd → filesystem root; `.opencode/` files override direct ones | `opencode.json` in cwd or nearest up to the Git root |
 | Terminal client (theme, keybinds) | `~/.config/opencode/cli.json` — global only | `~/.config/opencode/tui.json` + project `tui.json` |
@@ -77,7 +78,7 @@ Merge behavior: config files merge; later/closer files override conflicting keys
 { "formatter": true }                                             // same in V1
 { "websearch": { "provider": "random" } }                         // V2 only
 { "permissions": [{ "action": "shell", "resource": "git push *", "effect": "ask" }] }
-{ "experimental": { "policies": [{ "action": "provider.use", "resource": "openai", "effect": "deny" }] } }
+{ "policies": [{ "action": "provider.use", "resource": "openai", "effect": "deny" }] }   // 2.0.29+; was "experimental.policies"
 { "tool_output": { "max_lines": 2000, "max_bytes": 51200 } }      // same in V1
 ```
 

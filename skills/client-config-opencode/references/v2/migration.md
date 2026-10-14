@@ -19,8 +19,8 @@ fields in memory without rewriting the file**. Converting to native V2 is option
 > converted to native V2-only shapes. Keep a copy of the V1 setup until V2 is verified.
 >
 > The V1 1.19.0 CLI docs list `opencode upgrade --major`, described as "Upgrade to OpenCode 2 and remove
-> OpenCode 1". That flag is not in the V1 1.18.29 docs or in the 2.0.27 `opencode upgrade --help`. Back up the
-> V1 config and any V1 plugins before running it.
+> OpenCode 1". That flag is not in the V1 1.18.29 docs or in the 2.0.27 `opencode upgrade --help`, and the V2 CLI
+> command source at 2.0.29 defines no `major` option. Back up the V1 config and any V1 plugins before running it.
 
 ## Mixing rules
 
@@ -48,7 +48,8 @@ fields in memory without rewriting the file**. Converting to native V2 is option
 | `skills: { paths, urls }` | `skills: [ ...paths, ...urls ]` |
 | `autoupdate: false` / `"notify"` / `true` | `update: "disable"` / `"notify"` / `"auto"` |
 | `small_model` | `agents.title.model` |
-| `enabled_providers` / `disabled_providers` | `experimental.policies` with `provider.use` |
+| `enabled_providers` / `disabled_providers` | `policies` with `provider.use` (`experimental.policies` is the pre-2.0.29 location and still works) |
+| Provider `options.setCacheKey` | Provider `compatibility.supportsPromptCacheKey` |
 | `subagent_depth` | `experimental.subagent_depth` |
 | `logLevel` | `OPENCODE_LOG_LEVEL` env var |
 | `server` | `opencode service set ...` / `serve` flags |
