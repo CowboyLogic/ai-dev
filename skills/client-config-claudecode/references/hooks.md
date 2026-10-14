@@ -42,6 +42,8 @@ hooks:
 ---
 ```
 
+A `UserPromptSubmit` hook in a skill's own frontmatter first runs on the prompt *after* the one that invokes the skill (changelog only, v2.1.299).
+
 ---
 
 ## Hook events (lifecycle order)
@@ -68,8 +70,8 @@ hooks:
 | `TaskCompleted` | Task marked complete | none | Yes |
 | `Stop` | Claude finishes responding | none | Yes |
 | `StopFailure` | Turn ends due to API error | `rate_limit`, `overloaded`, `authentication_failed`, `oauth_org_not_allowed`, `account_on_hold`, `billing_error`, `invalid_request`, `model_not_found`, `server_error`, `max_output_tokens`, `cloud_credential_error` (v2.1.267+), `unknown` | No |
-| `PreCompact` | Before context compaction | `manual`, `auto` | Yes |
-| `PostCompact` | After compaction | `manual`, `auto` | No |
+| `PreCompact` | Before context compaction | `manual` (`/compact`), `auto` (reaching the auto-compact window, and idle compaction) | Yes |
+| `PostCompact` | After compaction | `manual` (`/compact`), `auto` (reaching the auto-compact window, and idle compaction) | No |
 | `PreModelSwitch` | Before a user/client-requested model switch (`/model`, picker, `/config`, fast mode, SDK `set_model`); not for automatic fallback (v2.1.251+) | Canonical target model name (`claude-opus-5`, `.*opus.*`) | Yes |
 | `PostModelSwitch` | After the session's model changes, including automatic changes | Canonical target model name | No |
 | `ConfigChange` | Config file changed during session | `user_settings`, `project_settings`, `local_settings`, `policy_settings`, `skills` | Yes (except `policy_settings`) |
@@ -263,6 +265,12 @@ Requires v2.1.295+. By default a hook that can't start, times out, or exits with
 A failure is: the hook can't start; exit code other than 0 or 2 (even if it printed JSON that allows the action — exit 0 to return a JSON decision); an HTTP connection failure or non-2xx status; a timeout; or JSON output that can't be parsed or fails schema validation. Plain-text stdout from a command hook is not a failure.
 
 `onFailure` has no effect on `Stop`, `SubagentStop`, `TaskCompleted`, and `TeammateIdle` hooks (exit 2 there sends Claude back to work, and Claude can't repair a hook that won't run) or on background command hooks (`async`/`asyncRewake`). A timed-out `command`, `http`, or `mcp_tool` hook on `PreToolUse` does **not** block the call. Set `onFailure: "block"` on a `command` or `http` hook to make a timeout block; `mcp_tool` hooks don't accept `onFailure`, so a timed-out one always lets the call continue.
+
+**Changelog only (v2.1.299), three fail-closed changes:**
+
+- On Windows, a `PreToolUse` or `PermissionRequest` hook that sets no `shell` used to fail open when Git for Windows isn't installed; a guard that fails now blocks the call.
+- Plan mode no longer runs a write (an MCP tool's, a file's, a shell command's) that a `PreToolUse` hook allowed.
+- `UserPromptSubmit` hooks now run before a skill or custom slash command expands, so a hook that blocks the prompt also stops the command's embedded shell commands.
 
 ### Stop hooks that keep blocking
 

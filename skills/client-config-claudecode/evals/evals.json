@@ -168,6 +168,30 @@
           "description": "If it shows configuration, sets the variable under the env key of settings.json with valid JSON"
         }
       ]
+    },
+    {
+      "id": 7,
+      "name": "idle-compaction",
+      "prompt": "Claude Code keeps compacting my long session when I step away for a while and come back. I want to turn that off but keep normal auto-compact working. What do I set?",
+      "expected_output": "Sets idleCompaction to false in settings.json (any settings file, v2.1.290+), explains it compacts an idle 200K+ token conversation shortly before the one-hour prompt cache expires, and notes autoCompactEnabled is the separate key for normal auto-compact",
+      "assertions": [
+        {
+          "id": "idle-key",
+          "description": "Names the idleCompaction setting and sets it to false"
+        },
+        {
+          "id": "keeps-auto-compact",
+          "description": "Leaves autoCompactEnabled alone, or says it controls normal auto-compact and that turning it off also turns idle compaction off"
+        },
+        {
+          "id": "min-version",
+          "description": "Notes idleCompaction needs Claude Code v2.1.290 or later"
+        },
+        {
+          "id": "threshold",
+          "description": "Mentions the alternative of raising CLAUDE_CODE_IDLE_COMPACT_MIN_TOKENS (default 200000, floor 100000) instead of turning it off"
+        }
+      ]
     }
   ]
 }
