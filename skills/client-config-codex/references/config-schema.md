@@ -422,6 +422,7 @@ The `apps` feature flag (stable, on by default in 0.162.1) gates app integration
 | `approvals_reviewer` | Reviewer for this app's approval prompts; overrides the thread default, and a per-account (link) value overrides it |
 | `tools.<tool>.enabled`, `tools.<tool>.approval_mode` | Per app only: per-tool switches; `approval_mode` takes the same four values |
 | `links.<link>.default_tools_approval_mode`, `links.<link>.approvals_reviewer` | Per app only: approval settings for one connected account of the app, keyed by link ID. The first overrides the app's `default_tools_approval_mode` for that account unless a per-tool override exists; the second overrides the app's `approvals_reviewer` for that account |
+| `omit_tools_from` | Array of `"direct"` \| `"deferred"` \| `"code_mode"`: model-facing surfaces (initial tool list, tool search, Code Mode) from which this app's tools are omitted, in addition to server-level omissions. An empty list clears connector-level omissions |
 
 ## Telemetry and notifications
 
