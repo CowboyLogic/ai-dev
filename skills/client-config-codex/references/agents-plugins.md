@@ -180,13 +180,16 @@ separate stable flag that is off by default. From the 0.162.1 config source (not
 upstream): an enabled `features.multi_agent_v2` takes precedence over `agents.enabled`, and
 `agents.max_depth` is ignored by V2.
 
-`features.multi_agent_v2` also accepts a table. Keys in the 0.162.1 config schema that have a
-description there: `max_concurrent_threads_per_session`, `wait_agent_enabled` (expose the V2
-`wait_agent` tool), `disable_direct_message` (disable the model's direct-message tools; spawning
-and automatic child results remain), `expose_spawn_agent_model_overrides` (expose `model` and
-`reasoning_effort` on the V2 spawn tool), and `subagent_developer_instructions` (override inherited
-developer instructions for subagents that have no role-specific instructions). `usage_hint_enabled`
-is a deprecated compatibility field whose value is ignored.
+`features.multi_agent_v2` also accepts a table. The table form turns V2 on only through its own
+`enabled = true`: from the 0.162.1 source, `enabled` is the only field that sets the flag, so a
+table without it leaves V2 at its default of off, however many other options it sets. Other keys
+in the 0.162.1 config schema that have a description there: `max_concurrent_threads_per_session`,
+`wait_agent_enabled` (expose the V2 `wait_agent` tool), `disable_direct_message` (disable the
+model's direct-message tools; spawning and automatic child results remain),
+`expose_spawn_agent_model_overrides` (expose `model` and `reasoning_effort` on the V2 spawn tool),
+and `subagent_developer_instructions` (override inherited developer instructions for subagents
+that have no role-specific instructions). `usage_hint_enabled` is a deprecated compatibility
+field whose value is ignored.
 
 ### Custom agent files
 
