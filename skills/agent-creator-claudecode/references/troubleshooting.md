@@ -164,6 +164,7 @@ Claude Code ignores unrecognized fields without any error. Check in this order:
 | `@agent-name` does nothing | Plugin agent needs the scoped name; new directory needs a restart | `@agent-my-plugin:name`; restart |
 | Agent starts without context | Subagents get only their system prompt, the delegation message, CLAUDE.md, git status, and preloaded skills | Have the parent put needed context in the delegation prompt; consider a fork |
 | `SendMessage` refuses a resumed name | The name now refers to a different agent (v2.1.199+) | Use the agent ID |
+| `SendMessage` can't find a subagent by name | The name was given before the session's last compaction. Lookup by name after a CLI restart and resume was fixed in v2.1.299 (changelog only), but pre-compaction names still need the agent ID | Use the agent ID |
 | Agent stopped partway, output marked partial | `maxTurns` reached (v2.1.246+) | Raise `maxTurns` or resume the agent |
 | Nested agent request blocked | Depth limit (3 by default) | Raise `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` or flatten the design |
 | `Concurrent subagent limit reached` | 20 subagents are already running (v2.1.217+) | Wait, or raise `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS`. Claude is told not to retry |
