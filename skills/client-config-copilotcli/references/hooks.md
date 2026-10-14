@@ -25,8 +25,8 @@ All sources are combined; when the same event appears in several, every entry ru
   branch), runs on Linux, honors only `bash` (or `command`) entries, and has a firewall-restricted
   network: by default only GitHub and Copilot hostnames are reachable, so another host (such as a
   webhook endpoint) needs an admin-configured firewall allow rule. The job is non-interactive with
-  all tool permissions pre-granted. Its filesystem is ephemeral, so send hook output elsewhere with
-  an `http` hook. The working directory is `/workspace` when a repository is cloned (otherwise
+  all tool permissions pre-granted. Its filesystem is ephemeral, so send hook output elsewhere from a
+  `bash` hook (for example with `curl` to an allowed host). The working directory is `/workspace` when a repository is cloned (otherwise
   `/root`) and `HOME` is `/root`. `GITHUB_COPILOT_API_TOKEN`, `GITHUB_COPILOT_GIT_TOKEN`, and
   `COPILOT_AGENT_PROMPT` (the prompt the job was invoked with) are set; `GITHUB_TOKEN` is not.
 - Windows: the docs' example hooks need PowerShell 7+ (`pwsh`) — `winget install Microsoft.PowerShell`.
