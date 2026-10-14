@@ -197,8 +197,11 @@ set = { MY_FLAG = "1" }
   (added in 0.162.0; the loader rejects zero, negative, and non-finite values).
 - `tui.auto_recap`: automatic recaps when the terminal is unfocused; default `true`, and `/recap`
   stays available when disabled.
-- `tui.copy_on_select`: copy selected transcript text on mouse release. Default `auto`: enabled
-  except in direct terminals known to forward their native copy shortcut.
+- `tui.copy_on_select`: copy selected transcript text on mouse release. `auto` (default) copies
+  except in direct terminals known to forward their native copy shortcut (Ghostty 1.2+, Kitty on
+  macOS, Windows Terminal, VS Code on Windows); unknown terminals, Ghostty without a recognized
+  version, and tmux/Zellij copy. `always` copies every nonempty selection; `never` requires an
+  explicit copy action.
 - `tui.right_click_paste`: right-click paste fallback for the fullscreen transcript. Default `auto`
   (Windows, WSL, Linux); `on` also enables macOS.
 - `tui.fullscreen_transcript`: Codex owns scrolling, selection, and search in the fullscreen
@@ -529,7 +532,7 @@ These tables constrain the desktop app's agent-driven browser and native-app con
 | `browser_use.allow_global_persistent_approval` | boolean | `false` stops Browser Use creating or honoring `Always allow` approvals that cover every site; saved approvals are ignored, not deleted |
 | `browser_use.allow_webmcp` | boolean | Present in the source; the official reference gives no description |
 | `browser_use.default_origin_policy` | table | Fallback for each origin setting when no `browser_use.origins` entry defines it |
-| `browser_use.origins."<origin>"` | table | Per-origin override with the same fields; include the HTTP or HTTPS scheme and optional port, no path, query, or fragment |
+| `browser_use.origins."<pattern>"` | table | Per-origin override with the same fields. Include the HTTP or HTTPS scheme and optional port; no path, query, fragment, embedded credentials, or wildcard scheme or port. The host may be exact, `*.example.com` (subdomains only), `**.example.com` (base domain and subdomains), another embedded `*` (can span dots), or `*` (every host for that scheme). Quote the table name in TOML. When several patterns match, the most restrictive value wins per capability: `deny` over `allow`, `false` over `true`, `turn` over `thread` |
 | `...access`, `...downloads`, `...uploads`, `...full_cdp_access`, `...auto_review` | `allow` \| `deny` | Per-origin policy. `deny` on `access` also blocks uploads, downloads, full CDP access, and auto-review there. `allow` only lets normal approval checks continue |
 | `...persistent_approval` | boolean | `false` stops saving or honoring `Always allow` on that origin |
 | `...access_approval_lifetime` | `turn` \| `thread` | How long a non-persistent site-access approval lasts; product default is `thread` |
