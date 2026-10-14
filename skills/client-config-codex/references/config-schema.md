@@ -203,7 +203,9 @@ set = { MY_FLAG = "1" }
   version, and tmux/Zellij copy. `always` copies every nonempty selection; `never` requires an
   explicit copy action.
 - `tui.right_click_paste`: right-click paste fallback for the fullscreen transcript. Default `auto`
-  (Windows, WSL, Linux); `on` also enables macOS.
+  (Windows, WSL, Linux; WSL only when VS Code detection is conclusive); `on` also enables macOS
+  and other supported local platforms; `off` leaves right-click paste to the terminal. Over SSH
+  or in a recognized VS Code terminal the fallback is disabled for every value, `on` included.
 - `tui.fullscreen_transcript`: Codex owns scrolling, selection, and search in the fullscreen
   transcript; default `true`, and alternate-screen restrictions take precedence.
 - `tui.disable_paste_burst`: `true` disables burst-paste detection entirely; default `false`. It
@@ -425,7 +427,7 @@ The `apps` feature flag (stable, on by default in 0.162.1) gates app integration
 | `approvals_reviewer` | Reviewer for this app's approval prompts; overrides the thread default, and a per-account (link) value overrides it |
 | `tools.<tool>.enabled`, `tools.<tool>.approval_mode` | Per app only: per-tool switches; `approval_mode` takes the same four values |
 | `links.<link>.default_tools_approval_mode`, `links.<link>.approvals_reviewer` | Per app only: approval settings for one connected account of the app, keyed by link ID. The first overrides the app's `default_tools_approval_mode` for that account unless a per-tool override exists; the second overrides the app's `approvals_reviewer` for that account |
-| `omit_tools_from` | Array of `"direct"` \| `"deferred"` \| `"code_mode"`: model-facing surfaces (initial tool list, tool search, Code Mode) from which this app's tools are omitted, in addition to server-level omissions. An empty list clears connector-level omissions |
+| `omit_tools_from` | Per app only (`[apps._default]` rejects it): array of `"direct"` \| `"deferred"` \| `"code_mode"`: model-facing surfaces (initial tool list, tool search, Code Mode) from which this app's tools are omitted, in addition to server-level omissions. An empty list clears connector-level omissions |
 
 ## Telemetry and notifications
 
