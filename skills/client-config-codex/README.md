@@ -19,12 +19,14 @@ This skill covers:
 
 - `config.toml` layers and precedence, profiles, and project trust
 - Model, reasoning effort, custom model providers, and feature flags
+- Memories and app (connector) settings
 - Sandbox mode, approval policy, permission profiles, auto-review, and `.rules` files
 - MCP servers, hooks, skills, and plugins and marketplaces
 - The `[agents]` table and where custom agents live (writing agent files is the job of the
   [agent-creator-codex](../agent-creator-codex/README.md) skill)
 - `AGENTS.md` and `AGENTS.override.md` discovery
-- Authentication, environment variables, and admin-enforced `requirements.toml`
+- Authentication, environment variables, and admin-enforced `requirements.toml`, including the
+  Browser Use, Computer Use, and desktop-app network requirements
 - CLI subcommands, `-c` overrides, sessions, and slash commands
 
 The skill never reads or prints Codex credentials, and it asks before trusting a project or

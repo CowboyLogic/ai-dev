@@ -82,6 +82,8 @@ hooks:
 | `Elicitation` | MCP server requests user input (form or URL dialog) | MCP server name | Yes |
 | `ElicitationResult` | After user responds to an elicitation | MCP server name | Yes (can override response) |
 
+`Notification` `permission_prompt` fires once you haven't typed for about six seconds. In sessions that send permission requests to the Agent SDK's `canUseTool` callback (Claude Desktop and the VS Code extension host Claude Code this way) it fires about six seconds after the request whether or not you type, does not fire if a `PermissionRequest` hook or you answer sooner, and `CLAUDE_CODE_DISABLE_PERMISSION_PROMPT_NOTIFY_HOOKS=1` turns it off there. Before v2.1.233 it did not fire in those sessions.
+
 ---
 
 ## Matcher patterns
@@ -102,7 +104,7 @@ Hyphenated exact names (e.g. `code-reviewer`) require v2.1.195+ — earlier vers
 
 ## Hook handler types
 
-**Common fields** (all handler types): `type` (required), `if`, `timeout` (seconds; defaults 600 for `command`/`http`/`mcp_tool`, 30 for `prompt`, 60 for `agent`; lowered to 30 on `UserPromptSubmit`/`PreModelSwitch`/`PostModelSwitch` and 10 on `MessageDisplay`; `SessionEnd` hooks share a 1.5 s budget), `statusMessage` (custom spinner text), `once` (remove after first successful run — honored only in skill frontmatter).
+**Common fields** (all handler types): `type` (required), `if`, `timeout` (seconds; defaults 600 for `command`/`http`/`mcp_tool`, 30 for `prompt`, 60 for `agent`; lowered to 30 on `UserPromptSubmit`/`PreModelSwitch`/`PostModelSwitch` and 10 on `MessageDisplay`; `SessionEnd` hooks share a 1.5 s budget, see [SessionEnd time budget](#sessionend-time-budget)), `statusMessage` (custom spinner text), `once` (remove after first successful run — honored only in skill frontmatter).
 
 The `if` field provides a second-level filter **without spawning the process unless it matches**:
 
@@ -148,6 +150,9 @@ The `if` field holds exactly one permission rule (no `&&`/`||`/lists) and is onl
 - `${CLAUDE_PLUGIN_DATA}` — plugin data dir
 - `$CLAUDE_ENV_FILE` — only for `SessionStart`, `Setup`, `CwdChanged`, `FileChanged`; append `export` lines to persist env vars into later Bash commands. PowerShell commands receive the variables too from v2.1.296, but PowerShell never runs the file: Claude Code copies the assignments across only when every line is a blank line, a `#` comment, or a plain `export NAME=value` / `declare -x NAME=value` / `NAME=value` with a simple quoted-or-unquoted value
 - `$CLAUDE_CODE_REMOTE` — `"true"` in remote web environments
+- `$CLAUDE_EFFORT` — the effort level in effect (same value as the `effort.level` input field)
+
+A hook process inherits Claude Code's environment, minus the `OTEL_*` exporter variables, and minus the credentials `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1` strips when it is set.
 
 ### `http`
 
@@ -207,6 +212,28 @@ Same response schema as `prompt`. Agent can use Read, Grep, Glob to inspect the 
 
 ---
 
+## Hook input (stdin JSON)
+
+Command hooks receive one JSON object on stdin; `http` hooks receive the same object as the POST body. Every event gets these common fields, plus the event-specific fields documented per event upstream (`tool_name`, `tool_input`, `tool_use_id` on tool events, `reason` on `SessionEnd`, `last_assistant_message` on `Stop`, and so on):
+
+| Field | Meaning |
+| ----- | ------- |
+| `session_id` | Current session identifier |
+| `prompt_id` | UUID of the user prompt being processed; matches the `prompt.id` attribute on OpenTelemetry events. Absent until the first user input |
+| `transcript_path` | Path to the conversation JSON. Written asynchronously, so it can lag the current turn; on `Stop`/`SubagentStop` read `last_assistant_message` instead |
+| `cwd` | Working directory when the hook is invoked |
+| `scratchpad_dir` | The session's scratchpad directory (v2.1.257+); absent when the session has none |
+| `permission_mode` | `default`, `plan`, `acceptEdits`, `auto`, `dontAsk`, or `bypassPermissions`. Manual mode arrives as `default`, never `manual`. Not every event receives it |
+| `effort` | Object with `level` (`low`/`medium`/`high`/`xhigh`/`max`); present on events within a tool-use context when the model supports effort |
+| `hook_event_name` | Name of the event that fired |
+| `agent_id`, `agent_type` | Which subagent, teammate, or `--agent` session the hook fired in. `agent_id` appears for subagents and in-process teammates; `agent_type` is also set for `--agent` sessions |
+
+Only `SessionStart` hooks can receive a `model` field, and not always. `PreModelSwitch`/`PostModelSwitch` receive `from_model` and `to_model`. There is no `$CLAUDE_MODEL` environment variable.
+
+Command hooks on macOS and Linux run in their own session with no controlling terminal, so they can't open `/dev/tty`; return `systemMessage` or `terminalSequence` JSON instead.
+
+---
+
 ## Exit codes for command hooks
 
 | Code | Meaning |
@@ -236,6 +263,14 @@ Requires v2.1.295+. By default a hook that can't start, times out, or exits with
 A failure is: the hook can't start; exit code other than 0 or 2 (even if it printed JSON that allows the action — exit 0 to return a JSON decision); an HTTP connection failure or non-2xx status; a timeout; or JSON output that can't be parsed or fails schema validation. Plain-text stdout from a command hook is not a failure.
 
 `onFailure` has no effect on `Stop`, `SubagentStop`, `TaskCompleted`, and `TeammateIdle` hooks (exit 2 there sends Claude back to work, and Claude can't repair a hook that won't run) or on background command hooks (`async`/`asyncRewake`). A timed-out `command`, `http`, or `mcp_tool` hook on `PreToolUse` does **not** block the call. Set `onFailure: "block"` on a `command` or `http` hook to make a timeout block; `mcp_tool` hooks don't accept `onFailure`, so a timed-out one always lets the call continue.
+
+### Stop hooks that keep blocking
+
+`Stop` and `SubagentStop` hooks receive `stop_hook_active: true` when Claude is already continuing because of a stop hook; check it, or the hook can block on a condition that never resolves. Claude Code also caps this loop: after stop hooks continue the turn 8 times in a row it overrides the next block and ends the turn. The count resets each time Claude calls a tool. `CLAUDE_CODE_STOP_HOOK_BLOCK_CAP` changes the cap (default 8; `0` disables it).
+
+### SessionEnd time budget
+
+`SessionEnd` hooks get a 1.5 s default timeout on exit, `/clear`, and interactive `/resume`. Two ways to raise it: set `timeout` on the hook (the overall budget rises to the highest per-hook `timeout` in your settings files, up to 60 s; plugin-provided hooks don't raise it, and a hook without its own `timeout` keeps the default), or set `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS`, which also becomes the timeout of each hook with no `timeout` of its own. Before v2.1.268 the variable raised only the overall budget.
 
 ---
 

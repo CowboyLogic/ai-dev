@@ -3,7 +3,7 @@
 Reference for the YAML frontmatter fields of Claude Code agent files. Load this file when
 writing, reviewing, or debugging agent frontmatter.
 
-**Source (last verified 2026-10-11 against Claude Code 2.1.296; the docs page references
+**Source (last verified 2026-10-13 against Claude Code 2.1.296; the docs page references
 versions up to v2.1.292):**
 <https://code.claude.com/docs/en/sub-agents#supported-frontmatter-fields>
 
@@ -112,6 +112,13 @@ Resolution order: (1) per-invocation `model` parameter, (2) frontmatter `model`,
 `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` (v2.1.257+) frontmatter and per-invocation values are
 ignored for every subagent, including built-in Explore and Plan.
 
+A per-invocation `model` also applies when the subagent is resumed or sent a follow-up
+(v2.1.211+). While `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` is on, Claude cannot pass a `model`,
+and forks and `model: inherit` skills that run in a subagent still use the main
+conversation's model. `CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL` (v2.1.296; changelog only, not
+yet on the docs pages) runs every workflow agent on one model while other subagents keep
+theirs.
+
 Before v2.1.251, `CLAUDE_CODE_SUBAGENT_MODEL` came first in the order. Values are checked
 against the organization's `availableModels` allowlist and substituted with a warning if
 blocked. Subagents inherit the parent's extended-thinking setting (v2.1.198+); there is no
@@ -202,7 +209,11 @@ Requires v2.1.271+. Use for agents that take everything from the delegation prom
 ### `effort`
 
 `low`, `medium`, `high`, `xhigh`, `max`; which are available depends on the model. Overrides
-the session effort while the agent is active.
+the session effort while the agent is active, but not the `CLAUDE_CODE_EFFORT_LEVEL`
+environment variable. When Claude runs a non-fork subagent it can also pass an `effort`
+parameter for that one invocation (v2.1.292+): it overrides this field, persists when the
+subagent is resumed, and is itself overridden by `CLAUDE_CODE_EFFORT_LEVEL`. `/tasks` shows
+the effort set for a running subagent.
 
 ### `isolation`
 

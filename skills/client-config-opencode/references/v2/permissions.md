@@ -63,6 +63,11 @@ All three fields are required strings.
 
 Plugins may define more actions (actions are free-form strings).
 
+The tools page (2.0.27) lists Code Mode worktree utilities in the `opencode` namespace. `worktree_remove` uses
+`edit` with the worktree directory as the resource, so an `edit` rule that denies that directory blocks it
+(`force: true` can discard modified or untracked files). `worktree_create` and `worktree_list` request no built-in
+permission action. The namespace is part of Code Mode, which `execute` controls.
+
 The docs state `doom_loop` and `lsp` are not V2 Core actions. The V1 keys `list` and `todowrite` do not appear in
 the V2 action table. V1 names map as: `bash` → `shell`, `task` → `subagent`, `write`/`patch` → `edit`.
 

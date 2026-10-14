@@ -2,6 +2,30 @@
 
 Changes to the `client-config-claudecode` skill, newest first.
 
+## 2026-10-13 — v2.2 (verified against Claude Code 2.1.296)
+
+Basis: Claude Code 2.1.296, still the npm `latest` and GitHub release; `stable` is 2.1.287.
+No release has shipped since the v2.1 update, so this pass compared the live docs pages
+and changelog against the references and validator and filled the gaps it found.
+
+- `references/hooks.md`: adds the common hook input fields every event receives on stdin
+  (`session_id`, `prompt_id`, `transcript_path`, `cwd`, `scratchpad_dir`, `permission_mode`,
+  `effort`, `hook_event_name`, `agent_id`, `agent_type`) and `$CLAUDE_EFFORT`; the 8-continuation
+  cap on `Stop`/`SubagentStop` hooks and `CLAUDE_CODE_STOP_HOOK_BLOCK_CAP`; the `SessionEnd`
+  1.5 s budget, how a per-hook `timeout` raises it (up to 60 s), and
+  `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS`; `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` in the hook
+  environment; and how `Notification` `permission_prompt` behaves under the Agent SDK
+  `canUseTool` callback (`CLAUDE_CODE_DISABLE_PERMISSION_PROMPT_NOTIFY_HOOKS`).
+- `references/settings-schema.md`: adds `worktree.location`, the Desktop SSH worktree folder
+  (user scope only; ignored by `--worktree`, `EnterWorktree`, isolated subagents, and
+  background sessions).
+- `scripts/validate-settings.py`: validates `worktree.location` (absolute path or `~/`) and
+  warns when it appears in project, local, or managed settings.
+- Checked and unchanged: every settings key and scope label in the settings reference index,
+  and all 33 hook events, match the references and validator.
+- Evals: new eval for the stop-hook continuation cap; not yet run (the README results predate
+  it).
+
 ## 2026-10-11 — v2.1 (verified against Claude Code 2.1.296)
 
 Basis: Claude Code 2.1.296 (npm `latest`; `stable` is 2.1.287), docs pages fetched with
