@@ -69,6 +69,7 @@ The `providers` map (plural) is keyed by the provider ID used in model reference
 | `env` | Ordered env var names that can supply the credential |
 | `package` | Runtime provider package |
 | `canonical` | Built-in provider ID whose catalog defaults this provider inherits |
+| `compatibility` | Request/response compatibility defaults inherited by every model of the provider; a model's `compatibility` overrides individual fields (see [Compatibility](#compatibility)) |
 | `settings` | Typed OpenCode controls and JSON options passed to the package (e.g. `baseURL`, `apiKey`); package-specific |
 | `headers` | String HTTP headers on every request |
 | `body` | JSON merged into every request body |
@@ -138,7 +139,7 @@ AI SDK package, the migration guide shows the `aisdk:` prefix (`"package": "aisd
 | `package` | Per-model runtime override |
 | `settings` / `headers` / `body` | Per-model request options |
 | `capabilities` | `tools`, `input`, `output` media types |
-| `compatibility` | e.g. `reasoningField` (`reasoning`, `reasoning_content`, `reasoning_text`, or custom) |
+| `compatibility` | Per-model overrides of the provider's `compatibility` (see [Compatibility](#compatibility)) |
 | `variants` | **Array** of `{ id, settings?, headers?, body? }` |
 | `cost` | Input/output and optional `cache.read`/`cache.write` per million tokens |
 | `limit` | `context`, `input`, `output` |
@@ -150,8 +151,11 @@ case-insensitively.
 
 ## Timeouts
 
-Requests wait up to five minutes for response headers and up to five minutes between streamed chunks. Set these
-on the provider's `settings` (provider-wide; not per model or variant), in milliseconds, or `false` to disable a limit:
+Requests wait up to five minutes for response headers and up to fifteen minutes between streamed chunks. The 2.0.28
+release notes raised the default streamed-chunk timeout from 5 to 15 minutes and the 2.0.29 source sets it to
+`900_000` ms, but the 2.0.29 providers docs page still says five, so set `chunkTimeout` explicitly if you depend on a
+value. Set these on the provider's `settings` (provider-wide; not per model or variant), in milliseconds, or `false`
+to disable a limit:
 
 ```jsonc
 { "providers": { "anthropic": { "settings": { "headerTimeout": 600000, "chunkTimeout": false } } } }
@@ -160,10 +164,58 @@ on the provider's `settings` (provider-wide; not per model or variant), in milli
 | Setting | Default | What it limits |
 |---------|---------|----------------|
 | `headerTimeout` | 5 minutes | Wait for response headers |
-| `chunkTimeout` | 5 minutes (30 minutes on a WebSocket transport, where it bounds the gap between frames) | Gap between streamed chunks |
+| `chunkTimeout` | 15 minutes since 2.0.28 (30 minutes on a WebSocket transport, where it bounds the gap between frames) | Gap between streamed chunks |
 | `timeout` | none | The whole request, from send until the response completes |
 
 A request that exceeds a limit fails with a transport error; OpenCode retries a timed-out request up to three times.
+
+## Compatibility
+
+`compatibility` adjusts how OpenCode talks to an OpenAI-compatible or otherwise non-standard endpoint. Set it on a
+provider to apply to all its models, or on a model to override single fields. Fields (from the 2.0.29 config schema):
+
+| Field | Values | Purpose |
+|-------|--------|---------|
+| `reasoningField` | `reasoning`, `reasoning_content`, `reasoning_text`, or a custom string | Field that carries reasoning text |
+| `requireReasoning` | boolean | Require every assistant message to include its reasoning field, even when empty |
+| `maxTokensField` | `max_completion_tokens` \| `max_tokens` | Request field that carries the output limit; detected from the provider and `baseURL` when unset (OpenAI-compatible chat protocol) |
+| `requireFinishReason` | boolean | OpenAI-compatible chat: a stream that ends without `finish_reason` is an error (default `true`); set `false` for endpoints that omit it |
+| `requireAssistantAfterTool` | boolean | OpenAI-compatible chat: append a `Done.` assistant message when the last message is a tool result (default on only for Mistral) |
+| `supportsPromptCacheKey` | boolean | Send a prompt cache key (V1 `options.setCacheKey` migrates here) |
+| `cacheFormat` | `anthropic` \| `alibaba` | Prompt-cache marker syntax the endpoint accepts |
+| `supportsThinkingBlockBinding`, `supportsEffortUpdates` | boolean | **Model-only**; override model-ID detection |
+
+`cacheFormat` is for Claude models behind an OpenAI-compatible proxy such as LiteLLM, where OpenCode cannot tell that
+Anthropic-style `cache_control` breakpoints are needed. It marks the last tool definition, the system prompt, and the
+latest message with `cache_control: { "type": "ephemeral" }` (the endpoint's default five-minute lifetime).
+`alibaba` uses the same markers but skips tool definitions. Routes known to need breakpoints, such as Anthropic, get
+them automatically.
+
+```jsonc
+{
+  "providers": {
+    "litellm": {
+      "package": "@opencode/ai/providers/openai-compatible",
+      "settings": { "baseURL": "https://litellm.example.com/v1" },
+      "models": {
+        "claude-sonnet-5": { "compatibility": { "cacheFormat": "anthropic" } },
+      },
+    },
+  },
+}
+```
+
+## Request encoding
+
+`settings.encoding` compresses HTTP request bodies with `"zstd"` or `"gzip"`, or sends plain JSON with `"none"`. Set it
+on a provider, model, or variant; the most specific value wins. Only enable an encoding the endpoint decodes: most
+providers and gateways reject compressed bodies. OpenAI defaults to `"zstd"` when signed in with ChatGPT and no custom
+`baseURL` is configured; API keys send plain JSON. WebSocket messages are unaffected (2.0.28 release notes and the
+2.0.29 providers page).
+
+```jsonc
+{ "providers": { "openai": { "settings": { "encoding": "none" } } } }
+```
 
 ## Model references
 

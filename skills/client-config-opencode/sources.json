@@ -70,7 +70,7 @@
         "https://opencode.ai/v2/docs/sharing/",
         "https://raw.githubusercontent.com/anomalyco/opencode/dev/CHANGELOG.md"
       ],
-      "covers": "V2: config locations/precedence, all top-level fields, ignored V1 fields, commands, skills, formatters, compaction, media, websearch, warming, references, worktree, instructions, service env, background service and remote pairing, V2 release notes (CHANGELOG.md)"
+      "covers": "V2: config locations/precedence (system directory, macOS managed preferences), all top-level fields, ignored V1 fields, commands, skills, formatters, compaction, media, websearch, warming, references, worktree, instructions, service env, background service and remote pairing, V2 release notes (CHANGELOG.md)"
     },
     "references/v2/permissions.md": {
       "urls": [
@@ -78,7 +78,7 @@
         "https://opencode.ai/v2/docs/policies/",
         "https://opencode.ai/v2/docs/tools/"
       ],
-      "covers": "V2: ordered permissions rules, actions/resources, defaults, approvals, experimental.policies (provider.use, permission), policy precedence"
+      "covers": "V2: ordered permissions rules, actions/resources, defaults, approvals, policies (provider.use, tool.use, integration.use; experimental.policies is the legacy location), policy precedence"
     },
     "references/v2/agents.md": {
       "urls": ["https://opencode.ai/v2/docs/agents/"],
@@ -94,7 +94,7 @@
         "https://opencode.ai/v2/docs/models/",
         "https://opencode.ai/v2/docs/cli/providers/"
       ],
-      "covers": "V2: providers map, packages, settings/headers/body, models and variants array, model references, Bedrock/Vertex/Azure/Copilot/local runtimes, credential storage"
+      "covers": "V2: providers map, packages, settings/headers/body, models and variants array, compatibility and prompt caching, request encoding, model references, Bedrock/Vertex/Azure/Copilot/local runtimes, credential storage"
     },
     "references/v2/cli.md": {
       "urls": [
