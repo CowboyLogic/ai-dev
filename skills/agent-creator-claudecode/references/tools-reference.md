@@ -110,6 +110,10 @@ want "everything except writes" and expect MCP tools to come along.
 An allowlist that names an MCP server with no connected server resolves to nothing for that
 entry, which can trigger the zero-tools refusal if nothing else in the list resolves.
 
+Changelog only (v2.1.299): a `tools` entry now takes only the named MCP server's tools. For a
+server whose normalized name contains `__`, list it as `mcp__<whole name>__*`; the shorter
+`mcp__a` form no longer reaches a server named `a__b`.
+
 ## Specifiers Remove the Whole Tool
 
 `disallowedTools: Bash(git push *)` does **not** keep Bash and block `git push`. It removes

@@ -3,7 +3,7 @@
 Reference for the YAML frontmatter fields of Claude Code agent files. Load this file when
 writing, reviewing, or debugging agent frontmatter.
 
-**Source (last verified 2026-10-13 against Claude Code 2.1.296; the docs page references
+**Source (last verified 2026-10-14 against Claude Code 2.1.299; the docs page references
 versions up to v2.1.292):**
 <https://code.claude.com/docs/en/sub-agents#supported-frontmatter-fields>
 
@@ -87,6 +87,8 @@ delegation. Combined `name` + `description` text across all non-built-in agents 
 | MCP server | `tools: mcp__github__*` |
 
 - If entries are given but **none** resolve, launch is refused ("zero tools" error).
+- A server whose normalized name contains `__` is listed as `mcp__<whole name>__*` (v2.1.299,
+  changelog only).
 - Do not list `Skill` to preload skills; use the `skills` field.
 - Legacy `Task(...)` still works as an alias for `Agent(...)` (renamed in v2.1.63).
 
@@ -199,6 +201,21 @@ prompt to consult and update memory.
 
 `true` keeps the agent in the background even if Claude asks for the foreground. Background
 agents get a reduced built-in tool set and route permission prompts to the main session.
+
+Which mode a given run gets is the first of these that applies (sub-agents docs, "Run
+subagents in foreground or background"):
+
+1. Spawned by an in-process agent-team teammate: foreground. A teammate spawning an agent
+   whose definition sets `background: true` is refused with an error.
+2. `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`: foreground, in every kind of session.
+3. Fork mode on (the default in an interactive session): background, and Claude cannot ask
+   for the foreground.
+4. Fork mode off (`-p`, the Agent SDK unless turned on): background by default, foreground
+   when Claude needs the result before continuing. `background: true` keeps the agent in the
+   background even then.
+
+A skill with `context: fork` follows the skills docs instead. Background agents get a smaller
+built-in tool set than foreground ones, except forks and resumed foreground agents.
 
 ### `omitClaudeMd`
 
