@@ -2,7 +2,7 @@
 
 Native V2 agent fields, file locations, defaults, and merge rules.
 
-**Sources (checked 2026-10-12):** <https://opencode.ai/v2/docs/agents/> ·
+**Sources (checked 2026-10-14):** <https://opencode.ai/v2/docs/agents/> ·
 <https://opencode.ai/v2/docs/config/> · <https://opencode.ai/v2/docs/models/> ·
 <https://opencode.ai/v2/docs/tools/> · <https://opencode.ai/v2/docs/migrate-v1/>
 
@@ -181,7 +181,8 @@ instructions (`AGENTS.md`), skills, and references are still added.
 
 > [!NOTE]
 > The V2 docs do not document `{file:...}` substitution for `system`, but it works:
-> verified on OpenCode 2.0.27 with `opencode debug config`, where
+> verified on OpenCode 2.0.27 with `opencode debug config` (the substitution source is
+> unchanged through 2.0.29; not re-run on the 2.0.29 binary), where
 > `"system": "{file:./prompts/plan.txt}"` resolved to the file's contents, relative to
 > the config file, including when OpenCode was started from a subdirectory. Because
 > the behavior is undocumented, a Markdown agent file (body = prompt) is still the
