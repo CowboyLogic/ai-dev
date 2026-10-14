@@ -6,8 +6,8 @@ A skill for creating custom agents for GitHub Copilot: Copilot cloud agent on Gi
 
 | | |
 |---|---|
-| GitHub Copilot CLI | **v1.0.96** (released 2026-10-12) |
-| References last verified | 2026-10-13 |
+| GitHub Copilot CLI | **v1.0.97** (released 2026-10-13) |
+| References last verified | 2026-10-14 |
 | Sources | docs.github.com Copilot custom-agent and CLI documentation, the supported-models page, and VS Code documentation at code.visualstudio.com (see the reference files for URLs) |
 
 The model roster and retirement dates change often; check the supported-models page before
@@ -23,7 +23,7 @@ This skill covers:
 - Where to store agent files (repository, user, organization, enterprise, CLI plugins)
 - Tools configuration: cross-platform aliases, VS Code tool sets, MCP namespacing
 - Model selection and current model names, including retired models to avoid
-- Handoffs, subagents, and agent-scoped hooks in VS Code
+- Handoffs and subagents in VS Code, and agent-scoped hooks in VS Code (Local harness) and Copilot CLI
 - CLI-only fields (`models`, `modelPolicy`, `reasoningEffort`, `include-custom-instructions`)
 - MCP server configuration and secrets for the cloud agent
 - Writing effective agent prompts and descriptions

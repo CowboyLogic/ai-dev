@@ -58,7 +58,7 @@ You are a planning agent. Produce a step-by-step plan and do not edit files.
 | `disable-model-invocation` | Stops other agents from selecting this one as a subagent, unless a coordinator names it in its `agents` list |
 | `target` | `vscode` or `github-copilot`. Omit it for both |
 | `handoffs` | Suggested next steps, shown as buttons after a response |
-| `hooks` | Commands scoped to the agent (Preview) |
+| `hooks` | Commands scoped to the agent (Preview, Local harness only) |
 | `mcp-servers` | MCP server configuration, for GitHub Copilot only |
 
 An unrecognized property or tool name is ignored, not an error. That makes a mistyped name fail quietly, so check the spelling when an agent does not behave as written.
