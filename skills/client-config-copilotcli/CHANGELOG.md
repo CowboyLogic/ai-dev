@@ -2,7 +2,7 @@
 
 Changes to the `client-config-copilotcli` skill, newest first.
 
-## 2026-10-14 — v2.3 (refresh to Copilot CLI v1.0.97)
+## 2026-10-14 — v2.4 (refresh to Copilot CLI v1.0.97)
 
 Basis: GitHub Copilot CLI **v1.0.97** (released 2026-10-13, the latest stable release; the
 v1.0.98 tags are prereleases); previous refresh covered v1.0.96. Documentation changes were
@@ -36,7 +36,7 @@ github/copilot-cli v1.0.97 release notes are labeled as such.
   catalog refresh, `/user switch` layout, and the GitHub MCP toolset endpoint fix.
 - Not done: the benchmark in `README.md` was not re-run.
 
-## 2026-10-13 — v2.2 (refresh to Copilot CLI v1.0.96)
+## 2026-10-13 — v2.3 (refresh to Copilot CLI v1.0.96)
 
 Basis: GitHub Copilot CLI **v1.0.96** (released 2026-10-12, the latest stable release; the
 v1.0.97 tags are prereleases); previous refresh covered v1.0.95. Each claim comes from the current
@@ -59,6 +59,30 @@ notes are labeled as such.
   permission-decision attribution in the timeline, `/allow-all` during startup policy resolution.
 - `SKILL.md`: routing rows for OpenTelemetry, the safety checks, and the model table.
 - `README.md`: associated Copilot CLI version and refresh date.
+- Not done: the benchmark in `README.md` was not re-run.
+
+## 2026-10-12 — v2.2 (gap-fill against Copilot CLI v1.0.95)
+
+Basis: GitHub Copilot CLI **v1.0.95** (released 2026-10-09), still the latest stable release; the
+newer v1.0.96-0 through v1.0.96-2 tags are prereleases and were not used. The docs.github.com pages
+listed in `sources.json` were re-fetched and compared with the references. None of those pages
+changed in github/docs after 2026-10-09 (the last change, to the CLI command reference, predates
+the previous refresh), so this pass fills gaps that refresh left. Each addition comes from the
+current documentation.
+
+- `references/cli-commands.md`: `/collect-debug-logs [file|gist|share] [PATH]` and its consent
+  behavior, the `/release-notes` alias and arguments of `/changelog`, `/tuikit`, and a new
+  OpenTelemetry monitoring section (activation conditions, environment variables, signals,
+  content-capture warning, `nano_aiu` guidance).
+- `references/permissions.md`: new built-in safety checks section (command safety analysis,
+  environment variable denylist, `web_fetch` SSRF protection, plan mode limits) and the sandbox
+  tool directory grants.
+- `references/mcp.md`: private npm registry `args`, trust levels by source, the 1 MB stdio filter
+  exception, and how the enterprise allowlist fingerprints servers.
+- `references/hooks.md`: cloud agent execution environment (filesystem, working directory,
+  environment variables, network, interactivity).
+- `SKILL.md`, `sources.json`: reference map and `covers` entries updated for the additions.
+- `README.md`: references-last-refreshed date.
 - Not done: the benchmark in `README.md` was not re-run.
 
 ## 2026-10-11 — v2.1 (refresh to Copilot CLI v1.0.95)

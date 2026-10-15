@@ -19,11 +19,15 @@ in the Copilot Agent Creator skill, and for VS Code's own description see
 | Scope | Folder |
 |---|---|
 | Workspace | `.github/agents/` or `.claude/agents/` |
-| User (all workspaces) | `~/.copilot/agents/` or `~/.claude/agents/` |
+| User (all workspaces), Copilot harness | `~/.copilot/agents/` |
+| User (all workspaces), Anthropic Claude harness | `~/.claude/agents/` |
 
 Files in `.github/agents/` and `~/.copilot/agents/` use the `.agent.md` extension. VS Code also detects a plain `.md`
 file in `.github/agents/`. Files in `.claude/agents/` are in Claude Code's format and are plain `.md` files, so do not
 rename them. A legacy `.chatmode.md` file should be renamed to `.agent.md`. Commit the workspace folder to share agents with your team.
+
+Copilot (Agent Host) sessions read user-level agents from the host's `~/.copilot/agents/`, and Anthropic Claude
+harness sessions read `~/.claude/agents/`; neither comes from VS Code profile user data. VS Code's migration list can move existing agents there.
 
 An organization can publish agents that VS Code detects for its members once you set
 `github.copilot.chat.organizationCustomAgents.enabled` to `true`.

@@ -54,7 +54,7 @@ in `config.json` are ignored, and `config.json` keeps only internal state such a
 | Authentication, tokens | `references/config-schema.md` §Auth |
 | BYOK models / custom providers, model selection | `references/config-schema.md` §BYOK, §Model usage |
 | Tool/path/URL permissions, `permissions-config.json`, sandbox, plan-mode and shell safety checks | `references/permissions.md` |
-| CLI flags, slash commands, supported model IDs, sessions (`--name`, `--resume`) | `references/cli-commands.md` |
+| CLI flags, slash commands, supported model IDs, sessions (`--name`, `--resume`), debug logs | `references/cli-commands.md` |
 | MCP servers, LSP servers | `references/mcp.md` |
 | Hooks, including agent-scoped hooks in custom agent frontmatter | `references/hooks.md` |
 | Skills | `references/skills.md` |

@@ -223,6 +223,7 @@ and `/instructions`.
 | `/chronicle <standup\|tips\|improve\|reindex\|skills ...>` | Session-history insights |
 | `/usage` | Usage and AI credits (v1.0.97 release notes: shows billed AI Credits for token-billed sessions, including after resume) |
 | `/diagnose [PROMPT]` | Analyze the session log |
+| `/collect-debug-logs [file\|gist\|share] [PATH]` | Collect debug logs into a local archive (`file`, at `PATH` when given), a secret GitHub gist (`gist`), or a local archive that is then uploaded to GitHub (`share`) |
 | `/refine TEXT` | Rewrite a rough prompt into a clear one for review (no argument: clean up the input box) |
 | `/workflows` | Observe workflow runs, phases, agents, and progress (needs a token-based-billing plan) |
 
@@ -237,3 +238,13 @@ gist, or `share`, which saves an archive and then asks for fresh consent before 
 is currently available only to GitHub staff), `/clikit [COMPONENT]` (preview CLI business
 components), `/tuikit [colors|icons|select|tabbar]` (preview TUIkit design-system components),
 `/exit` (`/quit`).
+
+### Debug logs
+
+`/collect-debug-logs` and the feedback-with-logs route offered from `/feedback` first save a local
+archive. `share` and the feedback route then ask for fresh consent, defaulting to **No**, before
+uploading to GitHub. Per the docs, uploading is currently available only to GitHub staff and
+internal users; everyone else uses the `file` and `gist` routes and the existing public feedback
+route.
+
+OpenTelemetry export is documented in `config-schema.md` §OpenTelemetry monitoring.

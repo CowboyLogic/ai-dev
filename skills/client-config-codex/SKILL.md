@@ -55,6 +55,9 @@ Codex config is **TOML**, not JSON. JSON appears only in `hooks.json`, plugin fi
 | Feature flags (`[features]`) | `references/config-schema.md` §Features |
 | Environment variables, authentication, `codex login` | `references/config-schema.md` §Environment variables, §Auth |
 | Managed configuration, `requirements.toml` | `references/config-schema.md` §Managed configuration |
+| Browser Use, Computer Use, in-app browser, and desktop-app network requirements | `references/config-schema.md` §Browser Use and Computer Use requirements |
+| Memories (`[memories]`) | `references/config-schema.md` §Memories |
+| App (connector) defaults and per-app tool policy (`[apps]`) | `references/config-schema.md` §Apps |
 | Sandbox mode, approval policy, network access, permission profiles, rules files, auto-review | `references/permissions.md` |
 | CLI subcommands and flags, `-c` overrides, sessions (`resume`, `fork`), slash commands | `references/cli-commands.md` |
 | MCP servers | `references/mcp.md` |

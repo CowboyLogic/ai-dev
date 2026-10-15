@@ -23,9 +23,12 @@ All sources are combined; when the same event appears in several, every entry ru
   set, or `GITHUB_COPILOT_PROMPT_MODE_REPO_HOOKS=true`.
 - Cloud agent reads only `.github/hooks/*.json` from the cloned repo (must be on the default
   branch), runs on Linux, honors only `bash` (or `command`) entries, and has a firewall-restricted
-  network. Its filesystem is ephemeral (send hook output with an `http` entry to keep it), `HOME` is
-  `/root`, `GITHUB_COPILOT_API_TOKEN` and `GITHUB_COPILOT_GIT_TOKEN` are set (`GITHUB_TOKEN` is not),
-  and `COPILOT_AGENT_PROMPT` holds the job's prompt.
+  network: by default only GitHub and Copilot hostnames are reachable, so another host (such as a
+  webhook endpoint) needs an admin-configured firewall allow rule. The job is non-interactive with
+  all tool permissions pre-granted. Its filesystem is ephemeral, so send hook output elsewhere from a
+  `bash` hook (for example with `curl` to an allowed host). The working directory is `/workspace` when a repository is cloned (otherwise
+  `/root`) and `HOME` is `/root`. `GITHUB_COPILOT_API_TOKEN`, `GITHUB_COPILOT_GIT_TOKEN`, and
+  `COPILOT_AGENT_PROMPT` (the prompt the job was invoked with) are set; `GITHUB_TOKEN` is not.
 - Windows: the docs' example hooks need PowerShell 7+ (`pwsh`) — `winget install Microsoft.PowerShell`.
 - **v1.0.97 release notes only:** after `--resume`, hooks from repository-local marketplace
   plugins keep running, and hooks from plugins your configuration disabled no longer come back.

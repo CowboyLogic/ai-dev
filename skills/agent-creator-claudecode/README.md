@@ -3,11 +3,14 @@
 A skill for creating and troubleshooting custom subagents for Claude Code.
 
 > [!NOTE]
-> **Claude Code version:** verified against [Claude Code 2.1.296](https://github.com/anthropics/claude-code/releases/tag/v2.1.296)
-> (released 2026-10-09; the npm `latest` tag on 2026-10-11, with `stable` at 2.1.287).
-> Field behavior comes from <https://code.claude.com/docs/en/sub-agents>, checked against the
-> changelog through 2.1.296. Where only the changelog supports a claim (`autoCompactWindow`),
-> the reference says so. Re-verify when Claude Code ships a new release.
+> **Claude Code version:** verified against [Claude Code 2.1.299](https://github.com/anthropics/claude-code/releases/tag/v2.1.299)
+> (released 2026-10-14; the npm `latest` and `next` tags on 2026-10-14, with `stable` at 2.1.287).
+> Field behavior comes from <https://code.claude.com/docs/en/sub-agents>, with failure
+> behavior from <https://code.claude.com/docs/en/errors>, checked against the changelog
+> through 2.1.299. Where only the changelog supports a claim (`autoCompactWindow`,
+> `CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL`, MCP server names containing `__` in `tools`), the
+> reference says so. Last re-verified 2026-10-14.
+> Re-verify when Claude Code ships a new release.
 
 ## Overview
 

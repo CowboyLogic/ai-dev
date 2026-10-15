@@ -42,7 +42,7 @@ For Claude Code *settings* (permissions, hooks in `settings.json`, MCP config), 
 | Reusable instructions loaded into the main conversation | Skill (`SKILL.md`) |
 | A different persona for a whole session | Subagent run with `claude --agent <name>` |
 | Deterministic action on a lifecycle event | Hook |
-| Side task that needs the full conversation so far | Fork (built in, no file) |
+| Side task that needs the full conversation so far | Fork (built in, no file; `/subtask <task>`, see `references/tools-reference.md`) |
 | One-off or scripted agent, nothing saved to disk | `--agents` JSON flag |
 
 ---

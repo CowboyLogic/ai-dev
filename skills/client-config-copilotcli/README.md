@@ -19,7 +19,7 @@ reference files.
 
 Benchmark run: **2026-04-26 · iteration 1** · 4 scenarios · 8 total runs
 
-These results predate the 2026-09-24 v2.0 refresh and the 2026-10-11, 2026-10-13, and 2026-10-14 refreshes, and no benchmark has
+These results predate the 2026-09-24 v2.0 refresh and the 2026-10-11, 2026-10-12, 2026-10-13, and 2026-10-14 refreshes, and no benchmark has
 been re-run since. The eval cases for this benchmark are not stored in the skill folder.
 
 ### Overall

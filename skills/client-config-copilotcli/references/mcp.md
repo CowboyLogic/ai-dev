@@ -191,7 +191,18 @@ that are off by default). Flags: `--disable-builtin-mcps`, `--disable-mcp-server
 - Local stdio servers that spawn inside the sandbox show `connected (sandboxed)`; toggling
   `/sandbox` restarts only local servers. Remote servers aren't locally sandboxed, though the
   sandbox network policy can restrict the CLI's connections to them.
-- Stdio servers must write logs to **stderr**; non-JSON stdout lines are dropped.
+- Stdio servers must write logs to **stderr**; non-JSON stdout lines are dropped (a line over 1 MB
+  skips that check and is forwarded as is).
+- Trust levels by source: built-in High; repository `.github/mcp.json` and workspace `.mcp.json`
+  Medium (review recommended); user `~/.copilot/mcp-config.json` user-defined; remote servers Low
+  (always review).
+- To pull a server package from a private npm registry, put `--registry` and the registry URL before
+  the package name in `args`, for example `"command": "npx"` with
+  `"args": ["--registry", "https://npm.pkg.github.com", "@my-org/internal-mcp-server"]`.
+  `--registry` and the other npm options (`--userconfig`,
+  `--globalconfig`, `--prefix`, `--cache`, `--node-options`, `--workspace`, `-w`) are treated as
+  value-consuming arguments when the server's identity fingerprint is computed, so allowlist checks
+  still work with them ahead of the package name.
 - Tool snapshots are cached; disable per server with `disableToolCache` or globally with
   `COPILOT_MCP_TOOL_CACHE=false`.
 - Per the v1.0.89–v1.0.93 release notes (not in the docs reference): `server/tool` and
@@ -203,7 +214,9 @@ that are off by default). Flags: `--disable-builtin-mcps`, `--disable-mcp-server
 
 - Enterprise registry/allowlist policies apply automatically; blocked servers show
   `MCP server "NAME" was blocked by your enterprise "ENTERPRISE"`. Fail-closed if the policy can't
-  be verified. Built-in servers are exempt.
+  be verified. Built-in servers are exempt. The CLI fingerprints each non-default server from its
+  command, arguments, and remote URL and sends the fingerprints to the enterprise evaluate endpoint;
+  the check also runs when the `MCP_ENTERPRISE_ALLOWLIST` experimental feature flag is enabled.
 - Managed settings may set `allowedMcpServers` / `deniedMcpServers` entries matching exactly one of
   `serverUrl` (wildcards allowed), `serverCommand` (exact command + args array), or `serverName`.
   Deny always wins; an empty `allowedMcpServers` array blocks all non-default servers.

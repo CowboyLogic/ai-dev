@@ -76,5 +76,6 @@ Alternatives: run `/agent` → **Create new agent** in Copilot CLI, or use **Cre
 | Configuration reference | <https://docs.github.com/en/copilot/reference/custom-agents-configuration> |
 | Custom agents for Copilot CLI | <https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/create-custom-agents-for-cli> |
 | Custom agents in VS Code | <https://code.visualstudio.com/docs/agent-customization/custom-agents> |
+| Migrate Copilot customizations in VS Code | <https://code.visualstudio.com/docs/agent-customization/migrate-customizations> |
 | Supported AI models | <https://docs.github.com/en/copilot/reference/ai-models/supported-models> |
 | Awesome Copilot agents | <https://github.com/github/awesome-copilot/tree/main/agents> |

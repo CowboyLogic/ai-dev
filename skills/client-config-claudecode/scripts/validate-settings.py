@@ -17,7 +17,7 @@ import json
 import os
 import re
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 # ---------------------------------------------------------------------------
 # Enumerations
@@ -95,7 +95,7 @@ ANY_FILE_KEYS = {
     "enabledPlugins", "enforceAvailableModels", "env", "extraKnownMarketplaces", "fallbackModel",
     "fastMode", "fastModePerSessionOptIn", "feedbackSurveyRate", "fileCheckpointingEnabled",
     "fileSuggestion", "forceLoginMethod", "forceLoginOrgUUID", "gcpAuthRefresh", "hooks",
-    "httpHookAllowedEnvVars", "includeGitInstructions", "inputNeededNotifEnabled",
+    "httpHookAllowedEnvVars", "idleCompaction", "includeGitInstructions", "inputNeededNotifEnabled",
     "isolatePeerMachines", "language", "maxEffortLevel", "maxProseWidth", "minimumVersion",
     "model", "modelOverrides", "modelSettings", "otelHeadersHelper", "outputStyle", "permissions",
     "plansDirectory", "prUrlTemplate", "preferredNotifChannel", "prefersReducedMotion",
@@ -195,6 +195,54 @@ def user_settings_path() -> Path:
     """$CLAUDE_CONFIG_DIR/settings.json when CLAUDE_CONFIG_DIR is set, else ~/.claude/settings.json."""
     home = os.environ.get("CLAUDE_CONFIG_DIR")
     return (Path(home).expanduser() if home else Path.home() / ".claude") / "settings.json"
+
+
+# `env` variables Claude Code drops (settings reference, "Variables Claude Code ignores in `env`")
+ENV_IGNORED_EVERYWHERE = {
+    "CLAUDE_CODE_REMOTE", "CLAUDE_CODE_ACCOUNT_UUID", "CLAUDE_CODE_MESSAGING_SOCKET",
+    "CLAUDE_CODE_MESSAGING_TOKEN", "CLAUDE_CODE_PROJECT_DIR_NAME", "CLAUDE_CODE_RESTRICTED",
+    "CLAUDE_CODE_DISABLE_POWERSHELL_CMD_RM_DENY", "CLAUDE_CODE_DISABLE_DANGEROUS_RM_TIMEOUT",
+    "CLAUDE_CODE_DISABLE_SUBSTITUTION_RM_PROMPT", "CLAUDE_CODE_DISABLE_INLINE_SHELL_RM_PROMPT",
+    "CLAUDE_CODE_DISABLE_ADMIN_ENV_UNION",
+}
+ENV_IGNORED_IN_PROJECT_LOCAL = {
+    "CLAUDE_CONFIG_DIR", "CLAUDE_CODE_TMPDIR", "HOME", "TMPDIR", "TMP", "TEMP",
+    "OTEL_LOG_RAW_API_BODIES", "OTEL_LOG_MANAGED_SETTINGS", "ENABLE_BETA_TRACING_DETAILED", "BETA_TRACING_ENDPOINT",
+    "CLAUDE_CODE_ENABLE_TELEMETRY", "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA",
+    "ENABLE_ENHANCED_TELEMETRY_BETA", "OTEL_LOGS_EXPORTER", "OTEL_METRICS_EXPORTER",
+    "OTEL_TRACES_EXPORTER", "OTEL_LOG_USER_PROMPTS", "OTEL_LOG_ASSISTANT_RESPONSES",
+    "OTEL_LOG_TOOL_CONTENT", "OTEL_LOG_TOOL_DETAILS", "OTEL_EXPORTER_PROMETHEUS_HOST",
+    "OTEL_EXPORTER_PROMETHEUS_PORT", "CLAUDE_CODE_PROCESS_WRAPPER", "CLAUDE_CODE_SYNC_SKILLS",
+    "CLAUDE_CODE_SYNC_PLUGINS", "CLAUDE_CODE_PLUGIN_CACHE_DIR", "CLAUDE_CODE_PLUGIN_SEED_DIR",
+    "CLAUDE_CODE_USER_DIALOG_TIMEOUT_MS", "CLAUDE_AFK_TIMEOUT_MS", "CLAUDE_AFK_COUNTDOWN_MS",
+    "CLAUDE_CODE_DISABLE_ATTACHMENTS", "CLAUDE_CODE_DISABLE_FILE_MENTIONS",
+}
+ENV_IGNORED_PREFIXES = ("XDG_",)
+# Windows environment names are case-insensitive, so these match upper-cased.
+ENV_IGNORED_WINDOWS_NAMES = {"SYSTEMROOT", "COMSPEC", "PROGRAMDATA", "LOCALAPPDATA", "PATHEXT", "PSMODULEPATH",
+                              "PROGRAMW6432"}
+ENV_IGNORED_WINDOWS_PREFIXES = ("PROGRAMFILES",)
+ENV_OTLP_SUFFIXES = ("_ENDPOINT", "_HEADERS", "_PROTOCOL", "_CERTIFICATE", "_CLIENT_KEY", "_INSECURE")
+# A value that turns telemetry off still applies from project and local settings.
+# Exporter selectors turn off with `none`; content switches turn off with a falsy value.
+ENV_EXPORTER_SELECTORS = {"OTEL_LOGS_EXPORTER", "OTEL_METRICS_EXPORTER", "OTEL_TRACES_EXPORTER"}
+ENV_CONTENT_SWITCHES = {"OTEL_LOG_USER_PROMPTS", "OTEL_LOG_TOOL_CONTENT", "OTEL_LOG_TOOL_DETAILS"}
+ENV_SELECTOR_OFF_VALUES = {"none"}
+ENV_SWITCH_OFF_VALUES = {"", "0", "false", "no", "off"}
+
+
+def env_ignored_in_project_local(name: str, value) -> bool:
+    normalized = str(value).strip().lower()
+    if name in ENV_EXPORTER_SELECTORS and normalized in ENV_SELECTOR_OFF_VALUES:
+        return False
+    if name in ENV_CONTENT_SWITCHES and normalized in ENV_SWITCH_OFF_VALUES:
+        return False
+    upper = name.upper()
+    if upper in ENV_IGNORED_WINDOWS_NAMES or upper.startswith(ENV_IGNORED_WINDOWS_PREFIXES):
+        return True
+    if name in ENV_IGNORED_IN_PROJECT_LOCAL or name.startswith(ENV_IGNORED_PREFIXES):
+        return True
+    return name.startswith("OTEL_EXPORTER_OTLP_") and name.endswith(ENV_OTLP_SUFFIXES)
 
 
 def infer_scope(path: Path) -> str:
@@ -538,6 +586,13 @@ def validate(data, scope):
             err("worktree.baseRef: must be \"fresh\" or \"head\"")
         if wt.get("bgIsolation") not in (None, "worktree", "none"):
             err("worktree.bgIsolation: must be \"worktree\" or \"none\"")
+        if "location" in wt:
+            loc = wt["location"]
+            # Evaluated on the SSH host, which Claude Desktop requires to run Linux or macOS.
+            if not isinstance(loc, str) or not (loc.startswith("~/") or PurePosixPath(loc).is_absolute()):
+                err("worktree.location: must be a POSIX absolute path or start with \"~/\"")
+            if scope in {"project", "local", "managed"}:
+                warn(f"'worktree.location' is read only from user settings; ignored in {scope} settings")
 
     for key in ("statusLine", "subagentStatusLine", "fileSuggestion"):
         if key in data:
@@ -596,6 +651,10 @@ def validate(data, scope):
             for k, v in data["env"].items():
                 if not isinstance(v, str):
                     err(f"env.{k}: value must be a string, got {type(v).__name__}")
+                if k in ENV_IGNORED_EVERYWHERE:
+                    warn(f"env.{k}: ignored from every settings file; Claude Code reads it from the launch environment only")
+                elif scope in {"project", "local"} and env_ignored_in_project_local(k, v):
+                    warn(f"env.{k}: ignored in {scope} settings; set it in your shell, user settings, or managed settings")
 
     if "mcpServers" in data:
         warn("mcpServers: MCP servers belong in ~/.claude.json or .mcp.json, not settings.json")

@@ -9,7 +9,9 @@ Check these in order:
 
 1. **Location.** The file must be in `.github/agents/` or `.claude/agents/` in the workspace, or
    `~/.copilot/agents/` or `~/.claude/agents/` for your user. A file in `.github/copilot-instructions/` or any
-   other folder is not detected.
+   other folder is not detected. In a Copilot (Agent Host) session, user-level agents are read from the host's
+   `~/.copilot/agents/` (`~/.claude/agents/` applies only to Anthropic Claude harness sessions), not from VS Code profile user data or the deprecated
+   `chat.agentFilesLocations` setting.
 2. **Extension.** Use `.agent.md` in `.github/agents/` and `~/.copilot/agents/`. Files in `.claude/agents/` are plain `.md`. A legacy `.chatmode.md` file should be renamed.
 3. **Frontmatter.** The block must open and close with `---` on their own lines and be valid YAML. A tab, a
    missing quote around a value containing a colon, or a stray character in the block can stop it parsing.
@@ -27,6 +29,7 @@ Files written to the earlier layout do not work. Move them and drop the properti
 |---|---|
 | `.github/copilot-instructions/name.md` | `.github/agents/name.agent.md` |
 | An entry in `settings.json` pointing at the file | Nothing. VS Code finds agents by location |
+| An agent kept in VS Code profile user data, or in a folder named by `chat.agentFilesLocations` | `~/.copilot/agents/` for your user, or `.github/agents/` in the workspace. Copilot (Agent Host) sessions do not read the old sources |
 | `temperature` | Nothing. VS Code has no such property |
 | `permissions: read / write / execute` | `tools`, for example `["read", "search"]` for read-only |
 

@@ -7,6 +7,7 @@ Reference for the YAML frontmatter properties in custom agent profiles (`.agent.
 - GitHub configuration reference: <https://docs.github.com/en/copilot/reference/custom-agents-configuration>
 - VS Code: <https://code.visualstudio.com/docs/agent-customization/custom-agents>
 - VS Code subagents: <https://code.visualstudio.com/docs/agents/run/subagents>
+- VS Code customization migration: <https://code.visualstudio.com/docs/agent-customization/migrate-customizations>
 - VS Code hooks: <https://code.visualstudio.com/docs/agent-customization/hooks>
 - GitHub hooks reference (agent-scoped hooks, Copilot CLI): <https://docs.github.com/en/copilot/reference/hooks-reference#agent-scoped-hooks>
 - Copilot CLI: <https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference#custom-agents-reference>
@@ -410,7 +411,7 @@ metadata:
 
 ## Claude Agent Format (`.claude/agents/`)
 
-VS Code and Copilot CLI both load agents from `.claude/agents/` (plain `.md` files in the [Claude sub-agents format](https://code.claude.com/docs/en/sub-agents)). VS Code also reads `~/.claude/agents/` at user level. User-level agents must be in the supported folder on the machine where the selected harness runs (`~/.copilot/agents` or `~/.claude/agents`); those folders are separate from VS Code profile user data. For Local harness sessions, user-level agents are stored in VS Code profile storage.
+VS Code and Copilot CLI both load agents from `.claude/agents/` (plain `.md` files in the [Claude sub-agents format](https://code.claude.com/docs/en/sub-agents)). VS Code also reads `~/.claude/agents/` at user level. User-level agents must be in the supported folder on the machine where the selected harness runs (`~/.copilot/agents` for the Copilot harness; `~/.claude/agents` applies only to Anthropic Claude harness sessions); those folders are separate from VS Code profile user data. For Local harness sessions, user-level agents are stored in VS Code profile storage.
 
 | Property | `.agent.md` format | Claude format |
 |---|---|---|
@@ -449,6 +450,14 @@ Versioning follows Git commit SHAs of the profile file. An assigned task uses th
 ### File detection (VS Code)
 
 VS Code treats **any** `.md` file in `.github/agents/` as a custom agent. The settings `chat.agentFilesLocations` and `chat.modeFilesLocations` are deprecated (Local agent only). Legacy `.chatmode.md` files should be renamed to `.agent.md`.
+
+### Moving a Local agent to the Copilot harness (VS Code)
+
+VS Code's migration guide describes what changes when a custom agent that worked in a Local session is used in a Copilot (Agent Host) session:
+
+- The Copilot harness doesn't read custom agents from VS Code profile user data or from the `chat.agentFilesLocations`, `chat.modeFilesLocations`, `chat.instructionsFilesLocations`, or `chat.agentSkillsLocations` settings. The migration list moves agents to `.github/agents` (workspace) or `~/.copilot/agents` (user), and the migrated user files aren't included in Settings Sync.
+- Prompt files (`*.prompt.md`) aren't loaded in Copilot sessions. The migration converts them to skills with `disable-model-invocation: true`; the prompt's `agent`, `model`, and `tools` aren't carried over.
+- Agents that depend on Local tool names, tool sets, or hooks need semantic changes. VS Code has no automatic migration for hooks or tool-set files, and the Copilot harness doesn't support VS Code tool-set files; the guide says to review the tools directly in the custom agent or the chat tools picker. It points to **Migrate with Agent** (which uses Copilot credits) for guided conversions.
 
 ---
 

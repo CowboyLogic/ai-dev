@@ -150,7 +150,7 @@ Claude Code ignores unrecognized fields without any error. Check in this order:
 | `opus` alias runs on the main conversation's exact model | Same-family alias resolves to the parent's model (including `[1m]`) | Use a full model ID to pin a specific version |
 | Frontmatter model ignored on an older Claude Code | Before v2.1.251 the env var took precedence | Update, or unset `CLAUDE_CODE_SUBAGENT_MODEL` |
 | Thinking behaves differently than expected | Subagents inherit the parent's extended-thinking setting; no per-agent field | Change it in the parent session |
-| `effort` seems unchanged | Available levels depend on the model | Choose a level the model supports |
+| `effort` seems unchanged | Available levels depend on the model; `CLAUDE_CODE_EFFORT_LEVEL` overrides both the `effort` field and a per-invocation `effort` parameter (v2.1.292+) | Choose a level the model supports; unset the variable. `/tasks` shows the effort set for a subagent |
 
 ---
 
@@ -164,8 +164,24 @@ Claude Code ignores unrecognized fields without any error. Check in this order:
 | `@agent-name` does nothing | Plugin agent needs the scoped name; new directory needs a restart | `@agent-my-plugin:name`; restart |
 | Agent starts without context | Subagents get only their system prompt, the delegation message, CLAUDE.md, git status, and preloaded skills | Have the parent put needed context in the delegation prompt; consider a fork |
 | `SendMessage` refuses a resumed name | The name now refers to a different agent (v2.1.199+) | Use the agent ID |
+| `SendMessage` can't find a subagent by name | The name was given before the session's last compaction. Lookup by name after a CLI restart and resume was fixed in v2.1.299 (changelog only), but pre-compaction names still need the agent ID | Use the agent ID |
 | Agent stopped partway, output marked partial | `maxTurns` reached (v2.1.246+) | Raise `maxTurns` or resume the agent |
 | Nested agent request blocked | Depth limit (3 by default) | Raise `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` or flatten the design |
+| `Concurrent subagent limit reached` | 20 subagents are already running (v2.1.217+) | Wait, or raise `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS`. Claude is told not to retry |
+| `SendMessage` to a subagent is refused as cancelled | You stopped that subagent yourself (`x` in `/tasks`, or an SDK `stop_task`); those do not auto-resume | Type into its transcript while its row is still in the subagent panel, or start a new run |
+| Claude cannot continue an Explore or Plan run | Both are one-shot and return no agent ID | Use `general-purpose` or a custom agent when the work may need continuing |
+| `subagent_type is required: the general-purpose agent is not available in this session` | The Agent call named no type and the session has no `general-purpose` subagent: `CLAUDE_AGENT_SDK_DISABLE_BUILTIN_AGENTS=1` in non-interactive mode, or the main-session agent's `tools: Agent(...)` allowlist leaves it out | Usually nothing, since the message lists the available agents and Claude retries. Otherwise add `general-purpose` to the allowlist or unset the variable |
+
+---
+
+## Failures While an Agent Runs
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `Agent terminated early due to an API error: <detail>` (v2.1.199+) | The subagent's API request failed terminally, such as a usage limit or server-error retries running out, before it finished. A subagent whose only output was tool calls also lands here | Match the text after the colon to its section on the errors page and follow it; once it clears, ask Claude to retry or resume the subagent |
+| A foreground subagent returned partial output marked incomplete | A rate limit, overload, or server error cut off a subagent that had already produced text | Ask Claude to retry or resume it. A configured fallback model chain, when it covers the failure, moves the subagent to the first model that accepts the request instead |
+| A background subagent is marked failed | An API error ended its run; the completion message names the error and carries its last output, so partial work is kept | Same as above |
+| A subagent's report begins with a `[harness: subagent output matched instruction-shaped pattern(s):` line, or text in it has a backslash you did not write (v2.1.210+) | Claude Code scans each subagent's final report. It inserts a backslash into text that imitates its own output (a `<system-reminder>` tag, a line starting `Human:` or `Assistant:`), and prepends the marker line when the report imitates such a tag or mentions permission settings such as `bypassPermissions` | Expected. Nothing is removed or reworded, and the scan changes no permissions. Keep the agent from echoing those strings if the marker is noise |
 
 ---
 
@@ -192,7 +208,7 @@ Claude Code ignores unrecognized fields without any error. Check in this order:
 | Agent never writes memory | The body never tells it to | Add "update your agent memory when you discover..." to the prompt |
 | A preloaded skill is missing | Skill not found, disabled by policy, or `disable-model-invocation: true` (cannot be preloaded) | Fix the name, or make the skill model-invocable. Skips are logged at debug level |
 | `Skill` in `tools` did not preload it | Preloading is the `skills` field | Use `skills:` |
-| Worktree agent's Bash command fails | Its working directory resolved to the main checkout, or git was redirected there | Keep commands inside the worktree; avoid runtime-computed command names |
+| Bash, PowerShell, or Monitor command refused with "Command blocked by the worktree isolation checks" | Its working directory resolved to the main checkout or another worktree, git was pointed at the main checkout, or (Bash and Monitor) the command text can't be verified to keep git inside the worktree, such as a runtime-computed command name or an indirect expansion like `${!name}`. PowerShell gets only the working-directory check. The checks also cover every subagent when the main conversation itself runs isolated in a worktree | Keep commands inside the worktree; spell flagged values literally and run git as its own plain command from the worktree. To act on the main checkout on purpose, run the command yourself outside the session |
 | Worktree branched from the wrong commit | It branches from the default branch, not the parent's `HEAD` | Have the delegation prompt include what to check out, or change the base per the worktrees docs |
 | Named worktree agent runs in the main directory | With agent teams enabled, a named spawn becomes a teammate and ignores frontmatter `isolation` | Pass `isolation` on the Agent call |
 

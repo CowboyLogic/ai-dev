@@ -378,9 +378,31 @@ administrators can push a baseline through the managed `telemetry` key.
 | `OTEL_LOG_LEVEL` | — | Diagnostic level: `NONE`, `ERROR`, `WARN`, `INFO`, `DEBUG`, `VERBOSE`, `ALL` |
 | `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` | `false` | Capture full prompts, responses, tool schemas, and tool arguments and results |
 
-By default only metadata is captured (model names, token counts, durations). Content capture can
-include code, file contents, and prompts, so enable it only in trusted environments. The span,
-metric, and event catalog (`invoke_agent`, `chat`, and `execute_tool` spans) is in the
+### Signals
+
+- **Traces:** an `invoke_agent` root span per agent invocation, with `chat` (one per LLM request)
+  and `execute_tool` child spans. Subagent invocations also use `invoke_agent` spans.
+- **Metrics:** `gen_ai.client.operation.duration`, `gen_ai.client.token.usage`,
+  `gen_ai.client.operation.time_to_first_chunk`, `gen_ai.client.operation.time_per_output_chunk`,
+  `gen_ai.invoke_agent.duration`, `gen_ai.invoke_agent.inference_calls`,
+  `gen_ai.invoke_agent.tool_calls`, `gen_ai.invoke_workflow.duration`, plus
+  `github.copilot.tool.call.count`, `github.copilot.tool.call.duration`,
+  `github.copilot.agent.turn.count`, `github.copilot.mcp.server.connection.count`,
+  `github.copilot.code.lines_added`, and `github.copilot.code.lines_removed`.
+- **Span events** on `chat` / `invoke_agent` spans: `github.copilot.hook.start`,
+  `github.copilot.hook.end`, `github.copilot.hook.error`, `github.copilot.session.truncation`,
+  `github.copilot.session.compaction_start`, `github.copilot.session.compaction_complete`,
+  `github.copilot.skill.invoked`, `github.copilot.session.shutdown`, `github.copilot.session.abort`,
+  and `exception`.
+
+> [!WARNING]
+> By default only metadata (model names, token counts, durations) is captured. Content capture can
+> include code, file contents, and prompts; enable it only in trusted environments.
+
+To measure AI-unit consumption, read `github.copilot.nano_aiu` from the root `invoke_agent` span
+only: it is also stamped on child `chat` spans, so summing across spans double-counts.
+`github.copilot.cost` is a per-request model multiplier used for billing, not a monetary value. The
+full catalog is in the
 [command reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference#opentelemetry-monitoring).
 
 ---
