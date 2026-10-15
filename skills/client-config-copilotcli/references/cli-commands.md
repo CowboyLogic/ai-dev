@@ -233,10 +233,8 @@ and `/instructions`.
 each signed-in account, per the v1.0.96 release notes), `/remote [on|off]`, `/ide`, `/app`,
 `/feedback` (`/bug`), `/changelog [summarize] [VERSION|last N|since VERSION]` (`/release-notes`),
 `/update` (`/upgrade`), `/version`, `/voice`, `/copy`, `/search` (`/find`),
-`/downgrade VERSION` (team accounts), `/collect-debug-logs [file|gist|share] [PATH]` (archive,
-gist, or `share`, which saves an archive and then asks for fresh consent before uploading; upload
-is currently available only to GitHub staff), `/clikit [COMPONENT]` (preview CLI business
-components), `/tuikit [colors|icons|select|tabbar]` (preview TUIkit design-system components),
+`/downgrade VERSION` (team accounts), `/collect-debug-logs` (see Debug logs below),
+`/clikit [COMPONENT]` (preview CLI business components), `/tuikit [colors|icons|select|tabbar]` (preview TUIkit design-system components),
 `/exit` (`/quit`).
 
 ### Debug logs

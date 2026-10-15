@@ -237,6 +237,9 @@ These apply independently of the permission flags above.
   own plan workspace. The docs call it a safety net, not a guarantee: shell commands whose effect
   can't be determined in advance and calls to connected external/MCP tools are intentionally let
   through.
+- **v1.0.96 release notes only** (not yet in the documentation): the timeline shows whether you,
+  Assisted Permissions, policy, or the unattended fallback made each permission decision, and
+  `/allow-all` stays available during startup while enterprise policy is still resolving.
 
 ---
 
@@ -310,15 +313,8 @@ Managed policy can force sandboxing on as a floor that users can only tighten. W
 execution when the sandbox can't be established. If a managed floor permits bypass, `/sandbox
 disable` turns sandboxing off for the current session only.
 
-### Sandbox grants and bypass details
+### Bypass and Windows details
 
-- **Tool directory grants.** With sandboxing on, each command's `PATH` entries and the directories
-  named by toolchain variables (for example `GOROOT`, `GOPATH`, `JAVA_HOME`, `NODE_PATH`,
-  `PYTHONHOME`, `PYTHONPATH`, `VIRTUAL_ENV`, `CONDA_PREFIX`, `RUSTUP_HOME`, `DOTNET_ROOT`,
-  `PYENV_ROOT`, `VCPKG_ROOT`) get **read-only** access when they are existing absolute directories.
-  Filesystem roots and system-critical locations (`/bin`, `/usr/bin`, `/proc`, `%WINDIR%`, and
-  similar) are excluded. Symlink targets aren't added automatically. `/sandbox policy [COMMAND]`
-  shows the resolved paths and the detected dev tools.
 - **Bypass prompt.** A synchronous command blocked by the sandbox's filesystem or network policy
   prompts to re-run outside the sandbox with no model round-trip. The prompt also offers to disable
   sandboxing for the rest of the session; that does not change the saved `sandbox` setting, and
@@ -330,32 +326,6 @@ disable` turns sandboxing off for the current session only.
 - **`web_fetch`.** With sandboxing on, a URL blocked by the sandbox network policy fails fast
   without a permission prompt; if the proxy simply can't reach the URL and bypass is allowed, the
   tool prompts to retry outside the sandbox.
-
----
-
-## Built-in safety checks
-
-- **Plan mode** (`/plan`): project-file edits, patches, and file-changing shell commands are
-  blocked by enforcement, not by the model's compliance, and delegated helper sessions inherit the
-  restriction. The plan itself can still be written. It is a safety net, not a guarantee: shell
-  commands whose effect can't be determined in advance, and external or MCP tool calls, are allowed.
-- **Command safety analysis**: shell commands are checked for patterns such as `rm -rf`, `sudo`,
-  `chmod 777`, `curl` with sensitive paths, reads of `.env` files or SSH keys, and inline
-  assignments that override dangerous variables. High-risk commands warn and need explicit
-  confirmation.
-- **Environment-variable denylist**: inline assignment of these is blocked even in otherwise
-  read-only commands: `LD_*`, `DYLD_*`, `GIT_CONFIG*` (including `GIT_CONFIG_COUNT`,
-  `GIT_CONFIG_KEY_*`, `GIT_CONFIG_VALUE_*`), `GIT_EXTERNAL_DIFF`, `GIT_PROXY_COMMAND`, `PATH`,
-  `BASH_ENV`, `ENV`, `PAGER`, `GIT_PAGER`, `GIT_EDITOR`, `VISUAL`, `EDITOR`, `GIT_SSH`,
-  `GIT_SSH_COMMAND`, `GIT_ASKPASS`, `BROWSER`, `GH_BROWSER`.
-- **`web_fetch` SSRF protection**: only `http://` and `https://`; loopback, RFC-1918 private ranges,
-  and cloud metadata endpoints (such as `169.254.169.254`) are blocked by literal check and DNS
-  pre-resolution; redirects are followed up to 10 hops within a 60-second budget, re-validating each
-  hop, and a cross-origin redirect needs permission approval. `COPILOT_WEB_FETCH_ALLOW_LOCALHOST=1`
-  allows `localhost` for development.
-- **v1.0.96 release notes only** (not yet in the documentation): the timeline shows whether you,
-  Assisted Permissions, policy, or the unattended fallback made each permission decision, and
-  `/allow-all` stays available during startup while enterprise policy is still resolving.
 
 ---
 

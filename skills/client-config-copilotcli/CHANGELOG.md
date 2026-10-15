@@ -45,7 +45,7 @@ notes are labeled as such.
 
 - `references/permissions.md`: new "Built-in safety checks" section (plan-mode enforcement,
   command safety analysis, environment-variable denylist, `web_fetch` SSRF protection) and
-  "Sandbox grants and bypass details" (tool-directory grants, bypass prompt behavior, Windows
+  sandbox tool-directory grants and a "Bypass and Windows details" subsection (bypass prompt behavior, Windows
   denial capture); `/add-dir` grants sandbox access for the session; the `/sandbox` dialog suggests
   secrets and masking hosts (v1.0.96).
 - `references/config-schema.md`: new "OpenTelemetry monitoring" section (`COPILOT_OTEL_*` and
