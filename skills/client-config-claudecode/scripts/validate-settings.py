@@ -218,7 +218,8 @@ ENV_IGNORED_IN_PROJECT_LOCAL = {
 }
 ENV_IGNORED_PREFIXES = ("XDG_",)
 # Windows environment names are case-insensitive, so these match upper-cased.
-ENV_IGNORED_WINDOWS_NAMES = {"SYSTEMROOT", "COMSPEC", "PROGRAMDATA", "LOCALAPPDATA", "PATHEXT", "PSMODULEPATH"}
+ENV_IGNORED_WINDOWS_NAMES = {"SYSTEMROOT", "COMSPEC", "PROGRAMDATA", "LOCALAPPDATA", "PATHEXT", "PSMODULEPATH",
+                              "PROGRAMW6432"}
 ENV_IGNORED_WINDOWS_PREFIXES = ("PROGRAMFILES",)
 ENV_OTLP_SUFFIXES = ("_ENDPOINT", "_HEADERS", "_PROTOCOL", "_CERTIFICATE", "_CLIENT_KEY", "_INSECURE")
 # A value that turns telemetry off still applies from project and local settings.
