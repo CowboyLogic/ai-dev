@@ -309,8 +309,9 @@ allow/deny list.
   tool descriptions and schemas, and raw MCP server, plugin, hook, and tool identifiers),
   `toolOutput` (tool, hook, MCP server, and subagent results and error details), and
   `policyDetail` (unbounded policy details such as raw sandbox path arrays; bounded posture and
-  counts stay available). `captureContent` is the legacy shorthand for the last four classes and
-  does not affect `identity`; an explicitly set `capture` field wins over it for that class.
+  counts stay available). `captureContent` is the legacy shorthand that toggles
+  all five content classes together and does not affect `identity`; an explicitly set `capture`
+  field wins over it for that class.
   `lockCaptureContent: true` stops local settings from enabling a legacy content class unless the
   managed object configures that class or `captureContent`, and it does not govern `identity`.
   Setting only `capture.identity` attributes traces to a user and machine without collecting
