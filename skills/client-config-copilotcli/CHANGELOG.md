@@ -2,13 +2,14 @@
 
 Changes to the `client-config-copilotcli` skill, newest first.
 
-## 2026-10-14 — v2.4 (refresh to Copilot CLI v1.0.97)
+## 2026-10-14 — v2.4 (refresh to Copilot CLI v1.0.98)
 
-Basis: GitHub Copilot CLI **v1.0.97** (released 2026-10-13, the latest stable release; the
-v1.0.98 tags are prereleases); previous refresh covered v1.0.96. Documentation changes were
+Basis: GitHub Copilot CLI **v1.0.98** (released 2026-10-14, the latest stable release; the
+v1.0.99 tag is a prerelease); previous refresh covered v1.0.96. Documentation changes were
 identified from the github/docs commits to the Copilot CLI content since 2026-10-13, and each
-claim was checked against the current docs.github.com page. Items that appear only in the
-github/copilot-cli v1.0.97 release notes are labeled as such.
+claim was checked against the current docs.github.com page. The github/docs repository had no
+further Copilot CLI content commits after the v1.0.97 pass. Items that appear only in the
+github/copilot-cli v1.0.97 or v1.0.98 release notes are labeled as such.
 
 - `references/hooks.md`: new "Agent-scoped hooks (CLI only)" section for the custom agent
   frontmatter `hooks` map (event names, per-platform commands, subagent `Stop`, trust, remote
@@ -27,13 +28,18 @@ github/copilot-cli v1.0.97 release notes are labeled as such.
   experimental mode, an invalid `config.json` entry no longer resets saved settings, agent
   discovery beyond 100 agents, `--plugin-dir` skills and agents in autocomplete, and plugin hooks
   after `--resume`.
+- `references/cli-commands.md`: v1.0.98 release-notes-only `/ask` answer shortcuts (`Ctrl+E`, `Ctrl+Y`,
+  reopen the last answer).
 - `SKILL.md`: routing row mentions agent-scoped hooks.
 - `sources.json`: added the enterprise managed settings reference; updated the `covers` text.
 - `README.md`: associated Copilot CLI version and refresh date.
 - Reviewed and not carried into the references (runtime fixes with no configuration surface):
   proxy `close_notify` handling, SCP remote parsing, Windows taskbar icon grouping, `view_range`
   timeline display, transcript selection, background-shell status, heap memory relief, MCP
-  catalog refresh, `/user switch` layout, and the GitHub MCP toolset endpoint fix.
+  catalog refresh, `/user switch` layout, and the GitHub MCP toolset endpoint fix. From v1.0.98:
+  command-hook completion under lost child-exit signals, `/mcp` status after split-view switches,
+  resume handling of abandoned permission requests, and startup keystroke retention. Gemini 4 Argon
+  support (v1.0.98) has no model ID in the command reference yet, so the model table is unchanged.
 - Not done: the benchmark in `README.md` was not re-run.
 
 ## 2026-10-13 — v2.3 (refresh to Copilot CLI v1.0.96)

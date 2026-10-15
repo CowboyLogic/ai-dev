@@ -218,7 +218,7 @@ and `/instructions`.
 | `/worktree [branch\|task]`, `/worktree new`, `/move` | Git worktrees |
 | `/every`, `/after` | Scheduled prompts (experimental) |
 | `/tasks` | Background subagents and shells |
-| `/ask QUESTION`, `/btw` | Side question outside history |
+| `/ask QUESTION`, `/btw` | Side question outside history (v1.0.98 release notes: `Ctrl+E` expands the answer, `Ctrl+Y` copies all of it, and `/ask` or `/btw` reopens the last completed answer in the session) |
 | `/compact [FOCUS]` / `/context` | Compress / inspect context |
 | `/chronicle <standup\|tips\|improve\|reindex\|skills ...>` | Session-history insights |
 | `/usage` | Usage and AI credits (v1.0.97 release notes: shows billed AI Credits for token-billed sessions, including after resume) |

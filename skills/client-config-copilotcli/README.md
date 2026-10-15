@@ -8,7 +8,7 @@ servers, hooks, skills, custom agents, plugins, and instructions. The skill itse
 
 | | |
 |---|---|
-| GitHub Copilot CLI | **v1.0.97** (released 2026-10-13) |
+| GitHub Copilot CLI | **v1.0.98** (released 2026-10-14) |
 | References last refreshed | 2026-10-14 |
 | Sources | docs.github.com Copilot CLI documentation (see [sources.json](sources.json)) and the [github/copilot-cli release notes](https://github.com/github/copilot-cli/releases) |
 

@@ -9,7 +9,7 @@ license: MIT
 Custom agents for GitHub Copilot are defined in `.agent.md` Markdown files called **agent profiles**. They encode a role, behavioral instructions, tool access, and optionally a model, without requiring extension development. The same profile can be used by Copilot cloud agent on GitHub.com, GitHub Copilot CLI, VS Code, JetBrains IDEs, Eclipse, and Xcode, but some properties only work on some surfaces.
 
 > [!IMPORTANT]
-> This skill was last verified in October 2026 against GitHub Copilot CLI v1.0.97. Always verify against the official docs before relying on a property. The canonical references are:
+> This skill was last verified in October 2026 against GitHub Copilot CLI v1.0.98. Always verify against the official docs before relying on a property. The canonical references are:
 >
 > - [Custom agents configuration (GitHub)](https://docs.github.com/en/copilot/reference/custom-agents-configuration)
 > - [Custom agents in VS Code](https://code.visualstudio.com/docs/agent-customization/custom-agents)
