@@ -300,8 +300,23 @@ allow/deny list.
   can't set it. In the Windows registry or macOS managed preferences, store it as a string
   `true`/`false`, not a DWORD or native Boolean.
 - `telemetry` pushes baseline OpenTelemetry export settings: `enabled`, `endpoint`, `protocol`,
-  `headers`, `resourceAttributes`, `captureContent`, `lockCaptureContent`, and `serviceName` (see
-  [OpenTelemetry monitoring](#opentelemetry-monitoring)).
+  `headers`, `resourceAttributes`, `serviceName`, and the capture controls below (see
+  [OpenTelemetry monitoring](#opentelemetry-monitoring)). `capture` is an object of independent
+  switches, each defaulting to `false`: `identity` (account name as `user.name`, OS account as
+  `process.user.name`, machine as `host.name`), `prompts` (prompt text and model input,
+  including attachments, compaction summaries, skill content, and workspace context), `responses`
+  (assistant text and reasoning), `toolArguments` (raw arguments, commands, denied resources,
+  tool descriptions and schemas, and raw MCP server, plugin, hook, and tool identifiers),
+  `toolOutput` (tool, hook, MCP server, and subagent results and error details), and
+  `policyDetail` (unbounded policy details such as raw sandbox path arrays; bounded posture and
+  counts stay available). `captureContent` is the legacy shorthand for the last four classes and
+  does not affect `identity`; an explicitly set `capture` field wins over it for that class.
+  `lockCaptureContent: true` stops local settings from enabling a legacy content class unless the
+  managed object configures that class or `captureContent`, and it does not govern `identity`.
+  Setting only `capture.identity` attributes traces to a user and machine without collecting
+  content. Fine-grained controls apply in Copilot CLI, the GitHub Copilot app, and VS Code sessions
+  using Agent Host; VS Code's local agent harness honors only `capture.identity` and
+  `captureContent`.
 - `remoteControl.mode` is `"enabled"`, `"disabled"`, or `"requireSSO"`; `requireSSO` needs
   `remoteControl.githubDotComOrganizations`, and the client must be SSO-authorized for at least one
   listed organization.
