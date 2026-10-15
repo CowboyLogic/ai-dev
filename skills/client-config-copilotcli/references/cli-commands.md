@@ -255,9 +255,11 @@ The docs also say OTel can be configured in VS Code or in an enterprise `managed
   `github.copilot.tool.call.count`, `github.copilot.tool.call.duration`,
   `github.copilot.agent.turn.count`, `github.copilot.mcp.server.connection.count`,
   `github.copilot.code.lines_added`, and `github.copilot.code.lines_removed`.
-- **Span events** on `chat` / `invoke_agent` spans: `github.copilot.hook.start`, `.hook.end`,
-  `.hook.error`, `.session.truncation`, `.session.compaction_start`, `.session.compaction_complete`,
-  `.skill.invoked`, `.session.shutdown`, `.session.abort`, and `exception`.
+- **Span events** on `chat` / `invoke_agent` spans: `github.copilot.hook.start`,
+  `github.copilot.hook.end`, `github.copilot.hook.error`, `github.copilot.session.truncation`,
+  `github.copilot.session.compaction_start`, `github.copilot.session.compaction_complete`,
+  `github.copilot.skill.invoked`, `github.copilot.session.shutdown`, `github.copilot.session.abort`,
+  and `exception`.
 
 > [!WARNING]
 > By default only metadata (model names, token counts, durations) is captured. Content capture can
