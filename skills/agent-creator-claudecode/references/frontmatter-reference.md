@@ -3,7 +3,7 @@
 Reference for the YAML frontmatter fields of Claude Code agent files. Load this file when
 writing, reviewing, or debugging agent frontmatter.
 
-**Source (last verified 2026-10-11 against Claude Code 2.1.296; the docs page references
+**Source (last verified 2026-10-14 against Claude Code 2.1.299; the docs page references
 versions up to v2.1.292):**
 <https://code.claude.com/docs/en/sub-agents#supported-frontmatter-fields>
 
@@ -87,6 +87,8 @@ delegation. Combined `name` + `description` text across all non-built-in agents 
 | MCP server | `tools: mcp__github__*` |
 
 - If entries are given but **none** resolve, launch is refused ("zero tools" error).
+- A server whose normalized name contains `__` is listed as `mcp__<whole name>__*` (v2.1.299,
+  changelog only).
 - Do not list `Skill` to preload skills; use the `skills` field.
 - Legacy `Task(...)` still works as an alias for `Agent(...)` (renamed in v2.1.63).
 
@@ -111,6 +113,13 @@ Resolution order: (1) per-invocation `model` parameter, (2) frontmatter `model`,
 (3) `CLAUDE_CODE_SUBAGENT_MODEL`, (4) main conversation's model. With
 `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` (v2.1.257+) frontmatter and per-invocation values are
 ignored for every subagent, including built-in Explore and Plan.
+
+A per-invocation `model` also applies when the subagent is resumed or sent a follow-up
+(v2.1.211+). While `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` is on, Claude cannot pass a `model`,
+and forks and `model: inherit` skills that run in a subagent still use the main
+conversation's model. `CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL` (v2.1.296; changelog only, not
+yet on the docs pages) runs every workflow agent on one model while other subagents keep
+theirs.
 
 Before v2.1.251, `CLAUDE_CODE_SUBAGENT_MODEL` came first in the order. Values are checked
 against the organization's `availableModels` allowlist and substituted with a warning if
@@ -193,6 +202,21 @@ prompt to consult and update memory.
 `true` keeps the agent in the background even if Claude asks for the foreground. Background
 agents get a reduced built-in tool set and route permission prompts to the main session.
 
+Which mode a given run gets is the first of these that applies (sub-agents docs, "Run
+subagents in foreground or background"):
+
+1. Spawned by an in-process agent-team teammate: foreground. A teammate spawning an agent
+   whose definition sets `background: true` is refused with an error.
+2. `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`: foreground, in every kind of session.
+3. Fork mode on (the default in an interactive session): background, and Claude cannot ask
+   for the foreground.
+4. Fork mode off (`-p`, the Agent SDK unless turned on): background by default, foreground
+   when Claude needs the result before continuing. `background: true` keeps the agent in the
+   background even then.
+
+A skill with `context: fork` follows the skills docs instead. Background agents get a smaller
+built-in tool set than foreground ones, except forks and resumed foreground agents.
+
 ### `omitClaudeMd`
 
 `true` launches without user, project, and local CLAUDE.md. Managed policy CLAUDE.md files
@@ -202,7 +226,11 @@ Requires v2.1.271+. Use for agents that take everything from the delegation prom
 ### `effort`
 
 `low`, `medium`, `high`, `xhigh`, `max`; which are available depends on the model. Overrides
-the session effort while the agent is active.
+the session effort while the agent is active, but not the `CLAUDE_CODE_EFFORT_LEVEL`
+environment variable. When Claude runs a non-fork subagent it can also pass an `effort`
+parameter for that one invocation (v2.1.292+): it overrides this field, persists when the
+subagent is resumed, and is itself overridden by `CLAUDE_CODE_EFFORT_LEVEL`. `/tasks` shows
+the effort set for a running subagent.
 
 ### `isolation`
 

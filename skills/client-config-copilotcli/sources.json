@@ -22,13 +22,13 @@
         "https://docs.github.com/en/copilot/how-tos/cloud-and-local-sandboxes/configuring-local-sandbox-settings",
         "https://docs.github.com/en/copilot/concepts/about-cloud-and-local-sandboxes"
       ],
-      "covers": "Trusted directories, tool/path/URL permission flags, permission patterns, tool names, approval prompts and modes, permissions-config.json schema, local and cloud sandboxing and sandbox settings, allow-all restriction, managed permission rules"
+      "covers": "Trusted directories, tool/path/URL permission flags, permission patterns, tool names, approval prompts and modes, permissions-config.json schema, built-in safety checks (command safety analysis, environment variable denylist, web_fetch SSRF protection, plan mode), local and cloud sandboxing and sandbox settings, sandbox tool directory grants, allow-all restriction, managed permission rules"
     },
     "references/cli-commands.md": {
       "urls": [
         "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
       ],
-      "covers": "Terminal subcommands, command-line options, session management, slash commands"
+      "covers": "Terminal subcommands, command-line options, session management, slash commands, debug-log collection, OpenTelemetry monitoring"
     },
     "references/mcp.md": {
       "urls": [
@@ -36,14 +36,14 @@
         "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference",
         "https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/add-lsp-servers"
       ],
-      "covers": "mcp-config.json and project .mcp.json/.github/mcp.json, loading priority, transport types and fields, OAuth, /mcp and copilot mcp commands, governance, LSP servers (lsp-config.json, .github/lsp.json, /lsp)"
+      "covers": "mcp-config.json and project .mcp.json/.github/mcp.json, loading priority, transport types and fields, private npm registries, trust levels, OAuth, /mcp and copilot mcp commands, enterprise allowlist governance, LSP servers (lsp-config.json, .github/lsp.json, /lsp)"
     },
     "references/hooks.md": {
       "urls": [
         "https://docs.github.com/en/copilot/reference/hooks-reference",
         "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/use-hooks"
       ],
-      "covers": "Hook sources and load order, file format, command/http/prompt entries, all hook events, input payloads, decision output, matchers, exit codes, disableAllHooks, debugging"
+      "covers": "Hook sources and load order, cloud agent execution environment, file format, command/http/prompt entries, all hook events, input payloads, decision output, matchers, exit codes, disableAllHooks, debugging"
     },
     "references/skills.md": {
       "urls": [

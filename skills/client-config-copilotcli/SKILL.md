@@ -52,8 +52,8 @@ in `config.json` are ignored, and `config.json` keeps only internal state such a
 | Environment variables | `references/config-schema.md` §Environment variables |
 | Authentication, tokens | `references/config-schema.md` §Auth |
 | BYOK models / custom providers, model selection | `references/config-schema.md` §BYOK, §Model usage |
-| Tool/path/URL permissions, `permissions-config.json`, sandbox | `references/permissions.md` |
-| CLI flags, slash commands, sessions (`--name`, `--resume`) | `references/cli-commands.md` |
+| Tool/path/URL permissions, `permissions-config.json`, sandbox, built-in safety checks | `references/permissions.md` |
+| CLI flags, slash commands, sessions (`--name`, `--resume`), debug logs, OpenTelemetry export | `references/cli-commands.md` |
 | MCP servers, LSP servers | `references/mcp.md` |
 | Hooks | `references/hooks.md` |
 | Skills | `references/skills.md` |

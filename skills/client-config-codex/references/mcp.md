@@ -87,6 +87,9 @@ Authorization = "EXAMPLE_AUTH_HEADER"
 | `enabled` | `false` disables a server without deleting it |
 | `required` | `true` fails startup if this enabled server cannot initialize |
 | `startup_timeout_sec` | Seconds to wait for startup (default `10`) |
+| `startup_timeout_ms` | Integer milliseconds form of the same setting, present in the 0.162.1 config schema; when both are set, `startup_timeout_sec` wins and `startup_timeout_ms` is ignored (0.162.1 loader), so editing only the millisecond value has no effect while the seconds key remains; set only one |
+| `startup_readiness` | `connection` (use the live connection to decide readiness) or `catalog` (allow a valid cached tool catalog while the live connection starts; tool execution still needs the live connection). With `required = true`, a valid cached catalog satisfies startup even if the live connection fails; the failure then surfaces when a tool is invoked, so `catalog` removes the live-connectivity guarantee of `required`. From the 0.162.1 config schema, not in the official docs page |
+| `tool_input_schema_max_bytes` | UTF-8 byte threshold for compacting each ordinary tool input schema; default 5,000. Larger limits keep more parameter descriptions |
 | `tool_timeout_sec` | Seconds to wait for a tool run (default `60`) |
 | `enabled_tools` | Tool allow list |
 | `disabled_tools` | Tool deny list, applied after `enabled_tools` |

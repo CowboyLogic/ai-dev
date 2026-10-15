@@ -2,6 +2,57 @@
 
 Changes to the `client-config-claudecode` skill, newest first.
 
+## 2026-10-14 — v2.3 (verified against Claude Code 2.1.299)
+
+Basis: Claude Code 2.1.299 (released 2026-10-14; npm `latest` and `next`, `stable` is
+2.1.287), the 2.1.297–2.1.299 changelog (no 2.1.297 or 2.1.298 release exists on npm), and the
+docs pages fetched with `scripts/update-references.py --all`.
+
+- `references/settings-schema.md`: adds `idleCompaction` (v2.1.290+; the docs page documents
+  it, the earlier references lacked it) with its conditions and the
+  `CLAUDE_CODE_IDLE_COMPACT_MIN_TOKENS` threshold; adds a "Variables Claude Code ignores in
+  `env`" section for project and local settings, which includes the new
+  `CLAUDE_CODE_DISABLE_FILE_MENTIONS` (v2.1.299).
+- `references/hooks.md`: `PreCompact`/`PostCompact` `auto` matcher also covers idle
+  compaction; changelog-only v2.1.299 notes that Windows hooks with no `shell` fail closed
+  when Git for Windows is missing, plan mode no longer runs a write a `PreToolUse` hook
+  allowed, and `UserPromptSubmit` hooks run before a skill or custom command expands; a
+  skill's own `UserPromptSubmit` frontmatter hook first runs on the following prompt.
+- `references/permissions.md`: changelog-only note that an MCP allow rule `mcp__a` no longer
+  reaches a server named `a__b` or `a_`, and that deny and ask rules now apply to servers
+  whose normalized name contains `__`.
+- `scripts/validate-settings.py`: `idleCompaction` is a known any-file key; warns on an `env`
+  entry Claude Code drops: the always-ignored identity and `*_RM_*` variables in any file, and
+  the project/local list in project and local settings (a value that turns telemetry off
+  still applies, so it isn't flagged).
+- Checked and unchanged: every row of the settings reference index other than
+  `idleCompaction` is already in the references and validator.
+- Evals: new `idle-compaction` eval; not yet run (the README results predate it).
+
+## 2026-10-13 — v2.2 (verified against Claude Code 2.1.296)
+
+Basis: Claude Code 2.1.296, still the npm `latest` and GitHub release; `stable` is 2.1.287.
+No release has shipped since the v2.1 update, so this pass compared the live docs pages
+and changelog against the references and validator and filled the gaps it found.
+
+- `references/hooks.md`: adds the common hook input fields every event receives on stdin
+  (`session_id`, `prompt_id`, `transcript_path`, `cwd`, `scratchpad_dir`, `permission_mode`,
+  `effort`, `hook_event_name`, `agent_id`, `agent_type`) and `$CLAUDE_EFFORT`; the 8-continuation
+  cap on `Stop`/`SubagentStop` hooks and `CLAUDE_CODE_STOP_HOOK_BLOCK_CAP`; the `SessionEnd`
+  1.5 s budget, how a per-hook `timeout` raises it (up to 60 s), and
+  `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS`; `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` in the hook
+  environment; and how `Notification` `permission_prompt` behaves under the Agent SDK
+  `canUseTool` callback (`CLAUDE_CODE_DISABLE_PERMISSION_PROMPT_NOTIFY_HOOKS`).
+- `references/settings-schema.md`: adds `worktree.location`, the Desktop SSH worktree folder
+  (user scope only; ignored by `--worktree`, `EnterWorktree`, isolated subagents, and
+  background sessions).
+- `scripts/validate-settings.py`: validates `worktree.location` (absolute path or `~/`) and
+  warns when it appears in project, local, or managed settings.
+- Checked and unchanged: every settings key and scope label in the settings reference index,
+  and all 33 hook events, match the references and validator.
+- Evals: new eval for the stop-hook continuation cap; not yet run (the README results predate
+  it).
+
 ## 2026-10-11 — v2.1 (verified against Claude Code 2.1.296)
 
 Basis: Claude Code 2.1.296 (npm `latest`; `stable` is 2.1.287), docs pages fetched with
