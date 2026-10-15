@@ -50,6 +50,27 @@ Booleans take `on`/`off` or `true`/`false`. An unset key exits `1`; secret value
 
 ---
 
+## Supported models
+
+`--model=MODEL` or `COPILOT_MODEL` selects the model; `auto` lets Copilot choose. The command
+reference lists these IDs:
+
+| Model | Best for |
+|-------|----------|
+| `claude-sonnet-5.5` | General-purpose coding (default) |
+| `gpt-5.4` | Complex reasoning tasks |
+| `gpt-6.1-sol`, `gpt-6-astra`, `gpt-6-luna` | Recommended, opt-in (not the automatic default) |
+| `claude-opus-5.5` | Recommended, high-capability complex tasks |
+| `claude-haiku-5.5`, `claude-haiku-4.5` | Fast, lightweight operations |
+| `gpt-5.3-codex` | Code-focused tasks |
+| `gemini-3.7-flash`, `gemini-3.8-flash` | Fast Google Gemini responses |
+
+The roster and retirement dates change often; the
+[supported models](https://docs.github.com/en/copilot/reference/ai-models/supported-models) page is
+the authority.
+
+---
+
 ## Command-line options
 
 ### Session and mode
@@ -101,7 +122,8 @@ Booleans take `on`/`off` or `true`/`false`. An unset key exits `1`; secret value
 
 ### Output and UI
 
-`--output-format=text|json` (JSONL), `-s`/`--silent`, `--stream=on|off`, `--share=PATH`,
+`--output-format=text|json` (JSONL; v1.0.97 release notes: secrets are redacted in JSON output
+while valid variable references are preserved), `-s`/`--silent`, `--stream=on|off`, `--share=PATH`,
 `--share-gist`, `--attachment PATH`, `--log-dir`, `--log-level`, `--banner`/`--no-banner`,
 `--no-color`, `--plain-diff`, `--screen-reader`, `--mouse[=on|off]`/`--no-mouse`,
 `--experimental`/`--no-experimental`, `--no-auto-update`, `--bash-env`/`--no-bash-env`,
@@ -146,7 +168,7 @@ Session history lives in `~/.copilot/session-state/`.
 | Command | Purpose |
 |---------|---------|
 | `/settings [--repo\|--local] [show KEY\|KEY\|KEY VALUE]`, `/config` | Settings editor or inline set |
-| `/model [--session\|--global\|--repo\|--local] [MODEL]`, `/models` | Choose model, effort, context |
+| `/model [--session\|--global\|--repo\|--local] [MODEL\|auto TIER]`, `/models` | Choose model, effort, context, or an Auto tier. Model IDs are case-insensitive; the canonical ID is saved |
 | `/theme [default\|github\|dim\|high-contrast\|colorblind]` | Color theme |
 | `/statusline`, `/footer` | Status-line items |
 | `/experimental [on\|off\|show]` | Experimental features |
@@ -199,7 +221,7 @@ and `/instructions`.
 | `/ask QUESTION`, `/btw` | Side question outside history |
 | `/compact [FOCUS]` / `/context` | Compress / inspect context |
 | `/chronicle <standup\|tips\|improve\|reindex\|skills ...>` | Session-history insights |
-| `/usage` | Usage and AI credits |
+| `/usage` | Usage and AI credits (v1.0.97 release notes: shows billed AI Credits for token-billed sessions, including after resume) |
 | `/diagnose [PROMPT]` | Analyze the session log |
 | `/collect-debug-logs [file\|gist\|share] [PATH]` | Collect debug logs into a local archive (`file`, at `PATH` when given), a secret GitHub gist (`gist`), or a local archive that is then uploaded to GitHub (`share`) |
 | `/refine TEXT` | Rewrite a rough prompt into a clear one for review (no argument: clean up the input box) |
@@ -207,11 +229,12 @@ and `/instructions`.
 
 ### Account and app
 
-`/login`, `/logout`, `/user [show|list|switch]`, `/remote [on|off]`, `/ide`, `/app`,
+`/login`, `/logout`, `/user [show|list|switch]` (`/user list` shows the authentication source of
+each signed-in account, per the v1.0.96 release notes), `/remote [on|off]`, `/ide`, `/app`,
 `/feedback` (`/bug`), `/changelog [summarize] [VERSION|last N|since VERSION]` (`/release-notes`),
 `/update` (`/upgrade`), `/version`, `/voice`, `/copy`, `/search` (`/find`),
-`/downgrade VERSION` (team accounts), `/clikit [COMPONENT]` (preview CLI business components),
-`/tuikit [colors|icons|select|tabbar]` (preview TUIkit design-system components and color tokens),
+`/downgrade VERSION` (team accounts), `/collect-debug-logs` (see Debug logs below),
+`/clikit [COMPONENT]` (preview CLI business components), `/tuikit [colors|icons|select|tabbar]` (preview TUIkit design-system components),
 `/exit` (`/quit`).
 
 ### Debug logs
@@ -222,49 +245,4 @@ uploading to GitHub. Per the docs, uploading is currently available only to GitH
 internal users; everyone else uses the `file` and `gist` routes and the existing public feedback
 route.
 
-## OpenTelemetry monitoring
-
-Copilot CLI can export OpenTelemetry (OTel) traces and metrics, following the OTel GenAI Semantic
-Conventions. It is off by default and has no overhead until one of these is set:
-`COPILOT_OTEL_ENABLED=true`, `OTEL_EXPORTER_OTLP_ENDPOINT`, or `COPILOT_OTEL_FILE_EXPORTER_PATH`.
-The docs also say OTel can be configured in VS Code or in an enterprise `managed-settings.json`.
-
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `COPILOT_OTEL_ENABLED` | `false` | Enable OTel explicitly (not needed when the endpoint variable is set) |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | — | OTLP endpoint URL; setting it enables OTel |
-| `COPILOT_OTEL_EXPORTER_TYPE` | `otlp-http` | `otlp-http` or `file`; `file` is selected automatically when the file path is set |
-| `COPILOT_OTEL_FILE_EXPORTER_PATH` | — | Write all signals to this file as JSON lines; setting it enables OTel |
-| `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/json` | `http/json` or `http/protobuf` (`otlp-http` exporter only) |
-| `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL`, `OTEL_EXPORTER_OTLP_METRICS_PROTOCOL` | — | Per-signal override of the protocol |
-| `OTEL_EXPORTER_OTLP_HEADERS` | — | Auth headers for the exporter, such as `Authorization=Bearer token` |
-| `OTEL_SERVICE_NAME` | `github-copilot` | `service.name` resource attribute |
-| `OTEL_RESOURCE_ATTRIBUTES` | — | Extra resource attributes as comma-separated `key=value` pairs (percent-encode special characters) |
-| `COPILOT_OTEL_SOURCE_NAME` | `github.copilot` | Instrumentation scope name for the tracer and meter |
-| `OTEL_LOG_LEVEL` | — | OTel diagnostic log level: `NONE`, `ERROR`, `WARN`, `INFO`, `DEBUG`, `VERBOSE`, `ALL` |
-| `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` | `false` | Capture full prompts, responses, system instructions, tool definitions, and tool arguments/results |
-
-### Signals
-
-- **Traces:** an `invoke_agent` root span per agent invocation, with `chat` (one per LLM request)
-  and `execute_tool` child spans. Subagent invocations also use `invoke_agent` spans.
-- **Metrics:** `gen_ai.client.operation.duration`, `gen_ai.client.token.usage`,
-  `gen_ai.client.operation.time_to_first_chunk`, `gen_ai.client.operation.time_per_output_chunk`,
-  `gen_ai.invoke_agent.duration`, `gen_ai.invoke_agent.inference_calls`,
-  `gen_ai.invoke_agent.tool_calls`, `gen_ai.invoke_workflow.duration`, plus
-  `github.copilot.tool.call.count`, `github.copilot.tool.call.duration`,
-  `github.copilot.agent.turn.count`, `github.copilot.mcp.server.connection.count`,
-  `github.copilot.code.lines_added`, and `github.copilot.code.lines_removed`.
-- **Span events** on `chat` / `invoke_agent` spans: `github.copilot.hook.start`,
-  `github.copilot.hook.end`, `github.copilot.hook.error`, `github.copilot.session.truncation`,
-  `github.copilot.session.compaction_start`, `github.copilot.session.compaction_complete`,
-  `github.copilot.skill.invoked`, `github.copilot.session.shutdown`, `github.copilot.session.abort`,
-  and `exception`.
-
-> [!WARNING]
-> By default only metadata (model names, token counts, durations) is captured. Content capture can
-> include code, file contents, and prompts; enable it only in trusted environments.
-
-To measure AI-unit consumption, read `github.copilot.nano_aiu` from the root `invoke_agent` span
-only: it is also stamped on child `chat` spans, so summing across spans double-counts.
-`github.copilot.cost` is a per-request model multiplier used for billing, not a monetary value.
+OpenTelemetry export is documented in `config-schema.md` §OpenTelemetry monitoring.

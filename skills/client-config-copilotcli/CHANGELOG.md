@@ -2,6 +2,65 @@
 
 Changes to the `client-config-copilotcli` skill, newest first.
 
+## 2026-10-14 — v2.4 (refresh to Copilot CLI v1.0.97)
+
+Basis: GitHub Copilot CLI **v1.0.97** (released 2026-10-13, the latest stable release; the
+v1.0.98 tags are prereleases); previous refresh covered v1.0.96. Documentation changes were
+identified from the github/docs commits to the Copilot CLI content since 2026-10-13, and each
+claim was checked against the current docs.github.com page. Items that appear only in the
+github/copilot-cli v1.0.97 release notes are labeled as such.
+
+- `references/hooks.md`: new "Agent-scoped hooks (CLI only)" section for the custom agent
+  frontmatter `hooks` map (event names, per-platform commands, subagent `Stop`, trust, remote
+  agents unsupported); `"ask"` from a `preToolUse` hook is denied in CLI autopilot mode.
+- `references/agents-plugins.md`: `hooks` frontmatter field (noted as absent from the command
+  reference's frontmatter table); marketplace and plugin fetches retry once with the signed-in
+  GitHub token after an HTTPS authentication failure; the example agent uses the documented
+  model ID `claude-sonnet-5.5`.
+- `references/config-schema.md`: `forceRemoteSettingsRefresh` semantics (cached policy can't
+  satisfy it, now also in the GitHub Copilot app, string value in registry and managed
+  preferences); minimum client versions enforced by a managed `sandbox` key.
+- `references/permissions.md`, `references/cli-commands.md`, `references/config-schema.md`,
+  `references/agents-plugins.md`, `references/hooks.md`: v1.0.97 release-notes-only items,
+  labeled in place: billed AI Credits in `/usage`, secret redaction in `--output-format json`,
+  managed permission rules read-only in `/config`, `inlineImages` on by default without
+  experimental mode, an invalid `config.json` entry no longer resets saved settings, agent
+  discovery beyond 100 agents, `--plugin-dir` skills and agents in autocomplete, and plugin hooks
+  after `--resume`.
+- `SKILL.md`: routing row mentions agent-scoped hooks.
+- `sources.json`: added the enterprise managed settings reference; updated the `covers` text.
+- `README.md`: associated Copilot CLI version and refresh date.
+- Reviewed and not carried into the references (runtime fixes with no configuration surface):
+  proxy `close_notify` handling, SCP remote parsing, Windows taskbar icon grouping, `view_range`
+  timeline display, transcript selection, background-shell status, heap memory relief, MCP
+  catalog refresh, `/user switch` layout, and the GitHub MCP toolset endpoint fix.
+- Not done: the benchmark in `README.md` was not re-run.
+
+## 2026-10-13 — v2.3 (refresh to Copilot CLI v1.0.96)
+
+Basis: GitHub Copilot CLI **v1.0.96** (released 2026-10-12, the latest stable release; the
+v1.0.97 tags are prereleases); previous refresh covered v1.0.95. Each claim comes from the current
+docs.github.com documentation. Items that appear only in the github/copilot-cli v1.0.96 release
+notes are labeled as such.
+
+- `references/permissions.md`: new "Built-in safety checks" section (plan-mode enforcement,
+  command safety analysis, environment-variable denylist, `web_fetch` SSRF protection) and
+  sandbox tool-directory grants and a "Bypass and Windows details" subsection (bypass prompt behavior, Windows
+  denial capture); `/add-dir` grants sandbox access for the session; the `/sandbox` dialog suggests
+  secrets and masking hosts (v1.0.96).
+- `references/config-schema.md`: new "OpenTelemetry monitoring" section (`COPILOT_OTEL_*` and
+  `OTEL_*` variables, content capture); managed `sandbox`, `telemetry`, and `remoteControl`
+  fields; `inlineImages`; model IDs are case-insensitive (v1.0.96).
+- `references/cli-commands.md`: supported model IDs table from the command reference;
+  `/model ... auto TIER`; `/release-notes`, `/collect-debug-logs`, and `/tuikit`.
+- `references/hooks.md`: complete runtime-to-Claude tool-name mapping and matcher regex rules;
+  cloud agent hook environment variables.
+- v1.0.96 release-notes-only items, labeled in place: `/user list` authentication source,
+  permission-decision attribution in the timeline, `/allow-all` during startup policy resolution.
+- `SKILL.md`: routing rows for OpenTelemetry, the safety checks, and the model table.
+- `README.md`: associated Copilot CLI version and refresh date.
+- Not done: the benchmark in `README.md` was not re-run.
+
 ## 2026-10-12 — v2.2 (gap-fill against Copilot CLI v1.0.95)
 
 Basis: GitHub Copilot CLI **v1.0.95** (released 2026-10-09), still the latest stable release; the

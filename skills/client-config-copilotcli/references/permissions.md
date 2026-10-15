@@ -28,8 +28,9 @@ model/effort overrides. Scoping is heuristic — avoid launching from `$HOME` or
 untrusted executables.
 
 `--add-dir=PATH` / `/add-dir PATH` grants file access to another directory **and** loads its
-`.github/skills` and `.github/agents` as trusted configuration. `/list-dirs` shows granted
-directories.
+`.github/skills` and `.github/agents` as trusted configuration. With local sandboxing on,
+`/add-dir PATH` also grants the sandbox access to that directory for the current session.
+`/list-dirs` shows granted directories.
 
 ---
 
@@ -236,6 +237,9 @@ These apply independently of the permission flags above.
   own plan workspace. The docs call it a safety net, not a guarantee: shell commands whose effect
   can't be determined in advance and calls to connected external/MCP tools are intentionally let
   through.
+- **v1.0.96 release notes only** (not yet in the documentation): the timeline shows whether you,
+  Assisted Permissions, policy, or the unattended fallback made each permission decision, and
+  `/allow-all` stays available during startup while enterprise policy is still resolving.
 
 ---
 
@@ -299,10 +303,29 @@ status|create|trust|rotate|remove`. Run `copilot help sandbox` for the full refe
 | `sandbox.userPolicy.filesystem.deniedPaths` | `[]` | Denied paths. If the host can't enforce them (older Windows), the command fails rather than running with weaker protection |
 | `sandbox.userPolicy.seatbelt.keychainAccess` | `false` | macOS only; `settings.json` only (not in `/sandbox` or `/settings`) |
 
+The `/sandbox` settings dialog suggests environment variables that may hold secrets and lets you
+add masking hosts before saving. Masking applies to commands, local MCP servers, and language
+servers inside the sandbox; Git and `gh` authentication are masked automatically while
+`sandbox.auth.git`/`sandbox.auth.gh` are on.
+
 Managed policy can force sandboxing on as a floor that users can only tighten. With the managed
 `sandbox.failIfUnavailable: true` (plus `sandbox.enabled: true`) the CLI blocks model and tool
 execution when the sandbox can't be established. If a managed floor permits bypass, `/sandbox
 disable` turns sandboxing off for the current session only.
+
+### Bypass and Windows details
+
+- **Bypass prompt.** A synchronous command blocked by the sandbox's filesystem or network policy
+  prompts to re-run outside the sandbox with no model round-trip. The prompt also offers to disable
+  sandboxing for the rest of the session; that does not change the saved `sandbox` setting, and
+  `/new` sandboxes commands again. A blocked `EPERM`/`EACCES` result naming a sandbox-blocked path
+  offers the same re-run.
+- **Windows denial capture.** On supported Windows hosts a blocked interactive command escalates in
+  one prompt: first a re-run that records instead of blocking file and process access (network
+  policy still applies), then a full bypass only if it is still blocked.
+- **`web_fetch`.** With sandboxing on, a URL blocked by the sandbox network policy fails fast
+  without a permission prompt; if the proxy simply can't reach the URL and bypass is allowed, the
+  tool prompts to retry outside the sandbox.
 
 ---
 
@@ -320,7 +343,9 @@ disable` turns sandboxing off for the current session only.
 
 ## Managed permission rules (administrators)
 
-MDM/server managed `permissions` may contain `deny`, `ask`, and `allow` arrays:
+MDM/server managed `permissions` may contain `deny`, `ask`, and `allow` arrays. (v1.0.97 release
+notes: in `/config`, managed permission rules are read-only and hidden unless your organization
+set them.)
 
 ```json
 {

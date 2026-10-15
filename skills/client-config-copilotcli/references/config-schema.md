@@ -133,6 +133,7 @@ the shared cross-tool subset (such as `companyAnnouncements`, `disableAllHooks`,
 | `ide.autoConnect` / `ide.openDiffOnEdit` | boolean | `true` | IDE auto-connect / show edit diffs in IDE |
 | `ignoredSkillsLocations` | `string[]` | `[]` | Skill directories (and descendants) excluded from discovery; `~`-relative paths supported |
 | `includeCoAuthoredBy` | boolean | `true` | `Co-authored-by` trailer on agent commits |
+| `inlineImages` | boolean | `true` | Render images inline with the Kitty graphics protocol (Ghostty, kitty, or WezTerm); otherwise image attachments show a text placeholder. v1.0.97 release notes: renders by default on supported terminals without experimental mode; turn off with `/settings inlineImages false` |
 | `keepAlive` | `"on"` \| `"off"` \| `"busy"` | `"off"` | Prevent system sleep |
 | `logLevel` | `"none"` \| `"error"` \| `"warning"` \| `"info"` \| `"debug"` \| `"all"` \| `"default"` | `"default"` | Log verbosity |
 | `mergeStrategy` | `"rebase"` \| `"merge"` | — | Strategy for `/pr fix conflicts` |
@@ -229,7 +230,9 @@ claude-sonnet-*
 
 **Location**: `~/.copilot/config.json` (or `$COPILOT_HOME/config.json`). Automatically managed
 application state (auth data, installed plugin metadata, `loggedInUsers`, `installedPlugins`,
-`firstLaunchAt`, `staff`). Put user preferences in `settings.json`, not here.
+`firstLaunchAt`, `staff`). Put user preferences in `settings.json`, not here. (v1.0.97 release
+notes: one invalid entry in `config.json` no longer resets the saved settings, such as dismissed
+prompts, trusted folders, and sign-ins, on every launch.)
 
 ### trustedFolders (array)
 
@@ -279,6 +282,31 @@ allow/deny list.
   default users and repositories may still override.
 - `policyHelper` registrations are validated, but the docs say the runtime doesn't yet invoke the
   helper.
+- `sandbox` sets a policy floor users can't relax. Supported fields: `enabled`,
+  `failIfUnavailable`, `allowBypass`, `addCurrentWorkingDirectory`, `sandboxMcpServers`,
+  `sandboxLspServers`, `auth.git`, `auth.gh`, `allowDevToolAccess`, `learningMode`, and the
+  `userPolicy.*` filesystem and network rules. The managed value wins in the safer direction;
+  sandboxing, `failIfUnavailable`, and sandboxed MCP/LSP servers can't be turned off. `learningMode`
+  is Windows-only and honored only from native MDM (a `managed-settings.json` value is ignored).
+  The managed `sandbox` key blocks connections from clients older than the minimum version that
+  supports local sandbox: Copilot CLI 1.0.93, VS Code 1.141.0, GitHub Copilot app 1.1.26
+  (enterprise managed settings reference).
+- `forceRemoteSettingsRefresh: true` requires a fresh server-managed settings download at startup
+  (Copilot CLI, VS Code, and the GitHub Copilot app). In the CLI and the app it skips the one-hour
+  cache and doesn't fall back to an older cached policy: if the fetch fails, affected operations
+  stay restricted until current policy is confirmed. In VS Code, Copilot features are blocked until
+  the refresh succeeds. The MDM value takes precedence over a cached server value. To apply from a
+  device's first startup, deliver it through MDM or file-based settings; policy helper scripts
+  can't set it. In the Windows registry or macOS managed preferences, store it as a string
+  `true`/`false`, not a DWORD or native Boolean.
+- `telemetry` pushes baseline OpenTelemetry export settings: `enabled`, `endpoint`, `protocol`,
+  `headers`, `resourceAttributes`, `captureContent`, `lockCaptureContent`, and `serviceName` (see
+  [OpenTelemetry monitoring](#opentelemetry-monitoring)).
+- `remoteControl.mode` is `"enabled"`, `"disabled"`, or `"requireSSO"`; `requireSSO` needs
+  `remoteControl.githubDotComOrganizations`, and the client must be SSO-authorized for at least one
+  listed organization.
+- Most managed keys lock the whole row. `enabledPlugins` and `extraKnownMarketplaces` are the
+  exception: the managed layer merges those maps field by field with the user's entries.
 
 ---
 
@@ -326,6 +354,56 @@ allow/deny list.
 > while the subagent-limits table and `subagents.*` settings list depth default `6` (cap `256`)
 > and plan-based concurrency (cap `32`). Treat the settings values as authoritative for
 > `settings.json`.
+
+---
+
+## OpenTelemetry monitoring
+
+Copilot CLI can export OpenTelemetry traces and metrics that follow the OTel GenAI semantic
+conventions. Export is off by default and turns on when `COPILOT_OTEL_ENABLED=true`,
+`OTEL_EXPORTER_OTLP_ENDPOINT` is set, or `COPILOT_OTEL_FILE_EXPORTER_PATH` is set. Enterprise
+administrators can push a baseline through the managed `telemetry` key.
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `COPILOT_OTEL_ENABLED` | `false` | Explicitly enable export (not needed when an endpoint is set) |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | — | OTLP endpoint URL; setting it enables export |
+| `COPILOT_OTEL_EXPORTER_TYPE` | `otlp-http` | `otlp-http` or `file`; `file` is chosen automatically when `COPILOT_OTEL_FILE_EXPORTER_PATH` is set |
+| `COPILOT_OTEL_FILE_EXPORTER_PATH` | — | Write all signals to this file as JSON lines; setting it enables export |
+| `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/json` | `http/json` or `http/protobuf` (`otlp-http` only); `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL` / `OTEL_EXPORTER_OTLP_METRICS_PROTOCOL` override it per signal |
+| `OTEL_EXPORTER_OTLP_HEADERS` | — | Auth headers for the exporter |
+| `OTEL_SERVICE_NAME` | `github-copilot` | `service.name` resource attribute |
+| `OTEL_RESOURCE_ATTRIBUTES` | — | Extra resource attributes, comma-separated `key=value` (percent-encode special characters) |
+| `COPILOT_OTEL_SOURCE_NAME` | `github.copilot` | Instrumentation scope name for the tracer and meter |
+| `OTEL_LOG_LEVEL` | — | Diagnostic level: `NONE`, `ERROR`, `WARN`, `INFO`, `DEBUG`, `VERBOSE`, `ALL` |
+| `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` | `false` | Capture full prompts, responses, tool schemas, and tool arguments and results |
+
+### Signals
+
+- **Traces:** an `invoke_agent` root span per agent invocation, with `chat` (one per LLM request)
+  and `execute_tool` child spans. Subagent invocations also use `invoke_agent` spans.
+- **Metrics:** `gen_ai.client.operation.duration`, `gen_ai.client.token.usage`,
+  `gen_ai.client.operation.time_to_first_chunk`, `gen_ai.client.operation.time_per_output_chunk`,
+  `gen_ai.invoke_agent.duration`, `gen_ai.invoke_agent.inference_calls`,
+  `gen_ai.invoke_agent.tool_calls`, `gen_ai.invoke_workflow.duration`, plus
+  `github.copilot.tool.call.count`, `github.copilot.tool.call.duration`,
+  `github.copilot.agent.turn.count`, `github.copilot.mcp.server.connection.count`,
+  `github.copilot.code.lines_added`, and `github.copilot.code.lines_removed`.
+- **Span events** on `chat` / `invoke_agent` spans: `github.copilot.hook.start`,
+  `github.copilot.hook.end`, `github.copilot.hook.error`, `github.copilot.session.truncation`,
+  `github.copilot.session.compaction_start`, `github.copilot.session.compaction_complete`,
+  `github.copilot.skill.invoked`, `github.copilot.session.shutdown`, `github.copilot.session.abort`,
+  and `exception`.
+
+> [!WARNING]
+> By default only metadata (model names, token counts, durations) is captured. Content capture can
+> include code, file contents, and prompts; enable it only in trusted environments.
+
+To measure AI-unit consumption, read `github.copilot.nano_aiu` from the root `invoke_agent` span
+only: it is also stamped on child `chat` spans, so summing across spans double-counts.
+`github.copilot.cost` is a per-request model multiplier used for billing, not a monetary value. The
+full catalog is in the
+[command reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference#opentelemetry-monitoring).
 
 ---
 
@@ -450,6 +528,7 @@ export COPILOT_MODEL=YOUR-MODEL-NAME
 
 - Select with `/model` (alias `/models`), `--model=MODEL`, `COPILOT_MODEL`, or the `model` setting.
   `auto` lets Copilot choose.
+  Model IDs are case-insensitive and the canonical ID is saved (`/model` and `/config model`).
 - `/model` scope flags: `--session`/`-s` (default, current session only), `--global` (saved default),
   `--repo`/`--local` (pins in repository settings).
 - Reasoning effort: `--effort`/`--reasoning-effort` (`low`, `medium`, `high`, `xhigh`, `max`;
