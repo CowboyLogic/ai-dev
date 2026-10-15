@@ -206,7 +206,6 @@ ENV_IGNORED_EVERYWHERE = {
 }
 ENV_IGNORED_IN_PROJECT_LOCAL = {
     "CLAUDE_CONFIG_DIR", "CLAUDE_CODE_TMPDIR", "HOME", "TMPDIR", "TMP", "TEMP",
-    "SystemRoot", "ComSpec", "ProgramData", "LOCALAPPDATA", "PATHEXT", "PSModulePath",
     "OTEL_LOG_RAW_API_BODIES", "ENABLE_BETA_TRACING_DETAILED", "BETA_TRACING_ENDPOINT",
     "CLAUDE_CODE_ENABLE_TELEMETRY", "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA",
     "ENABLE_ENHANCED_TELEMETRY_BETA", "OTEL_LOGS_EXPORTER", "OTEL_METRICS_EXPORTER",
@@ -217,19 +216,28 @@ ENV_IGNORED_IN_PROJECT_LOCAL = {
     "CLAUDE_CODE_USER_DIALOG_TIMEOUT_MS", "CLAUDE_AFK_TIMEOUT_MS", "CLAUDE_AFK_COUNTDOWN_MS",
     "CLAUDE_CODE_DISABLE_ATTACHMENTS", "CLAUDE_CODE_DISABLE_FILE_MENTIONS",
 }
-ENV_IGNORED_PREFIXES = ("XDG_", "ProgramFiles")
+ENV_IGNORED_PREFIXES = ("XDG_",)
+# Windows environment names are case-insensitive, so these match upper-cased.
+ENV_IGNORED_WINDOWS_NAMES = {"SYSTEMROOT", "COMSPEC", "PROGRAMDATA", "LOCALAPPDATA", "PATHEXT", "PSMODULEPATH"}
+ENV_IGNORED_WINDOWS_PREFIXES = ("PROGRAMFILES",)
 ENV_OTLP_SUFFIXES = ("_ENDPOINT", "_HEADERS", "_PROTOCOL", "_CERTIFICATE", "_CLIENT_KEY", "_INSECURE")
 # A value that turns telemetry off still applies from project and local settings.
-ENV_TELEMETRY_OFF_NAMES = {
-    "OTEL_LOGS_EXPORTER", "OTEL_METRICS_EXPORTER", "OTEL_TRACES_EXPORTER",
-    "OTEL_LOG_USER_PROMPTS", "OTEL_LOG_TOOL_CONTENT", "OTEL_LOG_TOOL_DETAILS",
-}
-ENV_OFF_VALUES = {"", "0", "false", "no", "off", "none"}
+# Exporter selectors turn off with `none`; content switches turn off with a falsy value.
+ENV_EXPORTER_SELECTORS = {"OTEL_LOGS_EXPORTER", "OTEL_METRICS_EXPORTER", "OTEL_TRACES_EXPORTER"}
+ENV_CONTENT_SWITCHES = {"OTEL_LOG_USER_PROMPTS", "OTEL_LOG_TOOL_CONTENT", "OTEL_LOG_TOOL_DETAILS"}
+ENV_SELECTOR_OFF_VALUES = {"none"}
+ENV_SWITCH_OFF_VALUES = {"", "0", "false", "no", "off"}
 
 
 def env_ignored_in_project_local(name: str, value) -> bool:
-    if name in ENV_TELEMETRY_OFF_NAMES and str(value).strip().lower() in ENV_OFF_VALUES:
+    normalized = str(value).strip().lower()
+    if name in ENV_EXPORTER_SELECTORS and normalized in ENV_SELECTOR_OFF_VALUES:
         return False
+    if name in ENV_CONTENT_SWITCHES and normalized in ENV_SWITCH_OFF_VALUES:
+        return False
+    upper = name.upper()
+    if upper in ENV_IGNORED_WINDOWS_NAMES or upper.startswith(ENV_IGNORED_WINDOWS_PREFIXES):
+        return True
     if name in ENV_IGNORED_IN_PROJECT_LOCAL or name.startswith(ENV_IGNORED_PREFIXES):
         return True
     return name.startswith("OTEL_EXPORTER_OTLP_") and name.endswith(ENV_OTLP_SUFFIXES)
