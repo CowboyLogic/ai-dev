@@ -234,12 +234,12 @@ Project and local settings can't set variables a checked-out repository shouldn'
 
 - Where Claude Code writes its files: `CLAUDE_CONFIG_DIR`, `CLAUDE_CODE_TMPDIR`, and OS directory variables (`HOME`, `TMPDIR`, `TMP`, `TEMP`, the `XDG_*` family).
 - Windows variables that pick programs or machine-wide configuration (`SystemRoot`, `ComSpec`, `ProgramData`, `LOCALAPPDATA`, `PATHEXT`, `PSModulePath`, the `ProgramFiles` family).
-- Session-content export: `OTEL_LOG_RAW_API_BODIES`, `ENABLE_BETA_TRACING_DETAILED`, `BETA_TRACING_ENDPOINT`.
+- Session-content export: `OTEL_LOG_RAW_API_BODIES`, `OTEL_LOG_MANAGED_SETTINGS`, `ENABLE_BETA_TRACING_DETAILED`, `BETA_TRACING_ENDPOINT`.
 - OpenTelemetry exporter variables that turn telemetry on, choose where it goes, or choose what it captures (`CLAUDE_CODE_ENABLE_TELEMETRY`, the `OTEL_*_EXPORTER` selectors, `OTEL_LOG_USER_PROMPTS` and the other content variables, `OTEL_EXPORTER_OTLP_*` endpoint/header/protocol/certificate variables, `OTEL_EXPORTER_PROMETHEUS_HOST`/`_PORT`). Needs v2.1.282+.
 - Startup and sync: `CLAUDE_CODE_PROCESS_WRAPPER`, `CLAUDE_CODE_SYNC_SKILLS`, `CLAUDE_CODE_SYNC_PLUGINS`, `CLAUDE_CODE_PLUGIN_CACHE_DIR`, `CLAUDE_CODE_PLUGIN_SEED_DIR`.
 - Unanswered-dialog timers (`CLAUDE_CODE_USER_DIALOG_TIMEOUT_MS`, `CLAUDE_AFK_TIMEOUT_MS`, `CLAUDE_AFK_COUNTDOWN_MS`), `CLAUDE_CODE_DISABLE_ATTACHMENTS`, and `CLAUDE_CODE_DISABLE_FILE_MENTIONS` (stops `@` mention expansion; the variable is new in v2.1.299). The timers and `CLAUDE_CODE_DISABLE_ATTACHMENTS` became ignored in project and local settings in v2.1.290.
 
-Variables ignored from every settings file (launch environment only): identity variables such as `CLAUDE_CODE_REMOTE` and `CLAUDE_CODE_ACCOUNT_UUID`, `CLAUDE_CODE_MESSAGING_SOCKET`, `CLAUDE_CODE_MESSAGING_TOKEN`, `CLAUDE_CODE_PROJECT_DIR_NAME`, `CLAUDE_CODE_RESTRICTED`, `CLAUDE_CODE_DISABLE_POWERSHELL_CMD_RM_DENY`, `CLAUDE_CODE_DISABLE_DANGEROUS_RM_TIMEOUT`, `CLAUDE_CODE_DISABLE_SUBSTITUTION_RM_PROMPT`, and `CLAUDE_CODE_DISABLE_INLINE_SHELL_RM_PROMPT`.
+Variables ignored from every settings file (launch environment only): identity variables such as `CLAUDE_CODE_REMOTE` and `CLAUDE_CODE_ACCOUNT_UUID`, `CLAUDE_CODE_MESSAGING_SOCKET`, `CLAUDE_CODE_MESSAGING_TOKEN`, `CLAUDE_CODE_PROJECT_DIR_NAME`, `CLAUDE_CODE_RESTRICTED`, `CLAUDE_CODE_DISABLE_POWERSHELL_CMD_RM_DENY`, `CLAUDE_CODE_DISABLE_DANGEROUS_RM_TIMEOUT`, `CLAUDE_CODE_DISABLE_SUBSTITUTION_RM_PROMPT`, and `CLAUDE_CODE_DISABLE_INLINE_SHELL_RM_PROMPT`, and `CLAUDE_CODE_DISABLE_ADMIN_ENV_UNION`.
 
 Source: the `env` section of the settings reference.
 
