@@ -60,6 +60,7 @@ reference lists these IDs:
 | `claude-sonnet-5.5` | General-purpose coding (default) |
 | `gpt-5.4` | Complex reasoning tasks |
 | `gpt-6.1-sol`, `gpt-6-astra`, `gpt-6-luna` | Recommended, opt-in (not the automatic default) |
+| `gpt-5.6-luna` | Default model of the built-in `task` agent; listed on the supported-models page |
 | `claude-opus-5.5` | Recommended, high-capability complex tasks |
 | `claude-haiku-5.5`, `claude-haiku-4.5` | Fast, lightweight operations |
 | `gpt-5.3-codex` | Code-focused tasks |
