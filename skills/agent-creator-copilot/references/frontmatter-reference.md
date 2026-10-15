@@ -401,7 +401,7 @@ metadata:
 
 ## Claude Agent Format (`.claude/agents/`)
 
-VS Code and Copilot CLI both load agents from `.claude/agents/` (plain `.md` files in the [Claude sub-agents format](https://code.claude.com/docs/en/sub-agents)). VS Code also reads `~/.claude/agents/` at user level. For sessions that run on the Agent Host (such as the Copilot harness), VS Code reads user-level agents from the selected host's folder (`~/.copilot/agents` or `~/.claude/agents`), not from VS Code profile user data.
+VS Code and Copilot CLI both load agents from `.claude/agents/` (plain `.md` files in the [Claude sub-agents format](https://code.claude.com/docs/en/sub-agents)). VS Code also reads `~/.claude/agents/` at user level. For sessions that run on the Agent Host (such as the Copilot harness), VS Code reads user-level agents from the selected host's folder (`~/.copilot/agents` for the Copilot harness; `~/.claude/agents` applies only to Anthropic Claude harness sessions), not from VS Code profile user data.
 
 | Property | `.agent.md` format | Claude format |
 |---|---|---|

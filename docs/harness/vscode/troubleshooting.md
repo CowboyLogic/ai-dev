@@ -10,7 +10,7 @@ Check these in order:
 1. **Location.** The file must be in `.github/agents/` or `.claude/agents/` in the workspace, or
    `~/.copilot/agents/` or `~/.claude/agents/` for your user. A file in `.github/copilot-instructions/` or any
    other folder is not detected. In a Copilot (Agent Host) session, user-level agents are read from the host's
-   `~/.copilot/agents/` or `~/.claude/agents/`, not from VS Code profile user data or the deprecated
+   `~/.copilot/agents/` (`~/.claude/agents/` applies only to Anthropic Claude harness sessions), not from VS Code profile user data or the deprecated
    `chat.agentFilesLocations` setting.
 2. **Extension.** Use `.agent.md` in `.github/agents/` and `~/.copilot/agents/`. Files in `.claude/agents/` are plain `.md`. A legacy `.chatmode.md` file should be renamed.
 3. **Frontmatter.** The block must open and close with `---` on their own lines and be valid YAML. A tab, a
