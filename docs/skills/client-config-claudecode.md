@@ -61,7 +61,7 @@ npx skills ls -g --agent claude-code
 
 In a benchmark run on 2026-04-26, the skill raised the assertion pass rate from 80% to
 100%, with the gain concentrated on settings that postdate the model's training. That run
-predates the 2026-09-24, 2026-10-11, and 2026-10-13 reference refreshes. The detail is in the [skill README](https://github.com/CowboyLogic/ai-dev/blob/main/skills/client-config-claudecode/README.md),
+predates the 2026-09-24, 2026-10-11, 2026-10-13, and 2026-10-14 reference refreshes. The detail is in the [skill README](https://github.com/CowboyLogic/ai-dev/blob/main/skills/client-config-claudecode/README.md),
 and the version history is in the
 [CHANGELOG](https://github.com/CowboyLogic/ai-dev/blob/main/skills/client-config-claudecode/CHANGELOG.md).
 
