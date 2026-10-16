@@ -38,6 +38,7 @@ const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
  * A repository with one modified, one untracked and one deleted file. Without `hasHead` it has no
  * commits yet, and README.md is staged with its second line then changed again unstaged.
  * `onStatus` runs inside each `git status`, the call every scan makes first; `text` is every file's.
+ * `live` is read on each call: README.md's diff and every file's modification time.
  */
 function fakeRepo(
   on: On,
@@ -46,11 +47,18 @@ function fakeRepo(
     hasHead = true,
     onStatus,
     text = 'a\nb\n',
-  }: { fileSize?: number; hasHead?: boolean; onStatus?: () => Promise<void>; text?: string } = {},
+    live = { diff: DIFF, mtimeMs: 1 },
+  }: {
+    fileSize?: number
+    hasHead?: boolean
+    onStatus?: () => Promise<void>
+    text?: string
+    live?: { diff: string; mtimeMs: number }
+  } = {},
 ) {
   on('session.cwd', () => ({ value: ROOT }))
   on('fs.list', ($, e) => ({ value: DISK[e.path] ?? [] }))
-  on('fs.stat', () => ({ value: { kind: 'file' as const, size: fileSize, mtimeMs: 1, isLink: false } }))
+  on('fs.stat', () => ({ value: { kind: 'file' as const, size: fileSize, mtimeMs: live.mtimeMs, isLink: false } }))
   on('fs.read', () => ({ value: text }))
   on('process.run', async ($, e) => {
     const args = e.argv.filter(a => a !== '--no-optional-locks').slice(1).join(' ')
@@ -68,7 +76,7 @@ function fakeRepo(
     if (args === 'diff --numstat --no-ext-diff --cached') return ok('2\t0\tREADME.md\n')
     if (args === 'diff --numstat --no-ext-diff') return ok('1\t1\tREADME.md\n')
     if (args.startsWith('diff --numstat')) return ok('1\t1\tREADME.md\n0\t3\tgone.txt\n')
-    if (args.includes('README.md')) return ok(DIFF)
+    if (args.includes('README.md')) return ok(live.diff)
     return ok('', 1)
   })
 }
@@ -164,6 +172,29 @@ describe('git-aware-file-explorer pane', () => {
     // README.md's 2 staged lines and src/new.ts's 2 untracked ones; the unstaged edit adds none.
     expect(await ui.find({ type: 'Text', text: '+4' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: '−0' })).toBeDefined()
+
+    await ui.unmount()
+  })
+
+  test('redraws the open diff when an edit keeps the line counts', async ($, on) => {
+    const live = { diff: DIFF, mtimeMs: 1 }
+    fakeRepo(on, { live })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+    await ui.press({ key: 'node:README.md' })
+    await ui.press({ key: 'refresh' })
+    expect(await ui.find({ type: 'Text', text: 'new line' })).toBeDefined()
+
+    // The same +1 −1, a different line: only the file's modification time says it changed.
+    live.diff = DIFF.replace('+new line', '+newer line')
+    live.mtimeMs = 2
+    await ui.press({ key: 'refresh' })
+    expect(await ui.find({ type: 'Text', text: 'newer line' })).toBeDefined()
 
     await ui.unmount()
   })

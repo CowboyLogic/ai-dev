@@ -177,6 +177,8 @@ export function countLines(text: string): number {
 /** Untracked files read for their line count, at most; larger ones are skipped. */
 const UNTRACKED_LIMIT = 200
 const UNTRACKED_BYTES = 512 * 1024
+/** Changed files whose modification time a scan reads, at most (see stampFor). */
+const STAMP_LIMIT = 200
 
 /**
  * What a diff compares the working tree against: HEAD, or on a branch with no commits yet the empty
@@ -206,6 +208,21 @@ async function lineTotals($: $, root: string, changes: Change[]) {
   return total
 }
 
+/**
+ * Modification time and size of the open file, the open folders and the first STAMP_LIMIT changed
+ * files. An edit that leaves git's status and line totals as they were (`bar` to `baz`) still
+ * changes this, so the scan that sees it redraws the pane.
+ */
+async function stampFor($: $, s: Scan): Promise<string> {
+  const selected = await read($, selectedAtom)
+  const paths = new Set(['', ...(await read($, expandedAtom)), ...s.changes.slice(0, STAMP_LIMIT).map(c => c.path)])
+  if (selected !== null) paths.add(selected)
+  const stats = await Promise.all(
+    [...paths].map(p => $.fs.stat(p === '' ? s.root : s.root + '/' + p).catch(() => undefined)),
+  )
+  return stats.map(st => (st ? st.mtimeMs + ':' + st.size : '-')).join(',')
+}
+
 /** The scan running now, and whether another was asked for while it ran (see rescan). */
 let scanning: Promise<void> | undefined
 let isRescanDue = false
@@ -224,7 +241,8 @@ function rescan($: $): Promise<void> {
     try {
       do {
         isRescanDue = false
-        const next = await scan($)
+        const found = await scan($)
+        const next: Scan = { ...found, stamp: await stampFor($, found) }
         // Any write redraws the pane, so an unchanged scan is not written at all.
         if (JSON.stringify(await read($, scanAtom)) !== JSON.stringify(next)) await update($, scanAtom, () => next)
       } while (isRescanDue)

@@ -30,6 +30,8 @@ export type Scan = {
   }
   /** Error text from the last scan, if it failed. */
   error?: string
+  /** Modification times and sizes of the files the pane shows, so a content edit redraws it. */
+  stamp?: string
 }
 
 declare module 'claude-code' {
