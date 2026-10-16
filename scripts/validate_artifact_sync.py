@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 from dataclasses import dataclass
@@ -595,6 +596,18 @@ MOD_HARNESS_PAGES = {"claude": "docs/harness/claudecode/index.md"}
 MOD_MANIFESTS = {"claude": ".claude-plugin/plugin.json"}
 
 
+def mod_rows(text: str, prefix: str = "") -> set[str]:
+    """Mods a page lists in a table row's first cell, as `[Name](<prefix><mod>.md)`; a link
+    anywhere else on the page does not list one."""
+    pattern = r"^\|\s*\[[^\]]*\]\(" + re.escape(prefix) + r"([a-z0-9-]+)\.md\)"
+    return set(re.findall(pattern, text, flags=re.MULTILINE))
+
+
+def mods_link_prefix(page: str) -> str:
+    """How a page links into docs/mods/ (`../../mods/` from docs/harness/claudecode/index.md)."""
+    return Path(os.path.relpath(ROOT / "docs/mods", (ROOT / page).parent)).as_posix() + "/"
+
+
 def validate_mods() -> None:
     """Every mod under mods/<client>/ has an overview page in the nav, a catalog row,
     and an entry on its client's harness page."""
@@ -625,7 +638,7 @@ def validate_mods() -> None:
     # With no mods left the docs are still checked, so entries for a removed mod fail.
     index = ROOT / "docs/mods/index.md"
     index_text = index.read_text() if index.is_file() else ""
-    catalogued = set(re.findall(r"\]\(([a-z0-9-]+)\.md\)", index_text))
+    catalogued = mod_rows(index_text)
     check(
         catalogued == set(mods),
         "docs/mods/index.md mod coverage drift",
@@ -639,7 +652,7 @@ def validate_mods() -> None:
     }
     check(not stale_nav, "mkdocs.yml nav lists mod pages with no mod", f"{sorted(stale_nav)}")
     for client, harness in sorted(MOD_HARNESS_PAGES.items()):
-        listed = set(re.findall(r"mods/([a-z0-9-]+)\.md", (ROOT / harness).read_text())) - {"index"}
+        listed = mod_rows((ROOT / harness).read_text(), mods_link_prefix(harness))
         stale = listed - {identifier for identifier, owner in mods.items() if owner == client}
         check(not stale, "harness page lists mods with no mod", f"{harness}: {sorted(stale)}")
     for identifier, client in sorted(mods.items()):
@@ -658,7 +671,7 @@ def validate_mods() -> None:
         check(harness is not None, f"mod {identifier} is for an unknown client", client)
         if harness is not None:
             check(
-                f"mods/{identifier}.md" in (ROOT / harness).read_text(),
+                identifier in mod_rows((ROOT / harness).read_text(), mods_link_prefix(harness)),
                 f"mod {identifier} is not listed on its client's harness page",
                 harness,
             )

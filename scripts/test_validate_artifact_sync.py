@@ -407,6 +407,23 @@ class ValidatorTest(unittest.TestCase):
         self.assert_fails_cleanly(result)
         self.assertIn("not listed on its client's harness page", result.stdout)
 
+    def test_mod_linked_only_in_catalog_prose_fails(self) -> None:
+        text = self.read("docs/mods/index.md")
+        kept = "".join(line for line in text.splitlines(keepends=True) if "(git-aware-file-explorer.md)" not in line)
+        self.write("docs/mods/index.md", kept + "\nSee [the explorer](git-aware-file-explorer.md).\n")
+        result = self.run_validator()
+        self.assert_fails_cleanly(result)
+        self.assertIn("docs/mods/index.md mod coverage drift", result.stdout)
+
+    def test_mod_linked_only_in_harness_prose_fails(self) -> None:
+        page = "docs/harness/claudecode/index.md"
+        text = self.read(page)
+        kept = "".join(line for line in text.splitlines(keepends=True) if "mods/git-aware-file-explorer.md" not in line)
+        self.write(page, kept + "\nSee [the explorer](../../mods/git-aware-file-explorer.md).\n")
+        result = self.run_validator()
+        self.assert_fails_cleanly(result)
+        self.assertIn("not listed on its client's harness page", result.stdout)
+
     def test_mkdocs_custom_yaml_tags_are_tolerated(self) -> None:
         self.write("mkdocs.yml", self.read("mkdocs.yml") + "\nextra_probe: !!python/name:material.extensions.emoji.twemoji\n")
         result = self.run_validator()
