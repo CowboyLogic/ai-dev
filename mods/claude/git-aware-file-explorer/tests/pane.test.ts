@@ -13,12 +13,12 @@ const DIFF = [
   '',
 ].join('\n')
 
-const ok = (stdout: string, exitCode = 0) => ({
+const ok = (stdout: string, exitCode = 0, isStdoutTruncated = false) => ({
   value: {
     exitCode,
     stdout,
     stderr: '',
-    isStdoutTruncated: false,
+    isStdoutTruncated,
     isStderrTruncated: false,
   },
 })
@@ -39,7 +39,8 @@ const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
  * commits yet, and README.md is staged with its second line then changed again unstaged.
  * `onStatus` runs inside each `git status`, the call every scan makes first; `text` is every file's.
  * `live` is read on each call: README.md's diff and every file's modification time; `diffRuns`
- * counts the diffs of README.md run.
+ * counts the diffs of README.md run. With `isCut`, git's status, line counts and diff come back cut
+ * at the 4 MiB limit, as `process.run` reports them.
  */
 function fakeRepo(
   on: On,
@@ -49,12 +50,14 @@ function fakeRepo(
     onStatus,
     text = 'a\nb\n',
     live = { diff: DIFF, mtimeMs: 1 } as { diff: string; mtimeMs: number; diffRuns?: number },
+    isCut = false,
   }: {
     fileSize?: number
     hasHead?: boolean
     onStatus?: () => Promise<void>
     text?: string
     live?: { diff: string; mtimeMs: number; diffRuns?: number }
+    isCut?: boolean
   } = {},
 ) {
   on('session.cwd', () => ({ value: ROOT }))
@@ -66,7 +69,7 @@ function fakeRepo(
     if (args === 'rev-parse --show-toplevel') return ok(ROOT + '\n')
     if (args.startsWith('status')) {
       await onStatus?.()
-      return ok(' M README.md\0?? src/new.ts\0 D gone.txt\0')
+      return isCut ? ok(' M README.md\0?? src/new.ts\0 D go', 0, true) : ok(' M README.md\0?? src/new.ts\0 D gone.txt\0')
     }
     if (args.startsWith('ls-files') && args.includes('--ignored')) return ok('node_modules/\0')
     if (args.startsWith('ls-files')) return ok('README.md\0src/a.ts\0docs/index.md\0')
@@ -76,10 +79,10 @@ function fakeRepo(
     if (args === 'diff --numstat --no-ext-diff ' + EMPTY_TREE) return ok('2\t0\tREADME.md\n')
     if (args === 'diff --numstat --no-ext-diff --cached') return ok('2\t0\tREADME.md\n')
     if (args === 'diff --numstat --no-ext-diff') return ok('1\t1\tREADME.md\n')
-    if (args.startsWith('diff --numstat')) return ok('1\t1\tREADME.md\n0\t3\tgone.txt\n')
+    if (args.startsWith('diff --numstat')) return ok('1\t1\tREADME.md\n0\t3\tgone.txt\n', 0, isCut)
     if (args.includes('README.md')) {
       live.diffRuns = (live.diffRuns ?? 0) + 1
-      return ok(live.diff)
+      return ok(live.diff, 0, isCut)
     }
     return ok('', 1)
   })
@@ -218,6 +221,25 @@ describe('git-aware-file-explorer pane', () => {
     // What a wheel or ▲/▼ press does: draw the pane again with nothing in the workspace changed.
     for (let i = 0; i < 3; i++) await ui.redraw()
     expect(live.diffRuns).toBe(runs)
+
+    await ui.unmount()
+  })
+
+  test('marks counts as floors when git output was cut', async ($, on) => {
+    fakeRepo(on, { isCut: true })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+
+    // The cut entry (` D go`) is dropped, not read as a file named `go`.
+    expect(await ui.find({ type: 'Text', text: '● 2+ changed' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '−4+' })).toBeDefined()
+    await ui.press({ key: 'node:README.md' })
+    expect(await ui.find({ type: 'Text', text: /cut at 4 MB/ })).toBeDefined()
 
     await ui.unmount()
   })

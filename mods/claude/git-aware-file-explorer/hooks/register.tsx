@@ -140,13 +140,17 @@ async function scan($: $): Promise<Scan> {
     ])
     let name = branch.stdout.trim()
     if (name === '') name = (await git($, root, ['rev-parse', '--short', 'HEAD'])).stdout.trim()
-    const changes = status.exitCode === 0 ? parseStatus(status.stdout) : []
+    // Output past 4 MiB is cut: keep the whole entries, and mark the counts as floors.
+    const out = status.isStdoutTruncated ? status.stdout.slice(0, status.stdout.lastIndexOf('\0') + 1) : status.stdout
+    const changes = status.exitCode === 0 ? parseStatus(out) : []
+    const lines = changes.length > 0 ? await lineTotals($, root, changes) : { added: 0, deleted: 0 }
     return {
       root,
       isRepo: true,
       branch: name || undefined,
       changes,
-      lines: changes.length > 0 ? await lineTotals($, root, changes) : { added: 0, deleted: 0 },
+      lines,
+      isTruncated: status.isStdoutTruncated || lines.isTruncated || undefined,
       ignored: ignored.stdout.split('\0').filter(Boolean),
       error: status.exitCode === 0 ? undefined : status.stderr.trim(),
     }
@@ -192,7 +196,8 @@ async function diffBase($: $, root: string): Promise<string> {
 /** Lines added and deleted against HEAD (staged and unstaged), untracked files counted as added. */
 async function lineTotals($: $, root: string, changes: Change[]) {
   const out = await git($, root, ['diff', '--numstat', '--no-ext-diff', await diffBase($, root)])
-  const total: { added: number; deleted: number; partial?: boolean } = sumNumstat(out.stdout)
+  const total: { added: number; deleted: number; partial?: boolean; isTruncated?: boolean } = sumNumstat(out.stdout)
+  if (out.isStdoutTruncated) total.isTruncated = true
   const untracked = changes.filter(c => c.x === '?')
   if (untracked.length > UNTRACKED_LIMIT) total.partial = true
   for (const c of untracked.slice(0, UNTRACKED_LIMIT)) {
@@ -431,24 +436,30 @@ export function diffLines(diff: string): DiffLine[] {
   return out
 }
 
+/** A file's parsed diff; `isTruncated` when git's output passed 4 MiB and only its start is here. */
+type FileDiff = { lines: DiffLine[]; isTruncated: boolean }
+
 /** The open file's parsed diff and what it was read for, so a scroll redraws without running git. */
-let diffCache: { key: string; lines: DiffLine[] } | undefined
+let diffCache: { key: string; diff: FileDiff } | undefined
 
 /** The parsed diff of `c`, read again only when the scan changed (a content edit changes its stamp). */
-async function cachedDiff($: $, s: Scan, c: Change): Promise<DiffLine[]> {
+async function cachedDiff($: $, s: Scan, c: Change): Promise<FileDiff> {
   const key = JSON.stringify([s, c])
-  if (diffCache?.key !== key) diffCache = { key, lines: diffLines(await diffFor($, s, c)) }
-  return diffCache.lines
+  if (diffCache?.key !== key) {
+    const out = await diffFor($, s, c)
+    diffCache = { key, diff: { lines: diffLines(out.stdout), isTruncated: out.isStdoutTruncated } }
+  }
+  return diffCache.diff
 }
 
-async function diffFor($: $, s: Scan, c: Change): Promise<string> {
+async function diffFor($: $, s: Scan, c: Change) {
   const flags = ['--no-color', '--no-ext-diff']
   if (c.x === '?') {
     // --no-index exits 1 when the files differ, which is the point here.
-    return (await git($, s.root, ['diff', ...flags, '--no-index', '--', '/dev/null', c.path])).stdout
+    return git($, s.root, ['diff', ...flags, '--no-index', '--', '/dev/null', c.path])
   }
   const paths = c.from ? [c.from, c.path] : [c.path]
-  return (await git($, s.root, ['diff', ...flags, '-M', await diffBase($, s.root), '--', ...paths])).stdout
+  return git($, s.root, ['diff', ...flags, '-M', await diffBase($, s.root), '--', ...paths])
 }
 
 const FOLDER_ICON =
@@ -554,12 +565,15 @@ export const register: Register = on => {
         <Box width="30%" flexDirection="row" justifyContent="flex-end" alignItems="center" columnGap={1}>
           {s.isRepo && n > 0 && s.lines && (
             <Text>
-              {/* A trailing + marks a floor: some untracked files went uncounted. */}
+              {/* A trailing + marks a floor: some untracked files went uncounted, or git's output was cut. */}
               <Text color="success">
                 +{s.lines.added}
-                {s.lines.partial ? '+' : ''}
+                {s.lines.partial || s.isTruncated ? '+' : ''}
               </Text>{' '}
-              <Text color="error">−{s.lines.deleted}</Text>
+              <Text color="error">
+                −{s.lines.deleted}
+                {s.isTruncated ? '+' : ''}
+              </Text>
             </Text>
           )}
           {s.isRepo && (
@@ -568,7 +582,8 @@ export const register: Register = on => {
                 <Text dimColor>clean</Text>
               ) : (
                 <Text color="warning" underline={changedOnly}>
-                  ● {n} changed
+                  ● {n}
+                  {s.isTruncated ? '+' : ''} changed
                 </Text>
               )}
             </Button>
@@ -666,6 +681,7 @@ export const register: Register = on => {
     let panelLast = 0
     let body
     let fileLines: { added: number; deleted: number } | undefined
+    let isDiffTruncated = false
     if (selected === null) {
       body = (
         <Box flexDirection="column" flexGrow={1} alignItems="center" justifyContent="center" rowGap={1}>
@@ -675,7 +691,9 @@ export const register: Register = on => {
         </Box>
       )
     } else if (change) {
-      const lines = await cachedDiff($, s, change)
+      const diff = await cachedDiff($, s, change)
+      const lines = diff.lines
+      isDiffTruncated = diff.isTruncated
       panelLast = lastTop(lines, panelRoom)
       if (lines.length === 0) body = <Text dimColor>No textual difference (binary or mode change).</Text>
       else {
@@ -780,7 +798,16 @@ export const register: Register = on => {
             <Box flexDirection="row" columnGap={2} alignItems="center">
               {fileLines && (
                 <Text>
-                  <Text color="success">+{fileLines.added}</Text> <Text color="error">−{fileLines.deleted}</Text>
+                  {/* A cut diff's counts are floors, as the branch bar marks them. */}
+                  {isDiffTruncated && <Text dimColor>cut at 4 MB </Text>}
+                  <Text color="success">
+                    +{fileLines.added}
+                    {isDiffTruncated ? '+' : ''}
+                  </Text>{' '}
+                  <Text color="error">
+                    −{fileLines.deleted}
+                    {isDiffTruncated ? '+' : ''}
+                  </Text>
                 </Text>
               )}
               {layout.hasFile && (

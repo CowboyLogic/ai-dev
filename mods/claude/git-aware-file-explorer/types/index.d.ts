@@ -27,7 +27,11 @@ export type Scan = {
     deleted: number
     /** Untracked files went uncounted (too many, or too large to read), so `added` is a floor. */
     partial?: boolean
+    /** git's line counts passed 4 MiB of output and were cut, so both totals are floors. */
+    isTruncated?: boolean
   }
+  /** git's output passed 4 MiB and was cut, so the changes and line totals are floors. */
+  isTruncated?: boolean
   /** Error text from the last scan, if it failed. */
   error?: string
   /** Modification times and sizes of the files the pane shows, so a content edit redraws it. */
