@@ -130,6 +130,28 @@ describe('git-aware-file-explorer pane', () => {
     await ui.unmount()
   })
 
+  test('says when a search outside a git repository stopped at the walk limit', async ($, on) => {
+    const many = Array.from({ length: 20001 }, (_, i) => file(`f${i}.txt`))
+    on('session.cwd', () => ({ value: ROOT }))
+    on('fs.list', ($, e) => ({
+      value: e.path === ROOT ? [dir('bulk'), dir('deep')] : e.path === ROOT + '/bulk' ? many : [file('target.md')],
+    }))
+    on('process.run', () => ok('', 128))
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+
+    await ui.input({ key: 'filter', text: 'target', kind: 'change' })
+    expect(await ui.find({ type: 'Text', text: 'No matching files.' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /Searched the first 20000 files only/ })).toBeDefined()
+
+    await ui.unmount()
+  })
+
   test('filters files outside a git repository', async ($, on) => {
     on('session.cwd', () => ({ value: ROOT }))
     on('fs.list', ($, e) => ({ value: DISK[e.path] ?? [] }))

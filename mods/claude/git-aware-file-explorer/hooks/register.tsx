@@ -245,12 +245,13 @@ async function pathsFor(
   s: Scan,
   changedOnly: boolean,
   filter: string,
-): Promise<{ paths: string[]; total: number } | undefined> {
+): Promise<{ paths: string[]; total: number; isWalkCapped?: boolean } | undefined> {
   const needle = filter.trim().toLowerCase()
   if (!changedOnly && needle === '') return undefined
   let paths: string[]
+  let isWalkCapped = false
   if (changedOnly) paths = s.changes.map(c => c.path)
-  else if (!s.isRepo) paths = await walkFiles($, s.root)
+  else if (!s.isRepo) ({ files: paths, isCapped: isWalkCapped } = await walkFiles($, s.root))
   else {
     const listed = await git($, s.root, ['ls-files', '-z', '--cached', '--others', '--exclude-standard'])
     // Ignored entries as the scan found them (a directory ends with `/`), so a filter narrows the
@@ -258,14 +259,18 @@ async function pathsFor(
     paths = [...new Set([...listed.stdout.split('\0').filter(Boolean), ...s.changes.map(c => c.path), ...s.ignored])]
   }
   const hits = needle === '' ? paths : paths.filter(p => p.toLowerCase().includes(needle))
-  return { paths: hits.slice(0, FILTER_LIMIT), total: hits.length }
+  return { paths: hits.slice(0, FILTER_LIMIT), total: hits.length, isWalkCapped }
 }
 
-/** File paths under `root`, breadth first, up to WALK_LIMIT: what a filter searches without git. */
-async function walkFiles($: $, root: string): Promise<string[]> {
+/**
+ * File paths under `root`, breadth first, up to WALK_LIMIT: what a filter searches without git.
+ * `isCapped` says the walk stopped there, so a search over it may miss files.
+ */
+async function walkFiles($: $, root: string): Promise<{ files: string[]; isCapped: boolean }> {
   const files: string[] = []
   const dirs = ['']
-  for (let i = 0; i < dirs.length && files.length < WALK_LIMIT; i++) {
+  let i = 0
+  for (; i < dirs.length && files.length < WALK_LIMIT; i++) {
     const dir = dirs[i] as string
     const entries = await $.fs.list(root + (dir === '' ? '' : '/' + dir)).catch(() => [])
     for (const en of entries) {
@@ -275,7 +280,7 @@ async function walkFiles($: $, root: string): Promise<string[]> {
       else files.push(path)
     }
   }
-  return files.slice(0, WALK_LIMIT)
+  return { files: files.slice(0, WALK_LIMIT), isCapped: files.length > WALK_LIMIT || i < dirs.length }
 }
 
 async function buildRows(
@@ -599,6 +604,7 @@ export const register: Register = on => {
             Showing {virtual.paths.length} of {virtual.total} matches.
           </Text>
         )}
+        {virtual?.isWalkCapped && <Text dimColor>Searched the first {WALK_LIMIT} files only.</Text>}
       </Box>
     )
 
