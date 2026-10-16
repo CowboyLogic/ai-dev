@@ -18,7 +18,7 @@ in a panel beside the tree.
   added total is marked as a minimum (`+1234+`). When git's output passes 4 MB it is cut, and the counts drawn from it are marked the same way.
 - **Git-aware tree.** Files and folders with icons, a status letter on each changed file, and a mark
   on every folder that holds a change. Ignored files are dimmed and deleted files struck through.
-  A filter box narrows the tree by name.
+  A filter box narrows the tree by name; it does not search inside ignored folders, and says so.
 - **Diff panel.** Selecting a changed file shows its diff against `HEAD`, with added and deleted lines
   tinted and the file's own line counts in the header. Selecting an unchanged file shows a preview.
 - **Stays current.** The pane rescans the workspace every few seconds and after each tool call that

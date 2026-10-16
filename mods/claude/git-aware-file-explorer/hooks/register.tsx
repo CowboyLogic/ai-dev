@@ -400,6 +400,10 @@ async function pathsFor(
     // Ignored entries as the scan found them (a directory ends with `/`), so a filter narrows the
     // tree without dropping what it shows dimmed; an ignored directory matches by its own path.
     paths = [...new Set([...names.split('\0').filter(Boolean), ...s.changes.map(c => c.path), ...s.ignored])]
+    // The files inside an ignored directory are not listed (a .venv can hold tens of thousands).
+    if (needle !== '' && s.ignored.some(p => p.endsWith('/'))) {
+      incomplete = [incomplete, 'Files inside ignored folders are not searched.'].filter(Boolean).join(' ')
+    }
   }
   const hits = needle === '' ? paths : paths.filter(p => p.toLowerCase().includes(needle))
   return { paths: hits.slice(0, FILTER_LIMIT), total: hits.length, incomplete }

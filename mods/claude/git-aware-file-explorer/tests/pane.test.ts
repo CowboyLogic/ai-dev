@@ -401,6 +401,24 @@ describe('git-aware-file-explorer pane', () => {
     await ui.unmount()
   })
 
+  test('says a filter does not search inside ignored folders', async ($, on) => {
+    fakeRepo(on)
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+
+    // git lists the ignored node_modules/ by its own path, not the files inside it.
+    await ui.input({ key: 'filter', text: 'read', kind: 'change' })
+    expect(await ui.find({ key: 'node:README.md' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: 'Files inside ignored folders are not searched.' })).toBeDefined()
+
+    await ui.unmount()
+  })
+
   test('says when a filter searched a cut list of ignored files', async ($, on) => {
     fakeRepo(on, { isIgnoredCut: true })
     const ui = await $.ui.mount({
