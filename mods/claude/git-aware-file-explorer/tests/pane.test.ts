@@ -42,7 +42,8 @@ const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
  * counts the diffs of README.md run. With `isCut`, git's status, line counts, file list and diff
  * come back cut at the 4 MiB limit, as `process.run` reports them. With `isRecreated`, gone.txt is
  * staged for deletion and back on disk with its second line changed, and with `isBlobCut` too its
- * committed version passes 4 MiB. With `isUnreadable`, no file can be read.
+ * committed version passes 4 MiB. With `isUnreadable`, no file can be read. With `isIgnoredCut`,
+ * the list of ignored paths comes back cut.
  */
 function fakeRepo(
   on: On,
@@ -56,6 +57,7 @@ function fakeRepo(
     isRecreated = false,
     isUnreadable = false,
     isBlobCut = false,
+    isIgnoredCut = false,
   }: {
     fileSize?: number
     hasHead?: boolean
@@ -66,6 +68,7 @@ function fakeRepo(
     isRecreated?: boolean
     isUnreadable?: boolean
     isBlobCut?: boolean
+    isIgnoredCut?: boolean
   } = {},
 ) {
   on('session.cwd', () => ({ value: ROOT }))
@@ -83,7 +86,9 @@ function fakeRepo(
       if (isRecreated) return ok(' M README.md\0?? src/new.ts\0D  gone.txt\0?? gone.txt\0')
       return isCut ? ok(' M README.md\0?? src/new.ts\0 D go', 0, true) : ok(' M README.md\0?? src/new.ts\0 D gone.txt\0')
     }
-    if (args.startsWith('ls-files') && args.includes('--ignored')) return ok('node_modules/\0')
+    if (args.startsWith('ls-files') && args.includes('--ignored')) {
+      return isIgnoredCut ? ok('node_modules/\0vend', 0, true) : ok('node_modules/\0')
+    }
     if (args.startsWith('ls-files')) return isCut ? ok('README.md\0src/a.ts\0docs/ind', 0, true) : ok('README.md\0src/a.ts\0docs/index.md\0')
     if (args === 'branch --show-current') return ok('feat/x\n')
     if (args === 'show HEAD:gone.txt') return isBlobCut ? ok('a\nb', 0, true) : ok('a\nb\nc\n')
@@ -351,6 +356,24 @@ describe('git-aware-file-explorer pane', () => {
 
     expect(await ui.find({ type: 'Text', text: 'Not a readable file.' })).toBeDefined()
     expect(await ui.find({ type: 'Code' })).toBeUndefined()
+
+    await ui.unmount()
+  })
+
+  test('says when a filter searched a cut list of ignored files', async ($, on) => {
+    fakeRepo(on, { isIgnoredCut: true })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+
+    // The cut entry (`vend`) is dropped, not drawn as a file of that name.
+    await ui.input({ key: 'filter', text: 'vend', kind: 'change' })
+    expect(await ui.find({ key: 'node:vend' })).toBeUndefined()
+    expect(await ui.find({ type: 'Text', text: /ignored files passed 4 MB/ })).toBeDefined()
 
     await ui.unmount()
   })

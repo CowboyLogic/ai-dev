@@ -176,7 +176,14 @@ async function scan($: $): Promise<Scan> {
       changes,
       lines,
       isTruncated: status.isStdoutTruncated || undefined,
-      ignored: ignored.stdout.split('\0').filter(Boolean),
+      // Cut the same way: whole entries only, and a filter says it may have missed some.
+      ignored: (ignored.isStdoutTruncated
+        ? ignored.stdout.slice(0, ignored.stdout.lastIndexOf('\0') + 1)
+        : ignored.stdout
+      )
+        .split('\0')
+        .filter(Boolean),
+      isIgnoredTruncated: ignored.isStdoutTruncated || undefined,
       error: status.exitCode === 0 ? undefined : status.stderr.trim(),
     }
   } catch (err) {
@@ -358,7 +365,8 @@ async function pathsFor(
     if (listed.isStdoutTruncated) {
       names = names.slice(0, names.lastIndexOf('\0') + 1)
       incomplete = "git's file list passed 4 MB; searched its start only."
-    }
+    } else if (s.isIgnoredTruncated) incomplete = "git's list of ignored files passed 4 MB; searched its start only."
+
     // Ignored entries as the scan found them (a directory ends with `/`), so a filter narrows the
     // tree without dropping what it shows dimmed; an ignored directory matches by its own path.
     paths = [...new Set([...names.split('\0').filter(Boolean), ...s.changes.map(c => c.path), ...s.ignored])]

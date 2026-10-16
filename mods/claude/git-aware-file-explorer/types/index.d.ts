@@ -21,6 +21,8 @@ export type Scan = {
   changes: Change[]
   /** Ignored paths relative to root; a directory ends with `/`. */
   ignored: string[]
+  /** git's list of ignored paths passed 4 MiB and was cut, so `ignored` holds its start only. */
+  isIgnoredTruncated?: boolean
   /** Lines added and deleted across all changes against HEAD, untracked files included. */
   lines?: {
     added: number
