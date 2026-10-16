@@ -189,6 +189,8 @@ ai-dev/
 │   ├── opencode/            # OpenCode config for the Matrix Topology
 │   ├── opencode-lane/       # OpenCode config for the Lane Topology
 │   └── opencode-samples/    # Sample OpenCode configs readers copy (standard, modular, MCP)
+├── mods/                    # Client interface mods (not published)
+│   └── claude/              # Claude Code mods: one folder per mod (plugin.json + hooks module)
 ├── skills/                  # Installable skill definitions (GitHub CLI discoverable)
 │   └── <skill-name>/        # Each skill: SKILL.md + README + references/
 ├── docs/                    # MkDocs source — PUBLICATION ONLY, not directives
