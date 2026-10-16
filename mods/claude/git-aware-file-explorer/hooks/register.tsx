@@ -248,7 +248,9 @@ async function pathsFor(
   else if (!s.isRepo) paths = await walkFiles($, s.root)
   else {
     const listed = await git($, s.root, ['ls-files', '-z', '--cached', '--others', '--exclude-standard'])
-    paths = [...new Set([...listed.stdout.split('\0').filter(Boolean), ...s.changes.map(c => c.path)])]
+    // Ignored entries as the scan found them (a directory ends with `/`), so a filter narrows the
+    // tree without dropping what it shows dimmed; an ignored directory matches by its own path.
+    paths = [...new Set([...listed.stdout.split('\0').filter(Boolean), ...s.changes.map(c => c.path), ...s.ignored])]
   }
   const hits = needle === '' ? paths : paths.filter(p => p.toLowerCase().includes(needle))
   return { paths: hits.slice(0, FILTER_LIMIT), total: hits.length }
@@ -284,13 +286,13 @@ async function buildRows(
 
   async function walk(dir: string, depth: number) {
     const prefix = dir === '' ? '' : dir + '/'
-    const kids = new Map<string, { isDir: boolean; isMissing: boolean }>()
+    const kids = new Map<string, { isDir: boolean; isMissing: boolean; hasKids: boolean }>()
     const source = virtual ?? s.changes.map(c => c.path)
     if (!virtual) {
       const entries = await $.fs.list(s.root + (dir === '' ? '' : '/' + dir)).catch(() => [])
       for (const en of entries) {
         if (HIDDEN.has(en.name)) continue
-        kids.set(en.name, { isDir: en.kind === 'dir', isMissing: false })
+        kids.set(en.name, { isDir: en.kind === 'dir', isMissing: false, hasKids: false })
       }
     }
     // In the lazy tree, changes add what the disk no longer holds (deletions).
@@ -298,11 +300,16 @@ async function buildRows(
       if (!path.startsWith(prefix)) continue
       const rest = path.slice(prefix.length)
       const seg = rest.split('/')[0] ?? ''
-      if (!kids.has(seg)) {
+      if (seg === '') continue
+      // A directory path ending in `/` (an ignored one) is a leaf: drawn closed, nothing under it.
+      const hasKids = rest.length > seg.length + 1
+      const kid = kids.get(seg)
+      if (kid) kid.hasKids ||= hasKids
+      else {
         const isDir = rest.includes('/')
         const c = byPath.get(path)
         const isGone = !isDir && (c?.x === 'D' || c?.y === 'D')
-        kids.set(seg, { isDir, isMissing: virtual ? isGone : true })
+        kids.set(seg, { isDir, isMissing: virtual ? isGone : true, hasKids })
       }
     }
     const sorted = [...kids].sort(([a, ka], [b, kb]) =>
@@ -310,7 +317,7 @@ async function buildRows(
     )
     for (const [name, k] of sorted) {
       const path = prefix + name
-      const isOpen = k.isDir && (virtual !== undefined || expanded.has(path))
+      const isOpen = k.isDir && (virtual !== undefined ? k.hasKids : expanded.has(path))
       rows.push({
         path,
         name,

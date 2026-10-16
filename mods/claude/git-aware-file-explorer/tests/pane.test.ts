@@ -42,7 +42,8 @@ function fakeRepo(on: On) {
     const args = e.argv.filter(a => a !== '--no-optional-locks').slice(1).join(' ')
     if (args === 'rev-parse --show-toplevel') return ok(ROOT + '\n')
     if (args.startsWith('status')) return ok(' M README.md\0?? src/new.ts\0 D gone.txt\0')
-    if (args.startsWith('ls-files')) return ok('node_modules/\0')
+    if (args.startsWith('ls-files') && args.includes('--ignored')) return ok('node_modules/\0')
+    if (args.startsWith('ls-files')) return ok('README.md\0src/a.ts\0docs/index.md\0')
     if (args === 'branch --show-current') return ok('feat/x\n')
     if (args.startsWith('rev-parse --verify')) return ok('abc\n')
     if (args.startsWith('diff --numstat')) return ok('1\t1\tREADME.md\n0\t3\tgone.txt\n')
@@ -101,6 +102,12 @@ describe('git-aware-file-explorer pane', () => {
 
       await ui.input({ key: 'filter', text: 'new', kind: 'change' })
       expect(await ui.find({ key: 'node:src/new.ts' })).toBeDefined()
+      expect(await ui.find({ key: 'node:README.md' })).toBeUndefined()
+
+      // Out of the changed-only view, a filter still finds what the tree shows dimmed.
+      await ui.press({ key: 'changes' })
+      await ui.input({ key: 'filter', text: 'node_mod', kind: 'change' })
+      expect(await ui.find({ key: 'node:node_modules' })).toBeDefined()
       expect(await ui.find({ key: 'node:README.md' })).toBeUndefined()
 
       await ui.unmount()
