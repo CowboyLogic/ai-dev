@@ -330,6 +330,8 @@ function rescan($: $): Promise<void> {
         isRescanDue = false
         const found = await scan($)
         const next: Scan = { ...found, stamp: await stampFor($, found) }
+        // Files may have come or gone since the filter's list was made, even with the scan unchanged.
+        listing = undefined
         // Any write redraws the pane, so an unchanged scan is not written at all.
         if (JSON.stringify(await read($, scanAtom)) !== JSON.stringify(next)) await update($, scanAtom, () => next)
       } while (isRescanDue)
@@ -384,22 +386,14 @@ async function pathsFor(
   // Why the search may have missed files, when it may have.
   let incomplete: string | undefined
   if (changedOnly) paths = s.changes.map(c => c.path)
-  else if (!s.isRepo) {
-    const walked = await walkFiles($, s.root)
-    paths = walked.files
-    if (walked.isCapped) incomplete = `Searched the first ${WALK_LIMIT} files only.`
-  } else {
-    const listed = await git($, s.root, ['ls-files', '-z', '--cached', '--others', '--exclude-standard'])
-    // Output past 4 MiB is cut: keep the whole names, and say the search stopped there.
-    let names = listed.stdout
-    if (listed.isStdoutTruncated) {
-      names = names.slice(0, names.lastIndexOf('\0') + 1)
-      incomplete = "git's file list passed 4 MB; searched its start only."
-    } else if (s.isIgnoredTruncated) incomplete = "git's list of ignored files passed 4 MB; searched its start only."
-
+  else if (!s.isRepo) ({ files: paths, incomplete } = await listFiles($, s))
+  else {
+    const listed = await listFiles($, s)
+    incomplete = listed.incomplete
+    if (!incomplete && s.isIgnoredTruncated) incomplete = "git's list of ignored files passed 4 MB; searched its start only."
     // Ignored entries as the scan found them (a directory ends with `/`), so a filter narrows the
     // tree without dropping what it shows dimmed; an ignored directory matches by its own path.
-    paths = [...new Set([...names.split('\0').filter(Boolean), ...s.changes.map(c => c.path), ...s.ignored])]
+    paths = [...new Set([...listed.files, ...s.changes.map(c => c.path), ...s.ignored])]
     // The files inside an ignored directory are not listed (a .venv can hold tens of thousands).
     if (needle !== '' && s.ignored.some(p => p.endsWith('/'))) {
       incomplete = [incomplete, 'Files inside ignored folders are not searched.'].filter(Boolean).join(' ')
@@ -407,6 +401,32 @@ async function pathsFor(
   }
   const hits = needle === '' ? paths : paths.filter(p => p.toLowerCase().includes(needle))
   return { paths: hits.slice(0, FILTER_LIMIT), total: hits.length, incomplete }
+}
+
+/** The workspace's files as last listed for a filter; each finished scan clears it (see rescan). */
+let listing: { root: string; files: Promise<{ files: string[]; incomplete?: string }> } | undefined
+
+/**
+ * The files a filter searches, listed once per scan: a redraw (a wheel move, a ▲/▼ press) or a new
+ * filter reuses the list, and `incomplete` says why it may lack some.
+ */
+function listFiles($: $, s: Scan): Promise<{ files: string[]; incomplete?: string }> {
+  if (listing?.root !== s.root) listing = { root: s.root, files: listFilesNow($, s) }
+  return listing.files
+}
+
+async function listFilesNow($: $, s: Scan): Promise<{ files: string[]; incomplete?: string }> {
+  if (!s.isRepo) {
+    const walked = await walkFiles($, s.root)
+    return { files: walked.files, incomplete: walked.isCapped ? `Searched the first ${WALK_LIMIT} files only.` : undefined }
+  }
+  const listed = await git($, s.root, ['ls-files', '-z', '--cached', '--others', '--exclude-standard'])
+  // Output past 4 MiB is cut: keep the whole names, and say the search stopped there.
+  if (!listed.isStdoutTruncated) return { files: listed.stdout.split('\0').filter(Boolean) }
+  return {
+    files: listed.stdout.slice(0, listed.stdout.lastIndexOf('\0') + 1).split('\0').filter(Boolean),
+    incomplete: "git's file list passed 4 MB; searched its start only.",
+  }
 }
 
 /**

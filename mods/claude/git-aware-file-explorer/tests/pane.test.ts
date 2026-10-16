@@ -542,6 +542,36 @@ describe('git-aware-file-explorer pane', () => {
     await ui.unmount()
   })
 
+  test('walks the workspace once for a filter while the scan stays the same', async ($, on) => {
+    let lists = 0
+    on('session.cwd', () => ({ value: ROOT }))
+    on('fs.list', ($, e) => {
+      lists++
+      return { value: DISK[e.path] ?? [] }
+    })
+    on('process.run', () => ok('', 128))
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+    await ui.input({ key: 'filter', text: 'a', kind: 'change' })
+    const walked = lists
+    // What a wheel or ▲/▼ press does, and a new filter: no file on disk changed, so no new walk.
+    for (let i = 0; i < 3; i++) await ui.redraw()
+    await ui.input({ key: 'filter', text: 'a.', kind: 'change' })
+    expect(lists).toBe(walked)
+    expect(await ui.find({ key: 'node:src/a.ts' })).toBeDefined()
+    // A finished scan drops the list, so files made since are found on the next draw.
+    await ui.press({ key: 'refresh' })
+    await ui.redraw()
+    expect(lists).toBeGreaterThan(walked)
+
+    await ui.unmount()
+  })
+
   test('filters files outside a git repository', async ($, on) => {
     on('session.cwd', () => ({ value: ROOT }))
     on('fs.list', ($, e) => ({ value: DISK[e.path] ?? [] }))
