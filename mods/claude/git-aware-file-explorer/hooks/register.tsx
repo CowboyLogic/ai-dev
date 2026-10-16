@@ -381,7 +381,9 @@ async function walkFiles($: $, root: string): Promise<{ files: string[]; isCappe
     for (const en of entries) {
       if (HIDDEN.has(en.name)) continue
       const path = dir === '' ? en.name : dir + '/' + en.name
-      if (en.kind === 'dir') dirs.push(path)
+      // A link is never walked into, so a link to an ancestor can't loop the walk. This host reports
+      // one as `other`; the isLink check holds on a host that reports a linked folder as a `dir`.
+      if (en.kind === 'dir' && !en.isLink) dirs.push(path)
       else files.push(path)
     }
   }

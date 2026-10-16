@@ -414,6 +414,34 @@ describe('git-aware-file-explorer pane', () => {
     await ui.unmount()
   })
 
+  test('does not walk into a linked folder outside a git repository', async ($, on) => {
+    // Every folder holds a link back to its parent, reported as a folder.
+    const loop: FsEntry = { name: 'up', kind: 'dir', size: 0, mtimeMs: 0, isLink: true }
+    let lists = 0
+    on('session.cwd', () => ({ value: ROOT }))
+    on('fs.list', ($, e) => {
+      // Bounded, so a walk that follows the link ends (a failed listing reads as empty) and fails below.
+      if (++lists > 50) throw new Error('ELOOP')
+      return { value: e.path === ROOT ? [file('a.md'), loop] : [loop] }
+    })
+    on('process.run', () => ok('', 128))
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+    const before = lists
+
+    await ui.input({ key: 'filter', text: 'a.md', kind: 'change' })
+    expect(await ui.find({ key: 'node:a.md' })).toBeDefined()
+    // The filter's walk lists the root alone.
+    expect(lists - before).toBeLessThanOrEqual(2)
+
+    await ui.unmount()
+  })
+
   test('filters files outside a git repository', async ($, on) => {
     on('session.cwd', () => ({ value: ROOT }))
     on('fs.list', ($, e) => ({ value: DISK[e.path] ?? [] }))
