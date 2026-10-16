@@ -49,7 +49,17 @@ type $ = EngineInterface
  * What the last drawing laid out, for the scroll hook to tell the two sides apart.
  * A module variable on purpose: it is layout, redrawn on every render, not state.
  */
-const layout = { treeColumns: 0, panelLast: 0, panelRoom: 0, hasFile: false, offset: 0, spacer: 0, spare: 0 }
+const layout = {
+  treeColumns: 0,
+  panelLast: 0,
+  panelRoom: 0,
+  hasFile: false,
+  offset: 0,
+  spacer: 0,
+  spare: 0,
+  /** A wheel event has carried a pointer, so the wheel reaches the tree while a file is open. */
+  hasPointer: false,
+}
 
 type Row = {
   path: string
@@ -466,6 +476,14 @@ async function buildRows(
 export type DiffLine = { text: string; kind: ' ' | '+' | '-'; o: number; n: number; hunk: number }
 
 /**
+ * Whether something the wheel can move can still go up, so the window keeps a row of room above
+ * (see ROOM). Without a pointer the wheel moves the open file alone; with one it reaches the tree too.
+ */
+export function canGoUp(at: { hasFile: boolean; hasPointer: boolean; panelOffset: number; treeOffset: number }) {
+  return (at.hasFile && at.panelOffset > 0) || ((!at.hasFile || at.hasPointer) && at.treeOffset > 0)
+}
+
+/**
  * The furthest a diff's window can start and still show its last line in `room` rows, counting
  * the separator row drawn between two hunks.
  */
@@ -569,6 +587,7 @@ export const register: Register = on => {
   // moves the open file's lines, or the tree's rows when the pointer is over the tree or no file is open.
   on('ui.scroll', { component: 'Pane', requestId: PANE }, async ($, e, next) => {
     if (e.origin.kind === 'plugin') return next(e)
+    if (e.pointer) layout.hasPointer = true
     // A surface that reports no pointer (the desktop, keys) scrolls the panel whenever a file is open.
     const isOverPanel = e.pointer ? e.pointer.column >= layout.treeColumns + GUTTER : true
     let moved: number
@@ -581,7 +600,13 @@ export const register: Register = on => {
       moved = Math.max(0, (await read($, treeOffsetAtom)) + Math.min(e.by, below))
       await update($, treeOffsetAtom, () => moved)
     }
-    const rest = moved > 0 ? ROOM : 0
+    const isRoomAbove = canGoUp({
+      hasFile: layout.hasFile,
+      hasPointer: layout.hasPointer,
+      panelOffset: await read($, panelOffsetAtom),
+      treeOffset: await read($, treeOffsetAtom),
+    })
+    const rest = isRoomAbove ? ROOM : 0
     return layout.offset === rest ? {} : next({ ...e, offset: rest })
   }).catch(($, e, next) => next(e))
 
@@ -836,8 +861,8 @@ export const register: Register = on => {
     const offset = e.props.scroll.offset
     // Room above while what the wheel moves can go up; a window still below that rest is matched, so
     // the branch bar stays at its top until the next wheel move brings it to rest.
-    const canGoUp = selected !== null ? panelOffset > 0 : treeOffset > 0
-    const spacer = Math.max(canGoUp ? ROOM : 0, offset)
+    const isRoomAbove = canGoUp({ hasFile: selected !== null, hasPointer: layout.hasPointer, panelOffset, treeOffset })
+    const spacer = Math.max(isRoomAbove ? ROOM : 0, offset)
     const spare = selected !== null && panelOffset < panelLast ? ROOM : 0
     Object.assign(layout, { treeColumns, panelLast, panelRoom, hasFile: selected !== null, offset, spacer, spare })
 

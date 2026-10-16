@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { countLines, diffLines, lastTop, sumNumstat } from '../hooks/register'
+import { canGoUp, countLines, diffLines, lastTop, sumNumstat } from '../hooks/register'
 
 const DIFF = [
   'diff --git a/f b/f',
@@ -42,5 +42,22 @@ describe('diff windowing', () => {
     expect(countLines('')).toBe(0)
     expect(countLines('a\nb\n')).toBe(2)
     expect(countLines('a\nb')).toBe(2)
+  })
+})
+
+describe('canGoUp', () => {
+  test('follows the tree with no file open', () => {
+    expect(canGoUp({ hasFile: false, hasPointer: false, panelOffset: 0, treeOffset: 3 })).toBe(true)
+    expect(canGoUp({ hasFile: false, hasPointer: false, panelOffset: 0, treeOffset: 0 })).toBe(false)
+  })
+
+  test('follows the open file alone where the wheel has no pointer', () => {
+    expect(canGoUp({ hasFile: true, hasPointer: false, panelOffset: 0, treeOffset: 3 })).toBe(false)
+    expect(canGoUp({ hasFile: true, hasPointer: false, panelOffset: 2, treeOffset: 0 })).toBe(true)
+  })
+
+  test('keeps a scrolled tree reachable with a file open where the wheel has a pointer', () => {
+    expect(canGoUp({ hasFile: true, hasPointer: true, panelOffset: 0, treeOffset: 3 })).toBe(true)
+    expect(canGoUp({ hasFile: true, hasPointer: true, panelOffset: 0, treeOffset: 0 })).toBe(false)
   })
 })
