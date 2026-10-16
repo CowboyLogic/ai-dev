@@ -248,6 +248,23 @@ describe('git-aware-file-explorer pane', () => {
     await ui.unmount()
   })
 
+  test('opens a 4 MB diff of two million lines', async ($, on) => {
+    const added = Array.from({ length: 2_000_000 }, () => '+')
+    const diff = ['diff --git a/README.md b/README.md', '@@ -0,0 +1,2000000 @@', ...added, ''].join('\n')
+    fakeRepo(on, { live: { diff, mtimeMs: 1 } })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+    await ui.press({ key: 'node:README.md' })
+    expect(await ui.find({ type: 'Text', text: '+2000000' })).toBeDefined()
+
+    await ui.unmount()
+  })
+
   test('marks counts as floors when git output was cut', async ($, on) => {
     fakeRepo(on, { isCut: true })
     const ui = await $.ui.mount({

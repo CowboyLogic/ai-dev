@@ -795,7 +795,8 @@ export const register: Register = on => {
       if (lines.length === 0) body = <Text dimColor>No textual difference (binary or mode change).</Text>
       else {
         const top = Math.min(panelOffset, panelLast)
-        const width = String(Math.max(...lines.map(l => Math.max(l.o, l.n)))).length
+        // A 4 MB diff can hold millions of lines, more than a call takes arguments, so no spread.
+        const width = String(lines.reduce((w, l) => Math.max(w, l.o, l.n), 0)).length
         const pad = (no: number | undefined) => (no === undefined ? '' : String(no)).padStart(width)
         // Each line is a row of its own, tinted by kind; a gap between hunks costs a separator row.
         const drawn = []
