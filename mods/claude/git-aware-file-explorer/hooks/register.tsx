@@ -258,7 +258,7 @@ function rescan($: $): Promise<void> {
   return scanning
 }
 
-/** Rests the pane's window with the branch bar at its top (see ROOM). */
+/** Scrolls the pane's window back so the branch bar is at its top, where it rests (see ROOM). */
 async function settle($: $) {
   await $.ui.scroll({ to: { key: 'branch-bar' }, in: PANE, block: 'start' }).catch(() => undefined)
 }
