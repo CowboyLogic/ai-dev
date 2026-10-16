@@ -40,7 +40,8 @@ const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
  * `onStatus` runs inside each `git status`, the call every scan makes first; `text` is every file's.
  * `live` is read on each call: README.md's diff and every file's modification time; `diffRuns`
  * counts the diffs of README.md run. With `isCut`, git's status, line counts, file list and diff
- * come back cut at the 4 MiB limit, as `process.run` reports them.
+ * come back cut at the 4 MiB limit, as `process.run` reports them. With `isRecreated`, gone.txt is
+ * staged for deletion and back on disk with its second line changed.
  */
 function fakeRepo(
   on: On,
@@ -51,6 +52,7 @@ function fakeRepo(
     text = 'a\nb\n',
     live = { diff: DIFF, mtimeMs: 1 } as { diff: string; mtimeMs: number; diffRuns?: number },
     isCut = false,
+    isRecreated = false,
   }: {
     fileSize?: number
     hasHead?: boolean
@@ -58,6 +60,7 @@ function fakeRepo(
     text?: string
     live?: { diff: string; mtimeMs: number; diffRuns?: number }
     isCut?: boolean
+    isRecreated?: boolean
   } = {},
 ) {
   on('session.cwd', () => ({ value: ROOT }))
@@ -69,11 +72,17 @@ function fakeRepo(
     if (args === 'rev-parse --show-toplevel') return ok(ROOT + '\n')
     if (args.startsWith('status')) {
       await onStatus?.()
+      if (isRecreated) return ok(' M README.md\0?? src/new.ts\0D  gone.txt\0?? gone.txt\0')
       return isCut ? ok(' M README.md\0?? src/new.ts\0 D go', 0, true) : ok(' M README.md\0?? src/new.ts\0 D gone.txt\0')
     }
     if (args.startsWith('ls-files') && args.includes('--ignored')) return ok('node_modules/\0')
     if (args.startsWith('ls-files')) return isCut ? ok('README.md\0src/a.ts\0docs/ind', 0, true) : ok('README.md\0src/a.ts\0docs/index.md\0')
     if (args === 'branch --show-current') return ok('feat/x\n')
+    if (args === 'show HEAD:gone.txt') return ok('a\nb\nc\n')
+    if (args.endsWith('--no-index -- /dev/stdin gone.txt') && e.init?.stdin === 'a\nb\nc\n') {
+      if (args.includes('--numstat')) return ok('1\t1\t/dev/stdin => gone.txt\n', 1)
+      return ok('diff --git a/dev/stdin b/gone.txt\n--- a/dev/stdin\n+++ b/gone.txt\n@@ -1,3 +1,3 @@\n a\n-b\n+B\n c\n', 1)
+    }
     if (args.startsWith('rev-parse --verify')) return hasHead ? ok('abc\n') : ok('', 1)
     if (args === 'hash-object -t tree /dev/null') return ok(EMPTY_TREE + '\n')
     if (args === 'diff --numstat --no-ext-diff ' + EMPTY_TREE) return ok('2\t0\tREADME.md\n')
@@ -258,6 +267,27 @@ describe('git-aware-file-explorer pane', () => {
     await ui.input({ key: 'filter', text: 'ind', kind: 'change' })
     expect(await ui.find({ type: 'Text', text: 'No matching files.' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /searched its start only/ })).toBeDefined()
+
+    await ui.unmount()
+  })
+
+  test('shows a file staged for deletion and recreated as one net change', async ($, on) => {
+    fakeRepo(on, { isRecreated: true })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+
+    // README.md +1 −1, gone.txt's net +1 −1 in place of its −3, src/new.ts's 2 untracked lines.
+    expect(await ui.find({ type: 'Text', text: '● 3 changed' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '+4' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '−2' })).toBeDefined()
+    await ui.press({ key: 'node:gone.txt' })
+    expect(await ui.find({ type: 'Text', text: 'B' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /deletion staged, back on disk/ })).toBeDefined()
 
     await ui.unmount()
   })

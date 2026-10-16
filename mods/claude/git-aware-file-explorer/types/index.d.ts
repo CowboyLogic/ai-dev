@@ -4,7 +4,7 @@ export type Change = {
   path: string
   /** Index (staged) column: one of ` MADRCU?`. */
   x: string
-  /** Worktree column: one of ` MADRCU?`. */
+  /** Worktree column: one of ` MADRCU?`; `?` after a `D` is a deletion staged with the file back on disk. */
   y: string
   /** For a rename or copy, the path it came from. */
   from?: string

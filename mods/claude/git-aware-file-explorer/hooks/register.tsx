@@ -65,24 +65,34 @@ type Row = {
   isMissing: boolean
 }
 
-/** Splits `git status --porcelain=v1 -z` output into changes. */
+/**
+ * Splits `git status --porcelain=v1 -z` output into changes, one per path. A path staged for
+ * deletion and back on disk comes as two records (`D ` and `??`); they become one, `D?`.
+ */
 export function parseStatus(out: string): Change[] {
   const parts = out.split('\0')
-  const changes: Change[] = []
+  const byPath = new Map<string, Change>()
   for (let i = 0; i < parts.length; i++) {
     const part = parts[i] ?? ''
     if (part.length < 4) continue
     const change: Change = { x: part.charAt(0), y: part.charAt(1), path: part.slice(3) }
     if (change.x === 'R' || change.x === 'C') change.from = parts[++i]
-    changes.push(change)
+    const seen = byPath.get(change.path)
+    if (seen && (seen.x === 'D' || change.x === 'D') && (seen.x === '?' || change.x === '?')) {
+      byPath.set(change.path, { x: 'D', y: '?', path: change.path })
+    } else byPath.set(change.path, change)
   }
-  return changes
+  return [...byPath.values()]
 }
+
+/** A path staged for deletion and back on disk, untracked: its diff is HEAD's version against the file. */
+const isRecreated = (c: Change) => c.x === 'D' && c.y === '?'
 
 /** The one letter and theme color a change is drawn with. */
 export function badge(c: Change): { letter: string; color: string } {
   const { x, y } = c
   if (x === '?') return { letter: 'U', color: 'success' }
+  if (isRecreated(c)) return { letter: 'M', color: 'warning' }
   if (x === 'U' || y === 'U' || (x === 'A' && y === 'A') || (x === 'D' && y === 'D')) {
     return { letter: '!', color: 'error' }
   }
@@ -95,6 +105,7 @@ export function badge(c: Change): { letter: string; color: string } {
 
 function stageNote(c: Change): string {
   if (c.x === '?') return 'untracked'
+  if (isRecreated(c)) return 'deletion staged, back on disk'
   if (c.x !== ' ' && c.y === ' ') return 'staged'
   if (c.x === ' ') return 'unstaged'
   return 'partly staged'
@@ -123,8 +134,20 @@ export function iconFor(name: string): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">${body}</svg>`
 }
 
-async function git($: $, root: string, args: string[]) {
-  return $.process.run(['git', '--no-optional-locks', ...args], { cwd: root })
+async function git($: $, root: string, args: string[], stdin?: string) {
+  return $.process.run(['git', '--no-optional-locks', ...args], { cwd: root, stdin })
+}
+
+/**
+ * `git diff` (with `flags`) of a recreated path: its version in `base`, piped in, against the file
+ * on disk, so the panel and the totals see the net change. Undefined when git can't run it so.
+ */
+async function recreatedDiff($: $, root: string, base: string, path: string, flags: string[]) {
+  const old = await git($, root, ['show', base + ':' + path])
+  if (old.exitCode !== 0 || old.isStdoutTruncated) return undefined
+  // --no-index exits 1 when the files differ, which is the point here.
+  const out = await git($, root, ['diff', ...flags, '--no-index', '--', '/dev/stdin', path], old.stdout)
+  return out.exitCode <= 1 ? out : undefined
 }
 
 async function scan($: $): Promise<Scan> {
@@ -195,9 +218,22 @@ async function diffBase($: $, root: string): Promise<string> {
 
 /** Lines added and deleted against HEAD (staged and unstaged), untracked files counted as added. */
 async function lineTotals($: $, root: string, changes: Change[]) {
-  const out = await git($, root, ['diff', '--numstat', '--no-ext-diff', await diffBase($, root)])
-  const total: { added: number; deleted: number; partial?: boolean; isTruncated?: boolean } = sumNumstat(out.stdout)
+  const base = await diffBase($, root)
+  const out = await git($, root, ['diff', '--numstat', '--no-ext-diff', base])
+  // A recreated path counts its net change, in place of the deletion the diff against base reports.
+  let numstat = out.stdout
+  let isUncounted = false
+  for (const c of changes.filter(isRecreated)) {
+    const net = await recreatedDiff($, root, base, c.path, ['--numstat'])
+    if (!net) {
+      isUncounted = true
+      continue
+    }
+    numstat = numstat.split('\n').filter(line => line.split('\t')[2] !== c.path).join('\n') + '\n' + net.stdout
+  }
+  const total: { added: number; deleted: number; partial?: boolean; isTruncated?: boolean } = sumNumstat(numstat)
   if (out.isStdoutTruncated) total.isTruncated = true
+  if (isUncounted) total.partial = true
   const untracked = changes.filter(c => c.x === '?')
   if (untracked.length > UNTRACKED_LIMIT) total.partial = true
   for (const c of untracked.slice(0, UNTRACKED_LIMIT)) {
@@ -466,6 +502,11 @@ async function diffFor($: $, s: Scan, c: Change) {
   const flags = ['--no-color', '--no-ext-diff']
   if (c.x === '?') {
     // --no-index exits 1 when the files differ, which is the point here.
+    return git($, s.root, ['diff', ...flags, '--no-index', '--', '/dev/null', c.path])
+  }
+  if (isRecreated(c)) {
+    const net = await recreatedDiff($, s.root, await diffBase($, s.root), c.path, flags)
+    if (net) return net
     return git($, s.root, ['diff', ...flags, '--no-index', '--', '/dev/null', c.path])
   }
   const paths = c.from ? [c.from, c.path] : [c.path]
