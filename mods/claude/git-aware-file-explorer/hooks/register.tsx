@@ -295,21 +295,31 @@ async function pathsFor(
   s: Scan,
   changedOnly: boolean,
   filter: string,
-): Promise<{ paths: string[]; total: number; isWalkCapped?: boolean } | undefined> {
+): Promise<{ paths: string[]; total: number; incomplete?: string } | undefined> {
   const needle = filter.trim().toLowerCase()
   if (!changedOnly && needle === '') return undefined
   let paths: string[]
-  let isWalkCapped = false
+  // Why the search may have missed files, when it may have.
+  let incomplete: string | undefined
   if (changedOnly) paths = s.changes.map(c => c.path)
-  else if (!s.isRepo) ({ files: paths, isCapped: isWalkCapped } = await walkFiles($, s.root))
-  else {
+  else if (!s.isRepo) {
+    const walked = await walkFiles($, s.root)
+    paths = walked.files
+    if (walked.isCapped) incomplete = `Searched the first ${WALK_LIMIT} files only.`
+  } else {
     const listed = await git($, s.root, ['ls-files', '-z', '--cached', '--others', '--exclude-standard'])
+    // Output past 4 MiB is cut: keep the whole names, and say the search stopped there.
+    let names = listed.stdout
+    if (listed.isStdoutTruncated) {
+      names = names.slice(0, names.lastIndexOf('\0') + 1)
+      incomplete = "git's file list passed 4 MB; searched its start only."
+    }
     // Ignored entries as the scan found them (a directory ends with `/`), so a filter narrows the
     // tree without dropping what it shows dimmed; an ignored directory matches by its own path.
-    paths = [...new Set([...listed.stdout.split('\0').filter(Boolean), ...s.changes.map(c => c.path), ...s.ignored])]
+    paths = [...new Set([...names.split('\0').filter(Boolean), ...s.changes.map(c => c.path), ...s.ignored])]
   }
   const hits = needle === '' ? paths : paths.filter(p => p.toLowerCase().includes(needle))
-  return { paths: hits.slice(0, FILTER_LIMIT), total: hits.length, isWalkCapped }
+  return { paths: hits.slice(0, FILTER_LIMIT), total: hits.length, incomplete }
 }
 
 /**
@@ -670,7 +680,7 @@ export const register: Register = on => {
             Showing {virtual.paths.length} of {virtual.total} matches.
           </Text>
         )}
-        {virtual?.isWalkCapped && <Text dimColor>Searched the first {WALK_LIMIT} files only.</Text>}
+        {virtual?.incomplete && <Text dimColor>{virtual.incomplete}</Text>}
       </Box>
     )
 

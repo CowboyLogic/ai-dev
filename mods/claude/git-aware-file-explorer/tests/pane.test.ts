@@ -39,8 +39,8 @@ const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
  * commits yet, and README.md is staged with its second line then changed again unstaged.
  * `onStatus` runs inside each `git status`, the call every scan makes first; `text` is every file's.
  * `live` is read on each call: README.md's diff and every file's modification time; `diffRuns`
- * counts the diffs of README.md run. With `isCut`, git's status, line counts and diff come back cut
- * at the 4 MiB limit, as `process.run` reports them.
+ * counts the diffs of README.md run. With `isCut`, git's status, line counts, file list and diff
+ * come back cut at the 4 MiB limit, as `process.run` reports them.
  */
 function fakeRepo(
   on: On,
@@ -72,7 +72,7 @@ function fakeRepo(
       return isCut ? ok(' M README.md\0?? src/new.ts\0 D go', 0, true) : ok(' M README.md\0?? src/new.ts\0 D gone.txt\0')
     }
     if (args.startsWith('ls-files') && args.includes('--ignored')) return ok('node_modules/\0')
-    if (args.startsWith('ls-files')) return ok('README.md\0src/a.ts\0docs/index.md\0')
+    if (args.startsWith('ls-files')) return isCut ? ok('README.md\0src/a.ts\0docs/ind', 0, true) : ok('README.md\0src/a.ts\0docs/index.md\0')
     if (args === 'branch --show-current') return ok('feat/x\n')
     if (args.startsWith('rev-parse --verify')) return hasHead ? ok('abc\n') : ok('', 1)
     if (args === 'hash-object -t tree /dev/null') return ok(EMPTY_TREE + '\n')
@@ -240,6 +240,24 @@ describe('git-aware-file-explorer pane', () => {
     expect(await ui.find({ type: 'Text', text: '−4+' })).toBeDefined()
     await ui.press({ key: 'node:README.md' })
     expect(await ui.find({ type: 'Text', text: /cut at 4 MB/ })).toBeDefined()
+
+    await ui.unmount()
+  })
+
+  test('says when a filter searched a cut file list', async ($, on) => {
+    fakeRepo(on, { isCut: true })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+
+    // The cut name (`docs/ind`) is dropped, not matched as a file of that name.
+    await ui.input({ key: 'filter', text: 'ind', kind: 'change' })
+    expect(await ui.find({ type: 'Text', text: 'No matching files.' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /searched its start only/ })).toBeDefined()
 
     await ui.unmount()
   })
