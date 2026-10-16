@@ -563,6 +563,28 @@ describe('git-aware-file-explorer pane', () => {
     await ui.unmount()
   })
 
+  test('keeps room below for the wheel while a short open file leaves the tree to move (desktop)', async ($, on) => {
+    // The desktop raises no wheel event for a window that cannot move: with a file that fits and no
+    // spare row, the wheel reached neither the file nor the tree.
+    fakeRepo(on)
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: { ...PROPS, scroll: { offset: 0, bodyRows: 20 } },
+    })
+    await ui.press({ key: 'node:src' })
+    await ui.press({ key: 'node:src/a.ts' })
+    expect(await ui.find({ key: 'spare' })).toBeDefined()
+
+    // With the file closed the tree is unclipped, and a long one makes its own room.
+    await ui.press({ key: 'close-panel' })
+    expect(await ui.find({ key: 'spare' })).toBeUndefined()
+
+    await ui.unmount()
+  })
+
   test('says when a search outside a git repository stopped at the walk limit', async ($, on) => {
     const many = Array.from({ length: 20001 }, (_, i) => file(`f${i}.txt`))
     on('session.cwd', () => ({ value: ROOT }))

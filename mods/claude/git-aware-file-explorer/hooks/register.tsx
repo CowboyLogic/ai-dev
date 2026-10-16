@@ -20,9 +20,9 @@ const BRANCH_ROWS = 2
 /**
  * The desktop raises no wheel event for a window that cannot move, and moves the window a row
  * before a hook answers. So the pane's window rests over a blank spacer row above the branch bar
- * only while the tree or the file can scroll up, and has a spare row below only while the file can
- * scroll down (a long tree makes its own): at a limit the window has nowhere to go, and nothing
- * bounces. The mod moves the tree or the file panel itself.
+ * only while the tree or the file can scroll up, and has a spare row below only while, with a file
+ * open, the file or the tree can scroll down (with none, a long tree makes its own): at a limit the
+ * window has nowhere to go, and nothing bounces. The mod moves the tree or the file panel itself.
  */
 const ROOM = 1
 /**
@@ -60,8 +60,8 @@ const layout = {
   offset: 0,
   spacer: 0,
   spare: 0,
-  /** A wheel event has carried a pointer, so the wheel reaches the tree while a file is open. */
-  hasPointer: false,
+  /** With a file open, the furthest row the clipped tree can start at. */
+  treeLast: 0,
 }
 
 type Row = {
@@ -544,12 +544,38 @@ async function buildRows(
 /** One body line of a unified diff, with the line numbers it stands at. */
 export type DiffLine = { text: string; kind: ' ' | '+' | '-'; o: number; n: number; hunk: number }
 
+/** Where the file panel and the tree stand, for the wheel and the room kept around the window. */
+export type Offsets = { hasFile: boolean; panelOffset: number; panelLast: number; treeOffset: number; treeLast: number }
+
 /**
  * Whether something the wheel can move can still go up, so the window keeps a row of room above
- * (see ROOM). Without a pointer the wheel moves the open file alone; with one it reaches the tree too.
+ * (see ROOM). The wheel reaches the tree with a file open too (see wheel).
  */
-export function canGoUp(at: { hasFile: boolean; hasPointer: boolean; panelOffset: number; treeOffset: number }) {
-  return (at.hasFile && at.panelOffset > 0) || ((!at.hasFile || at.hasPointer) && at.treeOffset > 0)
+export function canGoUp(at: Offsets) {
+  return (at.hasFile && Math.min(at.panelOffset, at.panelLast) > 0) || at.treeOffset > 0
+}
+
+/** Whether, with a file open, the file or the clipped tree can still go down (see ROOM). */
+export function canGoDown(at: Offsets) {
+  return at.hasFile && (at.panelOffset < at.panelLast || at.treeOffset < at.treeLast)
+}
+
+/**
+ * Where a wheel move of `by` rows leaves the file panel and the tree. A pointer picks the side it is
+ * over. Without one (the desktop, keys) the open file takes the move until it reaches an end and the
+ * tree takes the rest, so a file that fits, or one scrolled to its end, leaves the tree movable.
+ */
+export function wheel(at: Offsets & { by: number; over?: 'tree' | 'panel' }) {
+  let { by, panelOffset, treeOffset } = at
+  if (at.hasFile && at.over !== 'tree') {
+    // A file shorter than the offset left for it starts where the drawing put it.
+    const from = Math.min(panelOffset, at.panelLast)
+    panelOffset = Math.min(at.panelLast, Math.max(0, from + by))
+    by = at.over === 'panel' ? 0 : by - (panelOffset - from)
+  }
+  // A tree already past its last row (one that shrank) can go up, never further down.
+  treeOffset = Math.min(Math.max(treeOffset, at.treeLast), Math.max(0, treeOffset + by))
+  return { panelOffset, treeOffset }
 }
 
 /**
@@ -658,29 +684,26 @@ export const register: Register = on => {
   }).catch(($, e, next) => next(e))
 
   // The pane's window stays at rest (see ROOM), so the branch bar and the filter stay put: the wheel
-  // moves the open file's lines, or the tree's rows when the pointer is over the tree or no file is open.
+  // moves the open file's lines and the tree's rows itself (see wheel).
   on('ui.scroll', { component: 'Pane', requestId: PANE }, async ($, e, next) => {
     if (e.origin.kind === 'plugin') return next(e)
-    if (e.pointer) layout.hasPointer = true
-    // A surface that reports no pointer (the desktop, keys) scrolls the panel whenever a file is open.
-    const isOverPanel = e.pointer ? e.pointer.column >= layout.treeColumns + GUTTER : true
-    let moved: number
-    if (layout.hasFile && isOverPanel) {
-      moved = Math.min(layout.panelLast, Math.max(0, (await read($, panelOffsetAtom)) + e.by))
-      await update($, panelOffsetAtom, () => moved)
-    } else {
-      // The tree rows hidden below the window are as far as it can move down; a tree row is at least one.
-      const below = Math.max(0, e.contentRows - e.bodyRows - layout.spacer - layout.spare)
-      moved = Math.max(0, (await read($, treeOffsetAtom)) + Math.min(e.by, below))
-      await update($, treeOffsetAtom, () => moved)
-    }
-    const isRoomAbove = canGoUp({
+    const panelOffset = await read($, panelOffsetAtom)
+    const treeOffset = await read($, treeOffsetAtom)
+    // With no file open the tree is unclipped, and the rows hidden below the window are as far as it
+    // can move down; a tree row is at least one.
+    const below = Math.max(0, e.contentRows - e.bodyRows - layout.spacer - layout.spare)
+    const at = {
       hasFile: layout.hasFile,
-      hasPointer: layout.hasPointer,
-      panelOffset: await read($, panelOffsetAtom),
-      treeOffset: await read($, treeOffsetAtom),
-    })
-    const rest = isRoomAbove ? ROOM : 0
+      panelOffset,
+      panelLast: layout.panelLast,
+      treeOffset,
+      treeLast: layout.hasFile ? layout.treeLast : treeOffset + below,
+    }
+    const over = e.pointer ? (e.pointer.column >= layout.treeColumns + GUTTER ? 'panel' : 'tree') : undefined
+    const to = wheel({ ...at, by: e.by, over })
+    if (to.panelOffset !== panelOffset) await update($, panelOffsetAtom, () => to.panelOffset)
+    if (to.treeOffset !== treeOffset) await update($, treeOffsetAtom, () => to.treeOffset)
+    const rest = canGoUp({ ...at, ...to }) ? ROOM : 0
     return layout.offset === rest ? {} : next({ ...e, offset: rest })
   }).catch(($, e, next) => next(e))
 
@@ -944,10 +967,12 @@ export const register: Register = on => {
     const offset = e.props.scroll.offset
     // Room above while what the wheel moves can go up; a window still below that rest is matched, so
     // the branch bar stays at its top until the next wheel move brings it to rest.
-    const isRoomAbove = canGoUp({ hasFile: selected !== null, hasPointer: layout.hasPointer, panelOffset, treeOffset })
-    const spacer = Math.max(isRoomAbove ? ROOM : 0, offset)
-    const spare = selected !== null && panelOffset < panelLast ? ROOM : 0
-    Object.assign(layout, { treeColumns, panelLast, panelRoom, hasFile: selected !== null, offset, spacer, spare })
+    // With a file open the clipped tree can move until its last row is the only one drawn.
+    const treeLast = Math.max(0, rows.length - 1)
+    const at = { hasFile: selected !== null, panelOffset, panelLast, treeOffset, treeLast }
+    const spacer = Math.max(canGoUp(at) ? ROOM : 0, offset)
+    const spare = canGoDown(at) ? ROOM : 0
+    Object.assign(layout, { treeColumns, panelLast, panelRoom, hasFile: selected !== null, offset, spacer, spare, treeLast })
 
     const slash = selected === null ? -1 : selected.lastIndexOf('/')
     // Under the branch bar, down to the bottom of the pane's window.
@@ -1015,7 +1040,7 @@ export const register: Register = on => {
     return (
       <Box flexDirection="column">
         {spacer > 0 && <Box key="spacer" height={spacer} />}
-        {/* With a file open the wheel moves the file, so the tree below the window is clipped, not scrolled to. */}
+        {/* With a file open the tree is clipped to the window, and the wheel moves it through treeOffset. */}
         <Box
           flexDirection="column"
           rowGap={1}
