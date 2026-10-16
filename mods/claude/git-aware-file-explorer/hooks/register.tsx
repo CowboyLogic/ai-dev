@@ -651,7 +651,7 @@ export const register: Register = on => {
       panelLast = lastTop(lines, panelRoom)
       if (lines.length === 0) body = <Text dimColor>No textual difference (binary or mode change).</Text>
       else {
-        const top = Math.min(panelOffset, Math.max(0, lines.length - 1))
+        const top = Math.min(panelOffset, panelLast)
         const width = String(Math.max(...lines.map(l => Math.max(l.o, l.n)))).length
         const pad = (no: number | undefined) => (no === undefined ? '' : String(no)).padStart(width)
         // Each line is a row of its own, tinted by kind; a gap between hunks costs a separator row.
@@ -700,7 +700,7 @@ export const register: Register = on => {
         else {
           const lines = text.split('\n')
           panelLast = Math.max(0, lines.length - panelRoom)
-          const top = Math.min(panelOffset, Math.max(0, lines.length - 1))
+          const top = Math.min(panelOffset, panelLast)
           body = (
             <Code
               key="preview"

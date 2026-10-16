@@ -37,16 +37,21 @@ const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
 /**
  * A repository with one modified, one untracked and one deleted file. Without `hasHead` it has no
  * commits yet, and README.md is staged with its second line then changed again unstaged.
- * `onStatus` runs inside each `git status`, the call every scan makes first.
+ * `onStatus` runs inside each `git status`, the call every scan makes first; `text` is every file's.
  */
 function fakeRepo(
   on: On,
-  { fileSize = 4, hasHead = true, onStatus }: { fileSize?: number; hasHead?: boolean; onStatus?: () => Promise<void> } = {},
+  {
+    fileSize = 4,
+    hasHead = true,
+    onStatus,
+    text = 'a\nb\n',
+  }: { fileSize?: number; hasHead?: boolean; onStatus?: () => Promise<void>; text?: string } = {},
 ) {
   on('session.cwd', () => ({ value: ROOT }))
   on('fs.list', ($, e) => ({ value: DISK[e.path] ?? [] }))
   on('fs.stat', () => ({ value: { kind: 'file' as const, size: fileSize, mtimeMs: 1, isLink: false } }))
-  on('fs.read', () => ({ value: 'a\nb\n' }))
+  on('fs.read', () => ({ value: text }))
   on('process.run', async ($, e) => {
     const args = e.argv.filter(a => a !== '--no-optional-locks').slice(1).join(' ')
     if (args === 'rev-parse --show-toplevel') return ok(ROOT + '\n')
@@ -193,6 +198,27 @@ describe('git-aware-file-explorer pane', () => {
     await presses
     expect(most).toBe(1)
     expect(scans).toBe(2)
+
+    await ui.unmount()
+  })
+
+  test('keeps a scrolled preview within the file when the pane grows', async ($, on) => {
+    fakeRepo(on, { text: Array.from({ length: 100 }, (_, i) => `line ${i + 1}`).join('\n') })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: { ...PROPS, scroll: { offset: 0, bodyRows: 20 } },
+    })
+    await ui.press({ key: 'node:src' })
+    await ui.press({ key: 'node:src/a.ts' })
+    for (let i = 0; i < 30; i++) await ui.press({ key: 'line-down' })
+    expect((await ui.find({ type: 'Code' }))?.props.startLine).toBe(31)
+
+    // Tall enough for the whole file: the window can't sit 30 lines down any more.
+    await ui.redraw({ ...PROPS, scroll: { offset: 0, bodyRows: 200 } })
+    expect((await ui.find({ type: 'Code' }))?.props.startLine).toBe(1)
 
     await ui.unmount()
   })
