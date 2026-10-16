@@ -25,8 +25,11 @@ const BRANCH_ROWS = 2
  * bounces. The mod moves the tree or the file panel itself.
  */
 const ROOM = 1
-/** Tools whose calls can change the work tree; a scan follows each. */
-const WRITERS = new Set(['Edit', 'MultiEdit', 'Write', 'NotebookEdit', 'Bash'])
+/**
+ * Tools whose calls can change the work tree; a scan follows each. PowerShell is the shell tool on
+ * Windows. A subagent's own tool calls reach the hook too, so Agent needs no entry.
+ */
+const WRITERS = new Set(['Edit', 'MultiEdit', 'Write', 'NotebookEdit', 'Bash', 'PowerShell'])
 /** Files the native Files pane leaves out too. */
 const HIDDEN = new Set(['.git', '.DS_Store', 'Thumbs.db'])
 /** Row tints: a neutral grey with alpha reads in both light and dark themes. */

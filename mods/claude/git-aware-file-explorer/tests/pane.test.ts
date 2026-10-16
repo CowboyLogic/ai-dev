@@ -635,6 +635,30 @@ describe('git-aware-file-explorer pane', () => {
     await ui.unmount()
   })
 
+  test('rescans after a shell command, PowerShell included, and not after a read', async ($, on) => {
+    let scans = 0
+    fakeRepo(on, { onStatus: async () => void scans++ })
+    on('tool.call', () => ({ result: { text: '' } }))
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+    for (const [tool, isWriter] of [['Bash', true], ['PowerShell', true], ['Read', false]] as const) {
+      const before = scans
+      // Typed from this host's tools, which name no PowerShell off Windows: the input is cast.
+      const input = { tool, command: 'echo x > a.md', file_path: 'a.md' }
+      await $.tool.call(input as unknown as Parameters<typeof $.tool.call>[0])
+      // The scan runs unawaited after the call returns; a redraw lets it finish.
+      await ui.redraw()
+      expect([tool, scans > before]).toEqual([tool, isWriter])
+    }
+
+    await ui.unmount()
+  })
+
   test('says why git could not read the workspace, not that it is no repository', async ($, on) => {
     const dubious = "fatal: detected dubious ownership in repository at '/repo'"
     on('session.cwd', () => ({ value: ROOT }))
