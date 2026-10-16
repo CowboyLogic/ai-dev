@@ -12,6 +12,7 @@ Practical configurations and working examples for AI-powered development tools. 
 
 - **[Agents](agents/)** — Installable AI agent definitions (Lane Topology, Matrix Topology, and domain specialists), discoverable via GitHub CLI
 - **[Skills](skills/)** — Installable domain-specific instruction sets, discoverable via GitHub CLI
+- **[Mods](docs/mods/index.md)** — Client interface additions, such as a git-aware Files pane for Claude Code
 - **[Harness](docs/harness/index.md)** — Claude Code, OpenCode CLI, and VS Code configurations with examples
 - **[MCP Servers](docs/mcp/index.md)** — Model Context Protocol integration examples
 
@@ -29,7 +30,7 @@ Practical configurations and working examples for AI-powered development tools. 
 
 **Claude Code:**
 
-- [Claude Code](docs/harness/claudecode/index.md) — Skills, the Matrix Claude mirror, and Google Cloud Vertex AI setup
+- [Claude Code](docs/harness/claudecode/index.md) — Skills, mods, the Matrix Claude mirror, and Google Cloud Vertex AI setup
 
 **OpenCode CLI:**
 
@@ -52,11 +53,13 @@ ai-dev/
 │   ├── lane-topology/          # Lane Topology (OpenCode + Copilot)
 │   └── *.agent.md              # Domain specialist agents
 ├── harness/                    # Client harness configs and OpenCode sample configs
+├── mods/                       # Client interface mods, one folder per client
 ├── skills/                     # Installable skill definitions (GitHub CLI discoverable)
 │   └── <skill-name>/           # Each skill: SKILL.md + README + references/
 ├── docs/                       # MkDocs documentation source (catalog & guides only)
 │   ├── agents/                 # Agent catalog pages
 │   ├── skills/                 # Skills catalog + one overview page per skill
+│   ├── mods/                   # Mods catalog + one overview page per mod
 │   ├── harness/                # Claude Code, OpenCode, & VS Code guides
 │   └── mcp/                    # MCP server documentation
 ├── .agent-output/              # Temporary agent output (gitignored)

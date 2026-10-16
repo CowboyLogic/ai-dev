@@ -22,6 +22,15 @@ body from the canonical OpenCode definitions and translates the frontmatter to C
 aliases. The mirror is in
 [`agents/matrix-topology/claude/`](https://github.com/CowboyLogic/ai-dev/tree/main/agents/matrix-topology/claude).
 
+## Mods
+
+Mods change Claude Code's own interface. The [mods catalog](../../mods/index.md) lists them and
+explains how to load one.
+
+| Mod | Use it to |
+|---|---|
+| [Git-Aware File Explorer](../../mods/git-aware-file-explorer.md) | Browse the workspace with changed files marked and see a file's diff beside the tree |
+
 ## Provider setup
 
 - [Claude Code with Google Vertex AI](claudecode-vertexai.md): run Claude Code against Claude models served through a Google Cloud project
