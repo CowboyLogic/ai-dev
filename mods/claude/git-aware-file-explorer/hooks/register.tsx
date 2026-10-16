@@ -431,6 +431,16 @@ export function diffLines(diff: string): DiffLine[] {
   return out
 }
 
+/** The open file's parsed diff and what it was read for, so a scroll redraws without running git. */
+let diffCache: { key: string; lines: DiffLine[] } | undefined
+
+/** The parsed diff of `c`, read again only when the scan changed (a content edit changes its stamp). */
+async function cachedDiff($: $, s: Scan, c: Change): Promise<DiffLine[]> {
+  const key = JSON.stringify([s, c])
+  if (diffCache?.key !== key) diffCache = { key, lines: diffLines(await diffFor($, s, c)) }
+  return diffCache.lines
+}
+
 async function diffFor($: $, s: Scan, c: Change): Promise<string> {
   const flags = ['--no-color', '--no-ext-diff']
   if (c.x === '?') {
@@ -665,7 +675,7 @@ export const register: Register = on => {
         </Box>
       )
     } else if (change) {
-      const lines = diffLines(await diffFor($, s, change))
+      const lines = await cachedDiff($, s, change)
       panelLast = lastTop(lines, panelRoom)
       if (lines.length === 0) body = <Text dimColor>No textual difference (binary or mode change).</Text>
       else {

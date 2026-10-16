@@ -38,7 +38,8 @@ const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
  * A repository with one modified, one untracked and one deleted file. Without `hasHead` it has no
  * commits yet, and README.md is staged with its second line then changed again unstaged.
  * `onStatus` runs inside each `git status`, the call every scan makes first; `text` is every file's.
- * `live` is read on each call: README.md's diff and every file's modification time.
+ * `live` is read on each call: README.md's diff and every file's modification time; `diffRuns`
+ * counts the diffs of README.md run.
  */
 function fakeRepo(
   on: On,
@@ -47,13 +48,13 @@ function fakeRepo(
     hasHead = true,
     onStatus,
     text = 'a\nb\n',
-    live = { diff: DIFF, mtimeMs: 1 },
+    live = { diff: DIFF, mtimeMs: 1 } as { diff: string; mtimeMs: number; diffRuns?: number },
   }: {
     fileSize?: number
     hasHead?: boolean
     onStatus?: () => Promise<void>
     text?: string
-    live?: { diff: string; mtimeMs: number }
+    live?: { diff: string; mtimeMs: number; diffRuns?: number }
   } = {},
 ) {
   on('session.cwd', () => ({ value: ROOT }))
@@ -76,7 +77,10 @@ function fakeRepo(
     if (args === 'diff --numstat --no-ext-diff --cached') return ok('2\t0\tREADME.md\n')
     if (args === 'diff --numstat --no-ext-diff') return ok('1\t1\tREADME.md\n')
     if (args.startsWith('diff --numstat')) return ok('1\t1\tREADME.md\n0\t3\tgone.txt\n')
-    if (args.includes('README.md')) return ok(live.diff)
+    if (args.includes('README.md')) {
+      live.diffRuns = (live.diffRuns ?? 0) + 1
+      return ok(live.diff)
+    }
     return ok('', 1)
   })
 }
@@ -195,6 +199,25 @@ describe('git-aware-file-explorer pane', () => {
     live.mtimeMs = 2
     await ui.press({ key: 'refresh' })
     expect(await ui.find({ type: 'Text', text: 'newer line' })).toBeDefined()
+
+    await ui.unmount()
+  })
+
+  test('reads a diff once while the scan stays the same', async ($, on) => {
+    const live: { diff: string; mtimeMs: number; diffRuns?: number } = { diff: DIFF, mtimeMs: 1 }
+    fakeRepo(on, { live })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+    await ui.press({ key: 'node:README.md' })
+    const runs = live.diffRuns
+    // What a wheel or ▲/▼ press does: draw the pane again with nothing in the workspace changed.
+    for (let i = 0; i < 3; i++) await ui.redraw()
+    expect(live.diffRuns).toBe(runs)
 
     await ui.unmount()
   })
