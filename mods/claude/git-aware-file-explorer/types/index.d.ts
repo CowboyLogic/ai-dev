@@ -30,8 +30,9 @@ export type Scan = {
     /** Untracked files went uncounted (too many, or too large to read), so `added` is a floor. */
     partial?: boolean
     /**
-     * git's line counts passed 4 MiB of output and were cut, or a recreated file's committed version
-     * did and went uncounted, so both totals are floors.
+     * git's line counts passed 4 MiB of output and were cut, a recreated file's committed version
+     * did and went uncounted, or git could not count them at all (an unreadable changed file), so
+     * both totals are floors.
      */
     isTruncated?: boolean
   }

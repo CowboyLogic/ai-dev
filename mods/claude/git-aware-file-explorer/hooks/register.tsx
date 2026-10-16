@@ -281,7 +281,8 @@ async function lineTotals($: $, root: string, changes: Change[]) {
     numstat = net === 'cut' ? others : [...others, ...parseNumstat(net.stdout)]
   }
   const total: { added: number; deleted: number; partial?: boolean; isTruncated?: boolean } = sumNumstat(numstat)
-  if (out.isStdoutTruncated || isCut) total.isTruncated = true
+  // A diff git could not make (an unreadable changed file) prints no counts at all: both are floors.
+  if (out.isStdoutTruncated || isCut || out.exitCode !== 0) total.isTruncated = true
   if (isUncounted) total.partial = true
   const untracked = changes.filter(c => c.x === '?')
   if (untracked.length > UNTRACKED_LIMIT) total.partial = true
@@ -584,8 +585,11 @@ export function diffLines(diff: string): DiffLine[] {
   return out
 }
 
-/** A file's parsed diff; `isTruncated` when git's output passed 4 MiB and only its start is here. */
-type FileDiff = { lines: DiffLine[]; isTruncated: boolean }
+/**
+ * A file's parsed diff; `isTruncated` when git's output passed 4 MiB and only its start is here, and
+ * `error` when git could not make it (an unreadable file).
+ */
+type FileDiff = { lines: DiffLine[]; isTruncated: boolean; error?: string }
 
 /** The open file's parsed diff and what it was read for, so a scroll redraws without running git. */
 let diffCache: { key: string; diff: FileDiff } | undefined
@@ -595,7 +599,9 @@ async function cachedDiff($: $, s: Scan, c: Change): Promise<FileDiff> {
   const key = JSON.stringify([s, c])
   if (diffCache?.key !== key) {
     const out = await diffFor($, s, c)
-    diffCache = { key, diff: { lines: diffLines(out.stdout), isTruncated: out.isStdoutTruncated } }
+    // A diff exits 0, or 1 with --no-index when the files differ; past that, git failed.
+    const error = out.exitCode > 1 ? out.stderr.trim() || `git diff exited ${out.exitCode}` : undefined
+    diffCache = { key, diff: { lines: diffLines(out.stdout), isTruncated: out.isStdoutTruncated, error } }
   }
   return diffCache.diff
 }
@@ -864,7 +870,8 @@ export const register: Register = on => {
       const lines = diff.lines
       isDiffTruncated = diff.isTruncated
       panelLast = lastTop(lines, panelRoom)
-      if (lines.length === 0) body = <Text dimColor>No textual difference (binary or mode change).</Text>
+      if (diff.error !== undefined) body = <Text color="error">{diff.error}</Text>
+      else if (lines.length === 0) body = <Text dimColor>No textual difference (binary or mode change).</Text>
       else {
         const top = Math.min(panelOffset, panelLast)
         // A 4 MB diff can hold millions of lines, more than a call takes arguments, so no spread.

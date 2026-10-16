@@ -44,7 +44,8 @@ const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
  * staged for deletion and back on disk with its second line changed, and with `isBlobCut` too its
  * committed version passes 4 MiB. With `isUnreadable`, no file can be read. With `isIgnoredCut`,
  * the list of ignored paths comes back cut. With `isNewGone`, src/new.ts is gone by the time it is
- * looked at. With `statusError`, git status fails with that message. `gone` names the deleted file; git's line counts quote
+ * looked at. With `isDiffFailed`, git cannot read README.md, so every diff against the base fails.
+ * With `statusError`, git status fails with that message. `gone` names the deleted file; git's line counts quote
  * it outside printable ASCII unless asked for `-z`.
  */
 function fakeRepo(
@@ -63,6 +64,7 @@ function fakeRepo(
     gone = 'gone.txt',
     isNewGone = false,
     statusError,
+    isDiffFailed = false,
   }: {
     fileSize?: number
     hasHead?: boolean
@@ -77,6 +79,7 @@ function fakeRepo(
     gone?: string
     isNewGone?: boolean
     statusError?: string
+    isDiffFailed?: boolean
   } = {},
 ) {
   // Quoted as git quotes it in output without -z (its octal escapes left out here).
@@ -115,6 +118,9 @@ function fakeRepo(
     if (args.startsWith('rev-parse --verify')) return hasHead ? ok('abc\n') : ok('', 1)
     if (args === 'hash-object -t tree /dev/null') return ok(EMPTY_TREE + '\n')
     const end = z ? '\0' : '\n'
+    if (isDiffFailed && args.startsWith('diff') && !args.includes('--no-index')) {
+      return { value: { ...ok('', 128).value, stderr: 'fatal: cannot hash README.md' } }
+    }
     if (args.startsWith('diff --numstat') && args.endsWith(EMPTY_TREE)) return ok('2\t0\tREADME.md' + end)
     if (args.startsWith('diff --numstat')) {
       return ok('1\t1\tREADME.md' + end + '0\t3\t' + (z ? gone : quoted) + end, 0, isCut)
@@ -407,6 +413,26 @@ describe('git-aware-file-explorer pane', () => {
       await ui.unmount()
     })
   }
+
+  test('says when git could not diff a changed file', async ($, on) => {
+    fakeRepo(on, { isDiffFailed: true })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+
+    // The failed line counts give no lines at all: what is left is src/new.ts's 2, and both are floors.
+    expect(await ui.find({ type: 'Text', text: '+2+' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '−0+' })).toBeDefined()
+    await ui.press({ key: 'node:README.md' })
+    expect(await ui.find({ type: 'Text', text: /No textual difference/ })).toBeUndefined()
+    expect(await ui.find({ type: 'Text', text: 'fatal: cannot hash README.md' })).toBeDefined()
+
+    await ui.unmount()
+  })
 
   test('marks a recreated file too large to diff as incomplete', async ($, on) => {
     fakeRepo(on, { isRecreated: true, isBlobCut: true })
