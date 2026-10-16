@@ -36,6 +36,8 @@ const DISK: Record<string, FsEntry[]> = {
 function fakeRepo(on: On) {
   on('session.cwd', () => ({ value: ROOT }))
   on('fs.list', ($, e) => ({ value: DISK[e.path] ?? [] }))
+  on('fs.stat', () => ({ value: { kind: 'file' as const, size: 4, mtimeMs: 1, isLink: false } }))
+  on('fs.read', () => ({ value: 'a\nb\n' }))
   on('process.run', ($, e) => {
     const args = e.argv.filter(a => a !== '--no-optional-locks').slice(1).join(' ')
     if (args === 'rev-parse --show-toplevel') return ok(ROOT + '\n')
@@ -43,6 +45,7 @@ function fakeRepo(on: On) {
     if (args.startsWith('ls-files')) return ok('node_modules/\0')
     if (args === 'branch --show-current') return ok('feat/x\n')
     if (args.startsWith('rev-parse --verify')) return ok('abc\n')
+    if (args.startsWith('diff --numstat')) return ok('1\t1\tREADME.md\n0\t3\tgone.txt\n')
     if (args.includes('README.md')) return ok(DIFF)
     return ok('', 1)
   })
@@ -73,6 +76,9 @@ describe('git-aware-file-explorer pane', () => {
       expect(await ui.find({ key: 'node:gone.txt' })).toBeDefined()
       expect(await ui.find({ key: 'node:src/new.ts' })).toBeUndefined()
       expect(await ui.find({ type: 'Text', text: /feat\/x/ })).toBeDefined()
+      // One added in README.md, two in the untracked src/new.ts; one and three deleted.
+      expect(await ui.find({ type: 'Text', text: '+3' })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: '−4' })).toBeDefined()
 
       await ui.press({ key: 'node:src' })
       expect(await ui.find({ key: 'node:src/new.ts' })).toBeDefined()
@@ -80,10 +86,13 @@ describe('git-aware-file-explorer pane', () => {
       expect(await ui.find({ type: 'Text', text: 'Open files appear here' })).toBeDefined()
 
       await ui.press({ key: 'node:README.md' })
-      expect(await ui.find({ type: 'Code', text: /\+new line/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: 'new line' })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: 'old line' })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: '+1' })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: '−1' })).toBeDefined()
 
       await ui.press({ key: 'close-panel' })
-      expect(await ui.find({ type: 'Code' })).toBeUndefined()
+      expect(await ui.find({ type: 'Text', text: 'new line' })).toBeUndefined()
 
       await ui.press({ key: 'changes' })
       expect(await ui.find({ key: 'node:docs' })).toBeUndefined()

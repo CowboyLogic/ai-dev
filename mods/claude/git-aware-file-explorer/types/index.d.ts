@@ -21,6 +21,8 @@ export type Scan = {
   changes: Change[]
   /** Ignored paths relative to root; a directory ends with `/`. */
   ignored: string[]
+  /** Lines added and deleted across all changes against HEAD, untracked files included. */
+  lines?: { added: number; deleted: number }
   /** Error text from the last scan, if it failed. */
   error?: string
 }
@@ -35,6 +37,8 @@ declare module 'claude-code' {
       filter: string
       /** First line of the open file the right panel shows. */
       panelOffset: number
+      /** First row of the tree the left column shows. */
+      treeOffset: number
     }
   }
 }
