@@ -372,6 +372,14 @@ class ValidatorTest(unittest.TestCase):
         self.assert_fails_cleanly(result)
         self.assertIn("mod git-aware-file-explorer has no overview page", result.stdout)
 
+    def test_mod_without_manifest_fails(self) -> None:
+        hooks = self.root / "mods/claude/new-mod/hooks"
+        hooks.mkdir(parents=True)
+        (hooks / "register.tsx").write_text("export const register = () => {}\n")
+        result = self.run_validator()
+        self.assert_fails_cleanly(result)
+        self.assertIn("mod new-mod has no plugin manifest", result.stdout)
+
     def test_mod_missing_from_catalog_fails(self) -> None:
         text = self.read("docs/mods/index.md")
         kept = "".join(line for line in text.splitlines(keepends=True) if "(git-aware-file-explorer.md)" not in line)

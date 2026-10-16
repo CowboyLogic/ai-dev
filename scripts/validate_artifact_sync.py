@@ -591,17 +591,27 @@ def validate_skills() -> None:
 
 
 MOD_HARNESS_PAGES = {"claude": "docs/harness/claudecode/index.md"}
+# Each client's plugin manifest, relative to a mod's folder.
+MOD_MANIFESTS = {"claude": ".claude-plugin/plugin.json"}
 
 
 def validate_mods() -> None:
     """Every mod under mods/<client>/ has an overview page in the nav, a catalog row,
     and an entry on its client's harness page."""
-    manifests = sorted((ROOT / "mods").glob("*/*/.claude-plugin/plugin.json"))
+    folders = sorted(
+        path for path in (ROOT / "mods").glob("*/*") if path.is_dir() and not path.name.startswith(".")
+    )
     mods: dict[str, str] = {}
-    for path in manifests:
-        folder = path.parents[1]
+    for folder in folders:
         identifier, client = folder.name, folder.parent.name
         mods[identifier] = client
+        manifest = MOD_MANIFESTS.get(client)
+        if manifest is None:
+            continue  # reported below as an unknown client
+        path = folder / manifest
+        if not path.is_file():
+            check(False, f"mod {identifier} has no plugin manifest", str(path.relative_to(ROOT)))
+            continue
         try:
             name = json.loads(path.read_text()).get("name")
         except (json.JSONDecodeError, AttributeError):
