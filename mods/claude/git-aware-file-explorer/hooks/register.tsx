@@ -140,11 +140,13 @@ async function git($: $, root: string, args: string[], stdin?: string) {
 
 /**
  * `git diff` (with `flags`) of a recreated path: its version in `base`, piped in, against the file
- * on disk, so the panel and the totals see the net change. Undefined when git can't run it so.
+ * on disk, so the panel and the totals see the net change. `'cut'` when that version passed 4 MiB
+ * and can't be piped whole; undefined when git can't run it so.
  */
 async function recreatedDiff($: $, root: string, base: string, path: string, flags: string[]) {
   const old = await git($, root, ['show', base + ':' + path])
-  if (old.exitCode !== 0 || old.isStdoutTruncated) return undefined
+  if (old.isStdoutTruncated) return 'cut' as const
+  if (old.exitCode !== 0) return undefined
   // --no-index exits 1 when the files differ, which is the point here.
   const out = await git($, root, ['diff', ...flags, '--no-index', '--', '/dev/stdin', path], old.stdout)
   return out.exitCode <= 1 ? out : undefined
@@ -173,7 +175,7 @@ async function scan($: $): Promise<Scan> {
       branch: name || undefined,
       changes,
       lines,
-      isTruncated: status.isStdoutTruncated || lines.isTruncated || undefined,
+      isTruncated: status.isStdoutTruncated || undefined,
       ignored: ignored.stdout.split('\0').filter(Boolean),
       error: status.exitCode === 0 ? undefined : status.stderr.trim(),
     }
@@ -223,16 +225,20 @@ async function lineTotals($: $, root: string, changes: Change[]) {
   // A recreated path counts its net change, in place of the deletion the diff against base reports.
   let numstat = out.stdout
   let isUncounted = false
+  let isCut = false
   for (const c of changes.filter(isRecreated)) {
     const net = await recreatedDiff($, root, base, c.path, ['--numstat'])
-    if (!net) {
+    if (net === undefined) {
       isUncounted = true
       continue
     }
-    numstat = numstat.split('\n').filter(line => line.split('\t')[2] !== c.path).join('\n') + '\n' + net.stdout
+    const others = numstat.split('\n').filter(line => line.split('\t')[2] !== c.path).join('\n')
+    // Too large to diff: neither its deletion nor its contents count, and both totals are floors.
+    if (net === 'cut') isCut = true
+    numstat = net === 'cut' ? others : others + '\n' + net.stdout
   }
   const total: { added: number; deleted: number; partial?: boolean; isTruncated?: boolean } = sumNumstat(numstat)
-  if (out.isStdoutTruncated) total.isTruncated = true
+  if (out.isStdoutTruncated || isCut) total.isTruncated = true
   if (isUncounted) total.partial = true
   const untracked = changes.filter(c => c.x === '?')
   if (untracked.length > UNTRACKED_LIMIT) total.partial = true
@@ -509,8 +515,10 @@ async function diffFor($: $, s: Scan, c: Change) {
   }
   if (isRecreated(c)) {
     const net = await recreatedDiff($, s.root, await diffBase($, s.root), c.path, flags)
-    if (net) return net
-    return git($, s.root, ['diff', ...flags, '--no-index', '--', '/dev/null', c.path])
+    if (net !== undefined && net !== 'cut') return net
+    const contents = await git($, s.root, ['diff', ...flags, '--no-index', '--', '/dev/null', c.path])
+    // Its committed version too large to diff against: the new contents alone, marked incomplete.
+    return net === 'cut' ? { ...contents, isStdoutTruncated: true } : contents
   }
   const paths = c.from ? [c.from, c.path] : [c.path]
   return git($, s.root, ['diff', ...flags, '-M', await diffBase($, s.root), '--', ...paths])
@@ -622,11 +630,11 @@ export const register: Register = on => {
               {/* A trailing + marks a floor: some untracked files went uncounted, or git's output was cut. */}
               <Text color="success">
                 +{s.lines.added}
-                {s.lines.partial || s.isTruncated ? '+' : ''}
+                {s.lines.partial || s.lines.isTruncated || s.isTruncated ? '+' : ''}
               </Text>{' '}
               <Text color="error">
                 −{s.lines.deleted}
-                {s.isTruncated ? '+' : ''}
+                {s.lines.isTruncated || s.isTruncated ? '+' : ''}
               </Text>
             </Text>
           )}

@@ -41,8 +41,8 @@ const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
  * `live` is read on each call: README.md's diff and every file's modification time; `diffRuns`
  * counts the diffs of README.md run. With `isCut`, git's status, line counts, file list and diff
  * come back cut at the 4 MiB limit, as `process.run` reports them. With `isRecreated`, gone.txt is
- * staged for deletion and back on disk with its second line changed. With `isUnreadable`, no file
- * can be read.
+ * staged for deletion and back on disk with its second line changed, and with `isBlobCut` too its
+ * committed version passes 4 MiB. With `isUnreadable`, no file can be read.
  */
 function fakeRepo(
   on: On,
@@ -55,6 +55,7 @@ function fakeRepo(
     isCut = false,
     isRecreated = false,
     isUnreadable = false,
+    isBlobCut = false,
   }: {
     fileSize?: number
     hasHead?: boolean
@@ -64,6 +65,7 @@ function fakeRepo(
     isCut?: boolean
     isRecreated?: boolean
     isUnreadable?: boolean
+    isBlobCut?: boolean
   } = {},
 ) {
   on('session.cwd', () => ({ value: ROOT }))
@@ -84,7 +86,8 @@ function fakeRepo(
     if (args.startsWith('ls-files') && args.includes('--ignored')) return ok('node_modules/\0')
     if (args.startsWith('ls-files')) return isCut ? ok('README.md\0src/a.ts\0docs/ind', 0, true) : ok('README.md\0src/a.ts\0docs/index.md\0')
     if (args === 'branch --show-current') return ok('feat/x\n')
-    if (args === 'show HEAD:gone.txt') return ok('a\nb\nc\n')
+    if (args === 'show HEAD:gone.txt') return isBlobCut ? ok('a\nb', 0, true) : ok('a\nb\nc\n')
+    if (args.endsWith('--no-index -- /dev/null gone.txt')) return ok('diff --git a/gone.txt b/gone.txt\n@@ -0,0 +1,3 @@\n+a\n+B\n+c\n', 1)
     if (args.endsWith('--no-index -- /dev/stdin gone.txt') && e.init?.stdin === 'a\nb\nc\n') {
       if (args.includes('--numstat')) return ok('1\t1\t/dev/stdin => gone.txt\n', 1)
       return ok('diff --git a/dev/stdin b/gone.txt\n--- a/dev/stdin\n+++ b/gone.txt\n@@ -1,3 +1,3 @@\n a\n-b\n+B\n c\n', 1)
@@ -310,6 +313,26 @@ describe('git-aware-file-explorer pane', () => {
 
     // README.md's 1 added line; src/new.ts went uncounted, so the total is a floor.
     expect(await ui.find({ type: 'Text', text: '+1+' })).toBeDefined()
+
+    await ui.unmount()
+  })
+
+  test('marks a recreated file too large to diff as incomplete', async ($, on) => {
+    fakeRepo(on, { isRecreated: true, isBlobCut: true })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+
+    // gone.txt counts neither its deletion nor its contents; both totals are floors, the count exact.
+    expect(await ui.find({ type: 'Text', text: '+3+' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '−1+' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '● 3 changed' })).toBeDefined()
+    await ui.press({ key: 'node:gone.txt' })
+    expect(await ui.find({ type: 'Text', text: /cut at 4 MB/ })).toBeDefined()
 
     await ui.unmount()
   })

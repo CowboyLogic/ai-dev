@@ -15,7 +15,7 @@ in a panel beside the tree.
 - **Branch bar.** The current branch, the lines added and deleted across all changes, and a count of
   changed files. The count is a toggle that narrows the tree to changed files only. New files count
   as added lines; past 200 new files, or for a new file over 512 KB or one that cannot be read, the
-  added total is marked as a minimum (`+1234+`). When git's output passes 4 MB it is cut, and every count is marked the same way.
+  added total is marked as a minimum (`+1234+`). When git's output passes 4 MB it is cut, and the counts drawn from it are marked the same way.
 - **Git-aware tree.** Files and folders with icons, a status letter on each changed file, and a mark
   on every folder that holds a change. Ignored files are dimmed and deleted files struck through.
   A filter box narrows the tree by name.
