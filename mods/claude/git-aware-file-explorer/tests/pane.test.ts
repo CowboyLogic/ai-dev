@@ -609,6 +609,28 @@ describe('git-aware-file-explorer pane', () => {
     await ui.unmount()
   })
 
+  test('says why git could not read the workspace, not that it is no repository', async ($, on) => {
+    const dubious = "fatal: detected dubious ownership in repository at '/repo'"
+    on('session.cwd', () => ({ value: ROOT }))
+    on('fs.list', ($, e) => ({ value: DISK[e.path] ?? [] }))
+    on('process.run', () => ({ value: { ...ok('', 128).value, stderr: dubious } }))
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+
+    expect(await ui.find({ type: 'Text', text: 'not a git repo' })).toBeUndefined()
+    expect(await ui.find({ type: 'Text', text: 'git unavailable' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: dubious })).toBeDefined()
+    // The files are still there to browse.
+    expect(await ui.find({ key: 'node:README.md' })).toBeDefined()
+
+    await ui.unmount()
+  })
+
   test('walks the workspace once for a filter while the scan stays the same', async ($, on) => {
     let lists = 0
     on('session.cwd', () => ({ value: ROOT }))

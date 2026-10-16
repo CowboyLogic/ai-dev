@@ -166,7 +166,12 @@ async function scan($: $): Promise<Scan> {
   const cwd = await $.session.cwd()
   try {
     const top = await $.process.run(['git', 'rev-parse', '--show-toplevel'], { cwd })
-    if (top.exitCode !== 0) return { root: cwd, isRepo: false, changes: [], ignored: [] }
+    if (top.exitCode !== 0) {
+      // Outside a repository is no error; any other failure (dubious ownership, a broken .git) is shown.
+      const reason = top.stderr.trim()
+      const error = reason === '' || /not a git repository/i.test(reason) ? undefined : reason
+      return { root: cwd, isRepo: false, changes: [], ignored: [], error }
+    }
     const root = top.stdout.trim()
     const [status, ignored, branch] = await Promise.all([
       git($, root, ['status', '--porcelain=v1', '-z', '-uall']),
@@ -716,7 +721,13 @@ export const register: Register = on => {
       <Box key="branch-bar" flexDirection="row" alignItems="center">
         <Box width="70%" flexShrink={1}>
           <Text wrap="truncate-end">
-            {s.isRepo ? <Text color="suggestion">⎇ {s.branch ?? '?'}</Text> : <Text dimColor>not a git repo</Text>}
+            {s.isRepo ? (
+              <Text color="suggestion">⎇ {s.branch ?? '?'}</Text>
+            ) : s.error !== undefined ? (
+              <Text color="error">git unavailable</Text>
+            ) : (
+              <Text dimColor>not a git repo</Text>
+            )}
           </Text>
         </Box>
         <Box width="30%" flexDirection="row" justifyContent="flex-end" alignItems="center" columnGap={1}>
