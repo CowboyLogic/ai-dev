@@ -9,6 +9,8 @@ const SCAN_EVERY_MS = 5000
 const PREVIEW_BYTES = 256 * 1024
 /** Most matches a filter lists; the rest are counted, not drawn. */
 const FILTER_LIMIT = 300
+/** Paths a filter outside a git repository walks the disk for, at most. */
+const WALK_LIMIT = 20000
 /** The tree column's narrowest width, in cells; its widest is half the pane. */
 const TREE_MIN_COLUMNS = 34
 /** Cells between the tree column and the file panel. */
@@ -242,13 +244,31 @@ async function pathsFor(
   const needle = filter.trim().toLowerCase()
   if (!changedOnly && needle === '') return undefined
   let paths: string[]
-  if (changedOnly || !s.isRepo) paths = s.changes.map(c => c.path)
+  if (changedOnly) paths = s.changes.map(c => c.path)
+  else if (!s.isRepo) paths = await walkFiles($, s.root)
   else {
     const listed = await git($, s.root, ['ls-files', '-z', '--cached', '--others', '--exclude-standard'])
     paths = [...new Set([...listed.stdout.split('\0').filter(Boolean), ...s.changes.map(c => c.path)])]
   }
   const hits = needle === '' ? paths : paths.filter(p => p.toLowerCase().includes(needle))
   return { paths: hits.slice(0, FILTER_LIMIT), total: hits.length }
+}
+
+/** File paths under `root`, breadth first, up to WALK_LIMIT: what a filter searches without git. */
+async function walkFiles($: $, root: string): Promise<string[]> {
+  const files: string[] = []
+  const dirs = ['']
+  for (let i = 0; i < dirs.length && files.length < WALK_LIMIT; i++) {
+    const dir = dirs[i] as string
+    const entries = await $.fs.list(root + (dir === '' ? '' : '/' + dir)).catch(() => [])
+    for (const en of entries) {
+      if (HIDDEN.has(en.name)) continue
+      const path = dir === '' ? en.name : dir + '/' + en.name
+      if (en.kind === 'dir') dirs.push(path)
+      else files.push(path)
+    }
+  }
+  return files.slice(0, WALK_LIMIT)
 }
 
 async function buildRows(

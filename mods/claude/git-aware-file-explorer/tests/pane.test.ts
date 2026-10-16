@@ -106,4 +106,24 @@ describe('git-aware-file-explorer pane', () => {
       await ui.unmount()
     })
   }
+
+  test('filters files outside a git repository', async ($, on) => {
+    on('session.cwd', () => ({ value: ROOT }))
+    on('fs.list', ($, e) => ({ value: DISK[e.path] ?? [] }))
+    on('process.run', () => ok('', 128))
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+
+    expect(await ui.find({ type: 'Text', text: /not a git repo/ })).toBeDefined()
+    await ui.input({ key: 'filter', text: 'index', kind: 'change' })
+    expect(await ui.find({ key: 'node:docs/index.md' })).toBeDefined()
+    expect(await ui.find({ key: 'node:README.md' })).toBeUndefined()
+
+    await ui.unmount()
+  })
 })
