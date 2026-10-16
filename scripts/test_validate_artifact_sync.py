@@ -32,13 +32,18 @@ LANE_HARNESS = "harness/opencode-lane/opencode.jsonc"
 
 def build_template(dest: Path) -> None:
     """Copy just the files the validator reads."""
-    for rel in ("agents", "harness/opencode", "harness/opencode-lane", "docs/agents", "docs/skills"):
+    for rel in ("agents", "harness/opencode", "harness/opencode-lane", "docs/agents", "docs/skills", "docs/mods"):
         shutil.copytree(REPO / rel, dest / rel)
+    for manifest in (REPO / "mods").glob("*/*/.claude-plugin/plugin.json"):
+        target = dest / manifest.relative_to(REPO)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(manifest, target)
     for skill in (REPO / "skills").glob("*/SKILL.md"):
         target = dest / "skills" / skill.parent.name / "SKILL.md"
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(skill, target)
-    for rel in ("skills/README.md", "mkdocs.yml", "cerebro-catalog.yaml"):
+    for rel in ("skills/README.md", "mkdocs.yml", "cerebro-catalog.yaml", "docs/harness/claudecode/index.md"):
+        (dest / rel).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(REPO / rel, dest / rel)
     (dest / "scripts").mkdir()
     shutil.copy2(REPO / "scripts" / SCRIPT_NAME, dest / "scripts" / SCRIPT_NAME)
@@ -360,6 +365,64 @@ class ValidatorTest(unittest.TestCase):
         result = self.run_validator()
         self.assert_fails_cleanly(result)
         self.assertIn("git-commit-messages", result.stdout)
+
+    def test_missing_mod_overview_page_fails(self) -> None:
+        (self.root / "docs/mods/git-aware-file-explorer.md").unlink()
+        result = self.run_validator()
+        self.assert_fails_cleanly(result)
+        self.assertIn("mod git-aware-file-explorer has no overview page", result.stdout)
+
+    def test_mod_without_manifest_fails(self) -> None:
+        hooks = self.root / "mods/claude/new-mod/hooks"
+        hooks.mkdir(parents=True)
+        (hooks / "register.tsx").write_text("export const register = () => {}\n")
+        result = self.run_validator()
+        self.assert_fails_cleanly(result)
+        self.assertIn("mod new-mod has no plugin manifest", result.stdout)
+
+    def test_removed_last_mod_with_docs_left_fails(self) -> None:
+        shutil.rmtree(self.root / "mods")
+        result = self.run_validator()
+        self.assert_fails_cleanly(result)
+        self.assertIn("docs/mods/index.md mod coverage drift", result.stdout)
+        self.assertIn("mkdocs.yml nav lists mod pages with no mod", result.stdout)
+        self.assertIn("harness page lists mods with no mod", result.stdout)
+
+    def test_mod_missing_from_catalog_fails(self) -> None:
+        text = self.read("docs/mods/index.md")
+        kept = "".join(line for line in text.splitlines(keepends=True) if "(git-aware-file-explorer.md)" not in line)
+        self.assertNotEqual(kept, text)
+        self.write("docs/mods/index.md", kept)
+        result = self.run_validator()
+        self.assert_fails_cleanly(result)
+        self.assertIn("docs/mods/index.md mod coverage drift", result.stdout)
+
+    def test_mod_missing_from_its_harness_page_fails(self) -> None:
+        page = "docs/harness/claudecode/index.md"
+        text = self.read(page)
+        kept = "".join(line for line in text.splitlines(keepends=True) if "mods/git-aware-file-explorer.md" not in line)
+        self.assertNotEqual(kept, text)
+        self.write(page, kept)
+        result = self.run_validator()
+        self.assert_fails_cleanly(result)
+        self.assertIn("not listed on its client's harness page", result.stdout)
+
+    def test_mod_linked_only_in_catalog_prose_fails(self) -> None:
+        text = self.read("docs/mods/index.md")
+        kept = "".join(line for line in text.splitlines(keepends=True) if "(git-aware-file-explorer.md)" not in line)
+        self.write("docs/mods/index.md", kept + "\nSee [the explorer](git-aware-file-explorer.md).\n")
+        result = self.run_validator()
+        self.assert_fails_cleanly(result)
+        self.assertIn("docs/mods/index.md mod coverage drift", result.stdout)
+
+    def test_mod_linked_only_in_harness_prose_fails(self) -> None:
+        page = "docs/harness/claudecode/index.md"
+        text = self.read(page)
+        kept = "".join(line for line in text.splitlines(keepends=True) if "mods/git-aware-file-explorer.md" not in line)
+        self.write(page, kept + "\nSee [the explorer](../../mods/git-aware-file-explorer.md).\n")
+        result = self.run_validator()
+        self.assert_fails_cleanly(result)
+        self.assertIn("not listed on its client's harness page", result.stdout)
 
     def test_mkdocs_custom_yaml_tags_are_tolerated(self) -> None:
         self.write("mkdocs.yml", self.read("mkdocs.yml") + "\nextra_probe: !!python/name:material.extensions.emoji.twemoji\n")

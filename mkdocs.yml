@@ -115,6 +115,10 @@ nav:
           - Codex Configuration Manager: skills/client-config-codex.md
           - Copilot Configuration Manager: skills/client-config-copilotcli.md
           - OpenCode Configuration Manager: skills/client-config-opencode.md
+  - Mods:
+      - mods/index.md
+      - Claude Code:
+          - Git-Aware File Explorer: mods/git-aware-file-explorer.md
   - Harness:
       - harness/index.md
       - OpenCode:
