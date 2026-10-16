@@ -380,6 +380,14 @@ class ValidatorTest(unittest.TestCase):
         self.assert_fails_cleanly(result)
         self.assertIn("mod new-mod has no plugin manifest", result.stdout)
 
+    def test_removed_last_mod_with_docs_left_fails(self) -> None:
+        shutil.rmtree(self.root / "mods")
+        result = self.run_validator()
+        self.assert_fails_cleanly(result)
+        self.assertIn("docs/mods/index.md mod coverage drift", result.stdout)
+        self.assertIn("mkdocs.yml nav lists mod pages with no mod", result.stdout)
+        self.assertIn("harness page lists mods with no mod", result.stdout)
+
     def test_mod_missing_from_catalog_fails(self) -> None:
         text = self.read("docs/mods/index.md")
         kept = "".join(line for line in text.splitlines(keepends=True) if "(git-aware-file-explorer.md)" not in line)

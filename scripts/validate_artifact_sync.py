@@ -622,10 +622,9 @@ def validate_mods() -> None:
             "mod manifest name does not match directory",
             str(path.relative_to(ROOT)),
         )
-    if not mods:
-        return
-
-    index_text = (ROOT / "docs/mods/index.md").read_text()
+    # With no mods left the docs are still checked, so entries for a removed mod fail.
+    index = ROOT / "docs/mods/index.md"
+    index_text = index.read_text() if index.is_file() else ""
     catalogued = set(re.findall(r"\]\(([a-z0-9-]+)\.md\)", index_text))
     check(
         catalogued == set(mods),
@@ -635,6 +634,14 @@ def validate_mods() -> None:
 
     mkdocs = yaml.load((ROOT / "mkdocs.yml").read_text(), Loader=_MkdocsLoader)
     nav = nav_files(mkdocs.get("nav", []) if isinstance(mkdocs, dict) else [])
+    stale_nav = {page for page in nav if page.startswith("mods/") and page != "mods/index.md"} - {
+        f"mods/{identifier}.md" for identifier in mods
+    }
+    check(not stale_nav, "mkdocs.yml nav lists mod pages with no mod", f"{sorted(stale_nav)}")
+    for client, harness in sorted(MOD_HARNESS_PAGES.items()):
+        listed = set(re.findall(r"mods/([a-z0-9-]+)\.md", (ROOT / harness).read_text())) - {"index"}
+        stale = listed - {identifier for identifier, owner in mods.items() if owner == client}
+        check(not stale, "harness page lists mods with no mod", f"{harness}: {sorted(stale)}")
     for identifier, client in sorted(mods.items()):
         page = f"mods/{identifier}.md"
         check(
