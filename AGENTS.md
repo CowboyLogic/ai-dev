@@ -378,6 +378,7 @@ as local files.
    it to the `nav:` tree in `mkdocs.yml` under its client.
 3. Add the mod to the catalog table in `docs/mods/index.md` and to the client's harness page
    (for Claude Code, `docs/harness/claudecode/index.md`).
+4. Run `python scripts/validate_artifact_sync.py`; it fails when a mod is missing from any of these.
 
 ### Adding a new agent
 

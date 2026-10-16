@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate documentation coverage for repository agents, harnesses, and skills.
+"""Validate documentation coverage for repository agents, harnesses, skills, and mods.
 
 Run with ``--write`` after changing an agent roster or client format to refresh
 the generated inventory, roster, and install blocks in the topology pages and the
@@ -590,6 +590,63 @@ def validate_skills() -> None:
         )
 
 
+MOD_HARNESS_PAGES = {"claude": "docs/harness/claudecode/index.md"}
+
+
+def validate_mods() -> None:
+    """Every mod under mods/<client>/ has an overview page in the nav, a catalog row,
+    and an entry on its client's harness page."""
+    manifests = sorted((ROOT / "mods").glob("*/*/.claude-plugin/plugin.json"))
+    mods: dict[str, str] = {}
+    for path in manifests:
+        folder = path.parents[1]
+        identifier, client = folder.name, folder.parent.name
+        mods[identifier] = client
+        try:
+            name = json.loads(path.read_text()).get("name")
+        except (json.JSONDecodeError, AttributeError):
+            check(False, "mod manifest is not a JSON object", str(path.relative_to(ROOT)))
+            continue
+        check(
+            name == identifier,
+            "mod manifest name does not match directory",
+            str(path.relative_to(ROOT)),
+        )
+    if not mods:
+        return
+
+    index_text = (ROOT / "docs/mods/index.md").read_text()
+    catalogued = set(re.findall(r"\]\(([a-z0-9-]+)\.md\)", index_text))
+    check(
+        catalogued == set(mods),
+        "docs/mods/index.md mod coverage drift",
+        f"expected {sorted(mods)}, found {sorted(catalogued)}",
+    )
+
+    mkdocs = yaml.load((ROOT / "mkdocs.yml").read_text(), Loader=_MkdocsLoader)
+    nav = nav_files(mkdocs.get("nav", []) if isinstance(mkdocs, dict) else [])
+    for identifier, client in sorted(mods.items()):
+        page = f"mods/{identifier}.md"
+        check(
+            (ROOT / "docs" / page).is_file(),
+            f"mod {identifier} has no overview page",
+            f"docs/{page}",
+        )
+        check(
+            page in nav,
+            f"mod {identifier} overview page is not in the mkdocs.yml nav",
+            page,
+        )
+        harness = MOD_HARNESS_PAGES.get(client)
+        check(harness is not None, f"mod {identifier} is for an unknown client", client)
+        if harness is not None:
+            check(
+                f"mods/{identifier}.md" in (ROOT / harness).read_text(),
+                f"mod {identifier} is not listed on its client's harness page",
+                harness,
+            )
+
+
 def validate_discovery() -> None:
     discovered_topologies = {
         path.name for path in (ROOT / "agents").glob("*-topology") if path.is_dir()
@@ -636,6 +693,10 @@ def main() -> int:
         validate_skills()
     except (OSError, ValueError, yaml.YAMLError) as error:
         failures.append(f"skills: {error}")
+    try:
+        validate_mods()
+    except (OSError, ValueError, yaml.YAMLError) as error:
+        failures.append(f"mods: {error}")
 
     print(f"artifact-sync: {checks_run} checks")
     if failures:
