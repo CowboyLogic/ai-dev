@@ -43,7 +43,8 @@ const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
  * come back cut at the 4 MiB limit, as `process.run` reports them. With `isRecreated`, gone.txt is
  * staged for deletion and back on disk with its second line changed, and with `isBlobCut` too its
  * committed version passes 4 MiB. With `isUnreadable`, no file can be read. With `isIgnoredCut`,
- * the list of ignored paths comes back cut.
+ * the list of ignored paths comes back cut. `gone` names the deleted file; git's line counts quote
+ * it outside printable ASCII unless asked for `-z`.
  */
 function fakeRepo(
   on: On,
@@ -58,6 +59,7 @@ function fakeRepo(
     isUnreadable = false,
     isBlobCut = false,
     isIgnoredCut = false,
+    gone = 'gone.txt',
   }: {
     fileSize?: number
     hasHead?: boolean
@@ -69,8 +71,11 @@ function fakeRepo(
     isUnreadable?: boolean
     isBlobCut?: boolean
     isIgnoredCut?: boolean
+    gone?: string
   } = {},
 ) {
+  // Quoted as git quotes it in output without -z (its octal escapes left out here).
+  const quoted = /^[\x20-\x7e]*$/.test(gone) ? gone : `"${gone}"`
   on('session.cwd', () => ({ value: ROOT }))
   on('fs.list', ($, e) => ({ value: DISK[e.path] ?? [] }))
   on('fs.stat', () => ({ value: { kind: 'file' as const, size: fileSize, mtimeMs: live.mtimeMs, isLink: false } }))
@@ -80,29 +85,31 @@ function fakeRepo(
   })
   on('process.run', async ($, e) => {
     const args = e.argv.filter(a => a !== '--no-optional-locks').slice(1).join(' ')
+    const z = e.argv.includes('-z')
     if (args === 'rev-parse --show-toplevel') return ok(ROOT + '\n')
     if (args.startsWith('status')) {
       await onStatus?.()
-      if (isRecreated) return ok(' M README.md\0?? src/new.ts\0D  gone.txt\0?? gone.txt\0')
-      return isCut ? ok(' M README.md\0?? src/new.ts\0 D go', 0, true) : ok(' M README.md\0?? src/new.ts\0 D gone.txt\0')
+      if (isRecreated) return ok(` M README.md\0?? src/new.ts\0D  ${gone}\0?? ${gone}\0`)
+      return isCut ? ok(' M README.md\0?? src/new.ts\0 D go', 0, true) : ok(` M README.md\0?? src/new.ts\0 D ${gone}\0`)
     }
     if (args.startsWith('ls-files') && args.includes('--ignored')) {
       return isIgnoredCut ? ok('node_modules/\0vend', 0, true) : ok('node_modules/\0')
     }
     if (args.startsWith('ls-files')) return isCut ? ok('README.md\0src/a.ts\0docs/ind', 0, true) : ok('README.md\0src/a.ts\0docs/index.md\0')
     if (args === 'branch --show-current') return ok('feat/x\n')
-    if (args === 'show HEAD:gone.txt') return isBlobCut ? ok('a\nb', 0, true) : ok('a\nb\nc\n')
-    if (args.endsWith('--no-index -- /dev/null gone.txt')) return ok('diff --git a/gone.txt b/gone.txt\n@@ -0,0 +1,3 @@\n+a\n+B\n+c\n', 1)
-    if (args.endsWith('--no-index -- /dev/stdin gone.txt') && e.init?.stdin === 'a\nb\nc\n') {
-      if (args.includes('--numstat')) return ok('1\t1\t/dev/stdin => gone.txt\n', 1)
-      return ok('diff --git a/dev/stdin b/gone.txt\n--- a/dev/stdin\n+++ b/gone.txt\n@@ -1,3 +1,3 @@\n a\n-b\n+B\n c\n', 1)
+    if (args === `show HEAD:${gone}`) return isBlobCut ? ok('a\nb', 0, true) : ok('a\nb\nc\n')
+    if (args.endsWith(`--no-index -- /dev/null ${gone}`)) return ok(`diff --git a/${gone} b/${gone}\n@@ -0,0 +1,3 @@\n+a\n+B\n+c\n`, 1)
+    if (args.endsWith(`--no-index -- /dev/stdin ${gone}`) && e.init?.stdin === 'a\nb\nc\n') {
+      if (args.includes('--numstat')) return z ? ok(`1\t1\t\0/dev/stdin\0${gone}\0`, 1) : ok(`1\t1\t/dev/stdin => ${quoted}\n`, 1)
+      return ok(`diff --git a/dev/stdin b/${gone}\n--- a/dev/stdin\n+++ b/${gone}\n@@ -1,3 +1,3 @@\n a\n-b\n+B\n c\n`, 1)
     }
     if (args.startsWith('rev-parse --verify')) return hasHead ? ok('abc\n') : ok('', 1)
     if (args === 'hash-object -t tree /dev/null') return ok(EMPTY_TREE + '\n')
-    if (args === 'diff --numstat --no-ext-diff ' + EMPTY_TREE) return ok('2\t0\tREADME.md\n')
-    if (args === 'diff --numstat --no-ext-diff --cached') return ok('2\t0\tREADME.md\n')
-    if (args === 'diff --numstat --no-ext-diff') return ok('1\t1\tREADME.md\n')
-    if (args.startsWith('diff --numstat')) return ok('1\t1\tREADME.md\n0\t3\tgone.txt\n', 0, isCut)
+    const end = z ? '\0' : '\n'
+    if (args.startsWith('diff --numstat') && args.endsWith(EMPTY_TREE)) return ok('2\t0\tREADME.md' + end)
+    if (args.startsWith('diff --numstat')) {
+      return ok('1\t1\tREADME.md' + end + '0\t3\t' + (z ? gone : quoted) + end, 0, isCut)
+    }
     if (args.includes('README.md')) {
       live.diffRuns = (live.diffRuns ?? 0) + 1
       return ok(live.diff, 0, isCut)
@@ -319,6 +326,23 @@ describe('git-aware-file-explorer pane', () => {
     await ui.press({ key: 'node:gone.txt' })
     expect(await ui.find({ type: 'Text', text: 'B' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /deletion staged, back on disk/ })).toBeDefined()
+
+    await ui.unmount()
+  })
+
+  test('counts a recreated file once when git quotes its name', async ($, on) => {
+    fakeRepo(on, { isRecreated: true, gone: 'café.txt' })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+
+    // café.txt's net +1 −1 replaces its −3, as for any other name, and is not added beside it.
+    expect(await ui.find({ type: 'Text', text: '+4' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '−2' })).toBeDefined()
 
     await ui.unmount()
   })

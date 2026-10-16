@@ -201,16 +201,35 @@ async function scan($: $): Promise<Scan> {
   }
 }
 
-/** Sums `git diff --numstat` output; binary files (`-`) count no lines. */
-export function sumNumstat(out: string): { added: number; deleted: number } {
-  let added = 0
-  let deleted = 0
-  for (const line of out.split('\n')) {
-    const [a, d] = line.split('\t')
-    if (a && /^\d+$/.test(a)) added += Number(a)
-    if (d && /^\d+$/.test(d)) deleted += Number(d)
+export type Numstat = { added: number; deleted: number; path: string }
+
+/**
+ * Entries of `git diff --numstat -z`, each path verbatim (without -z git quotes a name outside
+ * printable ASCII). A rename's paths follow its counts, and it is named by the new one; binary
+ * files (`-`) count no lines.
+ */
+export function parseNumstat(out: string): Numstat[] {
+  const entries: Numstat[] = []
+  const parts = out.split('\0')
+  const count = (n: string) => (/^\d+$/.test(n) ? Number(n) : 0)
+  for (let i = 0; i < parts.length; i++) {
+    const record = parts[i] as string
+    const a = record.indexOf('\t')
+    const d = record.indexOf('\t', a + 1)
+    if (a < 0 || d < 0) continue
+    let path = record.slice(d + 1)
+    if (path === '') {
+      path = parts[i + 2] ?? ''
+      i += 2
+    }
+    entries.push({ added: count(record.slice(0, a)), deleted: count(record.slice(a + 1, d)), path })
   }
-  return { added, deleted }
+  return entries
+}
+
+/** Lines added and deleted across numstat entries. */
+export function sumNumstat(entries: Numstat[]): { added: number; deleted: number } {
+  return entries.reduce((t, e) => ({ added: t.added + e.added, deleted: t.deleted + e.deleted }), { added: 0, deleted: 0 })
 }
 
 /** Lines in a text, as git counts them: a last line without a newline still counts. */
@@ -238,21 +257,22 @@ async function diffBase($: $, root: string): Promise<string> {
 /** Lines added and deleted against HEAD (staged and unstaged), untracked files counted as added. */
 async function lineTotals($: $, root: string, changes: Change[]) {
   const base = await diffBase($, root)
-  const out = await git($, root, ['diff', '--numstat', '--no-ext-diff', base])
+  const out = await git($, root, ['diff', '--numstat', '-z', '--no-ext-diff', base])
+  // Output past 4 MiB is cut: keep the whole entries (the totals are marked as floors below).
+  let numstat = parseNumstat(out.isStdoutTruncated ? out.stdout.slice(0, out.stdout.lastIndexOf('\0') + 1) : out.stdout)
   // A recreated path counts its net change, in place of the deletion the diff against base reports.
-  let numstat = out.stdout
   let isUncounted = false
   let isCut = false
   for (const c of changes.filter(isRecreated)) {
-    const net = await recreatedDiff($, root, base, c.path, ['--numstat'])
+    const net = await recreatedDiff($, root, base, c.path, ['--numstat', '-z'])
     if (net === undefined) {
       isUncounted = true
       continue
     }
-    const others = numstat.split('\n').filter(line => line.split('\t')[2] !== c.path).join('\n')
+    const others = numstat.filter(e => e.path !== c.path)
     // Too large to diff: neither its deletion nor its contents count, and both totals are floors.
     if (net === 'cut') isCut = true
-    numstat = net === 'cut' ? others : others + '\n' + net.stdout
+    numstat = net === 'cut' ? others : [...others, ...parseNumstat(net.stdout)]
   }
   const total: { added: number; deleted: number; partial?: boolean; isTruncated?: boolean } = sumNumstat(numstat)
   if (out.isStdoutTruncated || isCut) total.isTruncated = true

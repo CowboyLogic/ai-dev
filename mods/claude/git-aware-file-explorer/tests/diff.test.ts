@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { canGoUp, countLines, diffLines, lastTop, sumNumstat } from '../hooks/register'
+import { canGoUp, countLines, diffLines, lastTop, parseNumstat, sumNumstat } from '../hooks/register'
 
 const DIFF = [
   'diff --git a/f b/f',
@@ -35,7 +35,11 @@ describe('diff windowing', () => {
   })
 
   test('numstat sums lines and skips binary files', async () => {
-    expect(sumNumstat('3\t1\ta.md\n-\t-\tlogo.png\n2\t0\tb.ts\n')).toEqual({ added: 5, deleted: 1 })
+    expect(sumNumstat(parseNumstat(['3\t1\ta.md', '-\t-\tlogo.png', '2\t0\tb.ts', ''].join('\0')))).toEqual({ added: 5, deleted: 1 })
+  })
+
+  test('numstat paths come verbatim, a rename named by its new path', async () => {
+    expect(parseNumstat(['1\t0\tcafé\tx.md', '4\t2\t', 'old.ts', 'new.ts', ''].join('\0')).map(e => e.path)).toEqual(['café\tx.md', 'new.ts'])
   })
 
   test('lines count as git counts them', async () => {
