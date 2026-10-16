@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { countLines, diffLines, sumNumstat } from '../hooks/register'
+import { countLines, diffLines, lastTop, sumNumstat } from '../hooks/register'
 
 const DIFF = [
   'diff --git a/f b/f',
@@ -22,6 +22,16 @@ describe('diff windowing', () => {
     const lines = diffLines(DIFF)
     expect(lines.length).toBe(7)
     expect(lines[4]).toEqual({ text: ' ten', kind: ' ', o: 10, n: 10, hunk: 1 })
+  })
+
+  test('the window stops where the last line reaches the bottom, separators counted', async () => {
+    const lines = diffLines(DIFF)
+    // 7 lines and one separator need 8 rows: they fit whole.
+    expect(lastTop(lines, 8)).toBe(0)
+    // In 4 rows the last hunk's 3 lines fit, and not the separator above them.
+    expect(lastTop(lines, 4)).toBe(4)
+    expect(lastTop(lines, 3)).toBe(4)
+    expect(lastTop(lines, 2)).toBe(5)
   })
 
   test('numstat sums lines and skips binary files', async () => {

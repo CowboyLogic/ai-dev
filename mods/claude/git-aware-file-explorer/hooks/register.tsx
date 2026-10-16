@@ -49,7 +49,7 @@ type $ = EngineInterface
  * What the last drawing laid out, for the scroll hook to tell the two sides apart.
  * A module variable on purpose: it is layout, redrawn on every render, not state.
  */
-const layout = { treeColumns: 0, panelLines: 0, panelRoom: 0, hasFile: false, offset: 0, spacer: 0, spare: 0 }
+const layout = { treeColumns: 0, panelLast: 0, panelRoom: 0, hasFile: false, offset: 0, spacer: 0, spare: 0 }
 
 type Row = {
   path: string
@@ -345,6 +345,19 @@ async function buildRows(
 /** One body line of a unified diff, with the line numbers it stands at. */
 export type DiffLine = { text: string; kind: ' ' | '+' | '-'; o: number; n: number; hunk: number }
 
+/**
+ * The furthest a diff's window can start and still show its last line in `room` rows, counting
+ * the separator row drawn between two hunks.
+ */
+export function lastTop(lines: DiffLine[], room: number): number {
+  let used = 0
+  for (let i = lines.length - 1; i >= 0; i--) {
+    used += 1 + (i < lines.length - 1 && lines[i]?.hunk !== lines[i + 1]?.hunk ? 1 : 0)
+    if (used > room) return i + 1
+  }
+  return 0
+}
+
 /** Reads a unified diff's hunks into numbered lines; file headers are dropped. */
 export function diffLines(diff: string): DiffLine[] {
   const out: DiffLine[] = []
@@ -421,8 +434,7 @@ export const register: Register = on => {
     const isOverPanel = e.pointer ? e.pointer.column >= layout.treeColumns + GUTTER : true
     let moved: number
     if (layout.hasFile && isOverPanel) {
-      const last = Math.max(0, layout.panelLines - Math.ceil(layout.panelRoom / 2))
-      moved = Math.min(last, Math.max(0, (await read($, panelOffsetAtom)) + e.by))
+      moved = Math.min(layout.panelLast, Math.max(0, (await read($, panelOffsetAtom)) + e.by))
       await update($, panelOffsetAtom, () => moved)
     } else {
       // The tree rows hidden below the window are as far as it can move down; a tree row is at least one.
@@ -437,9 +449,7 @@ export const register: Register = on => {
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     /** Moves the file panel's window by `by` lines, kept within the file. */
     const scrollPanel = (by: number) =>
-      update($, panelOffsetAtom, cur =>
-        Math.min(Math.max(0, layout.panelLines - Math.ceil(layout.panelRoom / 2)), Math.max(0, cur + by)),
-      )
+      update($, panelOffsetAtom, cur => Math.min(layout.panelLast, Math.max(0, cur + by)))
 
     const els = $.ui.resolve(e)
     const { Box, Text, Button, Code } = els
@@ -595,7 +605,8 @@ export const register: Register = on => {
     // The file panel is pinned over the pane's window: it moves down as the tree scrolls,
     // so it stays in view, and scrolls its own content through panelOffset.
     const panelRoom = Math.max(4, bodyRows - BRANCH_ROWS - 3)
-    let panelLines = 0
+    // The first line the panel can start at and still end on the file's last line.
+    let panelLast = 0
     let body
     let fileLines: { added: number; deleted: number } | undefined
     if (selected === null) {
@@ -608,7 +619,7 @@ export const register: Register = on => {
       )
     } else if (change) {
       const lines = diffLines(await diffFor($, s, change))
-      panelLines = lines.length
+      panelLast = lastTop(lines, panelRoom)
       if (lines.length === 0) body = <Text dimColor>No textual difference (binary or mode change).</Text>
       else {
         const top = Math.min(panelOffset, Math.max(0, lines.length - 1))
@@ -616,10 +627,12 @@ export const register: Register = on => {
         const pad = (no: number | undefined) => (no === undefined ? '' : String(no)).padStart(width)
         // Each line is a row of its own, tinted by kind; a gap between hunks costs a separator row.
         const drawn = []
-        for (let i = top, used = 0; i < lines.length && used < panelRoom; i++) {
+        for (let i = top, used = 0; i < lines.length; i++) {
           const l = lines[i] as DiffLine
           const tint = l.kind === '+' ? ADDED : l.kind === '-' ? DELETED : undefined
-          if (i > top && lines[i - 1]?.hunk !== l.hunk) {
+          const gap = i > top && lines[i - 1]?.hunk !== l.hunk
+          if (used + (gap ? 2 : 1) > panelRoom) break
+          if (gap) {
             drawn.push(
               <Text key={'gap:' + i} mono dimColor>
                 {' '.repeat(width * 2 + 2)}⋯
@@ -657,7 +670,7 @@ export const register: Register = on => {
         if (text.includes('\0')) body = <Text dimColor>Binary file.</Text>
         else {
           const lines = text.split('\n')
-          panelLines = lines.length
+          panelLast = Math.max(0, lines.length - panelRoom)
           const top = Math.min(panelOffset, Math.max(0, lines.length - 1))
           body = (
             <Code
@@ -676,8 +689,8 @@ export const register: Register = on => {
     // the branch bar stays at its top until the next wheel move brings it to rest.
     const canGoUp = selected !== null ? panelOffset > 0 : treeOffset > 0
     const spacer = Math.max(canGoUp ? ROOM : 0, offset)
-    const spare = selected !== null && panelOffset < Math.max(0, panelLines - Math.ceil(panelRoom / 2)) ? ROOM : 0
-    Object.assign(layout, { treeColumns, panelLines, panelRoom, hasFile: selected !== null, offset, spacer, spare })
+    const spare = selected !== null && panelOffset < panelLast ? ROOM : 0
+    Object.assign(layout, { treeColumns, panelLast, panelRoom, hasFile: selected !== null, offset, spacer, spare })
 
     const slash = selected === null ? -1 : selected.lastIndexOf('/')
     // Under the branch bar, down to the bottom of the pane's window.
