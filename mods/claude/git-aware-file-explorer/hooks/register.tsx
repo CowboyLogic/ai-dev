@@ -206,12 +206,33 @@ async function lineTotals($: $, root: string, changes: Change[]) {
   return total
 }
 
-/** Scans and writes the result only when it changed, so idle scans redraw nothing. */
-async function rescan($: $) {
-  const next = await scan($)
-  // Any write redraws the pane, so an unchanged scan is not written at all.
-  if (JSON.stringify(await read($, scanAtom)) === JSON.stringify(next)) return
-  await update($, scanAtom, () => next)
+/** The scan running now, and whether another was asked for while it ran (see rescan). */
+let scanning: Promise<void> | undefined
+let isRescanDue = false
+
+/**
+ * Scans and writes the result only when it changed, so idle scans redraw nothing. Scans never
+ * overlap: one asked for while another runs is folded into a single scan after it, so an older
+ * scan can never finish last and overwrite a newer one.
+ */
+function rescan($: $): Promise<void> {
+  if (scanning) {
+    isRescanDue = true
+    return scanning
+  }
+  scanning = (async () => {
+    try {
+      do {
+        isRescanDue = false
+        const next = await scan($)
+        // Any write redraws the pane, so an unchanged scan is not written at all.
+        if (JSON.stringify(await read($, scanAtom)) !== JSON.stringify(next)) await update($, scanAtom, () => next)
+      } while (isRescanDue)
+    } finally {
+      scanning = undefined
+    }
+  })()
+  return scanning
 }
 
 /** Rests the pane's window with the branch bar at its top (see ROOM). */

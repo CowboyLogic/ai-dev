@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'claude-code/testing'
+import { describe, expect, mock, test } from 'claude-code/testing'
 import type { FsEntry, On } from 'claude-code'
 
 const ROOT = '/repo'
@@ -37,16 +37,23 @@ const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
 /**
  * A repository with one modified, one untracked and one deleted file. Without `hasHead` it has no
  * commits yet, and README.md is staged with its second line then changed again unstaged.
+ * `onStatus` runs inside each `git status`, the call every scan makes first.
  */
-function fakeRepo(on: On, fileSize = 4, hasHead = true) {
+function fakeRepo(
+  on: On,
+  { fileSize = 4, hasHead = true, onStatus }: { fileSize?: number; hasHead?: boolean; onStatus?: () => Promise<void> } = {},
+) {
   on('session.cwd', () => ({ value: ROOT }))
   on('fs.list', ($, e) => ({ value: DISK[e.path] ?? [] }))
   on('fs.stat', () => ({ value: { kind: 'file' as const, size: fileSize, mtimeMs: 1, isLink: false } }))
   on('fs.read', () => ({ value: 'a\nb\n' }))
-  on('process.run', ($, e) => {
+  on('process.run', async ($, e) => {
     const args = e.argv.filter(a => a !== '--no-optional-locks').slice(1).join(' ')
     if (args === 'rev-parse --show-toplevel') return ok(ROOT + '\n')
-    if (args.startsWith('status')) return ok(' M README.md\0?? src/new.ts\0 D gone.txt\0')
+    if (args.startsWith('status')) {
+      await onStatus?.()
+      return ok(' M README.md\0?? src/new.ts\0 D gone.txt\0')
+    }
     if (args.startsWith('ls-files') && args.includes('--ignored')) return ok('node_modules/\0')
     if (args.startsWith('ls-files')) return ok('README.md\0src/a.ts\0docs/index.md\0')
     if (args === 'branch --show-current') return ok('feat/x\n')
@@ -124,7 +131,7 @@ describe('git-aware-file-explorer pane', () => {
   }
 
   test('marks the added total as a minimum when a new file is too large to count', async ($, on) => {
-    fakeRepo(on, 1024 * 1024)
+    fakeRepo(on, { fileSize: 1024 * 1024 })
     const ui = await $.ui.mount({
       plugin: 'git-aware-file-explorer',
       surface: 'desktop',
@@ -140,7 +147,7 @@ describe('git-aware-file-explorer pane', () => {
   })
 
   test('counts lines once on a branch with no commits yet', async ($, on) => {
-    fakeRepo(on, 4, false)
+    fakeRepo(on, { hasHead: false })
     const ui = await $.ui.mount({
       plugin: 'git-aware-file-explorer',
       surface: 'desktop',
@@ -152,6 +159,40 @@ describe('git-aware-file-explorer pane', () => {
     // README.md's 2 staged lines and src/new.ts's 2 untracked ones; the unstaged edit adds none.
     expect(await ui.find({ type: 'Text', text: '+4' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: '−0' })).toBeDefined()
+
+    await ui.unmount()
+  })
+
+  test('runs one scan at a time and folds the requests made meanwhile into one', async ($, on) => {
+    const clock = mock.clock(on)
+    let isSlow = false
+    let running = 0
+    let most = 0
+    let scans = 0
+    fakeRepo(on, {
+      onStatus: async () => {
+        if (!isSlow) return
+        scans++
+        most = Math.max(most, ++running)
+        await clock.sleep(20)
+        running--
+      },
+    })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+    isSlow = true
+
+    const presses = Promise.all([ui.press({ key: 'refresh' }), ui.press({ key: 'refresh' }), ui.press({ key: 'refresh' })])
+    await clock.advance(20)
+    await clock.advance(20)
+    await presses
+    expect(most).toBe(1)
+    expect(scans).toBe(2)
 
     await ui.unmount()
   })
