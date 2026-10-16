@@ -194,7 +194,8 @@ async function scan($: $): Promise<Scan> {
         .split('\0')
         .filter(Boolean),
       isIgnoredTruncated: ignored.isStdoutTruncated || undefined,
-      error: status.exitCode === 0 ? undefined : status.stderr.trim(),
+      // A failed status reads no changes; the error says so even when git printed nothing.
+      error: status.exitCode === 0 ? undefined : status.stderr.trim() || `git status exited ${status.exitCode}`,
     }
   } catch (err) {
     return { root: cwd, isRepo: false, changes: [], ignored: [], error: String(err) }
@@ -732,7 +733,8 @@ export const register: Register = on => {
               </Text>
             </Text>
           )}
-          {s.isRepo && (
+          {s.isRepo && s.error !== undefined && <Text color="error">status unavailable</Text>}
+          {s.isRepo && s.error === undefined && (
             <Button key="changes" plain onPress={() => update($, changedOnlyAtom, v => !v).then(toTreeTop)}>
               {n === 0 ? (
                 <Text dimColor>clean</Text>

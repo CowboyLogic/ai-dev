@@ -44,7 +44,7 @@ const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
  * staged for deletion and back on disk with its second line changed, and with `isBlobCut` too its
  * committed version passes 4 MiB. With `isUnreadable`, no file can be read. With `isIgnoredCut`,
  * the list of ignored paths comes back cut. With `isNewGone`, src/new.ts is gone by the time it is
- * looked at. `gone` names the deleted file; git's line counts quote
+ * looked at. With `statusError`, git status fails with that message. `gone` names the deleted file; git's line counts quote
  * it outside printable ASCII unless asked for `-z`.
  */
 function fakeRepo(
@@ -62,6 +62,7 @@ function fakeRepo(
     isIgnoredCut = false,
     gone = 'gone.txt',
     isNewGone = false,
+    statusError,
   }: {
     fileSize?: number
     hasHead?: boolean
@@ -75,6 +76,7 @@ function fakeRepo(
     isIgnoredCut?: boolean
     gone?: string
     isNewGone?: boolean
+    statusError?: string
   } = {},
 ) {
   // Quoted as git quotes it in output without -z (its octal escapes left out here).
@@ -95,6 +97,7 @@ function fakeRepo(
     if (args === 'rev-parse --show-toplevel') return ok(ROOT + '\n')
     if (args.startsWith('status')) {
       await onStatus?.()
+      if (statusError !== undefined) return { value: { ...ok('', 128).value, stderr: statusError } }
       if (isRecreated) return ok(` M README.md\0?? src/new.ts\0D  ${gone}\0?? ${gone}\0`)
       return isCut ? ok(' M README.md\0?? src/new.ts\0 D go', 0, true) : ok(` M README.md\0?? src/new.ts\0 D ${gone}\0`)
     }
@@ -384,6 +387,26 @@ describe('git-aware-file-explorer pane', () => {
 
     await ui.unmount()
   })
+
+  for (const statusError of ['fatal: index file corrupt', '']) {
+    test(`says the status is unavailable when git status fails (${statusError || 'no message'})`, async ($, on) => {
+      fakeRepo(on, { statusError })
+      const ui = await $.ui.mount({
+        plugin: 'git-aware-file-explorer',
+        surface: 'desktop',
+        component: 'Pane',
+        requestId: 'git-aware-file-explorer',
+        props: PROPS,
+      })
+
+      // No changes were read, which is not the same as a clean tree.
+      expect(await ui.find({ type: 'Text', text: 'clean' })).toBeUndefined()
+      expect(await ui.find({ type: 'Text', text: 'status unavailable' })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: statusError || 'git status exited 128' })).toBeDefined()
+
+      await ui.unmount()
+    })
+  }
 
   test('marks a recreated file too large to diff as incomplete', async ($, on) => {
     fakeRepo(on, { isRecreated: true, isBlobCut: true })
