@@ -178,13 +178,19 @@ export function countLines(text: string): number {
 const UNTRACKED_LIMIT = 200
 const UNTRACKED_BYTES = 512 * 1024
 
+/**
+ * What a diff compares the working tree against: HEAD, or on a branch with no commits yet the empty
+ * tree, so staged and unstaged changes come out as one diff and no line counts twice.
+ */
+async function diffBase($: $, root: string): Promise<string> {
+  if ((await git($, root, ['rev-parse', '--verify', '-q', 'HEAD'])).exitCode === 0) return 'HEAD'
+  return (await git($, root, ['hash-object', '-t', 'tree', '/dev/null'])).stdout.trim()
+}
+
 /** Lines added and deleted against HEAD (staged and unstaged), untracked files counted as added. */
 async function lineTotals($: $, root: string, changes: Change[]) {
-  const hasHead = (await git($, root, ['rev-parse', '--verify', '-q', 'HEAD'])).exitCode === 0
-  const outs = hasHead
-    ? [await git($, root, ['diff', '--numstat', '--no-ext-diff', 'HEAD'])]
-    : [await git($, root, ['diff', '--numstat', '--no-ext-diff', '--cached']), await git($, root, ['diff', '--numstat', '--no-ext-diff'])]
-  const total: { added: number; deleted: number; partial?: boolean } = sumNumstat(outs.map(o => o.stdout).join('\n'))
+  const out = await git($, root, ['diff', '--numstat', '--no-ext-diff', await diffBase($, root)])
+  const total: { added: number; deleted: number; partial?: boolean } = sumNumstat(out.stdout)
   const untracked = changes.filter(c => c.x === '?')
   if (untracked.length > UNTRACKED_LIMIT) total.partial = true
   for (const c of untracked.slice(0, UNTRACKED_LIMIT)) {
@@ -393,11 +399,7 @@ async function diffFor($: $, s: Scan, c: Change): Promise<string> {
     return (await git($, s.root, ['diff', ...flags, '--no-index', '--', '/dev/null', c.path])).stdout
   }
   const paths = c.from ? [c.from, c.path] : [c.path]
-  const hasHead = (await git($, s.root, ['rev-parse', '--verify', '-q', 'HEAD'])).exitCode === 0
-  if (hasHead) return (await git($, s.root, ['diff', ...flags, '-M', 'HEAD', '--', ...paths])).stdout
-  const staged = await git($, s.root, ['diff', ...flags, '--cached', '--', ...paths])
-  const unstaged = await git($, s.root, ['diff', ...flags, '--', ...paths])
-  return staged.stdout + unstaged.stdout
+  return (await git($, s.root, ['diff', ...flags, '-M', await diffBase($, s.root), '--', ...paths])).stdout
 }
 
 const FOLDER_ICON =

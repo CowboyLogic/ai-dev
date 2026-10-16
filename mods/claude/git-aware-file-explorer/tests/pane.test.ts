@@ -32,8 +32,13 @@ const DISK: Record<string, FsEntry[]> = {
   [ROOT + '/docs']: [file('index.md')],
 }
 
-/** A repository with one modified, one untracked and one deleted file. */
-function fakeRepo(on: On, fileSize = 4) {
+const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
+
+/**
+ * A repository with one modified, one untracked and one deleted file. Without `hasHead` it has no
+ * commits yet, and README.md is staged with its second line then changed again unstaged.
+ */
+function fakeRepo(on: On, fileSize = 4, hasHead = true) {
   on('session.cwd', () => ({ value: ROOT }))
   on('fs.list', ($, e) => ({ value: DISK[e.path] ?? [] }))
   on('fs.stat', () => ({ value: { kind: 'file' as const, size: fileSize, mtimeMs: 1, isLink: false } }))
@@ -45,7 +50,11 @@ function fakeRepo(on: On, fileSize = 4) {
     if (args.startsWith('ls-files') && args.includes('--ignored')) return ok('node_modules/\0')
     if (args.startsWith('ls-files')) return ok('README.md\0src/a.ts\0docs/index.md\0')
     if (args === 'branch --show-current') return ok('feat/x\n')
-    if (args.startsWith('rev-parse --verify')) return ok('abc\n')
+    if (args.startsWith('rev-parse --verify')) return hasHead ? ok('abc\n') : ok('', 1)
+    if (args === 'hash-object -t tree /dev/null') return ok(EMPTY_TREE + '\n')
+    if (args === 'diff --numstat --no-ext-diff ' + EMPTY_TREE) return ok('2\t0\tREADME.md\n')
+    if (args === 'diff --numstat --no-ext-diff --cached') return ok('2\t0\tREADME.md\n')
+    if (args === 'diff --numstat --no-ext-diff') return ok('1\t1\tREADME.md\n')
     if (args.startsWith('diff --numstat')) return ok('1\t1\tREADME.md\n0\t3\tgone.txt\n')
     if (args.includes('README.md')) return ok(DIFF)
     return ok('', 1)
@@ -126,6 +135,23 @@ describe('git-aware-file-explorer pane', () => {
 
     expect(await ui.find({ type: 'Text', text: '+1+' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: '−4' })).toBeDefined()
+
+    await ui.unmount()
+  })
+
+  test('counts lines once on a branch with no commits yet', async ($, on) => {
+    fakeRepo(on, 4, false)
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+
+    // README.md's 2 staged lines and src/new.ts's 2 untracked ones; the unstaged edit adds none.
+    expect(await ui.find({ type: 'Text', text: '+4' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '−0' })).toBeDefined()
 
     await ui.unmount()
   })
