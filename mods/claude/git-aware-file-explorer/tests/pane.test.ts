@@ -41,7 +41,8 @@ const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
  * `live` is read on each call: README.md's diff and every file's modification time; `diffRuns`
  * counts the diffs of README.md run. With `isCut`, git's status, line counts, file list and diff
  * come back cut at the 4 MiB limit, as `process.run` reports them. With `isRecreated`, gone.txt is
- * staged for deletion and back on disk with its second line changed.
+ * staged for deletion and back on disk with its second line changed. With `isUnreadable`, no file
+ * can be read.
  */
 function fakeRepo(
   on: On,
@@ -53,6 +54,7 @@ function fakeRepo(
     live = { diff: DIFF, mtimeMs: 1 } as { diff: string; mtimeMs: number; diffRuns?: number },
     isCut = false,
     isRecreated = false,
+    isUnreadable = false,
   }: {
     fileSize?: number
     hasHead?: boolean
@@ -61,12 +63,16 @@ function fakeRepo(
     live?: { diff: string; mtimeMs: number; diffRuns?: number }
     isCut?: boolean
     isRecreated?: boolean
+    isUnreadable?: boolean
   } = {},
 ) {
   on('session.cwd', () => ({ value: ROOT }))
   on('fs.list', ($, e) => ({ value: DISK[e.path] ?? [] }))
   on('fs.stat', () => ({ value: { kind: 'file' as const, size: fileSize, mtimeMs: live.mtimeMs, isLink: false } }))
-  on('fs.read', () => ({ value: text }))
+  on('fs.read', () => {
+    if (isUnreadable) throw new Error('EACCES: permission denied')
+    return { value: text }
+  })
   on('process.run', async ($, e) => {
     const args = e.argv.filter(a => a !== '--no-optional-locks').slice(1).join(' ')
     if (args === 'rev-parse --show-toplevel') return ok(ROOT + '\n')
@@ -288,6 +294,22 @@ describe('git-aware-file-explorer pane', () => {
     await ui.press({ key: 'node:gone.txt' })
     expect(await ui.find({ type: 'Text', text: 'B' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /deletion staged, back on disk/ })).toBeDefined()
+
+    await ui.unmount()
+  })
+
+  test('marks the added total as a minimum when a new file cannot be read', async ($, on) => {
+    fakeRepo(on, { isUnreadable: true })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+
+    // README.md's 1 added line; src/new.ts went uncounted, so the total is a floor.
+    expect(await ui.find({ type: 'Text', text: '+1+' })).toBeDefined()
 
     await ui.unmount()
   })

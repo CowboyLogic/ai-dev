@@ -244,7 +244,10 @@ async function lineTotals($: $, root: string, changes: Change[]) {
       total.partial = true
       continue
     }
-    total.added += countLines(await $.fs.read(path).catch(() => ''))
+    // A file that can't be read goes uncounted, so the total is a floor, not an exact zero for it.
+    const text = await $.fs.read(path).catch(() => undefined)
+    if (text === undefined) total.partial = true
+    else total.added += countLines(text)
   }
   return total
 }
