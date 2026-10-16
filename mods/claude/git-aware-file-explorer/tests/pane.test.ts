@@ -43,7 +43,8 @@ const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
  * come back cut at the 4 MiB limit, as `process.run` reports them. With `isRecreated`, gone.txt is
  * staged for deletion and back on disk with its second line changed, and with `isBlobCut` too its
  * committed version passes 4 MiB. With `isUnreadable`, no file can be read. With `isIgnoredCut`,
- * the list of ignored paths comes back cut. `gone` names the deleted file; git's line counts quote
+ * the list of ignored paths comes back cut. With `isNewGone`, src/new.ts is gone by the time it is
+ * looked at. `gone` names the deleted file; git's line counts quote
  * it outside printable ASCII unless asked for `-z`.
  */
 function fakeRepo(
@@ -60,6 +61,7 @@ function fakeRepo(
     isBlobCut = false,
     isIgnoredCut = false,
     gone = 'gone.txt',
+    isNewGone = false,
   }: {
     fileSize?: number
     hasHead?: boolean
@@ -72,13 +74,17 @@ function fakeRepo(
     isBlobCut?: boolean
     isIgnoredCut?: boolean
     gone?: string
+    isNewGone?: boolean
   } = {},
 ) {
   // Quoted as git quotes it in output without -z (its octal escapes left out here).
   const quoted = /^[\x20-\x7e]*$/.test(gone) ? gone : `"${gone}"`
   on('session.cwd', () => ({ value: ROOT }))
   on('fs.list', ($, e) => ({ value: DISK[e.path] ?? [] }))
-  on('fs.stat', () => ({ value: { kind: 'file' as const, size: fileSize, mtimeMs: live.mtimeMs, isLink: false } }))
+  on('fs.stat', ($, e) => {
+    if (isNewGone && e.path.endsWith('/src/new.ts')) throw new Error('ENOENT: no such file or directory')
+    return { value: { kind: 'file' as const, size: fileSize, mtimeMs: live.mtimeMs, isLink: false } }
+  })
   on('fs.read', () => {
     if (isUnreadable) throw new Error('EACCES: permission denied')
     return { value: text }
@@ -349,6 +355,22 @@ describe('git-aware-file-explorer pane', () => {
 
   test('marks the added total as a minimum when a new file cannot be read', async ($, on) => {
     fakeRepo(on, { isUnreadable: true })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+
+    // README.md's 1 added line; src/new.ts went uncounted, so the total is a floor.
+    expect(await ui.find({ type: 'Text', text: '+1+' })).toBeDefined()
+
+    await ui.unmount()
+  })
+
+  test('marks the added total as a minimum when a new file is gone before it is counted', async ($, on) => {
+    fakeRepo(on, { isNewGone: true })
     const ui = await $.ui.mount({
       plugin: 'git-aware-file-explorer',
       surface: 'desktop',

@@ -282,7 +282,12 @@ async function lineTotals($: $, root: string, changes: Change[]) {
   for (const c of untracked.slice(0, UNTRACKED_LIMIT)) {
     const path = root + '/' + c.path
     const stat = await $.fs.stat(path).catch(() => undefined)
-    if (!stat || stat.kind !== 'file') continue
+    // Gone since git listed it, or unreadable: uncounted, so the total is a floor.
+    if (!stat) {
+      total.partial = true
+      continue
+    }
+    if (stat.kind !== 'file') continue
     if (stat.size > UNTRACKED_BYTES) {
       total.partial = true
       continue
