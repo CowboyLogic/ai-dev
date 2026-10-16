@@ -418,7 +418,12 @@ function listFiles($: $, s: Scan): Promise<{ files: string[]; incomplete?: strin
 async function listFilesNow($: $, s: Scan): Promise<{ files: string[]; incomplete?: string }> {
   if (!s.isRepo) {
     const walked = await walkFiles($, s.root)
-    return { files: walked.files, incomplete: walked.isCapped ? `Searched the first ${WALK_LIMIT} files only.` : undefined }
+    const notes = [
+      walked.isCapped && `Searched the first ${WALK_LIMIT} files only.`,
+      walked.unread === 1 && '1 folder could not be read and was not searched.',
+      walked.unread > 1 && `${walked.unread} folders could not be read and were not searched.`,
+    ]
+    return { files: walked.files, incomplete: notes.filter(Boolean).join(' ') || undefined }
   }
   const listed = await git($, s.root, ['ls-files', '-z', '--cached', '--others', '--exclude-standard'])
   // Output past 4 MiB is cut: keep the whole names, and say the search stopped there.
@@ -431,15 +436,20 @@ async function listFilesNow($: $, s: Scan): Promise<{ files: string[]; incomplet
 
 /**
  * File paths under `root`, breadth first, up to WALK_LIMIT: what a filter searches without git.
- * `isCapped` says the walk stopped there, so a search over it may miss files.
+ * `isCapped` says the walk stopped there, and `unread` counts the folders it could not list
+ * (permissions, I/O), so a search over it may miss files.
  */
-async function walkFiles($: $, root: string): Promise<{ files: string[]; isCapped: boolean }> {
+async function walkFiles($: $, root: string): Promise<{ files: string[]; isCapped: boolean; unread: number }> {
   const files: string[] = []
   const dirs = ['']
+  let unread = 0
   let i = 0
   for (; i < dirs.length && files.length < WALK_LIMIT; i++) {
     const dir = dirs[i] as string
-    const entries = await $.fs.list(root + (dir === '' ? '' : '/' + dir)).catch(() => [])
+    const entries = await $.fs.list(root + (dir === '' ? '' : '/' + dir)).catch(() => {
+      unread++
+      return []
+    })
     for (const en of entries) {
       if (HIDDEN.has(en.name)) continue
       const path = dir === '' ? en.name : dir + '/' + en.name
@@ -449,7 +459,7 @@ async function walkFiles($: $, root: string): Promise<{ files: string[]; isCappe
       else files.push(path)
     }
   }
-  return { files: files.slice(0, WALK_LIMIT), isCapped: files.length > WALK_LIMIT || i < dirs.length }
+  return { files: files.slice(0, WALK_LIMIT), isCapped: files.length > WALK_LIMIT || i < dirs.length, unread }
 }
 
 async function buildRows(

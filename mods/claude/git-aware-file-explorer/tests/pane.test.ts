@@ -514,6 +514,28 @@ describe('git-aware-file-explorer pane', () => {
     await ui.unmount()
   })
 
+  test('says when a search outside a git repository could not read a folder', async ($, on) => {
+    on('session.cwd', () => ({ value: ROOT }))
+    on('fs.list', ($, e) => {
+      if (e.path === ROOT + '/locked') throw new Error('EACCES: permission denied')
+      return { value: e.path === ROOT ? [file('a.md'), dir('locked')] : [] }
+    })
+    on('process.run', () => ok('', 128))
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+
+    await ui.input({ key: 'filter', text: 'target', kind: 'change' })
+    expect(await ui.find({ type: 'Text', text: 'No matching files.' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /1 folder could not be read/ })).toBeDefined()
+
+    await ui.unmount()
+  })
+
   test('does not walk into a linked folder outside a git repository', async ($, on) => {
     // Every folder holds a link back to its parent, reported as a folder.
     const loop: FsEntry = { name: 'up', kind: 'dir', size: 0, mtimeMs: 0, isLink: true }
