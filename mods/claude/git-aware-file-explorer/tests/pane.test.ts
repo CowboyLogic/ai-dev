@@ -337,6 +337,24 @@ describe('git-aware-file-explorer pane', () => {
     await ui.unmount()
   })
 
+  test('says an unchanged file it cannot read is unreadable, not empty', async ($, on) => {
+    fakeRepo(on, { isUnreadable: true })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+    await ui.press({ key: 'node:src' })
+    await ui.press({ key: 'node:src/a.ts' })
+
+    expect(await ui.find({ type: 'Text', text: 'Not a readable file.' })).toBeDefined()
+    expect(await ui.find({ type: 'Code' })).toBeUndefined()
+
+    await ui.unmount()
+  })
+
   test('runs one scan at a time and folds the requests made meanwhile into one', async ($, on) => {
     const clock = mock.clock(on)
     let isSlow = false

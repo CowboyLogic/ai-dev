@@ -805,8 +805,10 @@ export const register: Register = on => {
       if (!stat || stat.kind !== 'file') body = <Text dimColor>Not a readable file.</Text>
       else if (stat.size > PREVIEW_BYTES) body = <Text dimColor>Too large to preview ({stat.size} bytes).</Text>
       else {
-        const text = await $.fs.read(s.root + '/' + selected).catch(() => '')
-        if (text.includes('\0')) body = <Text dimColor>Binary file.</Text>
+        // A read that fails (permissions, I/O) is not an empty file.
+        const text = await $.fs.read(s.root + '/' + selected).catch(() => undefined)
+        if (text === undefined) body = <Text dimColor>Not a readable file.</Text>
+        else if (text.includes('\0')) body = <Text dimColor>Binary file.</Text>
         else {
           const lines = text.split('\n')
           panelLast = Math.max(0, lines.length - panelRoom)
