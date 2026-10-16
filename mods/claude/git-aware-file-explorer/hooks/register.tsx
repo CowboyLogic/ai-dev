@@ -184,12 +184,17 @@ async function lineTotals($: $, root: string, changes: Change[]) {
   const outs = hasHead
     ? [await git($, root, ['diff', '--numstat', '--no-ext-diff', 'HEAD'])]
     : [await git($, root, ['diff', '--numstat', '--no-ext-diff', '--cached']), await git($, root, ['diff', '--numstat', '--no-ext-diff'])]
-  const total = sumNumstat(outs.map(o => o.stdout).join('\n'))
-  const untracked = changes.filter(c => c.x === '?').slice(0, UNTRACKED_LIMIT)
-  for (const c of untracked) {
+  const total: { added: number; deleted: number; partial?: boolean } = sumNumstat(outs.map(o => o.stdout).join('\n'))
+  const untracked = changes.filter(c => c.x === '?')
+  if (untracked.length > UNTRACKED_LIMIT) total.partial = true
+  for (const c of untracked.slice(0, UNTRACKED_LIMIT)) {
     const path = root + '/' + c.path
     const stat = await $.fs.stat(path).catch(() => undefined)
-    if (!stat || stat.kind !== 'file' || stat.size > UNTRACKED_BYTES) continue
+    if (!stat || stat.kind !== 'file') continue
+    if (stat.size > UNTRACKED_BYTES) {
+      total.partial = true
+      continue
+    }
     total.added += countLines(await $.fs.read(path).catch(() => ''))
   }
   return total
@@ -483,7 +488,12 @@ export const register: Register = on => {
         <Box width="30%" flexDirection="row" justifyContent="flex-end" alignItems="center" columnGap={1}>
           {s.isRepo && n > 0 && s.lines && (
             <Text>
-              <Text color="success">+{s.lines.added}</Text> <Text color="error">−{s.lines.deleted}</Text>
+              {/* A trailing + marks a floor: some untracked files went uncounted. */}
+              <Text color="success">
+                +{s.lines.added}
+                {s.lines.partial ? '+' : ''}
+              </Text>{' '}
+              <Text color="error">−{s.lines.deleted}</Text>
             </Text>
           )}
           {s.isRepo && (

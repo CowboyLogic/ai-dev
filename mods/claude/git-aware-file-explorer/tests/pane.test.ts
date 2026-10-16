@@ -33,10 +33,10 @@ const DISK: Record<string, FsEntry[]> = {
 }
 
 /** A repository with one modified, one untracked and one deleted file. */
-function fakeRepo(on: On) {
+function fakeRepo(on: On, fileSize = 4) {
   on('session.cwd', () => ({ value: ROOT }))
   on('fs.list', ($, e) => ({ value: DISK[e.path] ?? [] }))
-  on('fs.stat', () => ({ value: { kind: 'file' as const, size: 4, mtimeMs: 1, isLink: false } }))
+  on('fs.stat', () => ({ value: { kind: 'file' as const, size: fileSize, mtimeMs: 1, isLink: false } }))
   on('fs.read', () => ({ value: 'a\nb\n' }))
   on('process.run', ($, e) => {
     const args = e.argv.filter(a => a !== '--no-optional-locks').slice(1).join(' ')
@@ -113,6 +113,22 @@ describe('git-aware-file-explorer pane', () => {
       await ui.unmount()
     })
   }
+
+  test('marks the added total as a minimum when a new file is too large to count', async ($, on) => {
+    fakeRepo(on, 1024 * 1024)
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+
+    expect(await ui.find({ type: 'Text', text: '+1+' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '−4' })).toBeDefined()
+
+    await ui.unmount()
+  })
 
   test('filters files outside a git repository', async ($, on) => {
     on('session.cwd', () => ({ value: ROOT }))

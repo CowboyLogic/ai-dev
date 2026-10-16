@@ -22,7 +22,12 @@ export type Scan = {
   /** Ignored paths relative to root; a directory ends with `/`. */
   ignored: string[]
   /** Lines added and deleted across all changes against HEAD, untracked files included. */
-  lines?: { added: number; deleted: number }
+  lines?: {
+    added: number
+    deleted: number
+    /** Untracked files went uncounted (too many, or too large to read), so `added` is a floor. */
+    partial?: boolean
+  }
   /** Error text from the last scan, if it failed. */
   error?: string
 }
