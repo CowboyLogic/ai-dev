@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { canGoDown, canGoUp, countLines, diffLines, lastTop, parseNumstat, sumNumstat, wheel } from '../hooks/register'
+import { countLines, diffLines, parseNumstat, sumNumstat } from '../hooks/register'
+import { diffIndex, nativeWindow, previewCapacity, previewWindow, spacerHeights, visibleText } from '../hooks/viewport'
 
 const DIFF = [
   'diff --git a/f b/f',
@@ -24,16 +25,6 @@ describe('diff windowing', () => {
     expect(lines[4]).toEqual({ text: ' ten', kind: ' ', o: 10, n: 10, hunk: 1 })
   })
 
-  test('the window stops where the last line reaches the bottom, separators counted', async () => {
-    const lines = diffLines(DIFF)
-    // 7 lines and one separator need 8 rows: they fit whole.
-    expect(lastTop(lines, 8)).toBe(0)
-    // In 4 rows the last hunk's 3 lines fit, and not the separator above them.
-    expect(lastTop(lines, 4)).toBe(4)
-    expect(lastTop(lines, 3)).toBe(4)
-    expect(lastTop(lines, 2)).toBe(5)
-  })
-
   test('numstat sums lines and skips binary files', async () => {
     expect(sumNumstat(parseNumstat(['3\t1\ta.md', '-\t-\tlogo.png', '2\t0\tb.ts', ''].join('\0')))).toEqual({ added: 5, deleted: 1 })
   })
@@ -49,61 +40,44 @@ describe('diff windowing', () => {
   })
 })
 
-// A file open that fits its panel, over a tree of 40 rows: the desktop's pane with a short file.
-const FITS = { hasFile: true, panelOffset: 0, panelLast: 0, treeOffset: 0, treeLast: 39 }
-const LONG = { ...FITS, panelLast: 10 }
-
-describe('wheel', () => {
-  test('moves the tree when the open file fits and the wheel has no pointer', () => {
-    expect(wheel({ ...FITS, by: 3 })).toEqual({ panelOffset: 0, treeOffset: 3 })
-    expect(wheel({ ...FITS, treeOffset: 3, by: -5 })).toEqual({ panelOffset: 0, treeOffset: 0 })
+describe('native viewport', () => {
+  test('aligns preview ranges to fixed blocks and keeps their height and budget bounded', () => {
+    for (let offset = 0; offset < 1100; offset++) {
+      const view = previewWindow(1000, offset, 20)
+      expect(view.before + view.end - view.start + view.after).toBe(1000)
+      expect(view.end - view.start).toBeLessThanOrEqual(previewCapacity(20))
+      if (view.start < 1000) expect(view.start % 32).toBe(0)
+    }
+    expect(previewWindow(1000, 96, 20)).toEqual(previewWindow(1000, 97, 20))
+  })
+  test('splits tall offscreen regions into dimensions the engine accepts', () => {
+    expect(spacerHeights(20001)).toEqual([10000, 10000, 1])
+    expect(spacerHeights(0)).toEqual([])
+    expect(spacerHeights(2000000).reduce((sum, height) => sum + height, 0)).toBe(2000000)
+  })
+  test('keeps the total height constant at every scroll position', () => {
+    for (const height of [1, 2]) {
+      for (const offset of [-5, 0, 20, 500, 2000, 4000]) {
+        const view = nativeWindow(1000, offset, 20, height)
+        expect(view.before + (view.end - view.start) * height + view.after).toBe(1000 * height)
+        expect(view.end - view.start).toBeLessThanOrEqual(36)
+      }
+    }
   })
 
-  test('moves a long file first, then the tree with the rest', () => {
-    expect(wheel({ ...LONG, panelOffset: 4, by: 3 })).toEqual({ panelOffset: 7, treeOffset: 0 })
-    expect(wheel({ ...LONG, panelOffset: 8, by: 3 })).toEqual({ panelOffset: 10, treeOffset: 1 })
-    expect(wheel({ ...LONG, panelOffset: 1, treeOffset: 5, by: -3 })).toEqual({ panelOffset: 0, treeOffset: 3 })
+  test('keeps an empty or completed column at its original height', () => {
+    expect(nativeWindow(0, 100, 20)).toEqual({ start: 0, end: 0, before: 0, after: 0 })
+    expect(nativeWindow(10, 100, 20, 2)).toEqual({ start: 10, end: 10, before: 20, after: 0 })
   })
 
-  test('moves the tree first once it was clicked, then the file with the rest', () => {
-    expect(wheel({ ...LONG, by: 3, side: 'tree' })).toEqual({ panelOffset: 0, treeOffset: 3 })
-    expect(wheel({ ...LONG, treeOffset: 38, by: 3, side: 'tree' })).toEqual({ panelOffset: 2, treeOffset: 39 })
-    expect(wheel({ ...LONG, panelOffset: 5, treeOffset: 1, by: -3, side: 'tree' })).toEqual({ panelOffset: 3, treeOffset: 0 })
+  test('locates hunk separators and numbered lines by visual row', () => {
+    const hunks = [{ line: 0, row: 0 }, { line: 4, row: 5 }]
+    expect(Array.from({ length: 8 }, (_, row) => diffIndex(hunks, row))).toEqual([0, 1, 2, 3, undefined, 4, 5, 6])
   })
 
-  test('moves the file first once it was clicked', () => {
-    expect(wheel({ ...LONG, treeOffset: 5, by: 3, side: 'panel' })).toEqual({ panelOffset: 3, treeOffset: 5 })
-  })
-
-  test('moves only the side under the pointer', () => {
-    expect(wheel({ ...LONG, panelOffset: 10, by: 3, over: 'panel' })).toEqual({ panelOffset: 10, treeOffset: 0 })
-    expect(wheel({ ...LONG, by: 3, over: 'tree' })).toEqual({ panelOffset: 0, treeOffset: 3 })
-    expect(wheel({ ...LONG, by: 3, over: 'panel', side: 'tree' })).toEqual({ panelOffset: 3, treeOffset: 0 })
-  })
-
-  test('keeps the tree within its rows', () => {
-    expect(wheel({ ...FITS, treeOffset: 38, by: 3 })).toEqual({ panelOffset: 0, treeOffset: 39 })
-    expect(wheel({ ...FITS, hasFile: false, treeOffset: 0, treeLast: 2, by: 3 })).toEqual({ panelOffset: 0, treeOffset: 2 })
-  })
-
-  test('a file shorter than its stale offset passes the whole move on', () => {
-    expect(wheel({ ...FITS, panelOffset: 12, by: 2 })).toEqual({ panelOffset: 0, treeOffset: 2 })
-  })
-})
-
-describe('room around the window', () => {
-  test('above, while the tree or the open file can go up', () => {
-    expect(canGoUp({ ...FITS, hasFile: false, treeOffset: 3 })).toBe(true)
-    expect(canGoUp({ ...FITS, treeOffset: 3 })).toBe(true)
-    expect(canGoUp({ ...LONG, panelOffset: 2 })).toBe(true)
-    expect(canGoUp({ ...FITS, panelOffset: 2 })).toBe(false)
-    expect(canGoUp(FITS)).toBe(false)
-  })
-
-  test('below, while a file is open and the file or the tree can go down', () => {
-    expect(canGoDown(FITS)).toBe(true)
-    expect(canGoDown({ ...FITS, treeOffset: 39 })).toBe(false)
-    expect(canGoDown({ ...LONG, treeOffset: 39 })).toBe(true)
-    expect(canGoDown({ ...FITS, hasFile: false })).toBe(false)
+  test('bounds long lines without changing short lines', () => {
+    expect(visibleText('short', 80, 20)).toBe('short')
+    expect(visibleText('x'.repeat(30000), 80, 20).length).toBeLessThanOrEqual(161)
+    expect(visibleText('x'.repeat(30000), 10000, 100).length).toBeLessThanOrEqual(301)
   })
 })

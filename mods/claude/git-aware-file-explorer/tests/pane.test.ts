@@ -34,6 +34,17 @@ const DISK: Record<string, FsEntry[]> = {
 
 const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
 
+type Live = {
+  diff: string
+  mtimeMs: number
+  diffRuns?: number
+  lists?: number
+  reads?: number
+  stats?: number
+  processes?: number
+  text?: string
+}
+
 /**
  * A repository with one modified, one untracked and one deleted file. Without `hasHead` it has no
  * commits yet, and README.md is staged with its second line then changed again unstaged.
@@ -53,9 +64,10 @@ function fakeRepo(
   {
     fileSize = 4,
     hasHead = true,
+    disk = DISK,
     onStatus,
     text = 'a\nb\n',
-    live = { diff: DIFF, mtimeMs: 1 } as { diff: string; mtimeMs: number; diffRuns?: number },
+    live = { diff: DIFF, mtimeMs: 1 } as Live,
     isCut = false,
     isRecreated = false,
     isUnreadable = false,
@@ -68,9 +80,10 @@ function fakeRepo(
   }: {
     fileSize?: number
     hasHead?: boolean
+    disk?: Record<string, FsEntry[]>
     onStatus?: () => Promise<void>
     text?: string
-    live?: { diff: string; mtimeMs: number; diffRuns?: number }
+    live?: Live
     isCut?: boolean
     isRecreated?: boolean
     isUnreadable?: boolean
@@ -85,16 +98,22 @@ function fakeRepo(
   // Quoted as git quotes it in output without -z (its octal escapes left out here).
   const quoted = /^[\x20-\x7e]*$/.test(gone) ? gone : `"${gone}"`
   on('session.cwd', () => ({ value: ROOT }))
-  on('fs.list', ($, e) => ({ value: DISK[e.path] ?? [] }))
+  on('fs.list', ($, e) => {
+    live.lists = (live.lists ?? 0) + 1
+    return { value: disk[e.path] ?? [] }
+  })
   on('fs.stat', ($, e) => {
+    live.stats = (live.stats ?? 0) + 1
     if (isNewGone && e.path.endsWith('/src/new.ts')) throw new Error('ENOENT: no such file or directory')
     return { value: { kind: 'file' as const, size: fileSize, mtimeMs: live.mtimeMs, isLink: false } }
   })
   on('fs.read', () => {
+    live.reads = (live.reads ?? 0) + 1
     if (isUnreadable) throw new Error('EACCES: permission denied')
-    return { value: text }
+    return { value: live.text ?? text }
   })
   on('process.run', async ($, e) => {
+    live.processes = (live.processes ?? 0) + 1
     const args = e.argv.filter(a => a !== '--no-optional-locks').slice(1).join(' ')
     const z = e.argv.includes('-z')
     if (args === 'rev-parse --show-toplevel') return ok(ROOT + '\n')
@@ -263,10 +282,59 @@ describe('git-aware-file-explorer pane', () => {
     })
     await ui.press({ key: 'node:README.md' })
     const runs = live.diffRuns
-    // What a wheel or ▲/▼ press does: draw the pane again with nothing in the workspace changed.
+    // What a native scroll does: draw the pane again with nothing in the workspace changed.
     for (let i = 0; i < 3; i++) await ui.redraw()
     expect(live.diffRuns).toBe(runs)
 
+    await ui.unmount()
+  })
+
+  for (const selected of ['README.md', 'src/a.ts']) {
+    test(`scrolling ${selected} performs no filesystem or git calls`, async ($, on) => {
+      const live: Live = { diff: DIFF, mtimeMs: 1 }
+      fakeRepo(on, { live, text: Array.from({ length: 100 }, (_, i) => `line ${i + 1}`).join('\n') })
+      on('ui.scroll', () => ({}))
+      const ui = await $.ui.mount({
+        plugin: 'git-aware-file-explorer', surface: 'desktop', component: 'Pane',
+        requestId: 'git-aware-file-explorer', props: { ...PROPS, scroll: { offset: 0, bodyRows: 20 } },
+      })
+      // Initialize the scan atom as session.start does in the app.
+      await ui.press({ key: 'refresh' })
+      await ui.press({ key: 'node:src' })
+      await ui.press({ key: 'node:' + selected })
+      const before = [live.lists, live.reads, live.stats, live.processes]
+      for (let i = 0; i < 3; i++) {
+        await $.ui.scroll({
+          component: 'Pane', requestId: 'git-aware-file-explorer', offset: 1, by: 1,
+          bodyRows: 20, contentRows: 100, origin: { kind: 'person' },
+        })
+        await ui.redraw({ ...PROPS, scroll: { offset: (i + 1) * 10, bodyRows: 20 } })
+      }
+      expect([live.lists, live.reads, live.stats, live.processes]).toEqual(before)
+      await ui.unmount()
+    })
+  }
+
+  test('invalidates a cached preview when its scan stamp changes', async ($, on) => {
+    const live: Live = { diff: DIFF, mtimeMs: 1 }
+    fakeRepo(on, { live })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer', surface: 'desktop', component: 'Pane',
+      requestId: 'git-aware-file-explorer', props: PROPS,
+    })
+    await ui.press({ key: 'refresh' })
+    await ui.press({ key: 'node:src' })
+    await ui.press({ key: 'node:src/a.ts' })
+    const reads = live.reads ?? 0
+    live.mtimeMs++
+    live.text = 'updated preview'
+    await ui.press({ key: 'refresh' })
+    // One untracked-file read for the totals, plus the refreshed preview.
+    expect(live.reads).toBe(reads + 2)
+    expect((await ui.find({ type: 'Code' }))?.props.source).toBe('updated preview')
+    const after = live.reads
+    await ui.redraw()
+    expect(live.reads).toBe(after)
     await ui.unmount()
   })
 
@@ -282,6 +350,9 @@ describe('git-aware-file-explorer pane', () => {
       props: PROPS,
     })
     await ui.press({ key: 'node:README.md' })
+    expect(await ui.find({ type: 'Text', text: '+2000000' })).toBeDefined()
+    await ui.redraw({ ...PROPS, scroll: { offset: 1000000, bodyRows: 60 } })
+    expect(await ui.find({ key: 'line:999988' })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: '+2000000' })).toBeDefined()
 
     await ui.unmount()
@@ -542,94 +613,118 @@ describe('git-aware-file-explorer pane', () => {
     await ui.unmount()
   })
 
-  test('keeps a scrolled preview within the file when the pane grows', async ($, on) => {
-    fakeRepo(on, { text: Array.from({ length: 100 }, (_, i) => `line ${i + 1}`).join('\n') })
+  test('keeps an ordinary preview source unchanged while the native viewport moves and resizes', async ($, on) => {
+    const text = Array.from({ length: 100 }, (_, i) => `line ${i + 1}`).join('\n')
+    fakeRepo(on, { text })
     const ui = await $.ui.mount({
-      plugin: 'git-aware-file-explorer',
-      surface: 'desktop',
-      component: 'Pane',
-      requestId: 'git-aware-file-explorer',
-      props: { ...PROPS, scroll: { offset: 0, bodyRows: 20 } },
+      plugin: 'git-aware-file-explorer', surface: 'desktop', component: 'Pane',
+      requestId: 'git-aware-file-explorer', props: { ...PROPS, scroll: { offset: 0, bodyRows: 20 } },
     })
     await ui.press({ key: 'node:src' })
     await ui.press({ key: 'node:src/a.ts' })
-    for (let i = 0; i < 30; i++) await ui.press({ key: 'line-down' })
-    expect((await ui.find({ type: 'Code' }))?.props.startLine).toBe(31)
-
-    // Tall enough for the whole file: the window can't sit 30 lines down any more.
+    expect((await ui.find({ type: 'Code' }))?.props.source).toBe(text)
+    await ui.redraw({ ...PROPS, scroll: { offset: 50, bodyRows: 20 } })
+    expect((await ui.find({ type: 'Code' }))?.props.startLine).toBe(1)
+    expect((await ui.find({ type: 'Code' }))?.props.source).toBe(text)
+    expect(await ui.find({ key: 'preview-before' })).toBeUndefined()
+    expect(await ui.find({ key: 'preview-after' })).toBeUndefined()
     await ui.redraw({ ...PROPS, scroll: { offset: 0, bodyRows: 200 } })
     expect((await ui.find({ type: 'Code' }))?.props.startLine).toBe(1)
-
+    expect(await ui.find({ key: 'preview-before' })).toBeUndefined()
+    expect(await ui.find({ key: 'preview-after' })).toBeUndefined()
     await ui.unmount()
   })
 
-  test('keeps room below for the wheel while a short open file leaves the tree to move (desktop)', async ($, on) => {
-    // The desktop raises no wheel event for a window that cannot move: with a file that fits and no
-    // spare row, the wheel reached neither the file nor the tree.
+  test('keeps retained large-preview Code blocks unchanged across scroll boundaries', async ($, on) => {
+    const live: Live = { diff: DIFF, mtimeMs: 1 }
+    fakeRepo(on, { live, text: Array.from({ length: 1000 }, (_, i) => `line ${i + 1} ${'x'.repeat(80)}`).join('\n') })
+    const props = { ...PROPS, scroll: { offset: 0, bodyRows: 20 } }
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer', surface: 'desktop', component: 'Pane',
+      requestId: 'git-aware-file-explorer', props,
+    })
+    await ui.press({ key: 'refresh' })
+    await ui.press({ key: 'node:src' })
+    await ui.press({ key: 'node:src/a.ts' })
+    const codeProps = async () => (await ui.findAll({ type: 'Code' })).map(code => code.props)
+    const initial = await codeProps()
+    expect(initial.map(code => code.startLine)).toEqual([1, 33, 65])
+    const calls = [live.lists, live.reads, live.stats, live.processes]
+
+    await ui.redraw({ ...props, scroll: { offset: 100, bodyRows: 20 } })
+    const later = await codeProps()
+    expect(later.map(code => code.startLine)).toEqual([33, 65, 97, 129, 161])
+    expect(later[0]).toEqual(initial[1])
+    expect(later[1]).toEqual(initial[2])
+    expect((await ui.find({ key: 'preview-before' }))?.props.height).toBe(32)
+    expect((await ui.find({ key: 'preview-after' }))?.props.height).toBe(808)
+
+    await ui.redraw({ ...props, scroll: { offset: 101, bodyRows: 20 } })
+    expect(await codeProps()).toEqual(later)
+    expect([live.lists, live.reads, live.stats, live.processes]).toEqual(calls)
+    await ui.unmount()
+  })
+
+  test('puts both columns in normal flow without wheel reset space or file-only controls', async ($, on) => {
     fakeRepo(on)
     const ui = await $.ui.mount({
-      plugin: 'git-aware-file-explorer',
-      surface: 'desktop',
-      component: 'Pane',
-      requestId: 'git-aware-file-explorer',
-      props: { ...PROPS, scroll: { offset: 0, bodyRows: 20 } },
+      plugin: 'git-aware-file-explorer', surface: 'desktop', component: 'Pane',
+      requestId: 'git-aware-file-explorer', props: PROPS,
     })
-    await ui.press({ key: 'node:src' })
-    await ui.press({ key: 'node:src/a.ts' })
-    expect(await ui.find({ key: 'spare' })).toBeDefined()
-
-    // With the file closed the tree is unclipped, and a long one makes its own room.
-    await ui.press({ key: 'close-panel' })
+    await ui.press({ key: 'node:README.md' })
+    expect((await ui.find({ key: 'columns' }))?.props.flexDirection).toBe('row')
+    expect((await ui.find({ key: 'file-panel' }))?.props.position).toBeUndefined()
+    expect(await ui.find({ key: 'spacer' })).toBeUndefined()
     expect(await ui.find({ key: 'spare' })).toBeUndefined()
-
+    expect(await ui.find({ key: 'line-up' })).toBeUndefined()
+    expect(await ui.find({ key: 'line-down' })).toBeUndefined()
+    await ui.press({ key: 'close-panel' })
+    expect(await ui.find({ key: 'spacer' })).toBeUndefined()
+    expect(await ui.find({ key: 'spare' })).toBeUndefined()
     await ui.unmount()
   })
 
-  test('gives the wheel to the side last clicked (desktop, no pointer)', async ($, on) => {
-    fakeRepo(on, { text: Array.from({ length: 100 }, (_, i) => `line ${i + 1}`).join('\n') })
-    // The surface's own move of the window, beneath the mod's hook.
-    on('ui.scroll', () => ({}))
+  test('leaves person and plugin scroll offsets to the native surface', async ($, on) => {
+    fakeRepo(on)
+    const offsets: number[] = []
+    on('ui.scroll', ($, e) => { offsets.push(e.offset); return {} })
     const ui = await $.ui.mount({
-      plugin: 'git-aware-file-explorer',
-      surface: 'desktop',
-      component: 'Pane',
-      requestId: 'git-aware-file-explorer',
-      props: { ...PROPS, scroll: { offset: 0, bodyRows: 20 } },
+      plugin: 'git-aware-file-explorer', surface: 'desktop', component: 'Pane',
+      requestId: 'git-aware-file-explorer', props: PROPS,
     })
-    // A wheel tick as the desktop raises it: one row down, no pointer.
-    const tick = () =>
-      $.ui.scroll({
-        component: 'Pane',
-        requestId: 'git-aware-file-explorer',
-        offset: 1,
-        by: 1,
-        bodyRows: 20,
-        contentRows: 20,
-        origin: { kind: 'person' },
+    for (const by of [5, -5]) {
+      await $.ui.scroll({
+        component: 'Pane', requestId: 'git-aware-file-explorer', offset: 40 + by, by,
+        bodyRows: 20, contentRows: 100, origin: { kind: 'person' },
       })
-    const startLine = async () => (await ui.find({ type: 'Code' }))?.props.startLine
-    const treeRows = async () => (await ui.findAll({ type: 'Button' })).filter(b => b.key?.startsWith('node:')).length
+    }
+    await $.ui.scroll({
+      component: 'Pane', requestId: 'git-aware-file-explorer', offset: 25, by: 10,
+      bodyRows: 20, contentRows: 100, origin: { kind: 'plugin', name: 'git-aware-file-explorer' },
+    })
+    expect(offsets).toEqual([45, 35, 25])
+    await ui.unmount()
+  })
 
-    await ui.press({ key: 'node:src' })
-    await ui.press({ key: 'node:src/a.ts' })
-    const rows = await treeRows()
-    await tick()
-    expect(await startLine()).toBe(2)
-    expect(await treeRows()).toBe(rows)
-
-    // A folder clicked (closed and opened again) takes the wheel from the long file.
-    await ui.press({ key: 'chevron:src' })
-    await ui.press({ key: 'chevron:src' })
-    await tick()
-    expect(await startLine()).toBe(2)
-    expect(await treeRows()).toBe(rows - 1)
-
-    // ▲/▼ hands it back to the file.
-    await ui.press({ key: 'line-down' })
-    await tick()
-    expect(await startLine()).toBe(4)
-    expect(await treeRows()).toBe(rows - 1)
-
+  test('bounds large trees while preserving their full native height', async ($, on) => {
+    fakeRepo(on, { disk: {
+      [ROOT]: Array.from({ length: 1000 }, (_, i) => file(`f${String(i).padStart(4, '0')}.ts`)),
+    } })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer', surface: 'desktop', component: 'Pane',
+      requestId: 'git-aware-file-explorer', props: { ...PROPS, scroll: { offset: 0, bodyRows: 20 } },
+    })
+    const treeRows = async () => (await ui.findAll({ type: 'Button' })).filter(b => b.key?.startsWith('node:'))
+    expect((await treeRows()).length).toBe(18)
+    // The fixture also contributes the three changed root entries.
+    expect((await ui.find({ key: 'tree-after' }))?.props.height).toBe(1970)
+    await ui.redraw({ ...PROPS, scroll: { offset: 1005, bodyRows: 20 } })
+    expect((await treeRows()).length).toBe(26)
+    expect(await ui.find({ key: 'node:f0500.ts' })).toBeDefined()
+    expect((await ui.find({ key: 'tree-before' }))?.props.height).toBe(984)
+    expect((await ui.find({ key: 'tree-after' }))?.props.height).toBe(970)
+    await ui.redraw({ ...PROPS, scroll: { offset: 0, bodyRows: 20 } })
+    expect(await ui.find({ key: 'node:f0000.ts' })).toBeDefined()
     await ui.unmount()
   })
 
@@ -650,8 +745,28 @@ describe('git-aware-file-explorer pane', () => {
 
     await ui.input({ key: 'filter', text: 'target', kind: 'change' })
     expect(await ui.find({ type: 'Text', text: 'No matching files.' })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /Searched the first 20000 files only/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /Searched the first 20000 entries/ })).toBeDefined()
 
+    await ui.unmount()
+  })
+
+  test('bounds a non-git search even when its entries are all directories', async ($, on) => {
+    const many = Array.from({ length: 20001 }, (_, i) => dir(`d${i}`))
+    let lists = 0
+    on('session.cwd', () => ({ value: ROOT }))
+    on('fs.list', ($, e) => {
+      lists++
+      return { value: e.path === ROOT ? [dir('bulk')] : e.path === ROOT + '/bulk' ? many : [] }
+    })
+    on('process.run', () => ok('', 128))
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer', surface: 'desktop', component: 'Pane',
+      requestId: 'git-aware-file-explorer', props: PROPS,
+    })
+    const before = lists
+    await ui.input({ key: 'filter', text: 'target', kind: 'change' })
+    expect(lists - before).toBe(2)
+    expect(await ui.find({ type: 'Text', text: /Searched the first 20000 entries/ })).toBeDefined()
     await ui.unmount()
   })
 
@@ -768,7 +883,7 @@ describe('git-aware-file-explorer pane', () => {
     })
     await ui.input({ key: 'filter', text: 'a', kind: 'change' })
     const walked = lists
-    // What a wheel or ▲/▼ press does, and a new filter: no file on disk changed, so no new walk.
+    // A native scroll and a new filter: no file on disk changed, so no new walk.
     for (let i = 0; i < 3; i++) await ui.redraw()
     await ui.input({ key: 'filter', text: 'a.', kind: 'change' })
     expect(lists).toBe(walked)

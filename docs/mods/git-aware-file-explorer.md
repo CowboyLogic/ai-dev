@@ -19,13 +19,15 @@ in a panel beside the tree.
 - **Git-aware tree.** Files and folders with icons, a status letter on each changed file, and a mark
   on every folder that holds a change. Ignored files are dimmed and deleted files struck through.
   A filter box narrows the tree by name; it does not search inside ignored folders, and says so.
+  Outside git, searches stop after discovering 20,000 files and folders and report that limit.
 - **Diff panel.** Selecting a changed file shows its diff against `HEAD`, with added and deleted lines
   tinted and the file's own line counts in the header. Selecting an unchanged file shows a preview.
-  With a file open the wheel moves the side you last clicked: opening a file or its ▲/▼ gives it to
-  the file, and a folder, the filter or ⊟ to the tree. At the end of one side it moves the other. A
-  terminal that reports the pointer moves the side under it instead.
+  Smaller previews show the full file; larger previews use fixed sections retained across scrolls.
+  The branch bar, filter, tree and file content share one native scrollbar and move together.
+  Selecting a file brings the pane back to the top to show its header and first lines.
 - **Stays current.** The pane rescans the workspace every few seconds and after each tool call that
-  can change files.
+  can change files. Between changes, scrolling reuses the prepared tree and open file: it does not
+  run git, list folders or reread the file. Diff counts are prepared when the diff is loaded.
 
 ## Where it applies
 
@@ -33,6 +35,11 @@ Use it in a git repository when you want to watch an agent's changes land file b
 switching between the Files and Changes views. Outside a repository it works as a plain file browser.
 
 The pane opens at the start of each session. `/git-files` reopens it after it is closed.
+
+> [!NOTE]
+> The header and both columns scroll together in this version. Native scrolling avoids the desktop
+> movement and snap back caused by trying to keep a mod's header fixed. Platform support for fixed
+> headers and independent scrolling is tracked in [Anthropic issue #99449](https://github.com/anthropics/claude-code/issues/99449).
 
 ---
 

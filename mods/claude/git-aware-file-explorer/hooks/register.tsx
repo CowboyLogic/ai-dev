@@ -2,14 +2,18 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { Change, Scan } from '../types'
+import { diffIndex, nativeWindow, PREVIEW_BLOCK_ROWS, previewCapacity, previewWindow, spacerHeights, visibleText } from './viewport'
+import type { HunkStart } from './viewport'
 
 const PANE = 'git-aware-file-explorer'
 const TITLE = 'Files'
 const SCAN_EVERY_MS = 5000
 const PREVIEW_BYTES = 256 * 1024
+/** Leave room within the engine's drawing budget for the tree and controls. */
+const FULL_PREVIEW_CHARS = 48000
 /** Most matches a filter lists; the rest are counted, not drawn. */
 const FILTER_LIMIT = 300
-/** Paths a filter outside a git repository walks the disk for, at most. */
+/** Files and directories a filter outside a git repository discovers, at most. */
 const WALK_LIMIT = 20000
 /** The tree column's narrowest width, in cells; its widest is half the pane. */
 const TREE_MIN_COLUMNS = 34
@@ -17,17 +21,8 @@ const TREE_MIN_COLUMNS = 34
 const GUTTER = 2
 /** Rows the branch bar takes above both sides: its line and the gap under it. */
 const BRANCH_ROWS = 2
-/**
- * The desktop raises no wheel event for a window that cannot move, and moves the window before a
- * hook answers, no further than it has room for: one row of room caps the wheel at a row per answer.
- * So the pane's window rests over blank spacer rows above the branch bar only while the tree or the
- * file can scroll up, and has spare rows below only while, with a file open, the file or the tree
- * can scroll down (with none, a long tree makes its own): at a limit the window has nowhere to go,
- * and nothing bounces. The rows sit outside the window at rest. The mod moves the tree or the file
- * panel itself. More room lets the wheel run faster, and makes each move before the answer, the
- * jitter, larger: two rows is the balance.
- */
-const ROOM = 2
+/** A definite row height lets offscreen tree rows keep their native layout space. */
+const TREE_ROW_ROWS = 2
 /**
  * Tools whose calls can change the work tree; a scan follows each. PowerShell is the shell tool on
  * Windows. A subagent's own tool calls reach the hook too, so Agent needs no entry.
@@ -46,27 +41,8 @@ const expandedAtom = atom({ plugin: 'git-aware-file-explorer', key: 'expanded' }
 const selectedAtom = atom({ plugin: 'git-aware-file-explorer', key: 'selected' } as const, null)
 const changedOnlyAtom = atom({ plugin: 'git-aware-file-explorer', key: 'changedOnly' } as const, false)
 const filterAtom = atom({ plugin: 'git-aware-file-explorer', key: 'filter' } as const, '')
-const panelOffsetAtom = atom({ plugin: 'git-aware-file-explorer', key: 'panelOffset' } as const, 0)
-const treeOffsetAtom = atom({ plugin: 'git-aware-file-explorer', key: 'treeOffset' } as const, 0)
-const wheelSideAtom = atom({ plugin: 'git-aware-file-explorer', key: 'wheelSide' } as const, 'panel')
 
 type $ = EngineInterface
-
-/**
- * What the last drawing laid out, for the scroll hook to tell the two sides apart.
- * A module variable on purpose: it is layout, redrawn on every render, not state.
- */
-const layout = {
-  treeColumns: 0,
-  panelLast: 0,
-  panelRoom: 0,
-  hasFile: false,
-  offset: 0,
-  spacer: 0,
-  spare: 0,
-  /** With a file open, the furthest row the clipped tree can start at. */
-  treeLast: 0,
-}
 
 type Row = {
   path: string
@@ -361,9 +337,9 @@ function rescan($: $): Promise<void> {
   return scanning
 }
 
-/** Scrolls the pane's window back so the branch bar is at its top, where it rests (see ROOM). */
+/** Reveal the shared pane's top after opening it or changing its selection/filter. */
 async function settle($: $) {
-  await $.ui.scroll({ to: { key: 'branch-bar' }, in: PANE, block: 'start' }).catch(() => undefined)
+  await $.ui.scroll({ to: 'start', in: PANE }).catch(() => undefined)
 }
 
 /** Changed-path counts for every directory that holds a change (`''` is the root). */
@@ -426,7 +402,7 @@ async function pathsFor(
 let listing: { root: string; files: Promise<{ files: string[]; incomplete?: string }> } | undefined
 
 /**
- * The files a filter searches, listed once per scan: a redraw (a wheel move, a ▲/▼ press) or a new
+ * The files a filter searches, listed once per scan: a redraw (a wheel move) or a new
  * filter reuses the list, and `incomplete` says why it may lack some.
  */
 function listFiles($: $, s: Scan): Promise<{ files: string[]; incomplete?: string }> {
@@ -438,7 +414,7 @@ async function listFilesNow($: $, s: Scan): Promise<{ files: string[]; incomplet
   if (!s.isRepo) {
     const walked = await walkFiles($, s.root)
     const notes = [
-      walked.isCapped && `Searched the first ${WALK_LIMIT} files only.`,
+      walked.isCapped && `Searched the first ${WALK_LIMIT} entries (files and folders) only.`,
       walked.unread === 1 && '1 folder could not be read and was not searched.',
       walked.unread > 1 && `${walked.unread} folders could not be read and were not searched.`,
     ]
@@ -454,7 +430,7 @@ async function listFilesNow($: $, s: Scan): Promise<{ files: string[]; incomplet
 }
 
 /**
- * File paths under `root`, breadth first, up to WALK_LIMIT: what a filter searches without git.
+ * File paths under `root`, breadth first, discovering at most WALK_LIMIT files and directories.
  * `isCapped` says the walk stopped there, and `unread` counts the folders it could not list
  * (permissions, I/O), so a search over it may miss files.
  */
@@ -462,8 +438,10 @@ async function walkFiles($: $, root: string): Promise<{ files: string[]; isCappe
   const files: string[] = []
   const dirs = ['']
   let unread = 0
+  let seen = 0
+  let isCapped = false
   let i = 0
-  for (; i < dirs.length && files.length < WALK_LIMIT; i++) {
+  for (; i < dirs.length && seen < WALK_LIMIT; i++) {
     const dir = dirs[i] as string
     const entries = await $.fs.list(root + (dir === '' ? '' : '/' + dir)).catch(() => {
       unread++
@@ -471,6 +449,11 @@ async function walkFiles($: $, root: string): Promise<{ files: string[]; isCappe
     })
     for (const en of entries) {
       if (HIDDEN.has(en.name)) continue
+      if (seen === WALK_LIMIT) {
+        isCapped = true
+        break
+      }
+      seen++
       const path = dir === '' ? en.name : dir + '/' + en.name
       // A link is never walked into, so a link to an ancestor can't loop the walk. This host reports
       // one as `other`; the isLink check holds on a host that reports a linked folder as a `dir`.
@@ -478,7 +461,7 @@ async function walkFiles($: $, root: string): Promise<{ files: string[]; isCappe
       else files.push(path)
     }
   }
-  return { files: files.slice(0, WALK_LIMIT), isCapped: files.length > WALK_LIMIT || i < dirs.length, unread }
+  return { files, isCapped: isCapped || i < dirs.length, unread }
 }
 
 async function buildRows(
@@ -545,65 +528,27 @@ async function buildRows(
   return rows
 }
 
+type TreeView = { rows: Row[]; virtual: Awaited<ReturnType<typeof pathsFor>>; widest: number }
+let treeCache: { scanKey: string; viewKey: string; view: Promise<TreeView> } | undefined
+
+/** Scrolls reuse the prepared tree, including its filter and width, without listing directories. */
+function cachedTree($: $, s: Scan, scanKey: string, expanded: string[], changedOnly: boolean, filter: string) {
+  const viewKey = JSON.stringify([expanded, changedOnly, filter])
+  if (treeCache?.scanKey !== scanKey || treeCache.viewKey !== viewKey) {
+    treeCache = { scanKey, viewKey, view: prepareTree($, s, expanded, changedOnly, filter) }
+  }
+  return treeCache.view
+}
+
+async function prepareTree($: $, s: Scan, expanded: string[], changedOnly: boolean, filter: string): Promise<TreeView> {
+  const virtual = await pathsFor($, s, changedOnly, filter)
+  const rows = await buildRows($, s, new Set(expanded), virtual?.paths)
+  const widest = rows.reduce((w, r) => Math.max(w, r.depth * 2 + r.name.length + 8), 0)
+  return { rows, virtual, widest }
+}
+
 /** One body line of a unified diff, with the line numbers it stands at. */
 export type DiffLine = { text: string; kind: ' ' | '+' | '-'; o: number; n: number; hunk: number }
-
-/** Where the file panel and the tree stand, for the wheel and the room kept around the window. */
-export type Offsets = { hasFile: boolean; panelOffset: number; panelLast: number; treeOffset: number; treeLast: number }
-
-/**
- * Whether something the wheel can move can still go up, so the window keeps room above
- * (see ROOM). The wheel reaches the tree with a file open too (see wheel).
- */
-export function canGoUp(at: Offsets) {
-  return (at.hasFile && Math.min(at.panelOffset, at.panelLast) > 0) || at.treeOffset > 0
-}
-
-/** Whether, with a file open, the file or the clipped tree can still go down (see ROOM). */
-export function canGoDown(at: Offsets) {
-  return at.hasFile && (at.panelOffset < at.panelLast || at.treeOffset < at.treeLast)
-}
-
-/**
- * Where a wheel move of `by` rows leaves the file panel and the tree. A pointer picks the side it is
- * over. Without one (the desktop, keys) the side last clicked takes the move until it reaches an end
- * and the other side takes the rest, so a file that fits, or one scrolled to its end, leaves the tree
- * movable.
- */
-export function wheel(at: Offsets & { by: number; over?: 'tree' | 'panel'; side?: 'tree' | 'panel' }) {
-  let { panelOffset, treeOffset } = at
-  // Each moves its side as far as it can and hands back the part of the move it could not take.
-  const movePanel = (by: number) => {
-    // A file shorter than the offset left for it starts where the drawing put it.
-    const from = Math.min(panelOffset, at.panelLast)
-    panelOffset = Math.min(at.panelLast, Math.max(0, from + by))
-    return by - (panelOffset - from)
-  }
-  const moveTree = (by: number) => {
-    // A tree already past its last row (one that shrank) can go up, never further down.
-    const from = treeOffset
-    treeOffset = Math.min(Math.max(from, at.treeLast), Math.max(0, from + by))
-    return by - (treeOffset - from)
-  }
-  if (!at.hasFile || at.over === 'tree') moveTree(at.by)
-  else if (at.over === 'panel') movePanel(at.by)
-  else if (at.side === 'tree') movePanel(moveTree(at.by))
-  else moveTree(movePanel(at.by))
-  return { panelOffset, treeOffset }
-}
-
-/**
- * The furthest a diff's window can start and still show its last line in `room` rows, counting
- * the separator row drawn between two hunks.
- */
-export function lastTop(lines: DiffLine[], room: number): number {
-  let used = 0
-  for (let i = lines.length - 1; i >= 0; i--) {
-    used += 1 + (i < lines.length - 1 && lines[i]?.hunk !== lines[i + 1]?.hunk ? 1 : 0)
-    if (used > room) return i + 1
-  }
-  return 0
-}
 
 /** Reads a unified diff's hunks into numbered lines; file headers are dropped. */
 export function diffLines(diff: string): DiffLine[] {
@@ -632,21 +577,76 @@ export function diffLines(diff: string): DiffLine[] {
  * A file's parsed diff; `isTruncated` when git's output passed 4 MiB and only its start is here, and
  * `error` when git could not make it (an unreadable file).
  */
-type FileDiff = { lines: DiffLine[]; isTruncated: boolean; error?: string }
+type FileDiff = {
+  lines: DiffLine[]
+  isTruncated: boolean
+  error?: string
+  counts: { added: number; deleted: number }
+  width: number
+  hunks: HunkStart[]
+  rows: number
+}
 
 /** The open file's parsed diff and what it was read for, so a scroll redraws without running git. */
-let diffCache: { key: string; diff: FileDiff } | undefined
+let diffCache: { scanKey: string; path: string; diff: Promise<FileDiff> } | undefined
 
 /** The parsed diff of `c`, read again only when the scan changed (a content edit changes its stamp). */
-async function cachedDiff($: $, s: Scan, c: Change): Promise<FileDiff> {
-  const key = JSON.stringify([s, c])
-  if (diffCache?.key !== key) {
-    const out = await diffFor($, s, c)
-    // A diff exits 0, or 1 with --no-index when the files differ; past that, git failed.
-    const error = out.exitCode > 1 ? out.stderr.trim() || `git diff exited ${out.exitCode}` : undefined
-    diffCache = { key, diff: { lines: diffLines(out.stdout), isTruncated: out.isStdoutTruncated, error } }
+function cachedDiff($: $, s: Scan, c: Change, scanKey: string): Promise<FileDiff> {
+  if (diffCache?.scanKey !== scanKey || diffCache.path !== c.path) {
+    // Cache the in-flight work too: overlapping redraws share one process and one parse.
+    diffCache = { scanKey, path: c.path, diff: prepareDiff($, s, c) }
   }
   return diffCache.diff
+}
+
+async function prepareDiff($: $, s: Scan, c: Change): Promise<FileDiff> {
+  const out = await diffFor($, s, c)
+  const lines = diffLines(out.stdout)
+  const counts = { added: 0, deleted: 0 }
+  let largest = 0
+  const hunks: HunkStart[] = []
+  let rows = 0
+  let previousHunk = -1
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i] as DiffLine
+    if (line.hunk !== previousHunk) {
+      if (i > 0) rows++
+      hunks.push({ line: i, row: rows })
+      previousHunk = line.hunk
+    }
+    rows++
+    if (line.kind === '+') counts.added++
+    if (line.kind === '-') counts.deleted++
+    largest = Math.max(largest, line.o, line.n)
+  }
+  // A diff exits 0, or 1 with --no-index when the files differ; past that, git failed.
+  const error = out.exitCode > 1 ? out.stderr.trim() || `git diff exited ${out.exitCode}` : undefined
+  return { lines, counts, width: String(largest).length, hunks, rows, isTruncated: out.isStdoutTruncated, error }
+}
+
+type Preview = { lines: string[]; notice?: string; source?: string }
+let previewCache: { scanKey: string; path: string; preview: Promise<Preview> } | undefined
+
+function cachedPreview($: $, s: Scan, path: string, scanKey: string): Promise<Preview> {
+  if (previewCache?.scanKey !== scanKey || previewCache.path !== path) {
+    previewCache = { scanKey, path, preview: preparePreview($, s.root + '/' + path) }
+  }
+  return previewCache.preview
+}
+
+async function preparePreview($: $, path: string): Promise<Preview> {
+  const stat = await $.fs.stat(path).catch(() => undefined)
+  if (!stat || stat.kind !== 'file') return { lines: [], notice: 'Not a readable file.' }
+  if (stat.size > PREVIEW_BYTES) return { lines: [], notice: `Too large to preview (${stat.size} bytes).` }
+  const text = await $.fs.read(path).catch(() => undefined)
+  if (text === undefined) return { lines: [], notice: 'Not a readable file.' }
+  if (text.includes('\0')) return { lines: [], notice: 'Binary file.' }
+  const lines = text === '' ? [] : text.split('\n')
+  if (text.endsWith('\n')) lines.pop()
+  // Most files can remain one Code instance with its full syntax context and natural line height.
+  // Reserve half the drawing budget for the rest of the pane, counting JSON escaping too.
+  const source = JSON.stringify(text).length <= FULL_PREVIEW_CHARS ? text : undefined
+  return { lines, source }
 }
 
 async function diffFor($: $, s: Scan, c: Change) {
@@ -697,39 +697,14 @@ export const register: Register = on => {
     return result
   }).catch(($, e, next) => next(e))
 
-  // The pane's window stays at rest (see ROOM), so the branch bar and the filter stay put: the wheel
-  // moves the open file's lines and the tree's rows itself, the side last clicked first (see wheel).
-  on('ui.scroll', { component: 'Pane', requestId: PANE }, async ($, e, next) => {
-    if (e.origin.kind === 'plugin') return next(e)
-    const panelOffset = await read($, panelOffsetAtom)
-    const treeOffset = await read($, treeOffsetAtom)
-    // With no file open the tree is unclipped, and the rows hidden below the window are as far as it
-    // can move down; a tree row is at least one.
-    const below = Math.max(0, e.contentRows - e.bodyRows - layout.spacer - layout.spare)
-    const at = {
-      hasFile: layout.hasFile,
-      panelOffset,
-      panelLast: layout.panelLast,
-      treeOffset,
-      treeLast: layout.hasFile ? layout.treeLast : treeOffset + below,
-    }
-    const over = e.pointer ? (e.pointer.column >= layout.treeColumns + GUTTER ? 'panel' : 'tree') : undefined
-    const to = wheel({ ...at, by: e.by, over, side: await read($, wheelSideAtom) })
-    if (to.panelOffset !== panelOffset) await update($, panelOffsetAtom, () => to.panelOffset)
-    if (to.treeOffset !== treeOffset) await update($, treeOffsetAtom, () => to.treeOffset)
-    const rest = canGoUp({ ...at, ...to }) ? ROOM : 0
-    return layout.offset === rest ? {} : next({ ...e, offset: rest })
-  }).catch(($, e, next) => next(e))
-
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    /** Gives the wheel to the side just clicked (see wheel). */
-    const wheelTo = (side: 'tree' | 'panel') => update($, wheelSideAtom, () => side)
-    /** Moves the file panel's window by `by` lines, kept within the file. */
-    const scrollPanel = (by: number) =>
-      wheelTo('panel').then(() => update($, panelOffsetAtom, cur => Math.min(layout.panelLast, Math.max(0, cur + by))))
-
     const els = $.ui.resolve(e)
     const { Box, Text, Button, Code } = els
+    const space = (key: string, height: number) => height <= 10000
+      ? <Box key={key} height={height} flexShrink={0} />
+      : <Box key={key} flexDirection="column" flexShrink={0}>
+          {spacerHeights(height).map((part, i) => <Box key={key + ':' + i} height={part} flexShrink={0} />)}
+        </Box>
     const Input = 'Input' in els ? els.Input : undefined
     const Svg = 'Svg' in els ? els.Svg : undefined
     // A pane drawn before the first scan landed scans for itself; only handlers and timers write.
@@ -738,33 +713,26 @@ export const register: Register = on => {
     const selected = await read($, selectedAtom)
     const changedOnly = await read($, changedOnlyAtom)
     const filter = await read($, filterAtom)
-    const panelOffset = await read($, panelOffsetAtom)
-    const treeOffsetSet = await read($, treeOffsetAtom)
 
-    const virtual = await pathsFor($, s, changedOnly, filter)
-    const rows = await buildRows($, s, new Set(expanded), virtual?.paths)
-    // The tree draws from its first visible row down; the window clips the rest.
-    const treeOffset = Math.min(treeOffsetSet, Math.max(0, rows.length - 1))
+    const scanKey = JSON.stringify(s)
+    const { rows, virtual, widest } = await cachedTree($, s, scanKey, expanded, changedOnly, filter)
     const change = selected === null ? undefined : s.changes.find(c => c.path === selected)
     const bodyRows = e.props.scroll.bodyRows > 0 ? e.props.scroll.bodyRows : 30
+    const offset = e.props.scroll.offset
     const n = s.changes.length
 
     // The tree column fits its widest row, up to half the pane; the file panel takes the rest.
-    const widest = rows.reduce((w, r) => Math.max(w, r.depth * 2 + r.name.length + 8), 0)
     const half = Math.floor(e.props.bodyColumns / 2)
     const treeColumns = Math.max(Math.min(TREE_MIN_COLUMNS, half), Math.min(widest, half))
 
     const toggleDir = (path: string) =>
-      wheelTo('tree').then(() => update($, expandedAtom, list =>
+      update($, expandedAtom, list =>
         list.includes(path) ? list.filter(p => p !== path && !p.startsWith(path + '/')) : [...list, path],
-      ))
-    // A new filter, view or collapse redraws the tree from its first row, and gives it the wheel.
-    const toTreeTop = () => wheelTo('tree').then(() => update($, treeOffsetAtom, () => 0))
-    const setFilter = (value: string) => update($, filterAtom, () => value).then(toTreeTop)
+      )
+    const toTop = () => settle($)
+    const setFilter = (value: string) => update($, filterAtom, () => value).then(toTop)
     const select = (path: string) =>
-      update($, selectedAtom, cur => (cur === path ? null : path))
-        .then(() => update($, panelOffsetAtom, () => 0))
-        .then(() => wheelTo('panel'))
+      update($, selectedAtom, cur => (cur === path ? null : path)).then(toTop)
 
     // Across the whole pane: the branch on the left 70%, the change counts right-aligned in the rest.
     const branchBar = (
@@ -796,7 +764,7 @@ export const register: Register = on => {
           )}
           {s.isRepo && s.error !== undefined && <Text color="error">status unavailable</Text>}
           {s.isRepo && s.error === undefined && (
-            <Button key="changes" plain onPress={() => update($, changedOnlyAtom, v => !v).then(toTreeTop)}>
+            <Button key="changes" plain onPress={() => update($, changedOnlyAtom, v => !v).then(toTop)}>
               {n === 0 ? (
                 <Text dimColor>clean</Text>
               ) : (
@@ -827,18 +795,22 @@ export const register: Register = on => {
         <Button key="refresh" plain onPress={() => rescan($)}>
           <Text dimColor>↻</Text>
         </Button>
-        <Button key="collapse" plain onPress={() => update($, expandedAtom, () => []).then(toTreeTop)}>
+        <Button key="collapse" plain onPress={() => update($, expandedAtom, () => []).then(toTop)}>
           <Text dimColor>⊟</Text>
         </Button>
       </Box>
     )
 
+    // Only the rows near the native viewport are elements. Equal-height spacers retain the full
+    // layout extent, so redrawing never shifts the scroll position or pins a column over it.
+    const treeWindow = nativeWindow(rows.length, offset - BRANCH_ROWS - 3, bodyRows, TREE_ROW_ROWS)
     const tree = (
       <Box flexDirection="column">
+        {treeWindow.before > 0 && space('tree-before', treeWindow.before)}
         {rows.length === 0 && (
           <Text dimColor>{filter.trim() !== '' ? 'No matching files.' : changedOnly ? 'No changes.' : 'Empty directory.'}</Text>
         )}
-        {rows.slice(treeOffset).map(r => {
+        {rows.slice(treeWindow.start, treeWindow.end).map(r => {
           const b = r.change ? badge(r.change) : undefined
           const color = b?.color ?? (r.isDir && r.count > 0 ? 'warning' : undefined)
           const press = () => (r.isDir ? toggleDir(r.path) : select(r.path))
@@ -849,7 +821,8 @@ export const register: Register = on => {
               justifyContent="space-between"
               alignItems="center"
               paddingX={1}
-              paddingY="xs"
+              height={TREE_ROW_ROWS}
+              flexShrink={0}
               backgroundColor={r.path === selected ? SELECTED_BG : undefined}
               hover={{ backgroundColor: HOVER_BG }}
             >
@@ -884,6 +857,7 @@ export const register: Register = on => {
             </Box>
           )
         })}
+        {treeWindow.after > 0 && space('tree-after', treeWindow.after)}
         {virtual && virtual.total > virtual.paths.length && (
           <Text dimColor>
             Showing {virtual.paths.length} of {virtual.total} matches.
@@ -893,11 +867,7 @@ export const register: Register = on => {
       </Box>
     )
 
-    // The file panel is pinned over the pane's window: it moves down as the tree scrolls,
-    // so it stays in view, and scrolls its own content through panelOffset.
-    const panelRoom = Math.max(4, bodyRows - BRANCH_ROWS - 3)
-    // The first line the panel can start at and still end on the file's last line.
-    let panelLast = 0
+    const panelColumns = Math.max(1, e.props.bodyColumns - treeColumns - GUTTER)
     let body
     let fileLines: { added: number; deleted: number } | undefined
     let isDiffTruncated = false
@@ -910,34 +880,31 @@ export const register: Register = on => {
         </Box>
       )
     } else if (change) {
-      const diff = await cachedDiff($, s, change)
+      const diff = await cachedDiff($, s, change, scanKey)
       const lines = diff.lines
       isDiffTruncated = diff.isTruncated
-      panelLast = lastTop(lines, panelRoom)
       if (diff.error !== undefined) body = <Text color="error">{diff.error}</Text>
       else if (lines.length === 0) body = <Text dimColor>No textual difference (binary or mode change).</Text>
       else {
-        const top = Math.min(panelOffset, panelLast)
-        // A 4 MB diff can hold millions of lines, more than a call takes arguments, so no spread.
-        const width = String(lines.reduce((w, l) => Math.max(w, l.o, l.n), 0)).length
+        const view = nativeWindow(diff.rows, offset - BRANCH_ROWS - 2, bodyRows)
+        const width = diff.width
         const pad = (no: number | undefined) => (no === undefined ? '' : String(no)).padStart(width)
         // Each line is a row of its own, tinted by kind; a gap between hunks costs a separator row.
         const drawn = []
-        for (let i = top, used = 0; i < lines.length; i++) {
+        for (let row = view.start; row < view.end; row++) {
+          const i = diffIndex(diff.hunks, row)
+          if (i === undefined) {
+            drawn.push(
+              <Box key={'gap:' + row} height={1} flexShrink={0}>
+                <Text mono dimColor>{' '.repeat(width * 2 + 2)}⋯</Text>
+              </Box>,
+            )
+            continue
+          }
           const l = lines[i] as DiffLine
           const tint = l.kind === '+' ? ADDED : l.kind === '-' ? DELETED : undefined
-          const gap = i > top && lines[i - 1]?.hunk !== l.hunk
-          if (used + (gap ? 2 : 1) > panelRoom) break
-          if (gap) {
-            drawn.push(
-              <Text key={'gap:' + i} mono dimColor>
-                {' '.repeat(width * 2 + 2)}⋯
-              </Text>,
-            )
-            used++
-          }
           drawn.push(
-            <Box key={'line:' + i} flexDirection="row" backgroundColor={tint?.bg}>
+            <Box key={'line:' + i} height={1} flexShrink={0} flexDirection="row" backgroundColor={tint?.bg}>
               <Text mono color={tint?.fg} dimColor={!tint}>
                 {pad(l.kind === '+' ? undefined : l.o)} {pad(l.kind === '-' ? undefined : l.n)}{' '}
               </Text>
@@ -945,63 +912,60 @@ export const register: Register = on => {
                 {l.kind === ' ' ? ' ' : l.kind}{' '}
               </Text>
               <Text mono color={tint?.fg} wrap="truncate-end">
-                {l.text.slice(1) || ' '}
+                {visibleText(l.text.slice(1), panelColumns, view.end - view.start) || ' '}
               </Text>
             </Box>,
           )
-          used++
         }
-        fileLines = {
-          added: lines.filter(l => l.kind === '+').length,
-          deleted: lines.filter(l => l.kind === '-').length,
-        }
-        body = <Box flexDirection="column">{drawn}</Box>
+        fileLines = diff.counts
+        body = (
+          <Box key="diff-body" flexDirection="column">
+            {view.before > 0 && space('diff-before', view.before)}
+            {drawn}
+            {view.after > 0 && space('diff-after', view.after)}
+          </Box>
+        )
       }
     } else {
-      const stat = await $.fs.stat(s.root + '/' + selected).catch(() => undefined)
-      if (!stat || stat.kind !== 'file') body = <Text dimColor>Not a readable file.</Text>
-      else if (stat.size > PREVIEW_BYTES) body = <Text dimColor>Too large to preview ({stat.size} bytes).</Text>
-      else {
-        // A read that fails (permissions, I/O) is not an empty file.
-        const text = await $.fs.read(s.root + '/' + selected).catch(() => undefined)
-        if (text === undefined) body = <Text dimColor>Not a readable file.</Text>
-        else if (text.includes('\0')) body = <Text dimColor>Binary file.</Text>
-        else {
-          const lines = text.split('\n')
-          panelLast = Math.max(0, lines.length - panelRoom)
-          const top = Math.min(panelOffset, panelLast)
-          body = (
-            <Code
-              key="preview"
-              source={lines.slice(top, top + panelRoom).join('\n')}
-              path={selected}
-              startLine={top + 1}
-              wrap="truncate-end"
-            />
+      const preview = await cachedPreview($, s, selected, scanKey)
+      if (preview.notice !== undefined) body = <Text dimColor>{preview.notice}</Text>
+      else if (preview.source !== undefined) {
+        body = <Code key="preview" source={preview.source} path={selected} startLine={1} wrap="truncate-end" />
+      } else {
+        const lines = preview.lines
+        const view = previewWindow(lines.length, offset - BRANCH_ROWS - 2, bodyRows)
+        const blocks = []
+        for (let start = view.start; start < view.end; start += PREVIEW_BLOCK_ROWS) {
+          const end = Math.min(lines.length, start + PREVIEW_BLOCK_ROWS)
+          blocks.push(
+            <Box key={'preview-block:' + start} height={end - start} flexShrink={0} overflow="hidden">
+              <Code
+                key={'preview:' + start}
+                source={lines.slice(start, end)
+                  .map(line => visibleText(line, panelColumns, previewCapacity(bodyRows))).join('\n')}
+                path={selected}
+                startLine={start + 1}
+                wrap="truncate-end"
+              />
+            </Box>,
           )
         }
+        body = (
+          <Box key="preview-body" flexDirection="column">
+            {view.before > 0 && space('preview-before', view.before)}
+            {blocks}
+            {view.after > 0 && space('preview-after', view.after)}
+          </Box>
+        )
       }
     }
-    const offset = e.props.scroll.offset
-    // Room above while what the wheel moves can go up; a window still below that rest is matched, so
-    // the branch bar stays at its top until the next wheel move brings it to rest.
-    // With a file open the clipped tree can move until its last row is the only one drawn.
-    const treeLast = Math.max(0, rows.length - 1)
-    const at = { hasFile: selected !== null, panelOffset, panelLast, treeOffset, treeLast }
-    const spacer = Math.max(canGoUp(at) ? ROOM : 0, offset)
-    const spare = canGoDown(at) ? ROOM : 0
-    Object.assign(layout, { treeColumns, panelLast, panelRoom, hasFile: selected !== null, offset, spacer, spare, treeLast })
-
     const slash = selected === null ? -1 : selected.lastIndexOf('/')
-    // Under the branch bar, down to the bottom of the pane's window.
     const panel = (
       <Box
-        position="absolute"
-        top={BRANCH_ROWS + Math.max(0, offset - spacer)}
-        left={treeColumns + GUTTER}
-        right={0}
-        height={bodyRows - BRANCH_ROWS - Math.max(0, spacer - offset)}
-        overflow="hidden"
+        key="file-panel"
+        width={panelColumns}
+        minHeight={Math.max(0, bodyRows - BRANCH_ROWS)}
+        flexShrink={0}
         flexDirection="column"
         rowGap={1}
       >
@@ -1035,16 +999,6 @@ export const register: Register = on => {
                   </Text>
                 </Text>
               )}
-              {layout.hasFile && (
-                <Box flexDirection="row" columnGap={1}>
-                  <Button key="line-up" plain onPress={() => scrollPanel(-1)}>
-                    <Text dimColor>▲</Text>
-                  </Button>
-                  <Button key="line-down" plain onPress={() => scrollPanel(1)}>
-                    <Text dimColor>▼</Text>
-                  </Button>
-                </Box>
-              )}
               <Button key="close-panel" plain role="dismiss" onPress={() => update($, selectedAtom, () => null)}>
                 <Text dimColor>✕</Text>
               </Button>
@@ -1056,17 +1010,9 @@ export const register: Register = on => {
     )
 
     return (
-      <Box flexDirection="column">
-        {spacer > 0 && <Box key="spacer" height={spacer} />}
-        {/* With a file open the tree is clipped to the window, and the wheel moves it through treeOffset. */}
-        <Box
-          flexDirection="column"
-          rowGap={1}
-          minHeight={bodyRows}
-          height={selected !== null ? bodyRows : undefined}
-          overflow={selected !== null ? 'hidden' : undefined}
-        >
-          {branchBar}
+      <Box key="native-pane" flexDirection="column" rowGap={1}>
+        {branchBar}
+        <Box key="columns" flexDirection="row" columnGap={GUTTER} alignItems="flex-start">
           <Box flexDirection="column" rowGap={1} width={treeColumns} flexShrink={0}>
             {search}
             {s.error && <Text color="error">{s.error}</Text>}
@@ -1074,7 +1020,6 @@ export const register: Register = on => {
           </Box>
           {panel}
         </Box>
-        {spare > 0 && <Box key="spare" height={spare} />}
       </Box>
     )
   })

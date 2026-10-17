@@ -52,12 +52,6 @@ declare module 'claude-code' {
       selected: string | null
       changedOnly: boolean
       filter: string
-      /** First line of the open file the right panel shows. */
-      panelOffset: number
-      /** First row of the tree the left column shows. */
-      treeOffset: number
-      /** The side the wheel moves first while a file is open: the one last clicked. */
-      wheelSide: 'tree' | 'panel'
     }
   }
 }
