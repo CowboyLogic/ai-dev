@@ -21,6 +21,9 @@ in a panel beside the tree.
   A filter box narrows the tree by name; it does not search inside ignored folders, and says so.
 - **Diff panel.** Selecting a changed file shows its diff against `HEAD`, with added and deleted lines
   tinted and the file's own line counts in the header. Selecting an unchanged file shows a preview.
+  With a file open the wheel moves the side you last clicked: opening a file or its ▲/▼ gives it to
+  the file, and a folder, the filter or ⊟ to the tree. At the end of one side it moves the other. A
+  terminal that reports the pointer moves the side under it instead.
 - **Stays current.** The pane rescans the workspace every few seconds and after each tool call that
   can change files.
 

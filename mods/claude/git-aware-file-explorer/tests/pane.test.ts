@@ -585,6 +585,54 @@ describe('git-aware-file-explorer pane', () => {
     await ui.unmount()
   })
 
+  test('gives the wheel to the side last clicked (desktop, no pointer)', async ($, on) => {
+    fakeRepo(on, { text: Array.from({ length: 100 }, (_, i) => `line ${i + 1}`).join('\n') })
+    // The surface's own move of the window, beneath the mod's hook.
+    on('ui.scroll', () => ({}))
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: { ...PROPS, scroll: { offset: 0, bodyRows: 20 } },
+    })
+    // A wheel tick as the desktop raises it: one row down, no pointer.
+    const tick = () =>
+      $.ui.scroll({
+        component: 'Pane',
+        requestId: 'git-aware-file-explorer',
+        offset: 1,
+        by: 1,
+        bodyRows: 20,
+        contentRows: 20,
+        origin: { kind: 'person' },
+      })
+    const startLine = async () => (await ui.find({ type: 'Code' }))?.props.startLine
+    const treeRows = async () => (await ui.findAll({ type: 'Button' })).filter(b => b.key?.startsWith('node:')).length
+
+    await ui.press({ key: 'node:src' })
+    await ui.press({ key: 'node:src/a.ts' })
+    const rows = await treeRows()
+    await tick()
+    expect(await startLine()).toBe(2)
+    expect(await treeRows()).toBe(rows)
+
+    // A folder clicked (closed and opened again) takes the wheel from the long file.
+    await ui.press({ key: 'chevron:src' })
+    await ui.press({ key: 'chevron:src' })
+    await tick()
+    expect(await startLine()).toBe(2)
+    expect(await treeRows()).toBe(rows - 1)
+
+    // ▲/▼ hands it back to the file.
+    await ui.press({ key: 'line-down' })
+    await tick()
+    expect(await startLine()).toBe(4)
+    expect(await treeRows()).toBe(rows - 1)
+
+    await ui.unmount()
+  })
+
   test('says when a search outside a git repository stopped at the walk limit', async ($, on) => {
     const many = Array.from({ length: 20001 }, (_, i) => file(`f${i}.txt`))
     on('session.cwd', () => ({ value: ROOT }))

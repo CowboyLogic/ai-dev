@@ -18,13 +18,15 @@ const GUTTER = 2
 /** Rows the branch bar takes above both sides: its line and the gap under it. */
 const BRANCH_ROWS = 2
 /**
- * The desktop raises no wheel event for a window that cannot move, and moves the window a row
- * before a hook answers. So the pane's window rests over a blank spacer row above the branch bar
- * only while the tree or the file can scroll up, and has a spare row below only while, with a file
- * open, the file or the tree can scroll down (with none, a long tree makes its own): at a limit the
- * window has nowhere to go, and nothing bounces. The mod moves the tree or the file panel itself.
+ * The desktop raises no wheel event for a window that cannot move, and moves the window before a
+ * hook answers, no further than it has room for: one row of room caps the wheel at a row per answer.
+ * So the pane's window rests over blank spacer rows above the branch bar only while the tree or the
+ * file can scroll up, and has spare rows below only while, with a file open, the file or the tree
+ * can scroll down (with none, a long tree makes its own): at a limit the window has nowhere to go,
+ * and nothing bounces. The rows sit outside the window at rest. The mod moves the tree or the file
+ * panel itself.
  */
-const ROOM = 1
+const ROOM = 4
 /**
  * Tools whose calls can change the work tree; a scan follows each. PowerShell is the shell tool on
  * Windows. A subagent's own tool calls reach the hook too, so Agent needs no entry.
@@ -45,6 +47,7 @@ const changedOnlyAtom = atom({ plugin: 'git-aware-file-explorer', key: 'changedO
 const filterAtom = atom({ plugin: 'git-aware-file-explorer', key: 'filter' } as const, '')
 const panelOffsetAtom = atom({ plugin: 'git-aware-file-explorer', key: 'panelOffset' } as const, 0)
 const treeOffsetAtom = atom({ plugin: 'git-aware-file-explorer', key: 'treeOffset' } as const, 0)
+const wheelSideAtom = atom({ plugin: 'git-aware-file-explorer', key: 'wheelSide' } as const, 'panel')
 
 type $ = EngineInterface
 
@@ -548,7 +551,7 @@ export type DiffLine = { text: string; kind: ' ' | '+' | '-'; o: number; n: numb
 export type Offsets = { hasFile: boolean; panelOffset: number; panelLast: number; treeOffset: number; treeLast: number }
 
 /**
- * Whether something the wheel can move can still go up, so the window keeps a row of room above
+ * Whether something the wheel can move can still go up, so the window keeps room above
  * (see ROOM). The wheel reaches the tree with a file open too (see wheel).
  */
 export function canGoUp(at: Offsets) {
@@ -562,19 +565,29 @@ export function canGoDown(at: Offsets) {
 
 /**
  * Where a wheel move of `by` rows leaves the file panel and the tree. A pointer picks the side it is
- * over. Without one (the desktop, keys) the open file takes the move until it reaches an end and the
- * tree takes the rest, so a file that fits, or one scrolled to its end, leaves the tree movable.
+ * over. Without one (the desktop, keys) the side last clicked takes the move until it reaches an end
+ * and the other side takes the rest, so a file that fits, or one scrolled to its end, leaves the tree
+ * movable.
  */
-export function wheel(at: Offsets & { by: number; over?: 'tree' | 'panel' }) {
-  let { by, panelOffset, treeOffset } = at
-  if (at.hasFile && at.over !== 'tree') {
+export function wheel(at: Offsets & { by: number; over?: 'tree' | 'panel'; side?: 'tree' | 'panel' }) {
+  let { panelOffset, treeOffset } = at
+  // Each moves its side as far as it can and hands back the part of the move it could not take.
+  const movePanel = (by: number) => {
     // A file shorter than the offset left for it starts where the drawing put it.
     const from = Math.min(panelOffset, at.panelLast)
     panelOffset = Math.min(at.panelLast, Math.max(0, from + by))
-    by = at.over === 'panel' ? 0 : by - (panelOffset - from)
+    return by - (panelOffset - from)
   }
-  // A tree already past its last row (one that shrank) can go up, never further down.
-  treeOffset = Math.min(Math.max(treeOffset, at.treeLast), Math.max(0, treeOffset + by))
+  const moveTree = (by: number) => {
+    // A tree already past its last row (one that shrank) can go up, never further down.
+    const from = treeOffset
+    treeOffset = Math.min(Math.max(from, at.treeLast), Math.max(0, from + by))
+    return by - (treeOffset - from)
+  }
+  if (!at.hasFile || at.over === 'tree') moveTree(at.by)
+  else if (at.over === 'panel') movePanel(at.by)
+  else if (at.side === 'tree') movePanel(moveTree(at.by))
+  else moveTree(movePanel(at.by))
   return { panelOffset, treeOffset }
 }
 
@@ -684,7 +697,7 @@ export const register: Register = on => {
   }).catch(($, e, next) => next(e))
 
   // The pane's window stays at rest (see ROOM), so the branch bar and the filter stay put: the wheel
-  // moves the open file's lines and the tree's rows itself (see wheel).
+  // moves the open file's lines and the tree's rows itself, the side last clicked first (see wheel).
   on('ui.scroll', { component: 'Pane', requestId: PANE }, async ($, e, next) => {
     if (e.origin.kind === 'plugin') return next(e)
     const panelOffset = await read($, panelOffsetAtom)
@@ -700,7 +713,7 @@ export const register: Register = on => {
       treeLast: layout.hasFile ? layout.treeLast : treeOffset + below,
     }
     const over = e.pointer ? (e.pointer.column >= layout.treeColumns + GUTTER ? 'panel' : 'tree') : undefined
-    const to = wheel({ ...at, by: e.by, over })
+    const to = wheel({ ...at, by: e.by, over, side: await read($, wheelSideAtom) })
     if (to.panelOffset !== panelOffset) await update($, panelOffsetAtom, () => to.panelOffset)
     if (to.treeOffset !== treeOffset) await update($, treeOffsetAtom, () => to.treeOffset)
     const rest = canGoUp({ ...at, ...to }) ? ROOM : 0
@@ -708,9 +721,11 @@ export const register: Register = on => {
   }).catch(($, e, next) => next(e))
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
+    /** Gives the wheel to the side just clicked (see wheel). */
+    const wheelTo = (side: 'tree' | 'panel') => update($, wheelSideAtom, () => side)
     /** Moves the file panel's window by `by` lines, kept within the file. */
     const scrollPanel = (by: number) =>
-      update($, panelOffsetAtom, cur => Math.min(layout.panelLast, Math.max(0, cur + by)))
+      wheelTo('panel').then(() => update($, panelOffsetAtom, cur => Math.min(layout.panelLast, Math.max(0, cur + by))))
 
     const els = $.ui.resolve(e)
     const { Box, Text, Button, Code } = els
@@ -739,14 +754,16 @@ export const register: Register = on => {
     const treeColumns = Math.max(Math.min(TREE_MIN_COLUMNS, half), Math.min(widest, half))
 
     const toggleDir = (path: string) =>
-      update($, expandedAtom, list =>
+      wheelTo('tree').then(() => update($, expandedAtom, list =>
         list.includes(path) ? list.filter(p => p !== path && !p.startsWith(path + '/')) : [...list, path],
-      )
-    // A new filter, view or collapse redraws the tree from its first row.
-    const toTreeTop = () => update($, treeOffsetAtom, () => 0)
+      ))
+    // A new filter, view or collapse redraws the tree from its first row, and gives it the wheel.
+    const toTreeTop = () => wheelTo('tree').then(() => update($, treeOffsetAtom, () => 0))
     const setFilter = (value: string) => update($, filterAtom, () => value).then(toTreeTop)
     const select = (path: string) =>
-      update($, selectedAtom, cur => (cur === path ? null : path)).then(() => update($, panelOffsetAtom, () => 0))
+      update($, selectedAtom, cur => (cur === path ? null : path))
+        .then(() => update($, panelOffsetAtom, () => 0))
+        .then(() => wheelTo('panel'))
 
     // Across the whole pane: the branch on the left 70%, the change counts right-aligned in the rest.
     const branchBar = (

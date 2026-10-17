@@ -65,9 +65,20 @@ describe('wheel', () => {
     expect(wheel({ ...LONG, panelOffset: 1, treeOffset: 5, by: -3 })).toEqual({ panelOffset: 0, treeOffset: 3 })
   })
 
+  test('moves the tree first once it was clicked, then the file with the rest', () => {
+    expect(wheel({ ...LONG, by: 3, side: 'tree' })).toEqual({ panelOffset: 0, treeOffset: 3 })
+    expect(wheel({ ...LONG, treeOffset: 38, by: 3, side: 'tree' })).toEqual({ panelOffset: 2, treeOffset: 39 })
+    expect(wheel({ ...LONG, panelOffset: 5, treeOffset: 1, by: -3, side: 'tree' })).toEqual({ panelOffset: 3, treeOffset: 0 })
+  })
+
+  test('moves the file first once it was clicked', () => {
+    expect(wheel({ ...LONG, treeOffset: 5, by: 3, side: 'panel' })).toEqual({ panelOffset: 3, treeOffset: 5 })
+  })
+
   test('moves only the side under the pointer', () => {
     expect(wheel({ ...LONG, panelOffset: 10, by: 3, over: 'panel' })).toEqual({ panelOffset: 10, treeOffset: 0 })
     expect(wheel({ ...LONG, by: 3, over: 'tree' })).toEqual({ panelOffset: 0, treeOffset: 3 })
+    expect(wheel({ ...LONG, by: 3, over: 'panel', side: 'tree' })).toEqual({ panelOffset: 3, treeOffset: 0 })
   })
 
   test('keeps the tree within its rows', () => {

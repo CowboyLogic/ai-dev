@@ -56,6 +56,8 @@ declare module 'claude-code' {
       panelOffset: number
       /** First row of the tree the left column shows. */
       treeOffset: number
+      /** The side the wheel moves first while a file is open: the one last clicked. */
+      wheelSide: 'tree' | 'panel'
     }
   }
 }
