@@ -24,9 +24,10 @@ const BRANCH_ROWS = 2
  * file can scroll up, and has spare rows below only while, with a file open, the file or the tree
  * can scroll down (with none, a long tree makes its own): at a limit the window has nowhere to go,
  * and nothing bounces. The rows sit outside the window at rest. The mod moves the tree or the file
- * panel itself.
+ * panel itself. More room lets the wheel run faster, and makes each move before the answer, the
+ * jitter, larger: two rows is the balance.
  */
-const ROOM = 4
+const ROOM = 2
 /**
  * Tools whose calls can change the work tree; a scan follows each. PowerShell is the shell tool on
  * Windows. A subagent's own tool calls reach the hook too, so Agent needs no entry.
