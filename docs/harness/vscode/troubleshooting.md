@@ -12,7 +12,7 @@ Check these in order:
    other folder is not detected. In a Copilot (Agent Host) session, user-level agents are read from the host's
    `~/.copilot/agents/` (`~/.claude/agents/` applies only to Anthropic Claude harness sessions), not from VS Code profile user data or the deprecated
    `chat.agentFilesLocations` setting.
-2. **Extension.** Use `.agent.md` in `.github/agents/` and `~/.copilot/agents/`. Files in `.claude/agents/` are plain `.md`. A legacy `.chatmode.md` file should be renamed.
+2. **Extension.** Prefer `.agent.md` in `.github/agents/` and `~/.copilot/agents/` (plain `.md` is also listed there). Files in `.claude/agents/` are plain `.md`. A legacy `.chatmode.md` file should be renamed.
 3. **Frontmatter.** The block must open and close with `---` on their own lines and be valid YAML. A tab, a
    missing quote around a value containing a colon, or a stray character in the block can stop it parsing.
 4. **`user-invocable`.** `user-invocable: false` hides an agent from the dropdown on purpose.

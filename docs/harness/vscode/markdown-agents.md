@@ -23,8 +23,8 @@ in the Copilot Agent Creator skill, and for VS Code's own description see
 | User (all workspaces), Copilot harness | `~/.copilot/agents/` |
 | User (all workspaces), Anthropic Claude harness | `~/.claude/agents/` |
 
-Files in `.github/agents/` and `~/.copilot/agents/` use the `.agent.md` extension. VS Code also detects a plain `.md`
-file in `.github/agents/`. Files in `.claude/agents/` are in Claude Code's format and are plain `.md` files, so do not
+Files in `.github/agents/` and `~/.copilot/agents/` use the `.agent.md` extension, which is the one to prefer; VS Code's
+file-locations table also lists plain `.md` files for both folders. Files in `.claude/agents/` are in Claude Code's format and are plain `.md` files, so do not
 rename them. A legacy `.chatmode.md` file should be renamed to `.agent.md`. Commit the workspace folder to share agents with your team.
 
 Copilot (Agent Host) sessions read user-level agents from the host's `~/.copilot/agents/`, and Anthropic Claude
