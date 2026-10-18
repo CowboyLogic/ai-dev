@@ -27,6 +27,12 @@ permanent trust. Trust also gates project MCP servers, hooks, skills, plugins, a
 model/effort overrides. Scoping is heuristic — avoid launching from `$HOME` or directories with
 untrusted executables.
 
+`--trust-folder` trusts the working directory's hooks, workspace MCP servers, and repository plugin
+settings for one new non-interactive session (`-p` or piped standard input). The trust is not
+saved to `trustedFolders`, does not extend to parent or sibling directories, and is not a tool,
+path, or URL permission grant; managed policy still applies. It can't be combined with
+`--resume`, `--continue`, or `--session-id`. Use it only for configuration you have reviewed.
+
 `--add-dir=PATH` / `/add-dir PATH` grants file access to another directory **and** loads its
 `.github/skills` and `.github/agents` as trusted configuration. With local sandboxing on,
 `/add-dir PATH` also grants the sandbox access to that directory for the current session.
@@ -263,8 +269,12 @@ refused.
 
 `/sandbox` subcommands: `config` (or bare `/sandbox`, opens the General / Credentials / Filesystem /
 Network dialog), `status`, `policy [COMMAND]` (effective policy with grant sources; a command shows
-its dev-tool access without running it), `enable`, `disable`, and `ca [create|trust|rotate|remove]`
-for the proxy certificate authority. Outside a session: `copilot sandbox ca
+its dev-tool access without running it), `enable`, `disable`, `enable session`, `disable session`,
+and `ca [create|trust|rotate|remove]`
+for the proxy certificate authority. The dialog's **General** tab has separate options for enabling
+sandboxing for the current session and for setting the default for new sessions; changing either
+leaves the other unchanged. `/sandbox enable session` and `/sandbox disable session` change
+sandboxing for the current session without changing the saved default. Outside a session: `copilot sandbox ca
 status|create|trust|rotate|remove`. Run `copilot help sandbox` for the full reference.
 
 ### Defaults and bypass

@@ -9,7 +9,7 @@
         "https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/configure-copilot-cli",
         "https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/authenticate-copilot-cli",
         "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/use-byok-models",
-        "https://docs.github.com/en/copilot/concepts/agents/copilot-cli/about-copilot-cli",
+        "https://docs.github.com/en/copilot/concepts/copilot-surfaces/copilot-cli",
         "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference",
         "https://docs.github.com/en/copilot/reference/enterprise-administrators/enterprise-managed-settings",
         "https://github.com/github/copilot-cli/releases/tag/v1.0.96",
@@ -25,21 +25,23 @@
         "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-config-dir-reference",
         "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference",
         "https://docs.github.com/en/copilot/how-tos/cloud-and-local-sandboxes/configuring-local-sandbox-settings",
-        "https://docs.github.com/en/copilot/concepts/about-cloud-and-local-sandboxes",
+        "https://docs.github.com/en/copilot/concepts/security-governance-and-network-settings/about-cloud-and-local-sandboxes",
         "https://github.com/github/copilot-cli/releases/tag/v1.0.96",
         "https://github.com/github/copilot-cli/releases/tag/v1.0.97",
         "https://github.com/github/copilot-cli/releases/tag/v1.0.98"
       ],
-      "covers": "Trusted directories, tool/path/URL permission flags, permission patterns, tool names, approval prompts and modes, permissions-config.json schema, local and cloud sandboxing and sandbox settings, allow-all restriction, managed permission rules, built-in safety checks (plan mode, command safety analysis, environment-variable denylist, web_fetch SSRF protection), sandbox tool-directory grants; Copilot CLI v1.0.96-v1.0.98 release notes"
+      "covers": "Trusted directories (including --trust-folder), tool/path/URL permission flags, permission patterns, tool names, approval prompts and modes, permissions-config.json schema, local and cloud sandboxing and sandbox settings, allow-all restriction, managed permission rules, built-in safety checks (plan mode, command safety analysis, environment-variable denylist, web_fetch SSRF protection), sandbox tool-directory grants; Copilot CLI v1.0.96-v1.0.98 release notes"
     },
     "references/cli-commands.md": {
       "urls": [
         "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference",
+        "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-programmatic-reference",
+        "https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli/ask-a-side-question",
         "https://github.com/github/copilot-cli/releases/tag/v1.0.96",
         "https://github.com/github/copilot-cli/releases/tag/v1.0.97",
         "https://github.com/github/copilot-cli/releases/tag/v1.0.98"
       ],
-      "covers": "Terminal subcommands, command-line options, session management, slash commands, supported model IDs, debug-log collection; Copilot CLI v1.0.96-v1.0.98 release notes"
+      "covers": "Terminal subcommands, command-line options, session management, programmatic-mode options (including --trust-folder), slash commands (including /ask and /sandbox session scope), supported model IDs, debug-log collection; Copilot CLI v1.0.96-v1.0.98 release notes"
     },
     "references/mcp.md": {
       "urls": [
@@ -57,7 +59,7 @@
         "https://github.com/github/copilot-cli/releases/tag/v1.0.97",
         "https://github.com/github/copilot-cli/releases/tag/v1.0.98"
       ],
-      "covers": "Hook sources and load order, cloud agent execution environment, agent-scoped hooks in custom agent frontmatter, file format, command/http/prompt entries, all hook events, input payloads, decision output, matchers, exit codes, disableAllHooks, debugging; Copilot CLI v1.0.96-v1.0.98 release notes"
+      "covers": "Hook sources and load order, cloud agent execution environment, agent-scoped hooks in custom agent frontmatter, file format, command/http/prompt entries, all hook events, input payloads (including the subagent fields), decision output, matchers, exit codes, disableAllHooks, debugging; Copilot CLI v1.0.96-v1.0.98 release notes"
     },
     "references/skills.md": {
       "urls": [

@@ -2,6 +2,39 @@
 
 Changes to the `client-config-copilotcli` skill, newest first.
 
+## 2026-10-18 — v2.5 (documentation refresh, Copilot CLI v1.0.98 still the basis)
+
+Basis: GitHub Copilot CLI **v1.0.98** (released 2026-10-14). It is still the latest stable
+release on 2026-10-18: the GitHub releases "latest" and the npm `latest` dist-tag both point to
+it, and the v1.0.99 and v1.0.100 tags are prereleases, so they are not covered. No CLI release
+notes changed; this refresh covers the github/docs Copilot CLI content commits made after the
+2026-10-14 pass (`02b43700` and `bab62c42`, 2026-10-16). Each claim was checked against the
+current docs.github.com source.
+
+- `references/cli-commands.md`: `/ask` and `/btw` take an optional question, render Markdown, and
+  reopen the last answer when called with none (the `Ctrl+E` and `Ctrl+Y` answer shortcuts were
+  labeled release-notes-only and are now documented); `/sandbox enable session` and
+  `/sandbox disable session`; `--trust-folder` added to the permissions option list.
+- `references/permissions.md`: `--trust-folder` semantics under "Trusted directories" (one new
+  non-interactive session, not saved to `trustedFolders`, no permission grant, managed policy
+  still applies, incompatible with `--resume`, `--continue`, and `--session-id`); the `/sandbox`
+  dialog's General tab has separate session and default-for-new-sessions options.
+- `references/hooks.md`: hooks that fire inside a subagent also receive `agentId`, `agentType`,
+  and `parentAgentId` (snake_case equivalents for the PascalCase format).
+- `references/instructions.md`: path-specific rules at the repository root and in the working
+  directory are delivered automatically when the agent reads or edits a matching file.
+- `sources.json`: added the programmatic reference and the side-question how-to; updated the
+  `covers` text; repointed two source URLs that now redirect (the Copilot CLI overview moved to
+  `concepts/copilot-surfaces/copilot-cli`, and the sandbox concepts page to
+  `concepts/security-governance-and-network-settings/about-cloud-and-local-sandboxes`).
+- `README.md`: refresh date and the statement that v1.0.98 is still the latest stable release.
+- Reviewed and not carried into the references: the 2026-10-15 and 2026-10-16 github/docs commits
+  that only moved or reworded pages (the Copilot CLI concepts audit repointed links to relocated
+  autopilot, fleet, research, and rubber-duck pages; Copilot app download button and wording;
+  Copilot surfaces entry points; a Gemini durable-cache link), none of which changes a CLI
+  configuration surface.
+- Not done: the benchmark in `README.md` was not re-run.
+
 ## 2026-10-14 — v2.4 (refresh to Copilot CLI v1.0.98)
 
 Basis: GitHub Copilot CLI **v1.0.98** (released 2026-10-14, the latest stable release; the

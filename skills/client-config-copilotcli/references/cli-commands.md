@@ -104,7 +104,7 @@ the authority.
 `--allow-all`, `--yolo`, `--allow-all-tools`, `--allow-all-paths`, `--allow-all-urls`,
 `--allow-tool`, `--deny-tool`, `--allow-url`, `--deny-url`, `--available-tools`,
 `--excluded-tools`, `--disallow-temp-dir`, `--add-dir`, `--no-ask-user`, `--sandbox`,
-`--no-sandbox`, `--secret-env-vars=VAR` — see `permissions.md`.
+`--no-sandbox`, `--secret-env-vars=VAR`, `--trust-folder` — see `permissions.md`.
 
 ### MCP, plugins, instructions
 
@@ -200,8 +200,8 @@ and `/instructions`.
 
 `/permissions [default|assisted|allow-all|show|reset]`, `/allow-all`, `/yolo`,
 `/reset-allowed-tools`, `/add-dir PATH`, `/list-dirs`, `/cwd`, `/cd [PATH]`,
-`/sandbox [config|status|policy [COMMAND]|enable|disable]`, `/sandbox ca [create|trust|rotate|remove]`
-(see `permissions.md`).
+`/sandbox [config|status|policy [COMMAND]|enable|disable]`, `/sandbox enable session`,
+`/sandbox disable session`, `/sandbox ca [create|trust|rotate|remove]` (see `permissions.md`).
 
 ### Work
 
@@ -219,7 +219,7 @@ and `/instructions`.
 | `/worktree [branch\|task]`, `/worktree new`, `/move` | Git worktrees |
 | `/every`, `/after` | Scheduled prompts (experimental) |
 | `/tasks` | Background subagents and shells |
-| `/ask QUESTION`, `/btw` | Side question outside history (v1.0.98 release notes: `Ctrl+E` expands the answer, `Ctrl+Y` copies all of it, and `/ask` or `/btw` reopens the last completed answer in the session) |
+| `/ask [QUESTION]`, `/btw [QUESTION]` | Side question outside history; the answer renders as Markdown. In the answer dialog, `Ctrl+E` expands it and `Ctrl+Y` copies the full answer. With no question, reopens the last side-question answer in the session |
 | `/compact [FOCUS]` / `/context` | Compress / inspect context |
 | `/chronicle <standup\|tips\|improve\|reindex\|skills ...>` | Session-history insights |
 | `/usage` | Usage and AI credits (v1.0.97 release notes: shows billed AI Credits for token-billed sessions, including after resume) |

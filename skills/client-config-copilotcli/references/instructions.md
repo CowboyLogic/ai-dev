@@ -30,7 +30,8 @@ directories nested in the path of a file being worked on.
 No general precedence between `copilot-instructions.md`, `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md`.
 Identical copies are deduplicated; conflicting instructions resolve non-deterministically — avoid
 them. Path-specific files are included only when `applyTo` matches a file in context; files
-disabled via `/instructions` are excluded.
+disabled via `/instructions` are excluded. Path-specific rules at the repository root and in the
+working directory are delivered automatically when the agent reads or edits a matching file.
 
 ### Subagents
 
