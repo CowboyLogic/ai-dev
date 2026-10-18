@@ -3,8 +3,8 @@
 A skill for creating and troubleshooting custom subagents for OpenAI Codex.
 
 > [!NOTE]
-> **Codex version:** verified against [Codex CLI 0.162.1](https://github.com/openai/codex/releases/tag/rust-v0.162.1)
-> (released 2026-10-09). Role-file behavior comes from the Codex source at tag `rust-v0.162.1`
+> **Codex version:** verified against [Codex CLI 0.163.0](https://github.com/openai/codex/releases/tag/rust-v0.163.0)
+> (released 2026-10-15). Role-file behavior comes from the Codex source at tag `rust-v0.163.0`
 > and from running that CLI. Re-verify when Codex ships a new release.
 
 ## Overview
@@ -13,16 +13,16 @@ Codex custom agents are standalone TOML files in `.codex/agents/` or `~/.codex/a
 file needs `name`, `description`, and `developer_instructions`. There is no Markdown body.
 Two behaviors surprise people coming from other tools: Codex delegates only when asked, and a
 role file can only customize the child, never widen or narrow the parent's authority. Codex
-applies a bounded set of keys; `sandbox_mode`, `approval_policy`, and `mcp_servers` parse but
-are ignored, because the child inherits the parent's sandbox, approvals, and MCP servers. (The
-official subagents page implies otherwise for `sandbox_mode` and `mcp_servers`; the skill
-follows the source and its tests, and says so.)
+applies a bounded set of keys; `sandbox_mode`, `approval_policy`, `mcp_servers`, and
+`service_tier` parse but are ignored, because the child inherits the parent's sandbox,
+approvals, and MCP servers, and uses the root session's service tier. The official subagents
+page and the Codex source agree on this.
 
 This skill covers:
 
 - The agent file format and its three required fields
 - The bounded set of keys a role file can actually set: instructions, model and reasoning
-  effort, verbosity, personality, `service_tier`, and disabling features and skills
+  effort, summary, verbosity, personality, and disabling features and skills
 - The `[agents]` table (`enabled`, `max_concurrent_threads_per_session`,
   `default_subagent_model`, `default_subagent_reasoning_effort`) and `[agents.<name>]` roles
 - Built-in `default`, `worker`, and `explorer` agents and how to override them

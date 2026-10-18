@@ -2,8 +2,8 @@
 
 Sources: <https://developers.openai.com/codex/subagents> and
 <https://developers.openai.com/codex/config-reference>, the Codex source at tag
-`rust-v0.162.1`, plus load behavior observed with `codex doctor` against test agent files on
-codex-cli 0.162.1. Re-verify when the CLI version moves on.
+`rust-v0.163.0`, plus load behavior observed with `codex doctor` against test agent files on
+codex-cli 0.163.0. Re-verify when the CLI version moves on.
 
 ## Agent file fields
 
@@ -20,8 +20,9 @@ One agent per `.toml` file in `.codex/agents/` (project, trusted projects only) 
 
 ### What Codex applies from a role file
 
-Verified in `codex-rs/core/src/agent/role.rs` at tag `rust-v0.162.1` (unchanged from
-`rust-v0.158.0` apart from `service_tier` handling), which describes the mechanism as
+Verified in `codex-rs/core/src/agent/role.rs` at tag `rust-v0.163.0` (identical to
+`rust-v0.162.1`; `role_tests.rs` differs only in dropping its `main_execve_wrapper_exe`
+assertions), which describes the mechanism as
 "bounded agent-role overrides": roles "may customize the child or reduce its capabilities, but
 never replace the parent session's authority."
 
@@ -30,8 +31,8 @@ never replace the parent session's authority."
 | `developer_instructions` | string | Applied (required for standalone files) |
 | `model` | string | Applied; locked, and outranks spawn-time and `[agents]` values |
 | `model_reasoning_effort` | string | Applied and locked. Any non-empty string parses; the model decides what it accepts |
-| `model_reasoning_summary`, `model_verbosity`, `personality`, `service_tier` | typed enums / string | Applied. `service_tier = "fast"` is dropped unless the `fast_mode` feature is enabled, and `"ultrafast"` unless `ultrafast_mode` is; both are enabled by default in 0.162.1 |
-| `features.<name> = false` | boolean | Applied only for `shell_tool`, `apps`, `plugins`, `memory_tool`, `request_permissions_tool` |
+| `model_reasoning_summary`, `model_verbosity`, `personality` | typed enums | Applied |
+| `features.<name> = false` | boolean | Applied only for `shell_tool`, `apps`, `plugins`, `memories` (legacy key `memory_tool` resolves to the same feature), `request_permissions_tool` |
 | `skills.config` (`enabled = false`), `skills.bundled.enabled = false`, `skills.include_instructions = false` | tables | Applied as disables only. Cannot enable skills |
 | `nickname_candidates` | array of strings | Display nicknames for spawned instances |
 
@@ -39,16 +40,19 @@ never replace the parent session's authority."
 
 These parse (an invalid `sandbox_mode` still yields a load warning) and then have **no
 effect** on the child, which inherits the parent's live sandbox, approval, and MCP
-configuration: `sandbox_mode`, `approval_policy`, `mcp_servers`, `web_search`, and any
-`features.<name> = true`. Configure them on the parent session.
+configuration and uses the root session's service tier: `sandbox_mode`, `approval_policy`,
+`mcp_servers`, `model_provider`, `web_search`, `service_tier`, and any `features.<name> = true`.
+Configure them on the parent session.
 
-The subagents page says the opposite for `sandbox_mode` and `mcp_servers` (its "Custom agent
-file schema" lists them as keys a file can include, and its examples set
-`sandbox_mode = "read-only"`). The source disagrees: the `role_tests.rs` test at
-`rust-v0.162.1` writes a role file with `approval_policy`, `sandbox_mode`, and
-`[mcp_servers.*]` and asserts that the child's permissions and MCP servers equal the parent's
-and that the role layer contains none of those keys. Treat the docs text as inaccurate for
-this release, and do not rely on a role-file `sandbox_mode` for isolation.
+The official subagents page states the same ("Other session settings, including `sandbox_mode`,
+`approval_policy`, `model_provider`, and `mcp_servers`, don't override the parent configuration
+when placed in a custom agent file. The service tier also follows the root session's
+preference."). The source agrees: the `role_tests.rs` test at `rust-v0.163.0` writes a role file
+with `approval_policy`, `sandbox_mode`, and `[mcp_servers.*]` and asserts that the child's
+permissions and MCP servers equal the parent's and that the role layer contains none of those
+keys; `apply_spawn_agent_service_tier` in `core/src/agent/child_config.rs` runs after the role is
+applied and replaces `service_tier` with the root session's tier (or clears it when the root has
+none). Do not rely on a role-file `sandbox_mode` for isolation.
 
 ## `[agents]` table in `config.toml`
 
@@ -64,7 +68,7 @@ this release, and do not rely on a role-file `sandbox_mode` for isolation.
 `agents.max_depth` limits nesting for V1 agent threads and is ignored by V2.
 `agents.job_max_runtime_seconds` is a removed setting kept as a no-op for compatibility
 (`config_toml.rs`: "Removed agent-job setting retained as a no-op"). Both are absent from the
-public reference and accepted without error in 0.162.1. The public reference also notes that
+public reference and accepted without error in 0.163.0. The public reference also notes that
 scalar setting names are reserved and cannot be used as custom role names.
 
 Any other key under `[agents]` is parsed as a role table. An unknown scalar such as
