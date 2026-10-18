@@ -146,7 +146,10 @@ def validate_file(path: Path, names: dict[str, Path], res: Result) -> None:
     features = data.get("features")
     if isinstance(features, dict):
         for fname, on in features.items():
-            if on is True or fname not in DISABLE_ONLY_FEATURES:
+            if fname in DISABLE_ONLY_FEATURES and not isinstance(on, bool):
+                res.error(path, f"features.{fname} must be a boolean, not {type(on).__name__}; "
+                                "Codex ignores the whole file with `expected a boolean`")
+            elif on is True or fname not in DISABLE_ONLY_FEATURES:
                 res.warn(path, f"features.{fname} = {str(on).lower()} has no effect in a role file; "
                                f"roles can only disable {sorted(DISABLE_ONLY_FEATURES)}")
 
