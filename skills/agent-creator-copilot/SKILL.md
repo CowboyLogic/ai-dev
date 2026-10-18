@@ -72,7 +72,7 @@ You are a documentation specialist focused on README files. ...
 | Enterprise | `agents/<name>.md` in the `.github-private` repo of an org designated in enterprise settings | GitHub.com, IDEs |
 | Plugin | `<plugin>/agents/` | Copilot CLI |
 
-VS Code accepts `.agent.md` or `.md` files in `.github/agents` and `~/.copilot/agents`. The **Local** harness stores user-level agents in VS Code profile storage instead, separate from `~/.copilot/agents` and `~/.claude/agents`; move them to the folder the selected harness reads to reuse them.
+VS Code's file-locations table lists `.agent.md` or `.md` files for `.github/agents` and `~/.copilot/agents`; prefer `.agent.md`. The **Local** harness stores user-level agents in VS Code profile storage instead, separate from `~/.copilot/agents` and `~/.claude/agents`; move them to the folder the selected harness reads to reuse them.
 
 The filename (minus `.md` / `.agent.md`) is the agent's ID and is used for deduplication. On name conflicts the lowest (most specific) level wins: repository over organization, organization over enterprise.
 
