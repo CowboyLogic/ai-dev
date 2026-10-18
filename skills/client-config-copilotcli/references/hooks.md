@@ -199,6 +199,10 @@ Every payload includes `sessionId`, `timestamp` (epoch ms), and `cwd`. Additiona
 | `preCompact` | `transcriptPath`, `trigger` (`"manual"`/`"auto"`), `customInstructions` |
 | `notification` | `hook_event_name`, `message`, `title?`, `notification_type` |
 
+Hooks that fire inside a subagent also receive `agentId`, `agentType` (when known), and
+`parentAgentId` (when known); snake_case payloads use `agent_id`, `agent_type`, and
+`parent_agent_id`. Root-agent hook inputs are unchanged.
+
 `notification_type` values: `shell_completed`, `shell_detached_completed`, `agent_completed`,
 `agent_idle`, `permission_prompt`, `elicitation_dialog`.
 
