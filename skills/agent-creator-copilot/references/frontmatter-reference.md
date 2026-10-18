@@ -484,7 +484,7 @@ Versioning follows Git commit SHAs of the profile file. An assigned task uses th
 
 ### File detection (VS Code)
 
-VS Code treats **any** `.md` file in `.github/agents/` as a custom agent. The settings `chat.agentFilesLocations` and `chat.modeFilesLocations` are deprecated (Local agent only). Legacy `.chatmode.md` files should be renamed to `.agent.md`.
+VS Code's file-locations table lists `.agent.md` or `.md` files for `.github/agents` and `~/.copilot/agents`; prefer `.agent.md`. The settings `chat.agentFilesLocations` and `chat.modeFilesLocations` are deprecated (Local agent only). Legacy `.chatmode.md` files should be renamed to `.agent.md`.
 
 ### Moving a Local agent to the Copilot harness (VS Code)
 
