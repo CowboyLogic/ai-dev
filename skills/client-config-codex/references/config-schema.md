@@ -2,7 +2,7 @@
 
 Covers the Codex configuration directory, `config.toml` layers, profile files, project trust,
 model providers, feature flags, telemetry and notifications, managed configuration, environment
-variables, and authentication. Verified against `codex-cli 0.162.1`.
+variables, and authentication. Verified against `codex-cli 0.163.0`.
 
 Permissions and sandboxing (`[permissions.<name>]`, network proxy rules) are in `permissions.md`.
 CLI commands and flags are in `cli-commands.md`. Hooks, MCP, skills, agents, and plugins have their
@@ -38,7 +38,7 @@ Scopes outside `CODEX_HOME`:
 | `/etc/codex/config.toml` | System configuration defaults (Unix) |
 | `/etc/codex/requirements.toml` | System admin-enforced requirements (Unix) |
 | `/etc/codex/managed_config.toml` | Legacy managed defaults (Unix only) |
-| `%ProgramData%\OpenAI\Codex\config.toml` | System configuration defaults (Windows; confirmed in the config loader source at `rust-v0.162.1`, not run on Windows here) |
+| `%ProgramData%\OpenAI\Codex\config.toml` | System configuration defaults (Windows; confirmed in the config loader source at `rust-v0.163.0`, not run on Windows here) |
 | `%ProgramData%\OpenAI\Codex\requirements.toml` | System requirements (Windows) |
 
 Rules:
@@ -109,7 +109,7 @@ Codex ignores these keys in a project `.codex/config.toml` and prints a startup 
 | `experimental_compact_prompt_file` | path | Loads the compaction prompt override from a file (experimental) |
 | `model_catalog_json` | path | Startup model catalog; a profile may override it |
 | `service_tier` | string | Preferred tier; `fast` maps to request value `priority` |
-| `personality` | `none` \| `friendly` \| `pragmatic` | Deprecated: the `personality` feature is `removed` and the value had no effect on the rendered prompt in 0.158.0 or 0.162.1. Do not recommend it; only `none` remains meaningful as an opt-out |
+| `personality` | `none` \| `friendly` \| `pragmatic` | Deprecated: the `personality` feature is `removed` and the value had no effect on the rendered prompt in 0.158.0 or 0.163.0. Do not recommend it; only `none` remains meaningful as an opt-out |
 | `oss_provider` | `lmstudio` \| `ollama` | Default local provider for `--oss` |
 
 ```toml
@@ -159,9 +159,10 @@ Semantics and permission profiles live in `permissions.md`. Keys to recognize:
 | `suppress_unstable_features_warning` | Silence the under-development-feature warning |
 | `tool_output_token_limit` | Token budget for storing individual tool or function outputs in history |
 | `background_terminal_max_timeout` | Maximum poll window in milliseconds for empty `write_stdin` polls (background terminal output); default `300000` (5 minutes) |
+| `include_environment_context_time` | Whether the environment context includes the current date and timezone (new in 0.163.0) |
 | `include_environment_context`, `include_permissions_instructions`, `include_apps_instructions`, `include_collaboration_mode_instructions` | Booleans that control whether Codex injects the `<environment_context>` user block and the `<permissions instructions>`, `<apps_instructions>`, and `<collaboration_mode>` developer blocks |
 | `skills.include_instructions` | Whether turns receive the automatic skills instructions block |
-| `thread_unload_delay_secs` | App-server only: seconds a thread must have no subscribers and no activity before it is unloaded; default `60`, `0` unloads immediately, a restart is needed to change it |
+| `thread_unload_delay_secs` | App-server only: seconds a thread must have no subscribers and no activity before it is unloaded; default `1800` (30 minutes; it was `60` through 0.162.1), `0` unloads immediately, a restart is needed to change it |
 | `allow_symlinked_codex_home` | macOS only: let sandbox writable roots at or beneath `CODEX_HOME` traverse symlinks. Default `false`; it trusts symlink targets even if they change or lie outside `CODEX_HOME`. Read only from the user config at startup |
 | `goals.max_goal_token_budget` | Maximum token budget for a goal and the default budget for new goals |
 
@@ -197,11 +198,14 @@ set = { MY_FLAG = "1" }
   (added in 0.162.0; the loader rejects zero, negative, and non-finite values).
 - `tui.auto_recap`: automatic recaps when the terminal is unfocused; default `true`, and `/recap`
   stays available when disabled.
-- `tui.copy_on_select`: copy selected transcript text on mouse release. `auto` (default) copies
+- `tui.copy_on_select`: copy selected transcript or footer text on mouse release (footer selection
+  is new in 0.163.0). `auto` (default) copies
   except in direct terminals known to forward their native copy shortcut (Ghostty 1.2+, Kitty on
   macOS, Windows Terminal, VS Code on Windows); unknown terminals, Ghostty without a recognized
   version, and tmux/Zellij copy. `always` copies every nonempty selection; `never` requires an
   explicit copy action.
+- `tui.copy_on_select_clear_selection`: deselect the text after copy-on-select confirms clipboard
+  delivery. Default `false`; no effect when copy-on-select is off (new in 0.163.0).
 - `tui.right_click_paste`: right-click paste fallback for the fullscreen transcript. Default `auto`
   (Windows, WSL, Linux; WSL only when VS Code detection is conclusive); `on` also enables macOS
   and other supported local platforms; `off` leaves right-click paste to the terminal. Over SSH
@@ -219,6 +223,11 @@ set = { MY_FLAG = "1" }
 - `tui.terminal_resize_reflow_max_rows`: caps resize-reflow replay to the most recent rendered rows;
   `0` keeps all rows, omitted uses a terminal-specific default.
 - `tui.keymap.<context>.<action>`: string or `string[]`; `[]` unbinds.
+- `tui.keymap.global.leader`: one prefix key for persistent, context-aware shortcut menus (new in
+  0.163.0; also set from `/keymap`). The 0.163.0 release notes give the default as `Ctrl+X`. The
+  loader requires a single key that is `ctrl-`/`alt-` modified or a non-character key, and
+  rejects `ctrl-z` (reserved for suspend) and keys the TUI reserves. A binding elsewhere can be
+  written `leader <key>` (for example `leader c`): the key after `leader` is the second stroke.
 
 ```toml
 [tui.keymap.composer]
@@ -267,7 +276,7 @@ trust_level = "trusted"   # or "untrusted"
 
 - `trusted`: project `.codex/` layers load (config, hooks, rules).
 - `untrusted`: project `.codex/` layers are skipped, and so is the project `AGENTS.md` chain (global
-  instructions still load; verified on 0.158.0 and 0.162.1, see `references/instructions.md`). With no explicit `approval_policy`, Codex derives
+  instructions still load; verified on 0.158.0 and 0.163.0, see `references/instructions.md`). With no explicit `approval_policy`, Codex derives
   stricter approvals; setting `approval_policy = "on-request"` explicitly overrides that.
 - Quote the path key. Trust entries belong in user config, not project config.
 - Admins keep `untrusted` in `allowed_approval_policies` to permit the derived behavior; it does not
@@ -378,9 +387,11 @@ Commonly relevant flags (docs defaults; confirm with `codex features list`):
 | `prevent_idle_sleep` | false | Experimental; keep the machine awake during a turn |
 
 `web_search_cached` and `web_search_request` are deprecated; use top-level `web_search`. The docs also
-list a deprecated `features.web_search`, which `codex features list` does not show. As of 0.162.1,
-many historical flags (for example `undo`, `steer`, `js_repl`, `tool_search`, `collaboration_modes`)
-report `removed`; do not add them to new configs.
+list a deprecated `features.web_search`, which `codex features list` does not show. As of 0.163.0,
+many historical flags (for example `undo`, `steer`, `js_repl`, `tool_search`, `collaboration_modes`,
+`shell_zsh_fork`, `unified_exec_zsh_fork`) report `removed`; do not add them to new configs. The
+0.163.0 release notes say Codex no longer bundles a patched `zsh`, uses its standard shell executor,
+and shows a migration notice to configurations that still set the retired shell flags.
 `code_mode`, `rollout_budget`, and `context_management` are under development. Admins can pin
 feature values in `requirements.toml`; conflicting writes are rejected.
 
@@ -394,7 +405,7 @@ feature values in `requirements.toml`; conflicting writes are rejected.
 ## Memories
 
 The `memories` feature flag (above) turns memories on; `[memories]` tunes them. Keys in the
-0.162.1 config schema:
+0.163.0 config schema:
 
 | Key | Purpose |
 |-----|---------|
@@ -414,8 +425,8 @@ The `memories` feature flag (above) turns memories on; `[memories]` tunes them. 
 ## Apps
 
 `[apps._default]` sets defaults for every app (connector); `[apps.<id>]` overrides them for one app.
-The `apps` feature flag (stable, on by default in 0.162.1) gates app integrations. Keys in the
-0.162.1 config schema:
+The `apps` feature flag (stable, on by default in 0.163.0) gates app integrations. Keys in the
+0.163.0 config schema:
 
 | Key | Purpose |
 |-----|---------|
@@ -432,7 +443,9 @@ The `apps` feature flag (stable, on by default in 0.162.1) gates app integration
 ## Telemetry and notifications
 
 `[otel]` log export is disabled by default and cannot be set from project config. The reference
-documents `metrics_exporter` as defaulting to `statsig`; set it to `none` to send no metrics.
+documents `metrics_exporter` as defaulting to `statsig`; set it to `none` to send no metrics. In
+0.163.0 the `statsig` default follows `[analytics] enabled`, while a custom OTLP metrics exporter
+(`otlp-http`, `otlp-grpc`) is independent of it and stays on when analytics is disabled.
 
 ```toml
 [otel]
@@ -457,8 +470,10 @@ log_user_prompt = false        # keep prompts redacted unless policy allows othe
 > The docs show `"${OTLP_TOKEN}"` as an exporter header value but never state that `[otel]` headers
 > interpolate environment variables. Verify before relying on it.
 
-Other switches: `[analytics] enabled = false` disables anonymous usage and health metrics across the
-desktop app, CLI, and IDE (independent of OTel). `[feedback] enabled = false` disables `/feedback`.
+Other switches: `[analytics] enabled = false` disables OpenAI analytics (anonymous usage and health
+metrics) across the desktop app, CLI, and IDE. As of 0.163.0 it does not turn off a custom OTLP
+metrics exporter; set `otel.metrics_exporter = "none"` for that. When `[analytics] enabled` is
+unset, the default depends on the client. `[feedback] enabled = false` disables `/feedback`.
 
 Notifications:
 
@@ -502,7 +517,7 @@ Omitted keys stay unconstrained.
 | `[experimental_network]` | Managed sandbox network policy; experimental, test before broad rollout |
 | `enforce_residency` | Require service traffic to use a supported data residency; currently accepts `us` |
 | `remote_sandbox_config[]` | Host-specific `allowed_sandbox_modes`; the first entry whose `hostname_patterns` match overrides the top-level list for that source |
-| `windows.allowed_sandbox_implementations`, `windows.allow_mxc` | Restrict the legacy Windows sandbox (`elevated`, `unelevated`) / set `allow_mxc = false` to prohibit the MXC sandbox |
+| `windows.allowed_sandbox_implementations`, `windows.allow_mxc`, `windows.require_mxc` | Restrict the legacy Windows sandbox (`elevated`, `unelevated`) / set `allow_mxc = false` to prohibit the MXC sandbox, both explicit configuration and automatic selection / `require_mxc = true` to require MXC as the selected local Windows backend (new in 0.163.0) |
 | `additional_developer_instructions` | Managed developer instructions as a separate message; rejected above 10,000 estimated tokens |
 | `guardian_policy_config`, `guardian_extra_policy` | Managed Markdown policy for auto-review; each takes precedence over the local `[auto_review].policy` / `[auto_review].extra_policy`, and blank values are ignored |
 | `[auto_review]` `required_on_models`, `ignore_rules` | Model slugs that must use auto-review (no provider namespace; lists from several sources are combined) / full model slugs for which Codex ignores `allow` prefix rules (deny and network rules still apply) |
@@ -524,7 +539,7 @@ requirements file or macOS MDM; Codex ignores them in cloud-managed requirements
 ### Browser Use and Computer Use requirements
 
 These tables constrain the desktop app's agent-driven browser and native-app control. A local
-`config.toml` value cannot relax a managed deny. Key names are confirmed against the 0.162.1
+`config.toml` value cannot relax a managed deny. Key names are confirmed against the 0.163.0
 `ConfigRequirementsToml` source; descriptions follow the official reference.
 
 | Key | Values | Purpose |
@@ -550,7 +565,7 @@ These tables constrain the desktop app's agent-driven browser and native-app con
 ### managed_config.toml and MDM defaults
 
 - Path: `/etc/codex/managed_config.toml` (Unix only). A missing file skips the layer. The docs list
-  `~/.codex/managed_config.toml` for Windows, but the 0.162.1 config loader source warns "Ignoring
+  `~/.codex/managed_config.toml` for Windows, but the 0.163.0 config loader source warns "Ignoring
   deprecated managed config file ... no longer supported on Windows" and points to
   `%ProgramData%\OpenAI\Codex\requirements.toml` (enforced settings) or `config.toml` (defaults).
   Confirmed from source, not run on Windows here.
@@ -560,9 +575,10 @@ These tables constrain the desktop app's agent-driven browser and native-app con
 - Legacy order, top wins: managed preferences (MDM), `managed_config.toml`, user `config.toml`.
   `--config` overrides apply to the base, and managed layers override them. Cloud `config.toml` uses
   normal precedence instead.
-- Managed defaults pinning `gpt-5.5` must change before 2026-10-14 (retirement). The managed
-  configuration page says to choose `gpt-6-sol` once an admin has enabled it; the 0.162.1 model
-  catalog's migration prompt points to `gpt-6.1-sol`. Use whichever the admin has enabled.
+- The 0.163.0 model catalog (`codex debug models`) no longer lists `gpt-5.5`, which the earlier
+  guidance said was retiring on 2026-10-14. A managed default that still pins it must move to a
+  model the catalog lists (`gpt-6.1-sol`, `gpt-6-sol`, `gpt-6-astra`, `gpt-6-luna`, or a
+  `gpt-5.6-*` model there). Use whichever the admin has enabled.
 
 > [!NOTE]
 > The docs present the legacy managed-defaults order separately from the main precedence list and

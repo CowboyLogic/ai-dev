@@ -1,12 +1,12 @@
 # CLI Commands, Options, and Slash Commands
 
 Run `codex --help` or `codex <command> -h` for built-in help. Run `/` in a session to open the
-slash-command popup. Flag tables below were verified against `codex-cli 0.162.1`; slash commands come
+slash-command popup. Flag tables below were verified against `codex-cli 0.163.0`; slash commands come
 from the Codex docs and release notes and cannot be listed from the terminal.
 
 > [!NOTE]
 > Prefer local `-h` output over the docs when they differ. The upstream developer-commands page
-> renders its flag tables as components, so most flag-level detail here comes from `-h`. In 0.162.1,
+> renders its flag tables as components, so most flag-level detail here comes from `-h`. In 0.163.0,
 > `codex <group> <sub> --help` and `-h` both print the subcommand help; a single quoted string such
 > as `codex 'mcp list' --help` is parsed as a prompt and prints the root help.
 
@@ -40,10 +40,13 @@ invocation and wins over the file.
 | `codex update` | Self-update when the installed release supports it |
 | `codex app-server`, `codex remote-control`, `codex exec-server` | Experimental server tooling; may change without notice |
 
-`codex mcp-server` was removed (the docs point to the Codex app server); `0.162.1` confirms it is gone.
+`codex mcp-server` was removed (the docs point to the Codex app server); `0.163.0` confirms it is gone.
 
-Experimental server tooling, from `-h` on 0.162.1:
+Experimental server tooling, from `-h` on 0.163.0:
 
+- `codex app-server daemon` has `bootstrap`, `start`, `restart`, `update`, `enable-remote-control`,
+  `disable-remote-control`, `stop`, and `version` subcommands (`/daemon` in the TUI manages the same
+  background server).
 - `codex app-server` takes `--listen stdio://|unix://[PATH]|ws://IP:PORT|off`, `--code-mode-host`, and
   `--ws-*` authentication options, and has subcommands `daemon`, `proxy`, `generate-ts`, and
   `generate-json-schema`.
@@ -75,7 +78,7 @@ codex --enable unified_exec --profile review
 ```
 
 > [!NOTE]
-> The docs describe `--profile` only as "profiles" in config. The `0.162.1` CLI defines `-p, --profile`
+> The docs describe `--profile` only as "profiles" in config. The `0.163.0` CLI defines `-p, --profile`
 > as a separate file layer, `$CODEX_HOME/<name>.config.toml`. Note also that `-p` means `--profile`,
 > not `--prompt`. `codex features` does not accept `--profile`.
 
@@ -205,7 +208,7 @@ in CI to capture progress and a final summary.
 `codex login` opens a browser for ChatGPT OAuth by default. Alternatives: `--device-auth`,
 `--with-api-key` (reads the key from stdin, for example `printenv OPENAI_API_KEY | codex login --with-api-key`), and `--with-access-token` (reads the token from stdin).
 
-`codex sandbox` runs a command under the same policy Codex uses. The `0.162.1` CLI has one run form,
+`codex sandbox` runs a command under the same policy Codex uses. The `0.163.0` CLI has one run form,
 `codex sandbox [OPTIONS] [COMMAND]...`, with `-P`/`--permission-profile NAME`, `-p`/`--profile`,
 `-C`/`--cd`, `--include-managed-config`, `--allow-unix-socket PATH` (repeatable), `--log-denials`
 (macOS), and `--sandbox-state-json`, `--sandbox-state-readable-root`, and
@@ -213,7 +216,7 @@ in CI to capture progress and a final summary.
 
 > [!NOTE]
 > The docs list separate `macos`, `linux`, and `windows` sandbox subcommands (with `seatbelt` and
-> `landlock` aliases) and `sandbox` under `codex debug`. Neither exists in 0.162.1: `codex sandbox`
+> `landlock` aliases) and `sandbox` under `codex debug`. Neither exists in 0.163.0: `codex sandbox`
 > has only `uninstall`, and `codex debug` has only `models`, `app-server`, and `prompt-input`. The
 > canonical flag is `-P/--permission-profile`; the docs' plural `--permissions-profile` is still
 > accepted as a hidden legacy alias that `-h` does not show. Check `codex sandbox -h` on the target
@@ -244,8 +247,9 @@ in CI to capture progress and a final summary.
 
 ## Slash commands by area
 
-Slash commands come from the docs and were not verifiable from the terminal. Availability varies by
-model, platform, and state. Codex hides `/fast` when the model lacks support.
+Slash commands come from the docs and, for names and one-line purposes, from the `SlashCommand`
+enum in the Codex source at `rust-v0.163.0`; behavior was not verifiable from the terminal.
+Availability varies by model, platform, and state. Codex hides `/fast` when the model lacks support.
 
 ### Session and chat
 
@@ -253,7 +257,11 @@ model, platform, and state. Codex hides `/fast` when the model lacks support.
 |---------|---------|
 | `/new [NAME]`, `/clear [NAME]` | New chat; `/clear` also clears the terminal |
 | `/resume`, `/fork` | Pick a saved chat / clone the current one |
-| `/side [TEXT]`, `/btw` | Ephemeral side chat; unavailable in side chats and review mode |
+| `/side [TEXT]`, `/btw` | Ephemeral side chat; unavailable in side chats and review mode. Per the 0.163.0 release notes, `/side` returns to an existing side conversation after switching threads |
+| `/recap` | Summarize the current conversation now |
+| `/export` | Export the conversation as Markdown |
+| `/worktree` | Start or continue a conversation in a new worktree |
+| `/cd PATH`, `/pwd` (`/cwd`) | Change / show the current working directory |
 | `/rename [NAME]` | Rename the current chat |
 | `/archive`, `/delete` | Archive / permanently delete the current session and exit (`/delete` also removes descendants) |
 | `/compact` | Summarize the chat to free context |
@@ -270,7 +278,9 @@ model, platform, and state. Codex hides `/fast` when the model lacks support.
 | `/goal [OBJECTIVE\|edit\|pause\|resume\|clear]` | Persistent task goal, max 4,000 characters |
 | `/memories` | Toggle memory use and generation |
 | `/experimental` | Toggle experimental features; may need a restart |
-| `/personality` | Choose `friendly`, `pragmatic`, or `none`; hidden when the model lacks support. The `personality` feature is `removed` in 0.162.1, so treat this as legacy |
+| `/daybreak` | Turn Daybreak on or off. 0.163.0 release notes: Daybreak is on by default for eligible accounts, and `codex exec` can select it with an OpenAI API key when the server offers access |
+| `/voice` | Start or stop voice; `/voice settings` chooses a voice |
+| `/personality` | Choose `friendly`, `pragmatic`, or `none`; hidden when the model lacks support. The `personality` feature is `removed` in 0.163.0, so treat this as legacy |
 
 ### Permissions and safety
 
@@ -291,7 +301,8 @@ model, platform, and state. Codex hides `/fast` when the model lacks support.
 | `/apps` | Insert an app (connector) as `$app-slug` |
 | `/plugins` | Browse installed and discoverable plugins; Space toggles an installed plugin |
 | `/skills` | Browse and apply skills |
-| `/agent`, `/subagents` | Switch to a spawned subagent thread |
+| `/agents` | Open the agent command center (the same view as `codex agents`) |
+| `/subagents` | Switch between this session's subagents |
 | `/ps`, `/stop` | List / stop background terminals (`/clean` aliases `/stop`) |
 | `/import` | Import Claude Code or Cursor setup, projects, and chats from a local TUI session |
 
@@ -299,6 +310,9 @@ model, platform, and state. Codex hides `/fast` when the model lacks support.
 
 | Command | Purpose |
 |---------|---------|
+| `/config` | New in 0.163.0: search preferences across categories, change supported settings immediately, and see which changes need a restart (release notes). The pickers listed under TUI settings below persist to `config.toml` |
+| `/daemon` | Manage the local background server. 0.163.0 release notes: restart a managed background server, with a warning about work the restart could interrupt, and automatic reconnection. The docs say confirming an update exits Codex and may interrupt active work; for a remote connection, manage the server on its host |
+| `/warnings` | View retained warnings and their diagnostic details |
 | `/status` | Active model, approval policy, writable roots, token usage |
 | `/usage [daily\|weekly\|cumulative]` | Account token activity or reset redemption |
 | `/debug-config` | Config layers (lowest precedence first) and policy sources |
@@ -309,9 +323,10 @@ model, platform, and state. Codex hides `/fast` when the model lacks support.
 
 ### TUI settings
 
-`/theme` (`tui.theme`; custom `.tmTheme` files go in `$CODEX_HOME/themes`), `/statusline`
+`/tui` (choose the TUI mode for the next launch), `/theme` (`tui.theme`; custom `.tmTheme` files go in `$CODEX_HOME/themes`), `/statusline`
 (`tui.status_line`), `/title` (`tui.terminal_title`), `/keymap` (`tui.keymap`; context bindings
-override `tui.keymap.global`), `/vim` (default via `tui.vim_mode_default = true`), `/raw [on|off]`
+override `tui.keymap.global`; 0.163.0 adds a configurable leader key, default `Ctrl+X`, and moves
+voice mute to `F9`), `/vim` (default via `tui.vim_mode_default = true`), `/raw [on|off]`
 (default via `tui.raw_output_mode = true`), `/pets [off]` (`/pet`). The `/theme`, `/statusline`,
 `/title`, `/keymap`, and `/pets` pickers persist their choice to `config.toml`; `/vim` and `/raw`
 toggle for the current session only (Alt+R also toggles raw mode).
