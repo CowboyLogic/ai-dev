@@ -80,7 +80,9 @@ same context.
 | Isolate a fork's edits | Claude passes `isolation: "worktree"` on the Agent call |
 
 With fork mode on, Claude Code runs every subagent Claude spawns in the background, forks
-and non-fork alike, and removes the Agent tool's `run_in_background` parameter. A fork cannot
+and non-fork alike, and removes the Agent tool's `run_in_background` parameter (apart from the
+cases that stay in the foreground; changelog only, v2.1.302: a subagent's own Agent calls in
+`-p`, the Agent SDK, the desktop app and VS Code run in the foreground by default). A fork cannot
 spawn further forks. Source: <https://code.claude.com/docs/en/sub-agents#fork-the-current-conversation>.
 
 ---
