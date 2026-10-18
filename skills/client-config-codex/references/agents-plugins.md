@@ -153,7 +153,7 @@ runs cost noticeably more tokens than a single-agent run.
   `--yolo`). In interactive CLI sessions, approval requests from inactive threads still surface,
   labeled with the source thread. Press `o` to open it. In non-interactive runs an action that
   needs new approval fails.
-- `/agent` (alias `/subagents`) switches between active agent threads.
+- `/subagents` switches between active agent threads; `/agents` opens the agent command center.
 - If no subagent model or `model_reasoning_effort` is configured, the subagent inherits the
   parent's model and effort. If an explicit spawn request or an `[agents]` default selects a model
   without an effort, the subagent uses that model's default reasoning effort.
