@@ -3,12 +3,12 @@
 Reference for the YAML frontmatter fields of Claude Code agent files. Load this file when
 writing, reviewing, or debugging agent frontmatter.
 
-**Source (last verified 2026-10-14 against Claude Code 2.1.299; the docs page references
-versions up to v2.1.292):**
+**Source (last verified 2026-10-18 against Claude Code 2.1.302; the docs page references
+versions up to v2.1.296):**
 <https://code.claude.com/docs/en/sub-agents#supported-frontmatter-fields>
 
-`autoCompactWindow` is the one field here that only the v2.1.296 changelog supports; the
-docs table does not list it yet.
+Every field in this file is in the docs table. Where a note below is labeled "changelog only",
+the Claude Code changelog is its only source.
 
 Field names are camelCase and case-sensitive. **Unrecognized fields are ignored without an
 error**, so a misspelling looks exactly like a working file.
@@ -45,7 +45,7 @@ color: blue
 initialPrompt: "Start by reading TODO.md"   # main-session use only
 experimental:                        # v2.1.248+
   cacheTtl: 5m
-autoCompactWindow: 200000            # v2.1.296+ (changelog only)
+autoCompactWindow: 200000            # v2.1.296+; 100000 to 1000000
 ---
 ```
 
@@ -214,6 +214,14 @@ subagents in foreground or background"):
    when Claude needs the result before continuing. `background: true` keeps the agent in the
    background even then.
 
+Changelog only (v2.1.302): fork mode is now also on by default in `claude -p`, the Agent SDK,
+the desktop app and VS Code, so case 3 applies there; `CLAUDE_CODE_FORK_SUBAGENT=0` turns it
+off, and `claude mcp serve` never offers forks. The desktop app and VS Code always run the
+main conversation's subagents in the background, as the terminal does, and a subagent's own
+Agent calls in `-p`, the Agent SDK, the desktop app and VS Code run in the foreground by
+default. The sub-agents docs page still says fork mode is off for `-p` and the SDK (checked
+2026-10-18), so case 4 as written above is the pre-2.1.302 behavior there.
+
 A skill with `context: fork` follows the skills docs instead. Background agents get a smaller
 built-in tool set than foreground ones, except forks and resumed foreground agents.
 
@@ -253,12 +261,15 @@ user prompt. Ignored for plugin agents. Does nothing when the file is used as a 
 
 ### `autoCompactWindow`
 
-Lets this agent auto-compact earlier than the main conversation's window (added in v2.1.296;
-supported in frontmatter and `--agents` definitions). Same key name as the
-`autoCompactWindow` setting, a token count, which the settings reference documents as 100000
-to 1000000. The v2.1.296
-changelog entry does not state the range or precedence for the frontmatter field, so verify
-against the sub-agents docs page before relying on either.
+Lets this agent auto-compact earlier than the main conversation's window (requires v2.1.296
+or later; supported in frontmatter and `--agents` definitions). A token count from `100000`
+to `1000000`. If `CLAUDE_CODE_AUTO_COMPACT_WINDOW` is set to a positive integer, the agent
+uses that variable's window and the field has no effect.
+
+Write a plain integer such as `200000`: in frontmatter `200k` is read as 200, which is out of
+range. An out-of-range value is ignored (the agent still loads and compacts as if the field
+were absent); search `claude --debug` output for `invalid autoCompactWindow` to confirm.
+Source: <https://code.claude.com/docs/en/sub-agents#subagent-auto-compact-window>
 
 ### `experimental`
 
@@ -287,8 +298,7 @@ under `experimental`, not a top-level key. Not accepted in `--agents` JSON.
 Session-only agents, not saved to disk. Each top-level key is the name; the value takes
 `prompt` plus these fields: `description`, `tools`, `disallowedTools`, `model`,
 `permissionMode`, `mcpServers`, `hooks`, `maxTurns`, `skills`, `initialPrompt`, `memory`,
-`effort`, `background`, `omitClaudeMd`, `isolation`, and (v2.1.296, changelog only)
-`autoCompactWindow`.
+`effort`, `background`, `omitClaudeMd`, `isolation`, and (v2.1.296+) `autoCompactWindow`.
 
 ```bash
 claude --agents '{
