@@ -163,7 +163,7 @@ the same family, including any `[1m]` context suffix.
 | `color` | `red`, `blue`, `green`, `yellow`, `purple`, `orange`, `pink`, `cyan` |
 | `initialPrompt` | First user turn when the file runs as the main session agent |
 | `experimental` | `{cacheTtl: 5m \| 1h}` prompt cache lifetime |
-| `autoCompactWindow` | Auto-compact earlier than the main conversation's window (v2.1.296; changelog only, not yet in the docs table) |
+| `autoCompactWindow` | Auto-compact earlier than the main conversation's window: a token count from `100000` to `1000000` (v2.1.296+; `CLAUDE_CODE_AUTO_COMPACT_WINDOW`, when set, wins) |
 
 Plugin agents ignore `hooks`, `mcpServers`, `permissionMode`, and `initialPrompt`. Copy the
 file into `.claude/agents/` if you need them.

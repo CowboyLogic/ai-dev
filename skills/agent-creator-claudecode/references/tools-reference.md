@@ -74,7 +74,7 @@ same context.
 | Need | How |
 |---|---|
 | Start one yourself | `/subtask <task>` (v2.1.212+; `/fork` on v2.1.161 through v2.1.211, and `/fork` also starts one when agent view is turned off) |
-| Fork mode default | On in interactive sessions (v2.1.232+); off with `-p` and in the Agent SDK |
+| Fork mode default | On in interactive sessions (v2.1.232+); off with `-p` and in the Agent SDK per the docs page. Changelog only (v2.1.302): also on by default in `-p`, the Agent SDK, the desktop app and VS Code, and `claude mcp serve` never offers forks |
 | Force fork mode | `CLAUDE_CODE_FORK_SUBAGENT=1` on everywhere, `0` off everywhere |
 | Keep fork mode but stop Claude spawning forks | Deny the `fork` type: `Agent(fork)` in `permissions.deny` |
 | Isolate a fork's edits | Claude passes `isolation: "worktree"` on the Agent call |

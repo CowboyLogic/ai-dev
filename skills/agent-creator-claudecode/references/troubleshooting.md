@@ -122,7 +122,7 @@ Claude Code ignores unrecognized fields without any error. Check in this order:
 |---|---|---|
 | `Agent '<name>' would be spawned with zero tools — refusing` | Every `tools` entry is **unrecognized** (typo such as `Grpe`), **not available to subagents** (`AskUserQuestion`, `Workflow`, `CronCreate` in the background), or **matched no tools in this session** (`mcp__github__*` with no GitHub server, `Agent` at the depth limit) | Fix each entry the error names. Or delete `tools` to inherit everything |
 | Agent has fewer tools than listed, no error | Some entries resolved and others were dropped (background filter, unconnected MCP server) | Check the foreground/background note below; verify MCP servers are connected |
-| Works with `--agent` but not when delegated | Delegated agents run in the background by default, with a reduced tool set | Remove entries only foreground agents get, set `background: false` and ask for foreground, or turn fork mode off |
+| Works with `--agent` but not when delegated | Delegated agents run in the background by default, with a reduced tool set | Remove entries only foreground agents get, set `background: false` and ask for foreground, or turn fork mode off (`CLAUDE_CODE_FORK_SUBAGENT=0`) |
 | `disallowedTools: Bash(git push *)` removed all of Bash | Specifiers remove the whole tool | Use a `permissions.deny` rule or a `PreToolUse` hook |
 | Agent can edit despite `tools: Read, Grep` | `memory` enables Read, Write, and Edit for the memory directory | Drop `memory` or accept that Write/Edit are scoped to memory files |
 | Agent cannot spawn subagents | `Agent` missing from `tools`, depth limit reached, or the tool is withheld at the limit | Add `Agent`; check `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` |

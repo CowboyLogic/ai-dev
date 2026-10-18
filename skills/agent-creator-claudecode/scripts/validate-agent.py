@@ -8,9 +8,8 @@ Reports the conditions under which Claude Code silently skips an agent file, plu
 unknown or mis-cased fields, bad enum values, and fields ignored in a given scope.
 Requires PyYAML. Exit status is 1 when any error is found (or any warning with --strict).
 
-Field list last verified 2026-10-14 against Claude Code 2.1.299:
+Field list last verified 2026-10-18 against Claude Code 2.1.302:
 https://code.claude.com/docs/en/sub-agents#supported-frontmatter-fields
-(`autoCompactWindow` comes from the v2.1.296 changelog; the docs table does not list it yet.)
 """
 
 from __future__ import annotations
@@ -62,7 +61,8 @@ MIN_VERSIONS = {
     "experimental": "v2.1.248",
     "autoCompactWindow": "v2.1.296",
 }
-NAME_MAX_LENGTH = 256   # longer names are skipped (docs: "Subagent files Claude Code skips")
+AUTO_COMPACT_WINDOW_RANGE = (100_000, 1_000_000)  # docs: "a token count from 100000 to 1000000"
+NAME_MAX_LENGTH = 256  # longer names are skipped (docs: "Subagent files Claude Code skips")
 SKILLS_PRELOAD_MAX = 32  # only the first 32 distinct names are preloaded
 TOOL_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(\(.*\))?$")
 CASE_INSENSITIVE = {f.lower(): f for f in KNOWN_FIELDS}
@@ -336,6 +336,9 @@ def validate(path: Path, plugin: bool) -> Report:
     acw = data.get("autoCompactWindow")
     if acw is not None and (isinstance(acw, bool) or not isinstance(acw, int) or acw < 1):
         rep.error("autoCompactWindow: must be a positive integer number of tokens")
+    elif acw is not None and not AUTO_COMPACT_WINDOW_RANGE[0] <= acw <= AUTO_COMPACT_WINDOW_RANGE[1]:
+        rep.warn(f"autoCompactWindow: {acw} is outside {AUTO_COMPACT_WINDOW_RANGE[0]} to "
+                 f"{AUTO_COMPACT_WINDOW_RANGE[1]}; Claude Code ignores it and compacts as if it were absent")
 
     mcp = data.get("mcpServers")
     if mcp is not None:
