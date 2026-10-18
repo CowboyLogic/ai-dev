@@ -104,7 +104,7 @@ A handoff adds a button that sends the conversation to another agent:
 
 ## Create and select an agent
 
-Create an agent from the Command Palette with **Chat: New Custom Agent**, from the Agent Customizations editor (**Open Customizations** in the Chat view title bar, then **Agents**), or by typing `/create-agent` in chat and describing the role.
+Create an agent from the Command Palette with **Chat: New Custom Agent**, from the Agent Customizations editor (**Open Customizations** in the Chat view title bar, then **Agents**), or, in a Local harness session, by typing `/create-agent` in chat and describing the role.
 
 To use an agent, pick it from the **Agent** dropdown in the Chat view.
 

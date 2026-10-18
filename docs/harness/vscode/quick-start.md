@@ -28,7 +28,7 @@ Create a custom agent in VS Code and use it.
 
 The agent can only read and search, because those are the only tools it lists. To see the effect, remove the `tools` line and the agent gets every tool.
 
-You can also generate an agent for you: run **Chat: New Custom Agent**, or type `/create-agent` in chat and describe the role.
+You can also generate an agent for you: run **Chat: New Custom Agent**, or, in a Local harness session, type `/create-agent` in chat and describe the role.
 
 ## Install a ready-made agent
 

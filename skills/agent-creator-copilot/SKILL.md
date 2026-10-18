@@ -179,7 +179,7 @@ Key principles: state scope explicitly, use imperative language, define handoff 
 
 1. Select the agent harness you intend to use with the **Session Target** control, then open the Agent Customizations editor: **Open Customizations** in the Chat view title bar (or the **Customizations** panel in the Agents window), then **Agents**
 2. Select **New Agent** (plus icon) next to the **Workspace** or **User** group, or run **Chat: New Custom Agent** from the Command Palette
-3. To generate one with AI, describe the agent in the editor's **Overview** section, or type `/create-agent <description>` in chat
+3. To generate one with AI, describe the agent in the editor's **Overview** section, or, in a **Local** harness session, type `/create-agent <description>` in chat
 
 **GitHub.com (cloud agent):**
 
