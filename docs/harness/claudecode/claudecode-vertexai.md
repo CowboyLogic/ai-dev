@@ -9,7 +9,7 @@ audit through Google Cloud.
 > login prompt still labels it **Google Vertex AI**, and its environment variables keep the `VERTEX`
 > name.
 >
-> Verified against Claude Code 2.1.299 on 2026-10-14.
+> Verified against Claude Code 2.1.302 on 2026-10-18.
 
 This page covers the minimum setup. Anthropic maintains the full procedure, including IAM, region
 rules, model pinning, and troubleshooting, in
