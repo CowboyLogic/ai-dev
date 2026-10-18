@@ -66,7 +66,7 @@ Managed system dirs: macOS `/Library/Application Support/ClaudeCode/`, Linux/WSL
 | `modelPricing` | *(Managed only)* Contracted rates for cost display: `{multiplier?, overrides?}` (v2.1.242+) | see upstream |
 | `outputStyle` | Built-in or custom output style name | `"Explanatory"` |
 | `agent` | Run main thread as named subagent | `"code-reviewer"` |
-| `advisorModel` | Model for the advisor tool: `"fable"`\|`"opus"`\|`"sonnet"` or a full ID (unset = advisor off) | `"opus"` |
+| `advisorModel` | Model for the advisor tool: `"fable"`\|`"opus"`\|`"sonnet"` or a full ID (unset = advisor off). `CLAUDE_CODE_DISABLE_ADVISOR_TOOL=1` turns the advisor off and this key can't turn it back on. The settings reference lists Amazon Bedrock and Claude Platform on AWS as providers where the advisor is unavailable; the v2.1.300 changelog adds `/advisor` on Claude Platform on AWS (changelog only; the docs page has not caught up) | `"opus"` |
 | `fallbackModel` | Ordered fallback chain when primary is overloaded/unavailable; `"default"` expands to the default model. At most 3 distinct models kept; doesn't merge across files | `["claude-sonnet-5", "claude-haiku-4-5"]` |
 | `switchModelsOnFlag` | Default `true`. Auto-switch to fallback when a safety classifier flags a request | `false` |
 | `fastMode` | Turn on fast mode where available; `/fast` writes this | `true` |
@@ -164,7 +164,7 @@ claude auto-mode critique   # AI review of your custom rules
 | `autoMemoryDirectory` | Absolute or `~/` path (default `~/.claude/projects/<project>/memory/`) | `"~/my-memory-dir"` |
 | `autoCompactEnabled` | Auto-compact near context limit (default `true`) | `false` |
 | `autoCompactWindow` | Tokens before auto-compact, `100000`–`1000000`, capped at model window | `400000` |
-| `idleCompaction` | Compact a long conversation that sat idle, shortly before its prompt cache expires (default `true`; v2.1.290+). Applies only to interactive terminal sessions on the one-hour cache TTL with feature flags fetched, once the context reaches 200,000 tokens (`CLAUDE_CODE_IDLE_COMPACT_MIN_TOKENS` raises or lowers it; values below `100000` are raised to `100000`) and about 54 minutes have passed since the last request. `autoCompactEnabled: false` and `DISABLE_AUTO_COMPACT` also turn it off | `false` |
+| `idleCompaction` | Compact a long conversation that sat idle, shortly before its prompt cache expires (default `true`; v2.1.290+). Applies only to interactive terminal sessions on the one-hour cache TTL with feature flags fetched, once the context reaches 200,000 tokens (`CLAUDE_CODE_IDLE_COMPACT_MIN_TOKENS` raises or lowers it; values below `100000` are raised to `100000`) and about 54 minutes have passed since the last request. `autoCompactEnabled: false` and `DISABLE_AUTO_COMPACT` also turn it off. `/config` has an "Idle compaction" row for the same toggle, and the notice shown after an idle compaction says how to turn it off (v2.1.302, changelog only) | `false` |
 | `bashOutputMaxChars` | Inline Bash/PowerShell output limit, clamped `4000`–`128000` (default 30,000; v2.1.261+) | `60000` |
 | `claudeMdExcludes` | Globs/absolute paths of CLAUDE.md files to skip (not managed memory) | `["**/vendor/**/CLAUDE.md"]` |
 | `fileCheckpointingEnabled` | Snapshot files so `/rewind` can restore them (default `true`) | `false` |

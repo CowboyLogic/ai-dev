@@ -198,7 +198,7 @@ A hook process inherits Claude Code's environment, minus the `OTEL_*` exporter v
 }
 ```
 
-Optional `model` (defaults to a fast model). `$ARGUMENTS` is replaced by the hook input JSON; escape a literal `$` as `\$`. Model must return `{ "ok": true }` to allow or `{ "ok": false, "reason": "..." }` to block, optionally with `"impossible": true` (on `Stop`/`SubagentStop` this lets the turn end instead of feeding the reason back). On `PreToolUse`, `ok: false` denies and ends the turn unless the handler sets `continueOnBlock: true`.
+Optional `model` (defaults to the model Claude Code uses for background functionality). `$ARGUMENTS` is replaced by the hook input JSON; escape a literal `$` as `\$`. Model must return `{ "ok": true }` to allow or `{ "ok": false, "reason": "..." }` to block, optionally with `"impossible": true` (on `Stop`/`SubagentStop` this lets the turn end instead of feeding the reason back). On `PreToolUse`, `ok: false` denies and ends the turn unless the handler sets `continueOnBlock: true`.
 
 ### `agent` (spawns a subagent verifier — experimental)
 
@@ -211,6 +211,8 @@ Optional `model` (defaults to a fast model). `$ARGUMENTS` is replaced by the hoo
 ```
 
 Same response schema as `prompt`. Agent can use Read, Grep, Glob to inspect the codebase.
+
+Changelog only: from v2.1.300 an agent hook honors its `model` (an alias such as `haiku` resolves, a subagent's own model no longer overrides it, and an unavailable model falls back to the caller's model instead of allowing the action). From v2.1.302 at most 12 `prompt` or `agent` hooks of one event run at a time; the rest wait their turn.
 
 ---
 
@@ -319,6 +321,8 @@ An **async** hook's JSON response must be alone on stdout or on one line of its 
 
 `"defer"` — only honored in non-interactive mode (`-p`); ignored with a warning in interactive sessions or when Claude makes several tool calls in one turn. Exits with `stop_reason: "tool_deferred"` and the pending call in `deferred_tool_use` (id/name/input); an external process resumes with `claude -p --resume <session-id>` and the same tool call fires `PreToolUse` again so the hook can return `"allow"` with the answer in `updatedInput`. Typical use: `AskUserQuestion` answered by a host UI with no terminal.
 
+`updatedInput` replaces the whole input object, so include the unchanged fields too. Changelog only (v2.1.300): the value from a `PreToolUse` or `PermissionRequest` hook is validated like Claude's own input: unknown keys are dropped, and input the tool rejects denies the call.
+
 **Legacy note**: top-level `decision`/`reason` (`"approve"`/`"block"`) are deprecated for `PreToolUse` specifically — use `hookSpecificOutput.permissionDecision`. Other events (`PostToolUse`, `Stop`, etc.) still use top-level `decision`/`reason`.
 
 ### PermissionRequest (use `hookSpecificOutput.decision`)
@@ -327,7 +331,7 @@ An **async** hook's JSON response must be alone on stdout or on one line of its 
 { "hookSpecificOutput": { "hookEventName": "PermissionRequest", "decision": { "behavior": "allow", "updatedInput": { "command": "npm run lint" } } } }
 ```
 
-`decision.behavior`: `"allow"` | `"deny"`. No prompt reaches the user; runs even for background subagents in headless mode (denies by default if no hook decides). For `allow`, `updatedPermissions` can also add rules or change the session mode. Not run for a sandboxed command's network request.
+`decision.behavior`: `"allow"` | `"deny"`. No prompt reaches the user; runs even for background subagents in headless mode (denies by default if no hook decides). For `allow`, `updatedPermissions` can also add rules or change the session mode. Not run for a sandboxed command's network request. Changelog only (v2.1.300): in Cowork cloud sessions a `setMode` update in a hook's `allow` is ignored; the rest of the approval still applies.
 
 ### PermissionDenied retry
 
@@ -355,6 +359,8 @@ An **async** hook's JSON response must be alone on stdout or on one line of its 
 # Command hook: print the created directory path on stdout
 echo "$HOME/.claude/worktrees/$NAME"
 ```
+
+Changelog only (v2.1.300): plugin `WorktreeCreate` and `WorktreeRemove` hooks now also run when Claude Code starts with `--worktree` (not yet with `--tmux`).
 
 ---
 
