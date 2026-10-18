@@ -21,12 +21,12 @@ string inside the TOML.
 > the prompt, an applicable `AGENTS.md`, or a skill requests delegation. An agent file that
 > loads correctly can still sit unused. See [Invocation](#invocation).
 >
-> The official subagents page says a custom agent file can include `sandbox_mode` and
-> `mcp_servers` and shows examples that do. The Codex source and its tests at `rust-v0.162.1`
-> say otherwise: a role "must not control" them. This skill follows the source. See
-> [What a Role File Can Set](#what-a-role-file-can-set).
+> The official subagents page says the same: `sandbox_mode`, `approval_policy`,
+> `model_provider`, and `mcp_servers` in a custom agent file "don't override the parent
+> configuration". The Codex source and its tests at `rust-v0.163.0` agree: a role "must not
+> control" them. See [What a Role File Can Set](#what-a-role-file-can-set).
 
-Verified against **Codex CLI 0.162.1** (released 2026-10-09, the latest stable release when
+Verified against **Codex CLI 0.163.0** (released 2026-10-15, the latest stable release when
 this skill was last reviewed).
 
 Official docs: <https://developers.openai.com/codex/subagents> (redirects to
@@ -100,7 +100,7 @@ Rules that avoid load failures:
 
 ## What a Role File Can Set
 
-Verified in the Codex source at tag `rust-v0.162.1` (`codex-rs/core/src/agent/role.rs`,
+Verified in the Codex source at tag `rust-v0.163.0` (`codex-rs/core/src/agent/role.rs`,
 described there as "bounded agent-role overrides"), and by the upstream test
 `codex-rs/core/src/agent/role_tests.rs`, which asserts the role layer holds none of
 `openai_base_url`, `chatgpt_base_url`, `model_provider`, `approval_policy`, `sandbox_mode`,
@@ -110,13 +110,15 @@ described there as "bounded agent-role overrides"), and by the upstream test
 |---|---|
 | `developer_instructions` | Replaces the role's instructions |
 | `model`, `model_reasoning_effort` | Applied, and locked: the spawn UI tells the model these "cannot be changed" |
-| `model_reasoning_summary`, `model_verbosity`, `personality`, `service_tier` | Applied. `service_tier = "fast"` takes effect only while the `fast_mode` feature is enabled, and `"ultrafast"` only while `ultrafast_mode` is (both are on by default in 0.162.1, per `codex features list`) |
-| `features.<name> = false` | Disables only `shell_tool`, `apps`, `plugins`, `memory_tool`, `request_permissions_tool` |
+| `model_reasoning_summary`, `model_verbosity`, `personality` | Applied |
+| `features.<name> = false` | Disables only `shell_tool`, `apps`, `plugins`, `memories` (legacy key `memory_tool`), `request_permissions_tool` |
 | `skills.config` entries with `enabled = false`, `skills.bundled.enabled = false`, `skills.include_instructions = false` | Disables inherited skills. Cannot enable anything |
 
 Every other key, including `sandbox_mode`, `approval_policy`, `mcp_servers`, `web_search`,
-and `features.<name> = true`, is dropped. The file still loads, so nothing warns you.
-Configure sandbox, approvals, and MCP servers on the **parent** session or its config.
+`features.<name> = true`, and `service_tier`, is dropped. The spawn code applies the root session's
+service tier after the role, so a role-file `service_tier` never survives (the official page
+says the same: "The service tier also follows the root session's preference"). The file still
+loads, so nothing warns you. Configure sandbox, approvals, and MCP servers on the **parent** session or its config.
 
 ---
 
@@ -212,7 +214,7 @@ config reference lists it. `agents.interrupt_message` (default `true`) controls 
 model-visible message is recorded when an agent turn is interrupted.
 `agents.max_depth` limits nesting for V1 agent threads and is ignored by V2.
 `agents.job_max_runtime_seconds` is a removed setting kept as a no-op. Neither of those two
-is in the public config reference; both are accepted without error in 0.162.1.
+is in the public config reference; both are accepted without error in 0.163.0.
 
 > [!WARNING]
 > Under `[agents]`, any key Codex does not know is parsed as a role table. A typo such as
@@ -282,7 +284,7 @@ and match the filename.
 
 Codex does **not** stop on a bad agent file. It prints
 `warning: Ignoring malformed agent role definition: <reason>` and carries on without that
-agent, so the agent is simply missing. Verified against codex-cli 0.162.1 with `codex doctor`:
+agent, so the agent is simply missing. Verified against codex-cli 0.163.0 with `codex doctor`:
 
 | Defect | Codex message (abridged) |
 |---|---|

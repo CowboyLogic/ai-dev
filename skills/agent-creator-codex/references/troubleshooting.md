@@ -7,7 +7,7 @@ causes below, except project trust.
 
 Codex does not abort on a bad agent file. It prints
 `warning: Ignoring malformed agent role definition: <reason>` at session start and continues
-without that agent. Messages below were observed on codex-cli 0.162.1 with `codex doctor`,
+without that agent. Messages below were observed on codex-cli 0.163.0 with `codex doctor`,
 which lists them as `startup warning` lines without starting a session or calling a model.
 
 | Symptom (warning text, abridged) | Cause | Fix |
@@ -61,7 +61,7 @@ A role file cannot set any of these; the child inherits the parent's live policy
 | Agent blocked on a command | Inherited approval policy requires approval | Approve from the thread (`o` to inspect), or change the parent's approval policy |
 | Approval prompt seems to hang | The request is from an inactive agent thread | Look for the pending approval in the CLI and inspect it |
 | MCP server missing in the agent | `mcp_servers` in a role file is ignored | Configure the server in the parent's `config.toml` |
-| `features.<name> = true` has no effect | Roles can only disable a feature, and only `shell_tool`, `apps`, `plugins`, `memory_tool`, `request_permissions_tool` | Enable it on the parent |
+| `features.<name> = true` has no effect | Roles can only disable a feature, and only `shell_tool`, `apps`, `plugins`, `memories` (legacy key `memory_tool`), `request_permissions_tool` | Enable it on the parent |
 
 ## Instructions ignored
 
