@@ -198,7 +198,7 @@ These control MCP behavior; the servers themselves are in `~/.claude.json` / `.m
 }
 ```
 
-Pattern: `mcp__<server-name>__<tool-name>` (bare `mcp__<server>` also matches all its tools). Plugin-bundled servers use `mcp__plugin_<plugin-name>_<server-name>__<tool>`; claude.ai connectors use `mcp__claude_ai_<server>__<tool>`. Allow-rule globs need a literal `mcp__<server>__` prefix; `mcp__*` works only in deny/ask.
+Pattern: `mcp__<server-name>__<tool-name>` (bare `mcp__<server>` also matches all its tools, except for a server whose name contains `__` or ends in `_`: write `mcp__<whole name>__*`, see `permissions.md`). Plugin-bundled servers use `mcp__plugin_<plugin-name>_<server-name>__<tool>`; claude.ai connectors use `mcp__claude_ai_<server>__<tool>`. Allow-rule globs need a literal `mcp__<server>__` prefix; `mcp__*` works only in deny/ask.
 
 **Tools that force a prompt regardless of allow rules / permission mode:**
 
