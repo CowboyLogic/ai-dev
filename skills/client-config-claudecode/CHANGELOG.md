@@ -2,6 +2,40 @@
 
 Changes to the `client-config-claudecode` skill, newest first.
 
+## 2026-10-18 — v2.4 (verified against Claude Code 2.1.302)
+
+Basis: Claude Code 2.1.302 (released 2026-10-16; npm `latest` and `next`, `stable` is
+2.1.292), the 2.1.300–2.1.302 changelog, and the `code.claude.com/docs` pages fetched
+2026-10-18. Claims only the changelog supports are labeled "changelog only" in the references.
+
+- `references/permissions.md`: an MCP allow rule for a server whose name contains `__` or ends
+  in `_` is now documented upstream, so it is no longer labeled changelog only (deny and ask
+  rules still are); adds the auto mode classifier model (Sonnet 5 by default, with the fallbacks
+  the permission-modes page lists); changelog only: `CLAUDE_CODE_AUTO_MODE_MODEL` (v2.1.302),
+  server-side auto mode compacting a conversation too long for its safety check (v2.1.302), and
+  `claude -p`/Agent SDK sessions now starting in `default` on third-party providers, with
+  telemetry off, or on a fresh install (v2.1.302; the docs table still shows the earlier rule).
+- `references/hooks.md`: the `prompt`/`agent` hook `model` default is now worded as the docs
+  give it (the model used for background functionality). Changelog only: agent hooks honor
+  `model` (v2.1.300), at most 12 prompt/agent hooks of one event run at once (v2.1.302),
+  `updatedInput` from `PreToolUse`/`PermissionRequest` hooks is validated (v2.1.300), a
+  `setMode` update in a `PermissionRequest` allow is ignored in Cowork cloud sessions
+  (v2.1.300), and plugin `WorktreeCreate`/`WorktreeRemove` hooks run with `--worktree`
+  (v2.1.300).
+- `references/mcp.md`: adds the MCP docs page's rules for root-level `anyOf`/`oneOf`/`allOf`
+  schemas, invalid input schemas, and tool names over 128 characters; changelog only: a tool
+  whose schema the API still rejects is sent without parameters for the rest of the
+  conversation (v2.1.300).
+- `references/settings-schema.md`: `advisorModel` notes `CLAUDE_CODE_DISABLE_ADVISOR_TOOL` and
+  that the changelog adds `/advisor` on Claude Platform on AWS (v2.1.300) where the settings
+  reference still lists it as unavailable; `idleCompaction` notes the `/config` row (v2.1.302,
+  changelog only).
+- Checked and unchanged: all 245 rows of the settings reference index are in the references and
+  the validator; every hook event in the hooks docs is covered; the Google Vertex AI page
+  claims hold.
+- Evals: new `mcp-server-name-with-double-underscore` eval; not yet run (the README results
+  predate it).
+
 ## 2026-10-14 — v2.3 (verified against Claude Code 2.1.299)
 
 Basis: Claude Code 2.1.299 (released 2026-10-14; npm `latest` and `next`, `stable` is

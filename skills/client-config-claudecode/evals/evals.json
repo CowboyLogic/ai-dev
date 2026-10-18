@@ -192,6 +192,26 @@
           "description": "Mentions the alternative of raising CLAUDE_CODE_IDLE_COMPACT_MIN_TOKENS (default 200000, floor 100000) instead of turning it off"
         }
       ]
+    },
+    {
+      "id": 8,
+      "name": "mcp-server-name-with-double-underscore",
+      "prompt": "I have an MCP server configured as reports__v2. I added \"mcp__reports__v2\" to permissions.allow in settings.json but Claude still prompts for every one of its tools. What's wrong?",
+      "expected_output": "Explains that the bare mcp__reports__v2 rule is read as a rule for a server named reports, so it does not match the reports__v2 server's tools, and gives mcp__reports__v2__* as the rule to write",
+      "assertions": [
+        {
+          "id": "misread-rule",
+          "description": "Explains that mcp__reports__v2 (and mcp__reports) is read as a rule for a server named reports and so does not allow the reports__v2 server's tools"
+        },
+        {
+          "id": "wildcard-form",
+          "description": "Gives mcp__reports__v2__* (the wildcard form with the whole server name) as the rule to write"
+        },
+        {
+          "id": "name-ends-underscore",
+          "description": "Notes the same wildcard form is needed for a server name that ends in an underscore"
+        }
+      ]
     }
   ]
 }
