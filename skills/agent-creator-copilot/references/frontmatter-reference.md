@@ -6,6 +6,7 @@ Reference for the YAML frontmatter properties in custom agent profiles (`.agent.
 
 - GitHub configuration reference: <https://docs.github.com/en/copilot/reference/custom-agents-configuration>
 - VS Code: <https://code.visualstudio.com/docs/agent-customization/custom-agents>
+- VS Code custom agent file reference: <https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference>
 - VS Code subagents: <https://code.visualstudio.com/docs/agents/run/subagents>
 - VS Code customization migration: <https://code.visualstudio.com/docs/agent-customization/migrate-customizations>
 - VS Code hooks: <https://code.visualstudio.com/docs/agent-customization/hooks>
@@ -22,7 +23,7 @@ Custom agents are used by several products that each read the profile differentl
 - **Copilot cloud agent on GitHub.com**: agents tab/panel, issue assignment, pull requests
 - **GitHub Copilot app**: listed by GitHub as a place custom agents are available
 - **GitHub Copilot CLI**: `/agent`, `--agent`, or inferred delegation to a subagent
-- **VS Code** (and JetBrains IDEs, Eclipse, Xcode, which are in public preview for custom agents): the agents dropdown in chat. VS Code has several harnesses (**Local**, **Copilot**, Claude, Codex, Cloud); some properties only work with **Local**.
+- **VS Code** (and JetBrains IDEs, Eclipse, Xcode, which are in public preview for custom agents): the agents dropdown in chat. VS Code has several harnesses (**Local**, **Copilot**, Claude, Codex, Cloud) and the selected harness decides which fields and tool names take effect; handoffs and agent-scoped hooks work only with **Local**.
 
 Every surface ignores tool names it does not recognize, and GitHub.com explicitly ignores the IDE-only `argument-hint` and `handoffs` properties.
 
@@ -41,11 +42,12 @@ Every surface ignores tool names it does not recognize, and GitHub.com explicitl
 | `disable-model-invocation` | ✅ (blocks subagent use unless a coordinator lists the agent in `agents`) | ✅ (blocks auto-selection) | Not listed in CLI reference |
 | `infer` | Deprecated | Retired | ✅ Listed as active (see [`infer`](#infer-retired--deprecated)) |
 | `argument-hint` | ✅ | ❌ Ignored | Not listed |
-| `handoffs` | ✅ | ❌ Ignored | Not listed |
+| `handoffs` | ✅ Local harness | ❌ Ignored | Not listed |
 | `agents` | ✅ | Not listed | Not listed |
 | `hooks` | ✅ Preview, Local harness only | Not listed | ✅ Agent-scoped hooks (v1.0.97), documented in the hooks reference; not in the CLI frontmatter table |
 | `mcp-servers` | ❌ Not used (only passed through for `target: github-copilot`) | ✅ | ✅ |
 | `metadata` | ❌ Not used | ✅ | Not listed |
+| `reasoning-effort` | ✅ Copilot harness | Not listed | Not listed (the CLI uses `reasoningEffort`) |
 | `include-custom-instructions` | Not listed | Not listed | ✅ |
 | `models` | Not listed | Not listed | ✅ |
 | `modelPolicy` | Not listed | Not listed | ✅ |
@@ -67,6 +69,7 @@ description: What this agent does     # required on GitHub.com and CLI
 target: vscode                        # vscode | github-copilot | omit for both
 tools: ["read", "search"]             # omit = all tools
 model: Claude Sonnet 5                # string, or array in VS Code
+reasoning-effort: high                # VS Code Copilot harness: low | medium | high | xhigh | max
 user-invocable: true                  # show in agent picker (default true)
 disable-model-invocation: false       # block auto-selection / subagent use, unless a coordinator lists the agent in `agents` (default false)
 argument-hint: Paste your spec here   # VS Code / IDEs only
@@ -133,7 +136,7 @@ name: API Reviewer
 **Values:** `vscode` | `github-copilot` | *(omit for both)*
 **Platforms:** GitHub.com, VS Code / IDEs
 
-Restricts which environment uses the profile. Omit it to make the agent available in both.
+Restricts which environment uses the profile. Omit it to make the agent available in both. It is not the VS Code harness selector: `github-copilot` names the GitHub.com cloud agent target, not the **Copilot** harness.
 
 ```yaml
 target: vscode           # VS Code and IDEs only
@@ -182,7 +185,7 @@ model: gpt-5.6-luna
 
 **Surface notes:**
 
-- **VS Code:** accepts a model name or a prioritized array. For subagents, the order is: explicit model from the `runSubagent` call, then the agent's `model`, then the main conversation's model. A subagent model above the main model's cost tier does not run.
+- **VS Code:** accepts a model name or a prioritized array (the first available model is used). The VS Code file reference describes the field for the Copilot harness, and Local subagents also use it as part of their model selection order. For subagents, the order is: explicit model from the `runSubagent` call, then the agent's `model`, then the main conversation's model. A subagent model above the main model's cost tier does not run.
 - **Copilot CLI:** uses lowercase IDs (the CLI docs show `claude-sonnet-5.5` as the default and list `gpt-5.4`, `gpt-6.1-sol`, `gpt-6-astra`, `gpt-6-luna`, `claude-opus-5.5`, `claude-haiku-5.5`, `claude-haiku-4.5`, `gpt-5.3-codex`, `gemini-3.7-flash`, and `gemini-3.8-flash`, with model IDs case-insensitive; the built-in agents use `claude-sonnet-4.6`, `claude-haiku-4.5`, and `gpt-5.4-mini`). When the session model is `Auto`, subagents always use the resolved session model and ignore this field. See also `models`, `modelPolicy`, and `reasoningEffort` below.
 - **GitHub.com cloud agent:** ambiguous. The configuration reference lists `model` without restriction ("Model to use when this custom agent executes"), but the create how-to says `model` applies "if you are creating and using the agent profile in VS Code, JetBrains IDEs, Eclipse, or Xcode". Don't rely on `model` to select the cloud agent's model.
 - **Handoff `model`** uses the qualified format `Model Name (vendor)`, for example `GPT-5.5 (copilot)`.
@@ -206,6 +209,19 @@ Precedence, highest first: explicit per-call value, then the `subagents` overrid
 
 ---
 
+### `reasoning-effort` *(VS Code, Copilot harness)*
+
+**Type:** string
+**Values:** `low` | `medium` | `high` | `xhigh` | `max`
+
+Reasoning effort for the agent in the Copilot harness. Availability depends on the selected model; see [Thinking effort](https://code.visualstudio.com/docs/agent-customization/language-models#configure-thinking-effort). Copilot CLI agent profiles use `reasoningEffort` instead (above).
+
+```yaml
+reasoning-effort: high
+```
+
+---
+
 ### `include-custom-instructions` *(Copilot CLI only)*
 
 **Type:** boolean
@@ -225,7 +241,7 @@ include-custom-instructions: true
 **Default:** `true`
 **Platforms:** GitHub.com, VS Code / IDEs
 
-When `false`, users can't select the agent manually. It can only be used as a subagent or programmatically. In VS Code this controls picker visibility for both the Local and Copilot harnesses.
+When `false`, users can't select the agent manually. It can only be used as a subagent or programmatically. In VS Code this controls picker visibility for both the Local and Copilot harnesses. Editing it changes the shared agent definition, not a personal visibility preference.
 
 ```yaml
 user-invocable: false
@@ -270,7 +286,7 @@ disable-model-invocation: true
 **Type:** string
 **Platforms:** VS Code / IDEs only. Ignored on GitHub.com.
 
-Hint text shown in the chat input field when the agent is selected.
+Hint text shown in the chat input field when the agent is selected in the Local harness.
 
 ```yaml
 argument-hint: Paste the OpenAPI spec or describe the endpoint to review
@@ -301,7 +317,7 @@ agents: ["Codebase Researcher", "Reviewer"]
 ### `handoffs`
 
 **Type:** list of objects
-**Platforms:** VS Code / IDEs only. Ignored on GitHub.com.
+**Platforms:** VS Code / IDEs only (Local harness in VS Code). Ignored on GitHub.com.
 
 Buttons shown after a response completes that switch to another agent with the conversation context and a pre-filled prompt.
 
@@ -309,7 +325,7 @@ Buttons shown after a response completes that switch to another agent with the c
 |---|---|---|---|
 | `label` | string | Yes | Button text |
 | `agent` | string | Yes | Target agent identifier (built-in agents such as `agent` also work) |
-| `prompt` | string | No | Prompt text sent to the target agent |
+| `prompt` | string | Yes | Prompt to pre-fill when the user selects the handoff (the VS Code file reference marks it required) |
 | `send` | boolean | No | `true` auto-submits the prompt; default `false` |
 | `model` | string | No | Model for the handoff, in `Model Name (vendor)` format, for example `Claude Sonnet 5 (copilot)` |
 
@@ -409,6 +425,21 @@ metadata:
 
 ---
 
+## Prompt Body References (VS Code)
+
+The Markdown body holds the agent's instructions. Per the VS Code file reference:
+
+- Reference files with Markdown links or `#file:` syntax. Relative paths resolve from the custom agent file; `~` or `~/` refers to the home folder. Use `/` separators so paths stay portable across operating systems.
+- In the Local harness, reference a tool with `#tool:<tool-name>`, such as `#tool:web/fetch`.
+- When the agent is selected in chat, its body is added after the user's custom instructions and takes precedence if they conflict.
+
+```markdown
+Follow the [review checklist](./review-checklist.md).
+Use #file:~/copilot/security-guidelines.md for security reviews.
+```
+
+---
+
 ## Claude Agent Format (`.claude/agents/`)
 
 VS Code and Copilot CLI both load agents from `.claude/agents/` (plain `.md` files in the [Claude sub-agents format](https://code.claude.com/docs/en/sub-agents)). VS Code also reads `~/.claude/agents/` at user level. User-level agents must be in the supported folder on the machine where the selected harness runs (`~/.copilot/agents` for the Copilot harness; `~/.claude/agents` applies only to Anthropic Claude harness sessions); those folders are separate from VS Code profile user data. For Local harness sessions, user-level agents are stored in VS Code profile storage.
@@ -419,6 +450,10 @@ VS Code and Copilot CLI both load agents from `.claude/agents/` (plain `.md` fil
 | `name` | Optional | Required |
 | `tools` | YAML array | Comma-separated string, for example `"Read, Grep, Glob, Bash"` |
 | `disallowedTools` | Not supported | Comma-separated string of blocked tools |
+| `model` | Model name or array (see [`model`](#model)) | `sonnet`, `opus`, `haiku`, or `inherit` (default) |
+| `permissionMode` | Not listed | `default`, `acceptEdits`, `dontAsk`, `bypassPermissions`, or `plan` |
+| `skills`, `mcpServers`, `memory` | Not listed | Skills to load into the agent's context at startup, MCP servers, and persistent memory scope (`user`, `project`, or `local`) |
+| `hooks` | Object (see [`hooks`](#hooks-preview-in-vs-code)) | Lifecycle hooks scoped to the agent |
 
 ```markdown
 ---
@@ -431,7 +466,7 @@ disallowedTools: Bash, Edit, Write
 You are a security specialist...
 ```
 
-VS Code maps Claude tool names to the corresponding VS Code tools. In the CLI, `.github/agents/` takes precedence over `.claude/agents/` at the same directory level.
+The Claude harness implements these fields according to Anthropic's documentation. When the Local harness loads a Claude-format agent, VS Code maps supported Claude tool and model names to their VS Code equivalents; that doesn't make all Claude runtime features available in Local. In the CLI, `.github/agents/` takes precedence over `.claude/agents/` at the same directory level.
 
 ---
 
