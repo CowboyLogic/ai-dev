@@ -6,9 +6,9 @@ A skill for creating custom agents for GitHub Copilot: Copilot cloud agent on Gi
 
 | | |
 |---|---|
-| GitHub Copilot CLI | **v1.0.98** (released 2026-10-14) |
-| References last verified | 2026-10-14 |
-| Sources | docs.github.com Copilot custom-agent and CLI documentation, the supported-models page, and VS Code documentation at code.visualstudio.com (see the reference files for URLs) |
+| GitHub Copilot CLI | **v1.0.98** (released 2026-10-14, the latest stable release as of 2026-10-18) |
+| References last verified | 2026-10-18 |
+| Sources | docs.github.com Copilot custom-agent and CLI documentation, the supported-models page, and VS Code documentation at code.visualstudio.com as published through 2026-10-16 (see the reference files for URLs) |
 
 The model roster and retirement dates change often; check the supported-models page before
 pinning a model.
@@ -31,7 +31,7 @@ This skill covers:
 
 ## Quick Start
 
-1. In VS Code, open the Chat view → **Configure Chat** (gear icon) → **Agents**, then select **New Agent (Workspace)**
+1. In VS Code, select **Open Customizations** in the Chat view title bar → **Agents**, then select **New Agent** (plus icon) next to the **Workspace** group
 2. Enter a filename. A `.agent.md` file is created in `.github/agents/`
 3. Add a `description` and write the prompt body
 4. Select your agent in the agents dropdown and test it
@@ -76,6 +76,7 @@ Alternatives: run `/agent` → **Create new agent** in Copilot CLI, or use **Cre
 | Configuration reference | <https://docs.github.com/en/copilot/reference/custom-agents-configuration> |
 | Custom agents for Copilot CLI | <https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/create-custom-agents-for-cli> |
 | Custom agents in VS Code | <https://code.visualstudio.com/docs/agent-customization/custom-agents> |
+| Custom agent file reference (VS Code) | <https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference> |
 | Migrate Copilot customizations in VS Code | <https://code.visualstudio.com/docs/agent-customization/migrate-customizations> |
 | Supported AI models | <https://docs.github.com/en/copilot/reference/ai-models/supported-models> |
 | Awesome Copilot agents | <https://github.com/github/awesome-copilot/tree/main/agents> |
