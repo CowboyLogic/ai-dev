@@ -197,11 +197,11 @@
       "id": 8,
       "name": "mcp-server-name-with-double-underscore",
       "prompt": "I have an MCP server configured as reports__v2. I added \"mcp__reports__v2\" to permissions.allow in settings.json but Claude still prompts for every one of its tools. What's wrong?",
-      "expected_output": "Explains that the bare mcp__reports__v2 rule is read as a rule for a server named reports, so it does not match the reports__v2 server's tools, and gives mcp__reports__v2__* as the rule to write",
+      "expected_output": "Explains that the bare mcp__reports__v2 rule is not read as a rule for the reports__v2 server: under the mcp__<server>__<tool> grammar it names server reports (and tool v2), so it does not match the reports__v2 server's tools, and gives mcp__reports__v2__* as the rule to write",
       "assertions": [
         {
           "id": "misread-rule",
-          "description": "Explains that mcp__reports__v2 (and mcp__reports) is read as a rule for a server named reports and so does not allow the reports__v2 server's tools"
+          "description": "Explains that mcp__reports__v2 (and mcp__reports) is parsed against a server named reports (for mcp__reports__v2, with v2 as a tool name) and so does not allow the reports__v2 server's tools"
         },
         {
           "id": "wildcard-form",
