@@ -5,7 +5,8 @@ A custom agent in VS Code is a Markdown file with YAML frontmatter. The frontmat
 This page covers what VS Code reads. For every property across VS Code, GitHub.com, and the Copilot CLI, see the
 [Frontmatter Reference](https://github.com/CowboyLogic/ai-dev/blob/main/skills/agent-creator-copilot/references/frontmatter-reference.md)
 in the Copilot Agent Creator skill, and for VS Code's own description see
-[Custom agents in VS Code](https://code.visualstudio.com/docs/agent-customization/custom-agents).
+[Custom agents in VS Code](https://code.visualstudio.com/docs/agent-customization/custom-agents) and the
+[Custom agent file reference](https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference).
 
 > [!WARNING]
 > Earlier versions of this guide described agents stored in `.github/copilot-instructions/*.md`, mapped in
@@ -29,8 +30,8 @@ rename them. A legacy `.chatmode.md` file should be renamed to `.agent.md`. Comm
 Copilot (Agent Host) sessions read user-level agents from the host's `~/.copilot/agents/`, and Anthropic Claude
 harness sessions read `~/.claude/agents/`; neither comes from VS Code profile user data. VS Code's migration list can move existing agents there.
 
-An organization can publish agents that VS Code detects for its members once you set
-`github.copilot.chat.organizationCustomAgents.enabled` to `true`.
+An organization can publish agents that VS Code detects for its members. Discovery is on by default; set
+`github.copilot.chat.organizationCustomAgents.enabled` to `false` to stop showing them.
 
 ## File format
 
@@ -57,11 +58,12 @@ You are a planning agent. Produce a step-by-step plan and do not edit files.
 | `argument-hint` | Guidance text shown in the chat input |
 | `tools` | Tools and tool sets the agent may use. Omit it for all tools |
 | `agents` | Subagents this agent may call. `*` allows all, `[]` allows none |
-| `model` | One model name, or a prioritized list |
-| `user-invocable` | Whether the agent appears in the Agent dropdown. Default `true` |
+| `model` | One model name, or a prioritized list. Local subagents also use it when choosing their model |
+| `reasoning-effort` | `low`, `medium`, `high`, `xhigh`, or `max`, for the Copilot harness. Availability depends on the model |
+| `user-invocable` | Whether the agent appears in the Agent dropdown, in the Local and Copilot harnesses. Default `true` |
 | `disable-model-invocation` | Stops other agents from selecting this one as a subagent, unless a coordinator names it in its `agents` list |
 | `target` | `vscode` or `github-copilot`. Omit it for both |
-| `handoffs` | Suggested next steps, shown as buttons after a response |
+| `handoffs` | Suggested next steps, shown as buttons after a response (Local harness) |
 | `hooks` | Commands scoped to the agent (Preview, Local harness only) |
 | `mcp-servers` | MCP server configuration, for GitHub Copilot only |
 
@@ -92,7 +94,7 @@ A handoff adds a button that sends the conversation to another agent:
 |---|---|
 | `label` | Text on the button |
 | `agent` | The target agent |
-| `prompt` | The text sent to the target |
+| `prompt` | The prompt pre-filled when the user selects the handoff (required) |
 | `send` | `true` submits it automatically. Default `false` |
 | `model` | Optional model for the target, as a qualified name such as `GPT-5 (copilot)` |
 
@@ -102,7 +104,7 @@ A handoff adds a button that sends the conversation to another agent:
 
 ## Create and select an agent
 
-Create an agent from the Command Palette with **Chat: New Custom Agent**, from the gear menu in Chat (**Configure Chat**, then **Agents**), or by typing `/create-agent` in chat and describing the role. Type `/agents` in chat to open agent configuration.
+Create an agent from the Command Palette with **Chat: New Custom Agent**, from the Agent Customizations editor (**Open Customizations** in the Chat view title bar, then **Agents**), or by typing `/create-agent` in chat and describing the role.
 
 To use an agent, pick it from the **Agent** dropdown in the Chat view.
 
