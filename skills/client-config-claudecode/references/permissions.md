@@ -107,7 +107,7 @@ mcp__claude_ai_<server>__<tool>    → claude.ai connector tools
 
 An `mcp__` rule with parentheses (parameter match) is skipped when loaded from a settings file — use `--disallowedTools` for that.
 
-An MCP allow rule reaches only the server it names (v2.1.299; the permissions docs now state it). For a server whose normalized name contains `__` or ends in `_`, write `mcp__<whole normalized name>__*`: for a server named `reports__v2` that is `mcp__reports__v2__*`, and the bare `mcp__reports__v2` or `mcp__reports` does not allow its tools. Changelog only (v2.1.299): deny and ask rules for `mcp__<server>` now also apply to such servers. The same naming holds for an agent's `tools:` list (see `agent-creator-claudecode`).
+An MCP allow rule reaches only the server it names (v2.1.299; the permissions docs now state it). For a server whose normalized name contains `__` or ends in `_`, write `mcp__<whole normalized name>__*`: for a server named `reports__v2` that is `mcp__reports__v2__*`, and the bare `mcp__reports__v2` or `mcp__reports` does not allow its tools. Changelog only (v2.1.299): deny and ask rules for `mcp__<server>` now also apply to such servers. For a server whose name contains `__`, the same wildcard form holds for an agent's `tools:` list (changelog only; see `agent-creator-claudecode`, which does not cover a trailing `_` there).
 
 ### Tool-name wildcards
 
