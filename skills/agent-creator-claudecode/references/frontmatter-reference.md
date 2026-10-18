@@ -217,9 +217,9 @@ subagents in foreground or background"):
 Changelog only (v2.1.302): fork mode is now also on by default in `claude -p`, the Agent SDK,
 the desktop app and VS Code, so case 3 applies there; `CLAUDE_CODE_FORK_SUBAGENT=0` turns it
 off, and `claude mcp serve` never offers forks. The desktop app and VS Code always run the
-main conversation's subagents in the background, as the terminal does, and a subagent's own
-Agent calls in `-p`, the Agent SDK, the desktop app and VS Code run in the foreground by
-default. The sub-agents docs page still says fork mode is off for `-p` and the SDK (checked
+main conversation's subagents in the background, as the terminal does. The exception to
+case 3 is a subagent's own Agent calls in `-p`, the Agent SDK, the desktop app and VS Code,
+which run in the foreground by default. The sub-agents docs page still says fork mode is off for `-p` and the SDK (checked
 2026-10-18), so case 4 as written above is the pre-2.1.302 behavior there.
 
 A skill with `context: fork` follows the skills docs instead. Background agents get a smaller
