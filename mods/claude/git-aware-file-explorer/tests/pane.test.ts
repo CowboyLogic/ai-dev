@@ -43,6 +43,8 @@ type Live = {
   stats?: number
   processes?: number
   text?: string
+  /** Modification times of single files, by path from the root, in place of `mtimeMs`. */
+  fileMtimes?: Record<string, number>
 }
 
 /**
@@ -110,7 +112,8 @@ function fakeRepo(
     live.stats = (live.stats ?? 0) + 1
     if (isNewGone && e.path.endsWith('/src/new.ts')) throw new Error('ENOENT: no such file or directory')
     const isLink = isNewLink && e.path.endsWith('/src/new.ts')
-    return { value: { kind: 'file' as const, size: fileSize, mtimeMs: live.mtimeMs, isLink } }
+    const mtimeMs = live.fileMtimes?.[e.path.slice(ROOT.length + 1)] ?? live.mtimeMs
+    return { value: { kind: 'file' as const, size: fileSize, mtimeMs, isLink } }
   })
   on('fs.read', () => {
     live.reads = (live.reads ?? 0) + 1
@@ -323,6 +326,28 @@ describe('git-aware-file-explorer pane', () => {
       await ui.unmount()
     })
   }
+
+  test('shows the current preview of a file edited while closed', async ($, on) => {
+    const live: Live = { diff: DIFF, mtimeMs: 1 }
+    fakeRepo(on, { live })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer', surface: 'desktop', component: 'Pane',
+      requestId: 'git-aware-file-explorer', props: PROPS,
+    })
+    await ui.press({ key: 'node:src' })
+    await ui.press({ key: 'refresh' })
+    await ui.press({ key: 'node:src/a.ts' })
+    await ui.press({ key: 'node:src/a.ts' })
+    // Edited while closed: only its own time moves, and git's status and line totals stay the same.
+    live.fileMtimes = { 'src/a.ts': 2 }
+    live.text = 'edited\nclosed\n'
+    await ui.press({ key: 'refresh' })
+    await ui.press({ key: 'node:src/a.ts' })
+
+    expect((await ui.find({ type: 'Code' }))?.props.source).toBe('edited\nclosed\n')
+
+    await ui.unmount()
+  })
 
   test('invalidates a cached preview when its scan stamp changes', async ($, on) => {
     const live: Live = { diff: DIFF, mtimeMs: 1 }
@@ -587,22 +612,6 @@ describe('git-aware-file-explorer pane', () => {
     await ui.unmount()
   })
 
-  test('does not strike through a recreated file in the changed-only view', async ($, on) => {
-    fakeRepo(on, { isRecreated: true })
-    const ui = await $.ui.mount({
-      plugin: 'git-aware-file-explorer',
-      surface: 'desktop',
-      component: 'Pane',
-      requestId: 'git-aware-file-explorer',
-      props: PROPS,
-    })
-    await ui.press({ key: 'changes' })
-
-    expect((await ui.find({ type: 'Text', text: 'gone.txt' }))?.props.strikethrough).toBe(false)
-
-    await ui.unmount()
-  })
-
   test("shows git's error when it cannot read a recreated file's committed version", async ($, on) => {
     fakeRepo(on, { isRecreated: true, isBlobMissing: true })
     const ui = await $.ui.mount({
@@ -616,6 +625,22 @@ describe('git-aware-file-explorer pane', () => {
 
     // Not the new contents alone, drawn as if they were the whole change.
     expect(await ui.find({ type: 'Text', text: 'fatal: bad object HEAD:gone.txt' })).toBeDefined()
+
+    await ui.unmount()
+  })
+
+  test('does not strike through a recreated file in the changed-only view', async ($, on) => {
+    fakeRepo(on, { isRecreated: true })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+    await ui.press({ key: 'changes' })
+
+    expect((await ui.find({ type: 'Text', text: 'gone.txt' }))?.props.strikethrough).toBe(false)
 
     await ui.unmount()
   })

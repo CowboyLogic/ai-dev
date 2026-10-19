@@ -298,14 +298,15 @@ async function lineTotals($: $, root: string, changes: Change[]) {
 }
 
 /**
- * Modification time and size of the open file, the open folders and the first STAMP_LIMIT changed
- * files. An edit that leaves git's status and line totals as they were (`bar` to `baz`) still
- * changes this, so the scan that sees it redraws the pane.
+ * Modification time and size of the open file, the files whose diff or preview is cached, the open
+ * folders and the first STAMP_LIMIT changed files. An edit that leaves git's status and line totals
+ * as they were (`bar` to `baz`) still changes this, so the scan that sees it redraws the pane and a
+ * file closed and edited does not reopen from a stale cache.
  */
 async function stampFor($: $, s: Scan): Promise<string> {
   const selected = await read($, selectedAtom)
   const paths = new Set(['', ...(await read($, expandedAtom)), ...s.changes.slice(0, STAMP_LIMIT).map(c => c.path)])
-  if (selected !== null) paths.add(selected)
+  for (const p of [selected, diffCache?.path, previewCache?.path]) if (p != null) paths.add(p)
   const stats = await Promise.all(
     [...paths].map(p => $.fs.stat(p === '' ? s.root : s.root + '/' + p).catch(() => undefined)),
   )
