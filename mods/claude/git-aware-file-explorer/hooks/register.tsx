@@ -860,6 +860,8 @@ export const register: Register = on => {
           const b = r.change ? badge(r.change) : undefined
           const color = b?.color ?? (r.isDir && r.count > 0 ? 'warning' : undefined)
           const press = () => (r.isDir ? toggleDir(r.path) : select(r.path))
+          // A folder that is itself a change (a submodule) opens its diff by name; its chevron expands it.
+          const pressName = r.isDir && r.change ? () => select(r.path) : press
           return (
             <Box
               key={'row:' + r.path}
@@ -887,7 +889,7 @@ export const register: Register = on => {
                     height={16}
                   />
                 )}
-                <Button key={'node:' + r.path} plain onPress={press}>
+                <Button key={'node:' + r.path} plain onPress={pressName}>
                   <Text color={color} dimColor={r.isIgnored} strikethrough={r.isMissing} wrap="truncate-end">
                     {r.name}
                     {r.isUnreadable && <Text dimColor> (unreadable)</Text>}

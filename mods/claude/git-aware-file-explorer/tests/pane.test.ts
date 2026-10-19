@@ -65,7 +65,7 @@ type Live = {
  * committed version passes 4 MiB; with `isBlobMissing`, git cannot show it. With `isUnreadable`, no file can be read. With `isIgnoredCut`,
  * the list of ignored paths comes back cut. With `isNewGone`, src/new.ts is gone by the time it is
  * looked at, and with `isNewLink` it is a symbolic link to a file. With `isDiffFailed`, git cannot read README.md, so every diff against the base fails.
- * With `isSrcUnreadable`, src can't be listed. With `statusError`, git status fails with that message. `gone` names the deleted file; git's line counts quote
+ * With `isSrcUnreadable`, src can't be listed; with `isSrcSubmodule`, src is a changed submodule. With `statusError`, git status fails with that message. `gone` names the deleted file; git's line counts quote
  * it outside printable ASCII unless asked for `-z`.
  */
 function fakeRepo(
@@ -87,6 +87,7 @@ function fakeRepo(
     isNewGone = false,
     isNewLink = false,
     isSrcUnreadable = false,
+    isSrcSubmodule = false,
     statusError,
     isDiffFailed = false,
   }: {
@@ -106,6 +107,7 @@ function fakeRepo(
     isNewGone?: boolean
     isNewLink?: boolean
     isSrcUnreadable?: boolean
+    isSrcSubmodule?: boolean
     statusError?: string
     isDiffFailed?: boolean
   } = {},
@@ -139,6 +141,7 @@ function fakeRepo(
     if (args.startsWith('status')) {
       await onStatus?.()
       if (statusError !== undefined) return { value: { ...ok('', 128).value, stderr: statusError } }
+      if (isSrcSubmodule) return ok(' M README.md\0 M src\0')
       if (isRecreated) return ok(` M README.md\0?? src/new.ts\0D  ${gone}\0?? ${gone}\0`)
       return isCut ? ok(' M README.md\0?? src/new.ts\0 D go', 0, true) : ok(` M README.md\0?? src/new.ts\0 D ${gone}\0`)
     }
@@ -582,6 +585,25 @@ describe('git-aware-file-explorer pane', () => {
     const repoCalls = (live.runs ?? []).filter(a => a.join(' ') !== 'git rev-parse --show-toplevel')
     expect(repoCalls.some(a => a.includes('README.md'))).toBe(true)
     expect(repoCalls.every(a => a.includes('--literal-pathspecs'))).toBe(true)
+
+    await ui.unmount()
+  })
+
+  test('opens a changed submodule by its name and expands it by its chevron', async ($, on) => {
+    fakeRepo(on, { isSrcSubmodule: true })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+
+    await ui.press({ key: 'node:src' })
+    expect(await ui.find({ key: 'close-panel' })).toBeDefined()
+    expect(await ui.find({ key: 'node:src/a.ts' })).toBeUndefined()
+    await ui.press({ key: 'chevron:src' })
+    expect(await ui.find({ key: 'node:src/a.ts' })).toBeDefined()
 
     await ui.unmount()
   })
