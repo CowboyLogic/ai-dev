@@ -587,6 +587,22 @@ describe('git-aware-file-explorer pane', () => {
     await ui.unmount()
   })
 
+  test('does not strike through a recreated file in the changed-only view', async ($, on) => {
+    fakeRepo(on, { isRecreated: true })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+    await ui.press({ key: 'changes' })
+
+    expect((await ui.find({ type: 'Text', text: 'gone.txt' }))?.props.strikethrough).toBe(false)
+
+    await ui.unmount()
+  })
+
   test('says an unchanged file it cannot read is unreadable, not empty', async ($, on) => {
     fakeRepo(on, { isUnreadable: true })
     const ui = await $.ui.mount({

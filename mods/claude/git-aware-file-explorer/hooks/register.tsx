@@ -505,7 +505,8 @@ async function buildRows(
       else {
         const isDir = rest.includes('/')
         const c = byPath.get(path)
-        const isGone = !isDir && (c?.x === 'D' || c?.y === 'D')
+        // A recreated file (`D?`) is back on disk: not drawn as gone.
+        const isGone = !isDir && c !== undefined && !isRecreated(c) && (c.x === 'D' || c.y === 'D')
         kids.set(seg, { isDir, isMissing: virtual ? isGone : true, hasKids })
       }
     }
