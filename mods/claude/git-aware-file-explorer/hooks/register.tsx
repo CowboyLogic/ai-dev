@@ -71,8 +71,12 @@ export function parseStatus(out: string): Change[] {
     const part = parts[i] ?? ''
     if (part.length < 4) continue
     const change: Change = { x: part.charAt(0), y: part.charAt(1), path: part.slice(3) }
-    // A rename or copy names its original path next, staged or not (an intent-to-add file).
-    if (/[RC]/.test(change.x + change.y)) change.from = parts[++i]
+    // A rename or copy names its original path next, staged or not (an intent-to-add file). Output
+    // cut at 4 MiB can end before it: the record is incomplete and dropped.
+    if (/[RC]/.test(change.x + change.y)) {
+      change.from = parts[++i]
+      if (!change.from) continue
+    }
     const seen = byPath.get(change.path)
     if (seen && (seen.x === 'D' || change.x === 'D') && (seen.x === '?' || change.x === '?')) {
       byPath.set(change.path, { x: 'D', y: '?', path: change.path })

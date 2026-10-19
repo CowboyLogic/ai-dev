@@ -41,6 +41,11 @@ describe('diff windowing', () => {
     ])
   })
 
+  test('status drops a rename whose original path was cut off', async () => {
+    // Output cut at 4 MiB and trimmed to its last NUL can end between a rename's two fields.
+    expect(parseStatus(' M README.md\0R  new.ts\0')).toEqual([{ x: ' ', y: 'M', path: 'README.md' }])
+  })
+
   test('lines count as git counts them', async () => {
     expect(countLines('')).toBe(0)
     expect(countLines('a\nb\n')).toBe(2)
