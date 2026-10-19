@@ -143,6 +143,9 @@ function fakeRepo(
     if (args.startsWith('rev-parse --verify')) return hasHead ? ok('abc\n') : ok('', 1)
     if (args === 'hash-object -t tree /dev/null') return ok(EMPTY_TREE + '\n')
     const end = z ? '\0' : '\n'
+    if (isNewGone && args.endsWith('--no-index -- /dev/null src/new.ts')) {
+      return { value: { ...ok('', 1).value, stderr: "error: Could not access 'src/new.ts'" } }
+    }
     if (isDiffFailed && args.startsWith('diff') && !args.includes('--no-index')) {
       return { value: { ...ok('', 128).value, stderr: 'fatal: cannot hash README.md' } }
     }
@@ -467,6 +470,25 @@ describe('git-aware-file-explorer pane', () => {
 
     // README.md's 1 added line; src/new.ts went uncounted, so the total is a floor.
     expect(await ui.find({ type: 'Text', text: '+1+' })).toBeDefined()
+
+    await ui.unmount()
+  })
+
+  test("shows git's error when a new file is gone before its diff opens", async ($, on) => {
+    fakeRepo(on, { isNewGone: true })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+    await ui.press({ key: 'node:src' })
+    await ui.press({ key: 'node:src/new.ts' })
+
+    // --no-index exits 1 for this error too, as it does when the files differ.
+    expect(await ui.find({ type: 'Text', text: /No textual difference/ })).toBeUndefined()
+    expect(await ui.find({ type: 'Text', text: "error: Could not access 'src/new.ts'" })).toBeDefined()
 
     await ui.unmount()
   })

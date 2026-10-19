@@ -132,6 +132,14 @@ async function git($: $, root: string, args: string[], stdin?: string) {
 }
 
 /**
+ * Whether a diff failed. `--no-index` exits 1 when the files differ, and also on some errors (a
+ * file it can't access), which print nothing but the error.
+ */
+function isDiffFailed(out: { exitCode: number; stdout: string; stderr: string }) {
+  return out.exitCode > 1 || (out.exitCode === 1 && out.stdout === '' && out.stderr.trim() !== '')
+}
+
+/**
  * `git diff` (with `flags`) of a recreated path: its version in `base`, piped in, against the file
  * on disk, so the panel and the totals see the net change. `'cut'` when that version passed 4 MiB
  * and can't be piped whole; undefined when git can't run it so.
@@ -140,9 +148,8 @@ async function recreatedDiff($: $, root: string, base: string, path: string, fla
   const old = await git($, root, ['show', base + ':' + path])
   if (old.isStdoutTruncated) return 'cut' as const
   if (old.exitCode !== 0) return undefined
-  // --no-index exits 1 when the files differ, which is the point here.
   const out = await git($, root, ['diff', ...flags, '--no-index', '--', '/dev/stdin', path], old.stdout)
-  return out.exitCode <= 1 ? out : undefined
+  return isDiffFailed(out) ? undefined : out
 }
 
 async function scan($: $): Promise<Scan> {
@@ -618,8 +625,7 @@ async function prepareDiff($: $, s: Scan, c: Change): Promise<FileDiff> {
     if (line.kind === '-') counts.deleted++
     largest = Math.max(largest, line.o, line.n)
   }
-  // A diff exits 0, or 1 with --no-index when the files differ; past that, git failed.
-  const error = out.exitCode > 1 ? out.stderr.trim() || `git diff exited ${out.exitCode}` : undefined
+  const error = isDiffFailed(out) ? out.stderr.trim() || `git diff exited ${out.exitCode}` : undefined
   return { lines, counts, width: String(largest).length, hunks, rows, isTruncated: out.isStdoutTruncated, error }
 }
 
