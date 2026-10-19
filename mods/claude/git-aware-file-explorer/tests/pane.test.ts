@@ -45,6 +45,9 @@ type Live = {
   text?: string
   /** Modification times of single files, by path from the root, in place of `mtimeMs`. */
   fileMtimes?: Record<string, number>
+  /** The commit HEAD names, and git's list of files, in place of the defaults. */
+  head?: string
+  files?: string
 }
 
 /**
@@ -137,7 +140,7 @@ function fakeRepo(
     if (args.startsWith('ls-files') && args.includes('--ignored')) {
       return isIgnoredCut ? ok('node_modules/\0vend', 0, true) : ok('node_modules/\0')
     }
-    if (args.startsWith('ls-files')) return isCut ? ok('README.md\0src/a.ts\0docs/ind', 0, true) : ok('README.md\0src/a.ts\0docs/index.md\0')
+    if (args.startsWith('ls-files')) return isCut ? ok('README.md\0src/a.ts\0docs/ind', 0, true) : ok(live.files ?? 'README.md\0src/a.ts\0docs/index.md\0')
     if (args === 'branch --show-current') return ok('feat/x\n')
     if (args === `show HEAD:${gone}` && isBlobMissing) return { value: { ...ok('', 128).value, stderr: `fatal: bad object HEAD:${gone}` } }
     if (args === `show HEAD:${gone}`) return isBlobCut ? ok('a\nb', 0, true) : ok('a\nb\nc\n')
@@ -146,7 +149,7 @@ function fakeRepo(
       if (args.includes('--numstat')) return z ? ok(`1\t1\t\0/dev/stdin\0${gone}\0`, 1) : ok(`1\t1\t/dev/stdin => ${quoted}\n`, 1)
       return ok(`diff --git a/dev/stdin b/${gone}\n--- a/dev/stdin\n+++ b/${gone}\n@@ -1,3 +1,3 @@\n a\n-b\n+B\n c\n`, 1)
     }
-    if (args.startsWith('rev-parse --verify')) return hasHead ? ok('abc\n') : ok('', 1)
+    if (args.startsWith('rev-parse --verify')) return hasHead ? ok((live.head ?? 'abc') + '\n') : ok('', 1)
     if (args === 'hash-object -t tree /dev/null') return ok(EMPTY_TREE + '\n')
     const end = z ? '\0' : '\n'
     if (isNewGone && args.endsWith('--no-index -- /dev/null src/new.ts')) {
@@ -1031,6 +1034,30 @@ describe('git-aware-file-explorer pane', () => {
     await ui.press({ key: 'refresh' })
     await ui.redraw()
     expect(lists).toBeGreaterThan(walked)
+
+    await ui.unmount()
+  })
+
+  test('finds a file a pull added in a closed folder, with the status still clean', async ($, on) => {
+    const live: Live = { diff: DIFF, mtimeMs: 1 }
+    fakeRepo(on, { live })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+    await ui.input({ key: 'filter', text: 'index', kind: 'change' })
+    await ui.press({ key: 'refresh' })
+    expect(await ui.find({ key: 'node:docs/old-index.md' })).toBeUndefined()
+
+    // Only HEAD moves: the status, the totals and every stamped path stay as they were.
+    live.head = 'def'
+    live.files = 'README.md\0src/a.ts\0docs/index.md\0docs/old-index.md\0'
+    await ui.press({ key: 'refresh' })
+
+    expect(await ui.find({ key: 'node:docs/old-index.md' })).toBeDefined()
 
     await ui.unmount()
   })

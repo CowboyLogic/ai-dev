@@ -165,10 +165,11 @@ async function scan($: $): Promise<Scan> {
       return { root: cwd, isRepo: false, changes: [], ignored: [], error }
     }
     const root = top.stdout.trim()
-    const [status, ignored, branch] = await Promise.all([
+    const [status, ignored, branch, head] = await Promise.all([
       git($, root, ['status', '--porcelain=v1', '-z', '-uall']),
       git($, root, ['ls-files', '-z', '--others', '--ignored', '--exclude-standard', '--directory']),
       git($, root, ['branch', '--show-current']),
+      git($, root, ['rev-parse', '--verify', '-q', 'HEAD']),
     ])
     let name = branch.stdout.trim()
     if (name === '') name = (await git($, root, ['rev-parse', '--short', 'HEAD'])).stdout.trim()
@@ -180,6 +181,7 @@ async function scan($: $): Promise<Scan> {
       root,
       isRepo: true,
       branch: name || undefined,
+      head: head.stdout.trim() || undefined,
       changes,
       lines,
       isTruncated: status.isStdoutTruncated || undefined,

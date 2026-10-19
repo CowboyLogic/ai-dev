@@ -18,6 +18,11 @@ export type Scan = {
   isRepo: boolean
   /** The checked-out branch, or a short commit id when detached. */
   branch?: string
+  /**
+   * The commit HEAD names, absent before the first commit. A pull or checkout that leaves the status
+   * clean still moves it, so the scan changes and the tree and filter are listed again.
+   */
+  head?: string
   changes: Change[]
   /** Ignored paths relative to root; a directory ends with `/`. */
   ignored: string[]
