@@ -312,7 +312,7 @@ async function lineTotals($: $, root: string, changes: Change[]) {
  * folders and the first STAMP_LIMIT changed files. An edit that leaves git's status and line totals
  * as they were (`bar` to `baz`) still changes this, so the scan that sees it redraws the pane and a
  * file closed and edited does not reopen from a stale cache. While the open preview can't be read,
- * every stamp differs, so each scan redraws and reads it again.
+ * or an open folder can't be listed, every stamp differs, so each scan redraws and tries again.
  */
 async function stampFor($: $, s: Scan): Promise<string> {
   const selected = await read($, selectedAtom)
@@ -322,10 +322,11 @@ async function stampFor($: $, s: Scan): Promise<string> {
     [...paths].map(p => $.fs.stat(p === '' ? s.root : s.root + '/' + p).catch(() => undefined)),
   )
   const stamp = stats.map(st => (st ? st.mtimeMs + ':' + st.size : '-')).join(',')
-  return previewCache?.isFailed && previewCache.path === selected ? stamp + ',retry' + ++retries : stamp
+  const isRetried = (previewCache?.isFailed && previewCache.path === selected) || treeCache?.isFailed
+  return isRetried ? stamp + ',retry' + ++retries : stamp
 }
 
-/** Counts the scans that retried a preview that could not be read (see stampFor). */
+/** Counts the scans that retried a preview or folder that could not be read (see stampFor). */
 let retries = 0
 
 /** A short fingerprint of a file list: its length and a 32-bit hash of its paths. */
@@ -573,13 +574,19 @@ async function buildRows(
 }
 
 type TreeView = { rows: Row[]; virtual: Awaited<ReturnType<typeof pathsFor>>; widest: number }
-let treeCache: { scanKey: string; viewKey: string; view: Promise<TreeView> } | undefined
+let treeCache: { scanKey: string; viewKey: string; view: Promise<TreeView>; isFailed?: boolean } | undefined
 
 /** Scrolls reuse the prepared tree, including its filter and width, without listing directories. */
 function cachedTree($: $, s: Scan, scanKey: string, expanded: string[], changedOnly: boolean, filter: string) {
   const viewKey = JSON.stringify([expanded, changedOnly, filter])
   if (treeCache?.scanKey !== scanKey || treeCache.viewKey !== viewKey) {
-    treeCache = { scanKey, viewKey, view: prepareTree($, s, expanded, changedOnly, filter) }
+    const view = prepareTree($, s, expanded, changedOnly, filter)
+    const entry: NonNullable<typeof treeCache> = { scanKey, viewKey, view }
+    // A folder that couldn't be listed may list later with its time and size unchanged (see stampFor).
+    void entry.view.then(v => {
+      if (v.rows.some(r => r.isUnreadable)) entry.isFailed = true
+    })
+    treeCache = entry
   }
   return treeCache.view
 }
@@ -673,7 +680,8 @@ const UNREADABLE = 'Not a readable file.'
 
 function cachedPreview($: $, s: Scan, path: string, scanKey: string): Promise<Preview> {
   if (previewCache?.scanKey !== scanKey || previewCache.path !== path) {
-    const entry: NonNullable<typeof previewCache> = { scanKey, path, preview: preparePreview($, s.root + '/' + path) }
+    const preview = preparePreview($, s.root + '/' + path)
+    const entry: NonNullable<typeof previewCache> = { scanKey, path, preview }
     // A read that failed may work later with the file's time and size unchanged (see stampFor).
     void entry.preview.then(p => {
       if (p.notice === UNREADABLE) entry.isFailed = true

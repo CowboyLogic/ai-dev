@@ -48,8 +48,9 @@ type Live = {
   /** The commit HEAD names, and git's list of files, in place of the defaults. */
   head?: string
   files?: string
-  /** A path from the root that can't be read for now. */
+  /** A path from the root that can't be read for now, and a folder that can't be listed for now. */
   unreadable?: string
+  unlistable?: string
   /** Every process run, as its argv. */
   runs?: (readonly string[])[]
 }
@@ -117,7 +118,9 @@ function fakeRepo(
   on('session.cwd', () => ({ value: ROOT }))
   on('fs.list', ($, e) => {
     live.lists = (live.lists ?? 0) + 1
-    if (isSrcUnreadable && e.path === ROOT + '/src') throw new Error('EACCES: permission denied')
+    if ((isSrcUnreadable && e.path === ROOT + '/src') || e.path === ROOT + '/' + live.unlistable) {
+      throw new Error('EACCES: permission denied')
+    }
     return { value: disk[e.path] ?? [] }
   })
   on('fs.stat', ($, e) => {
@@ -603,6 +606,29 @@ describe('git-aware-file-explorer pane', () => {
     expect(await ui.find({ key: 'close-panel' })).toBeDefined()
     expect(await ui.find({ key: 'node:src/a.ts' })).toBeUndefined()
     await ui.press({ key: 'chevron:src' })
+    expect(await ui.find({ key: 'node:src/a.ts' })).toBeDefined()
+
+    await ui.unmount()
+  })
+
+  test('lists a folder it could not list again on the next scan', async ($, on) => {
+    const live: Live = { diff: DIFF, mtimeMs: 1, unlistable: 'src' }
+    fakeRepo(on, { live })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+    await ui.press({ key: 'node:src' })
+    await ui.press({ key: 'refresh' })
+    expect(await ui.find({ type: 'Text', text: ' (unreadable)' })).toBeDefined()
+
+    // Listable again, with its time and size unchanged.
+    live.unlistable = undefined
+    await ui.press({ key: 'refresh' })
+
     expect(await ui.find({ key: 'node:src/a.ts' })).toBeDefined()
 
     await ui.unmount()
