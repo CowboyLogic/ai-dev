@@ -55,7 +55,7 @@ type Live = {
  * staged for deletion and back on disk with its second line changed, and with `isBlobCut` too its
  * committed version passes 4 MiB; with `isBlobMissing`, git cannot show it. With `isUnreadable`, no file can be read. With `isIgnoredCut`,
  * the list of ignored paths comes back cut. With `isNewGone`, src/new.ts is gone by the time it is
- * looked at. With `isDiffFailed`, git cannot read README.md, so every diff against the base fails.
+ * looked at, and with `isNewLink` it is a symbolic link to a file. With `isDiffFailed`, git cannot read README.md, so every diff against the base fails.
  * With `statusError`, git status fails with that message. `gone` names the deleted file; git's line counts quote
  * it outside printable ASCII unless asked for `-z`.
  */
@@ -76,6 +76,7 @@ function fakeRepo(
     isIgnoredCut = false,
     gone = 'gone.txt',
     isNewGone = false,
+    isNewLink = false,
     statusError,
     isDiffFailed = false,
   }: {
@@ -93,6 +94,7 @@ function fakeRepo(
     isIgnoredCut?: boolean
     gone?: string
     isNewGone?: boolean
+    isNewLink?: boolean
     statusError?: string
     isDiffFailed?: boolean
   } = {},
@@ -107,7 +109,8 @@ function fakeRepo(
   on('fs.stat', ($, e) => {
     live.stats = (live.stats ?? 0) + 1
     if (isNewGone && e.path.endsWith('/src/new.ts')) throw new Error('ENOENT: no such file or directory')
-    return { value: { kind: 'file' as const, size: fileSize, mtimeMs: live.mtimeMs, isLink: false } }
+    const isLink = isNewLink && e.path.endsWith('/src/new.ts')
+    return { value: { kind: 'file' as const, size: fileSize, mtimeMs: live.mtimeMs, isLink } }
   })
   on('fs.read', () => {
     live.reads = (live.reads ?? 0) + 1
@@ -464,6 +467,22 @@ describe('git-aware-file-explorer pane', () => {
 
     // README.md's 1 added line; src/new.ts went uncounted, so the total is a floor.
     expect(await ui.find({ type: 'Text', text: '+1+' })).toBeDefined()
+
+    await ui.unmount()
+  })
+
+  test('counts a new symbolic link as one added line, as git does', async ($, on) => {
+    fakeRepo(on, { isNewLink: true })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+
+    // README.md's 1 added line and src/new.ts's link target as 1, not the 2 lines of the file it leads to.
+    expect(await ui.find({ type: 'Text', text: '+2' })).toBeDefined()
 
     await ui.unmount()
   })

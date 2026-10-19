@@ -271,6 +271,11 @@ async function lineTotals($: $, root: string, changes: Change[]) {
       total.partial = true
       continue
     }
+    // git diffs a symbolic link as one line, its target, whatever it leads to.
+    if (stat.isLink) {
+      total.added += 1
+      continue
+    }
     if (stat.kind !== 'file') continue
     if (stat.size > UNTRACKED_BYTES) {
       total.partial = true
