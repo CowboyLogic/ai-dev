@@ -251,22 +251,16 @@ async function lineTotals($: $, root: string, changes: Change[]) {
   let numstat = parseNumstat(out.isStdoutTruncated ? out.stdout.slice(0, out.stdout.lastIndexOf('\0') + 1) : out.stdout)
   // A recreated path counts its net change, in place of the deletion the diff against base reports.
   let isUncounted = false
-  let isCut = false
   for (const c of changes.filter(isRecreated)) {
     const net = await recreatedDiff($, root, base, c.path, ['--numstat', '-z'])
-    if (net === undefined) {
-      isUncounted = true
-      continue
-    }
     const others = numstat.filter(e => e.path !== c.path)
-    // Too large to diff: neither its deletion nor its contents count, and both totals are floors.
-    if (net === 'cut') isCut = true
-    numstat = net === 'cut' ? others : [...others, ...parseNumstat(net.stdout)]
+    // Too large to diff, or git can't: neither its deletion nor its contents count, and both totals are floors.
+    if (net === 'cut' || net === undefined) isUncounted = true
+    numstat = net === 'cut' || net === undefined ? others : [...others, ...parseNumstat(net.stdout)]
   }
   const total: { added: number; deleted: number; partial?: boolean; isTruncated?: boolean } = sumNumstat(numstat)
   // A diff git could not make (an unreadable changed file) prints no counts at all: both are floors.
-  if (out.isStdoutTruncated || isCut || out.exitCode !== 0) total.isTruncated = true
-  if (isUncounted) total.partial = true
+  if (out.isStdoutTruncated || isUncounted || out.exitCode !== 0) total.isTruncated = true
   const untracked = changes.filter(c => c.x === '?')
   if (untracked.length > UNTRACKED_LIMIT) total.partial = true
   for (const c of untracked.slice(0, UNTRACKED_LIMIT)) {

@@ -53,7 +53,7 @@ type Live = {
  * counts the diffs of README.md run. With `isCut`, git's status, line counts, file list and diff
  * come back cut at the 4 MiB limit, as `process.run` reports them. With `isRecreated`, gone.txt is
  * staged for deletion and back on disk with its second line changed, and with `isBlobCut` too its
- * committed version passes 4 MiB. With `isUnreadable`, no file can be read. With `isIgnoredCut`,
+ * committed version passes 4 MiB; with `isBlobMissing`, git cannot show it. With `isUnreadable`, no file can be read. With `isIgnoredCut`,
  * the list of ignored paths comes back cut. With `isNewGone`, src/new.ts is gone by the time it is
  * looked at. With `isDiffFailed`, git cannot read README.md, so every diff against the base fails.
  * With `statusError`, git status fails with that message. `gone` names the deleted file; git's line counts quote
@@ -72,6 +72,7 @@ function fakeRepo(
     isRecreated = false,
     isUnreadable = false,
     isBlobCut = false,
+    isBlobMissing = false,
     isIgnoredCut = false,
     gone = 'gone.txt',
     isNewGone = false,
@@ -88,6 +89,7 @@ function fakeRepo(
     isRecreated?: boolean
     isUnreadable?: boolean
     isBlobCut?: boolean
+    isBlobMissing?: boolean
     isIgnoredCut?: boolean
     gone?: string
     isNewGone?: boolean
@@ -128,6 +130,7 @@ function fakeRepo(
     }
     if (args.startsWith('ls-files')) return isCut ? ok('README.md\0src/a.ts\0docs/ind', 0, true) : ok('README.md\0src/a.ts\0docs/index.md\0')
     if (args === 'branch --show-current') return ok('feat/x\n')
+    if (args === `show HEAD:${gone}` && isBlobMissing) return { value: { ...ok('', 128).value, stderr: `fatal: bad object HEAD:${gone}` } }
     if (args === `show HEAD:${gone}`) return isBlobCut ? ok('a\nb', 0, true) : ok('a\nb\nc\n')
     if (args.endsWith(`--no-index -- /dev/null ${gone}`)) return ok(`diff --git a/${gone} b/${gone}\n@@ -0,0 +1,3 @@\n+a\n+B\n+c\n`, 1)
     if (args.endsWith(`--no-index -- /dev/stdin ${gone}`) && e.init?.stdin === 'a\nb\nc\n') {
@@ -521,6 +524,24 @@ describe('git-aware-file-explorer pane', () => {
     expect(await ui.find({ type: 'Text', text: '● 3 changed' })).toBeDefined()
     await ui.press({ key: 'node:gone.txt' })
     expect(await ui.find({ type: 'Text', text: /cut at 4 MB/ })).toBeDefined()
+
+    await ui.unmount()
+  })
+
+  test('marks both totals as floors when git cannot diff a recreated file', async ($, on) => {
+    fakeRepo(on, { isRecreated: true, isBlobMissing: true })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+
+    // gone.txt's net change is unknown: neither its −3 deletion nor its contents count, both are floors.
+    expect(await ui.find({ type: 'Text', text: '+3+' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '−1+' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: '● 3 changed' })).toBeDefined()
 
     await ui.unmount()
   })
