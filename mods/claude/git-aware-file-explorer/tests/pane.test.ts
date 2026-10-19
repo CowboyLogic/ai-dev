@@ -1035,6 +1035,31 @@ describe('git-aware-file-explorer pane', () => {
     await ui.unmount()
   })
 
+  test('finds a file added in a closed folder outside git on the next scan', async ($, on) => {
+    const disk = { ...DISK }
+    on('session.cwd', () => ({ value: ROOT }))
+    on('fs.list', ($, e) => ({ value: disk[e.path] ?? [] }))
+    on('process.run', () => ok('', 128))
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+    await ui.input({ key: 'filter', text: 'index', kind: 'change' })
+    await ui.press({ key: 'refresh' })
+    expect(await ui.find({ key: 'node:docs/old-index.md' })).toBeUndefined()
+
+    // Nothing open or stamped changes: only the walk the filter searches can see it.
+    disk[ROOT + '/docs'] = [file('index.md'), file('old-index.md')]
+    await ui.press({ key: 'refresh' })
+
+    expect(await ui.find({ key: 'node:docs/old-index.md' })).toBeDefined()
+
+    await ui.unmount()
+  })
+
   test('filters files outside a git repository', async ($, on) => {
     on('session.cwd', () => ({ value: ROOT }))
     on('fs.list', ($, e) => ({ value: DISK[e.path] ?? [] }))

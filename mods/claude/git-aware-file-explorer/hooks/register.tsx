@@ -315,6 +315,16 @@ async function stampFor($: $, s: Scan): Promise<string> {
   return stats.map(st => (st ? st.mtimeMs + ':' + st.size : '-')).join(',')
 }
 
+/** A short fingerprint of a file list: its length and a 32-bit hash of its paths. */
+export function fingerprint(files: string[]): string {
+  let hash = 5381
+  for (const f of files) {
+    for (let i = 0; i < f.length; i++) hash = ((hash << 5) + hash + f.charCodeAt(i)) | 0
+    hash = ((hash << 5) + hash) | 0
+  }
+  return files.length + ':' + (hash >>> 0).toString(36)
+}
+
 /** The scan running now, and whether another was asked for while it ran (see rescan). */
 let scanning: Promise<void> | undefined
 let isRescanDue = false
@@ -334,9 +344,14 @@ function rescan($: $): Promise<void> {
       do {
         isRescanDue = false
         const found = await scan($)
-        const next: Scan = { ...found, stamp: await stampFor($, found) }
         // Files may have come or gone since the filter's list was made, even with the scan unchanged.
         listing = undefined
+        // Outside git nothing else sees a file come or go in a closed folder, so a filter's walk is
+        // redone here (and kept for the redraw) and stamped: a new or vanished match redraws the pane.
+        const isWalked = !found.isRepo && (await read($, filterAtom)).trim() !== ''
+        const walked = isWalked ? await listFiles($, found) : undefined
+        const stamp = await stampFor($, found)
+        const next: Scan = { ...found, stamp: walked ? stamp + ',' + fingerprint(walked.files) : stamp }
         // Any write redraws the pane, so an unchanged scan is not written at all.
         if (JSON.stringify(await read($, scanAtom)) !== JSON.stringify(next)) await update($, scanAtom, () => next)
       } while (isRescanDue)
