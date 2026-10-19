@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { countLines, diffLines, parseNumstat, sumNumstat } from '../hooks/register'
+import { countLines, diffLines, parseNumstat, parseStatus, sumNumstat } from '../hooks/register'
 import { diffIndex, nativeWindow, previewCapacity, previewWindow, spacerHeights, visibleText } from '../hooks/viewport'
 
 const DIFF = [
@@ -31,6 +31,14 @@ describe('diff windowing', () => {
 
   test('numstat paths come verbatim, a rename named by its new path', async () => {
     expect(parseNumstat(['1\t0\tcafé\tx.md', '4\t2\t', 'old.ts', 'new.ts', ''].join('\0')).map(e => e.path)).toEqual(['café\tx.md', 'new.ts'])
+  })
+
+  test('status reads the original path of a rename in either column', async () => {
+    // An unstaged rename (an intent-to-add file) names its original path too.
+    expect(parseStatus(' R new.ts\0old.ts\0 M README.md\0')).toEqual([
+      { x: ' ', y: 'R', path: 'new.ts', from: 'old.ts' },
+      { x: ' ', y: 'M', path: 'README.md' },
+    ])
   })
 
   test('lines count as git counts them', async () => {
