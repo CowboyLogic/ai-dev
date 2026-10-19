@@ -58,7 +58,7 @@ type Live = {
  * committed version passes 4 MiB; with `isBlobMissing`, git cannot show it. With `isUnreadable`, no file can be read. With `isIgnoredCut`,
  * the list of ignored paths comes back cut. With `isNewGone`, src/new.ts is gone by the time it is
  * looked at, and with `isNewLink` it is a symbolic link to a file. With `isDiffFailed`, git cannot read README.md, so every diff against the base fails.
- * With `statusError`, git status fails with that message. `gone` names the deleted file; git's line counts quote
+ * With `isSrcUnreadable`, src can't be listed. With `statusError`, git status fails with that message. `gone` names the deleted file; git's line counts quote
  * it outside printable ASCII unless asked for `-z`.
  */
 function fakeRepo(
@@ -79,6 +79,7 @@ function fakeRepo(
     gone = 'gone.txt',
     isNewGone = false,
     isNewLink = false,
+    isSrcUnreadable = false,
     statusError,
     isDiffFailed = false,
   }: {
@@ -97,6 +98,7 @@ function fakeRepo(
     gone?: string
     isNewGone?: boolean
     isNewLink?: boolean
+    isSrcUnreadable?: boolean
     statusError?: string
     isDiffFailed?: boolean
   } = {},
@@ -106,6 +108,7 @@ function fakeRepo(
   on('session.cwd', () => ({ value: ROOT }))
   on('fs.list', ($, e) => {
     live.lists = (live.lists ?? 0) + 1
+    if (isSrcUnreadable && e.path === ROOT + '/src') throw new Error('EACCES: permission denied')
     return { value: disk[e.path] ?? [] }
   })
   on('fs.stat', ($, e) => {
@@ -514,6 +517,22 @@ describe('git-aware-file-explorer pane', () => {
     // --no-index exits 1 for this error too, as it does when the files differ.
     expect(await ui.find({ type: 'Text', text: /No textual difference/ })).toBeUndefined()
     expect(await ui.find({ type: 'Text', text: "error: Could not access 'src/new.ts'" })).toBeDefined()
+
+    await ui.unmount()
+  })
+
+  test('says a folder it cannot list is unreadable, not empty', async ($, on) => {
+    fakeRepo(on, { isSrcUnreadable: true })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+    await ui.press({ key: 'node:src' })
+
+    expect(await ui.find({ type: 'Text', text: ' (unreadable)' })).toBeDefined()
 
     await ui.unmount()
   })

@@ -56,6 +56,8 @@ type Row = {
   isIgnored: boolean
   /** On record in git but gone from disk (deleted). */
   isMissing: boolean
+  /** An open folder that could not be listed, so its contents are unknown, not empty. */
+  isUnreadable?: boolean
 }
 
 /**
@@ -483,13 +485,16 @@ async function buildRows(
   const ignored = new Set(s.ignored)
   const rows: Row[] = []
 
-  async function walk(dir: string, depth: number) {
+  /** Adds the rows under `dir`; false when the disk couldn't list it. */
+  async function walk(dir: string, depth: number): Promise<boolean> {
     const prefix = dir === '' ? '' : dir + '/'
     const kids = new Map<string, { isDir: boolean; isMissing: boolean; hasKids: boolean }>()
     const source = virtual ?? s.changes.map(c => c.path)
+    let isListed = true
     if (!virtual) {
-      const entries = await $.fs.list(s.root + (dir === '' ? '' : '/' + dir)).catch(() => [])
-      for (const en of entries) {
+      const entries = await $.fs.list(s.root + (dir === '' ? '' : '/' + dir)).catch(() => undefined)
+      if (entries === undefined) isListed = false
+      for (const en of entries ?? []) {
         if (HIDDEN.has(en.name)) continue
         kids.set(en.name, { isDir: en.kind === 'dir', isMissing: false, hasKids: false })
       }
@@ -518,7 +523,7 @@ async function buildRows(
     for (const [name, k] of sorted) {
       const path = prefix + name
       const isOpen = k.isDir && (virtual !== undefined ? k.hasKids : expanded.has(path))
-      rows.push({
+      const row: Row = {
         path,
         name,
         depth,
@@ -528,9 +533,11 @@ async function buildRows(
         count: counts.get(path) ?? 0,
         isIgnored: s.isRepo && isIgnored(path, ignored),
         isMissing: k.isMissing,
-      })
-      if (isOpen) await walk(path, depth + 1)
+      }
+      rows.push(row)
+      if (isOpen && !(await walk(path, depth + 1))) row.isUnreadable = true
     }
+    return isListed
   }
 
   await walk('', 0)
@@ -853,6 +860,7 @@ export const register: Register = on => {
                 <Button key={'node:' + r.path} plain onPress={press}>
                   <Text color={color} dimColor={r.isIgnored} strikethrough={r.isMissing} wrap="truncate-end">
                     {r.name}
+                    {r.isUnreadable && <Text dimColor> (unreadable)</Text>}
                   </Text>
                 </Button>
               </Box>
