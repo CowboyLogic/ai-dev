@@ -48,6 +48,8 @@ type Live = {
   /** The commit HEAD names, and git's list of files, in place of the defaults. */
   head?: string
   files?: string
+  /** A path from the root that can't be read for now. */
+  unreadable?: string
 }
 
 /**
@@ -121,9 +123,9 @@ function fakeRepo(
     const mtimeMs = live.fileMtimes?.[e.path.slice(ROOT.length + 1)] ?? live.mtimeMs
     return { value: { kind: 'file' as const, size: fileSize, mtimeMs, isLink } }
   })
-  on('fs.read', () => {
+  on('fs.read', ($, e) => {
     live.reads = (live.reads ?? 0) + 1
-    if (isUnreadable) throw new Error('EACCES: permission denied')
+    if (isUnreadable || e.path === ROOT + '/' + live.unreadable) throw new Error('EACCES: permission denied')
     return { value: live.text ?? text }
   })
   on('process.run', async ($, e) => {
@@ -351,6 +353,27 @@ describe('git-aware-file-explorer pane', () => {
     await ui.press({ key: 'node:src/a.ts' })
 
     expect((await ui.find({ type: 'Code' }))?.props.source).toBe('edited\nclosed\n')
+
+    await ui.unmount()
+  })
+
+  test('retries a preview that could not be read on the next scan', async ($, on) => {
+    const live: Live = { diff: DIFF, mtimeMs: 1, unreadable: 'src/a.ts' }
+    fakeRepo(on, { live })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer', surface: 'desktop', component: 'Pane',
+      requestId: 'git-aware-file-explorer', props: PROPS,
+    })
+    await ui.press({ key: 'node:src' })
+    await ui.press({ key: 'node:src/a.ts' })
+    await ui.press({ key: 'refresh' })
+    expect(await ui.find({ type: 'Text', text: 'Not a readable file.' })).toBeDefined()
+
+    // Readable again, with its time and size unchanged.
+    live.unreadable = undefined
+    await ui.press({ key: 'refresh' })
+
+    expect((await ui.find({ type: 'Code' }))?.props.source).toBe('a\nb\n')
 
     await ui.unmount()
   })

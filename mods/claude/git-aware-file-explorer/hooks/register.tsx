@@ -305,7 +305,8 @@ async function lineTotals($: $, root: string, changes: Change[]) {
  * Modification time and size of the open file, the files whose diff or preview is cached, the open
  * folders and the first STAMP_LIMIT changed files. An edit that leaves git's status and line totals
  * as they were (`bar` to `baz`) still changes this, so the scan that sees it redraws the pane and a
- * file closed and edited does not reopen from a stale cache.
+ * file closed and edited does not reopen from a stale cache. While the open preview can't be read,
+ * every stamp differs, so each scan redraws and reads it again.
  */
 async function stampFor($: $, s: Scan): Promise<string> {
   const selected = await read($, selectedAtom)
@@ -314,8 +315,12 @@ async function stampFor($: $, s: Scan): Promise<string> {
   const stats = await Promise.all(
     [...paths].map(p => $.fs.stat(p === '' ? s.root : s.root + '/' + p).catch(() => undefined)),
   )
-  return stats.map(st => (st ? st.mtimeMs + ':' + st.size : '-')).join(',')
+  const stamp = stats.map(st => (st ? st.mtimeMs + ':' + st.size : '-')).join(',')
+  return previewCache?.isFailed && previewCache.path === selected ? stamp + ',retry' + ++retries : stamp
 }
+
+/** Counts the scans that retried a preview that could not be read (see stampFor). */
+let retries = 0
 
 /** A short fingerprint of a file list: its length and a 32-bit hash of its paths. */
 export function fingerprint(files: string[]): string {
@@ -657,21 +662,27 @@ async function prepareDiff($: $, s: Scan, c: Change): Promise<FileDiff> {
 }
 
 type Preview = { lines: string[]; notice?: string; source?: string }
-let previewCache: { scanKey: string; path: string; preview: Promise<Preview> } | undefined
+let previewCache: { scanKey: string; path: string; preview: Promise<Preview>; isFailed?: boolean } | undefined
+const UNREADABLE = 'Not a readable file.'
 
 function cachedPreview($: $, s: Scan, path: string, scanKey: string): Promise<Preview> {
   if (previewCache?.scanKey !== scanKey || previewCache.path !== path) {
-    previewCache = { scanKey, path, preview: preparePreview($, s.root + '/' + path) }
+    const entry: NonNullable<typeof previewCache> = { scanKey, path, preview: preparePreview($, s.root + '/' + path) }
+    // A read that failed may work later with the file's time and size unchanged (see stampFor).
+    void entry.preview.then(p => {
+      if (p.notice === UNREADABLE) entry.isFailed = true
+    })
+    previewCache = entry
   }
   return previewCache.preview
 }
 
 async function preparePreview($: $, path: string): Promise<Preview> {
   const stat = await $.fs.stat(path).catch(() => undefined)
-  if (!stat || stat.kind !== 'file') return { lines: [], notice: 'Not a readable file.' }
+  if (!stat || stat.kind !== 'file') return { lines: [], notice: UNREADABLE }
   if (stat.size > PREVIEW_BYTES) return { lines: [], notice: `Too large to preview (${stat.size} bytes).` }
   const text = await $.fs.read(path).catch(() => undefined)
-  if (text === undefined) return { lines: [], notice: 'Not a readable file.' }
+  if (text === undefined) return { lines: [], notice: UNREADABLE }
   if (text.includes('\0')) return { lines: [], notice: 'Binary file.' }
   const lines = text === '' ? [] : text.split('\n')
   if (text.endsWith('\n')) lines.pop()
