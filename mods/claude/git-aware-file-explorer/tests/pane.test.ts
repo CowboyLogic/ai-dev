@@ -603,6 +603,23 @@ describe('git-aware-file-explorer pane', () => {
     await ui.unmount()
   })
 
+  test("shows git's error when it cannot read a recreated file's committed version", async ($, on) => {
+    fakeRepo(on, { isRecreated: true, isBlobMissing: true })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+    await ui.press({ key: 'node:gone.txt' })
+
+    // Not the new contents alone, drawn as if they were the whole change.
+    expect(await ui.find({ type: 'Text', text: 'fatal: bad object HEAD:gone.txt' })).toBeDefined()
+
+    await ui.unmount()
+  })
+
   test('says an unchanged file it cannot read is unreadable, not empty', async ($, on) => {
     fakeRepo(on, { isUnreadable: true })
     const ui = await $.ui.mount({

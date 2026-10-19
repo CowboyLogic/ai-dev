@@ -142,14 +142,14 @@ function isDiffFailed(out: { exitCode: number; stdout: string; stderr: string })
 /**
  * `git diff` (with `flags`) of a recreated path: its version in `base`, piped in, against the file
  * on disk, so the panel and the totals see the net change. `'cut'` when that version passed 4 MiB
- * and can't be piped whole; undefined when git can't run it so.
+ * and can't be piped whole. When git can't read that version or diff it, the failed run, for
+ * isDiffFailed to catch and the panel to show its error (`git show` fails with 128).
  */
 async function recreatedDiff($: $, root: string, base: string, path: string, flags: string[]) {
   const old = await git($, root, ['show', base + ':' + path])
   if (old.isStdoutTruncated) return 'cut' as const
-  if (old.exitCode !== 0) return undefined
-  const out = await git($, root, ['diff', ...flags, '--no-index', '--', '/dev/stdin', path], old.stdout)
-  return isDiffFailed(out) ? undefined : out
+  if (old.exitCode !== 0) return old
+  return git($, root, ['diff', ...flags, '--no-index', '--', '/dev/stdin', path], old.stdout)
 }
 
 async function scan($: $): Promise<Scan> {
@@ -262,8 +262,9 @@ async function lineTotals($: $, root: string, changes: Change[]) {
     const net = await recreatedDiff($, root, base, c.path, ['--numstat', '-z'])
     const others = numstat.filter(e => e.path !== c.path)
     // Too large to diff, or git can't: neither its deletion nor its contents count, and both totals are floors.
-    if (net === 'cut' || net === undefined) isUncounted = true
-    numstat = net === 'cut' || net === undefined ? others : [...others, ...parseNumstat(net.stdout)]
+    const isMissed = net === 'cut' || isDiffFailed(net)
+    if (isMissed) isUncounted = true
+    numstat = isMissed ? others : [...others, ...parseNumstat(net.stdout)]
   }
   const total: { added: number; deleted: number; partial?: boolean; isTruncated?: boolean } = sumNumstat(numstat)
   // A diff git could not make (an unreadable changed file) prints no counts at all: both are floors.
@@ -663,10 +664,11 @@ async function diffFor($: $, s: Scan, c: Change) {
   }
   if (isRecreated(c)) {
     const net = await recreatedDiff($, s.root, await diffBase($, s.root), c.path, flags)
-    if (net !== undefined && net !== 'cut') return net
+    // A failed run is returned too, so the panel shows git's error, not the new contents as the whole change.
+    if (net !== 'cut') return net
     const contents = await git($, s.root, ['diff', ...flags, '--no-index', '--', '/dev/null', c.path])
     // Its committed version too large to diff against: the new contents alone, marked incomplete.
-    return net === 'cut' ? { ...contents, isStdoutTruncated: true } : contents
+    return { ...contents, isStdoutTruncated: true }
   }
   const paths = c.from ? [c.from, c.path] : [c.path]
   return git($, s.root, ['diff', ...flags, '-M', await diffBase($, s.root), '--', ...paths])
