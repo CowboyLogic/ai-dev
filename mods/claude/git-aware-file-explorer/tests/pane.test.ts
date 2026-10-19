@@ -50,6 +50,8 @@ type Live = {
   files?: string
   /** A path from the root that can't be read for now. */
   unreadable?: string
+  /** Every process run, as its argv. */
+  runs?: (readonly string[])[]
 }
 
 /**
@@ -130,7 +132,8 @@ function fakeRepo(
   })
   on('process.run', async ($, e) => {
     live.processes = (live.processes ?? 0) + 1
-    const args = e.argv.filter(a => a !== '--no-optional-locks').slice(1).join(' ')
+    live.runs = [...(live.runs ?? []), e.argv]
+    const args = e.argv.filter(a => a !== '--no-optional-locks' && a !== '--literal-pathspecs').slice(1).join(' ')
     const z = e.argv.includes('-z')
     if (args === 'rev-parse --show-toplevel') return ok(ROOT + '\n')
     if (args.startsWith('status')) {
@@ -559,6 +562,26 @@ describe('git-aware-file-explorer pane', () => {
     await ui.press({ key: 'node:src' })
 
     expect(await ui.find({ type: 'Text', text: ' (unreadable)' })).toBeDefined()
+
+    await ui.unmount()
+  })
+
+  test('passes file names to git literally, never as pathspec magic', async ($, on) => {
+    const live: Live = { diff: DIFF, mtimeMs: 1 }
+    fakeRepo(on, { live })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+    await ui.press({ key: 'node:README.md' })
+
+    // A name like `:(exclude)foo` would otherwise select other files.
+    const repoCalls = (live.runs ?? []).filter(a => a.join(' ') !== 'git rev-parse --show-toplevel')
+    expect(repoCalls.some(a => a.includes('README.md'))).toBe(true)
+    expect(repoCalls.every(a => a.includes('--literal-pathspecs'))).toBe(true)
 
     await ui.unmount()
   })

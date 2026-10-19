@@ -130,8 +130,9 @@ export function iconFor(name: string): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">${body}</svg>`
 }
 
+/** Runs git in `root`. Paths come from git or disk, so none is read as pathspec magic (`:(exclude)x`). */
 async function git($: $, root: string, args: string[], stdin?: string) {
-  return $.process.run(['git', '--no-optional-locks', ...args], { cwd: root, stdin })
+  return $.process.run(['git', '--no-optional-locks', '--literal-pathspecs', ...args], { cwd: root, stdin })
 }
 
 /**
