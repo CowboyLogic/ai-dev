@@ -48,7 +48,7 @@ type Live = {
   /** The commit HEAD names, and git's list of files, in place of the defaults. */
   head?: string
   files?: string
-  /** A path from the root that can't be read for now, and a folder that can't be listed for now. */
+  /** A path from the root that can't be read for now, and a folder that can't be listed for now ('' the root). */
   unreadable?: string
   unlistable?: string
   /** Every process run, as its argv. */
@@ -120,7 +120,8 @@ function fakeRepo(
   on('session.cwd', () => ({ value: ROOT }))
   on('fs.list', ($, e) => {
     live.lists = (live.lists ?? 0) + 1
-    if ((isSrcUnreadable && e.path === ROOT + '/src') || e.path === ROOT + '/' + live.unlistable) {
+    const unlistable = live.unlistable === undefined ? undefined : live.unlistable === '' ? ROOT : ROOT + '/' + live.unlistable
+    if ((isSrcUnreadable && e.path === ROOT + '/src') || e.path === unlistable) {
       throw new Error('EACCES: permission denied')
     }
     return { value: disk[e.path] ?? [] }
@@ -649,6 +650,28 @@ describe('git-aware-file-explorer pane', () => {
 
     // README.md's 1 added line; git counts no lines for src/new.ts, so the total is exact.
     expect(await ui.find({ type: 'Text', text: '+1' })).toBeDefined()
+
+    await ui.unmount()
+  })
+
+  test('says the workspace cannot be read, not that it is empty, and lists it once it can', async ($, on) => {
+    const live: Live = { diff: DIFF, mtimeMs: 1, unlistable: '' }
+    fakeRepo(on, { live })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+    await ui.press({ key: 'refresh' })
+    expect(await ui.find({ type: 'Text', text: "Can't read this folder." })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: 'Empty directory.' })).toBeUndefined()
+
+    live.unlistable = undefined
+    await ui.press({ key: 'refresh' })
+
+    expect(await ui.find({ key: 'node:src' })).toBeDefined()
 
     await ui.unmount()
   })

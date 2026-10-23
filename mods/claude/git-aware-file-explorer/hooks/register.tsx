@@ -521,7 +521,7 @@ async function buildRows(
   s: Scan,
   expanded: Set<string>,
   virtual: string[] | undefined,
-): Promise<Row[]> {
+): Promise<{ rows: Row[]; isRootUnreadable: boolean }> {
   const byPath = new Map(s.changes.map(c => [c.path, c]))
   const counts = rollup(s.changes)
   const ignored = new Set(s.ignored)
@@ -582,11 +582,17 @@ async function buildRows(
     return isListed
   }
 
-  await walk('', 0)
-  return rows
+  const isListed = await walk('', 0)
+  return { rows, isRootUnreadable: !isListed }
 }
 
-type TreeView = { rows: Row[]; virtual: Awaited<ReturnType<typeof pathsFor>>; widest: number }
+type TreeView = {
+  rows: Row[]
+  virtual: Awaited<ReturnType<typeof pathsFor>>
+  widest: number
+  /** The workspace root itself could not be listed. */
+  isRootUnreadable: boolean
+}
 let treeCache: { scanKey: string; viewKey: string; view: Promise<TreeView>; isFailed?: boolean } | undefined
 
 /** Scrolls reuse the prepared tree, including its filter and width, without listing directories. */
@@ -597,7 +603,7 @@ function cachedTree($: $, s: Scan, scanKey: string, expanded: string[], changedO
     const entry: NonNullable<typeof treeCache> = { scanKey, viewKey, view }
     // A folder that couldn't be listed may list later with its time and size unchanged (see stampFor).
     void entry.view.then(v => {
-      if (v.rows.some(r => r.isUnreadable)) entry.isFailed = true
+      if (v.isRootUnreadable || v.rows.some(r => r.isUnreadable)) entry.isFailed = true
     })
     treeCache = entry
   }
@@ -606,9 +612,9 @@ function cachedTree($: $, s: Scan, scanKey: string, expanded: string[], changedO
 
 async function prepareTree($: $, s: Scan, expanded: string[], changedOnly: boolean, filter: string): Promise<TreeView> {
   const virtual = await pathsFor($, s, changedOnly, filter)
-  const rows = await buildRows($, s, new Set(expanded), virtual?.paths)
+  const { rows, isRootUnreadable } = await buildRows($, s, new Set(expanded), virtual?.paths)
   const widest = rows.reduce((w, r) => Math.max(w, r.depth * 2 + r.name.length + 8), 0)
-  return { rows, virtual, widest }
+  return { rows, virtual, widest, isRootUnreadable }
 }
 
 /** One body line of a unified diff, with the line numbers it stands at. */
@@ -786,7 +792,7 @@ export const register: Register = on => {
     const filter = await read($, filterAtom)
 
     const scanKey = JSON.stringify(s)
-    const { rows, virtual, widest } = await cachedTree($, s, scanKey, expanded, changedOnly, filter)
+    const { rows, virtual, widest, isRootUnreadable } = await cachedTree($, s, scanKey, expanded, changedOnly, filter)
     const change = selected === null ? undefined : s.changes.find(c => c.path === selected)
     const bodyRows = e.props.scroll.bodyRows > 0 ? e.props.scroll.bodyRows : 30
     const offset = e.props.scroll.offset
@@ -878,7 +884,7 @@ export const register: Register = on => {
     const tree = (
       <Box flexDirection="column">
         {treeWindow.before > 0 && space('tree-before', treeWindow.before)}
-        {rows.length === 0 && (
+        {rows.length === 0 && !isRootUnreadable && (
           <Text dimColor>{filter.trim() !== '' ? 'No matching files.' : changedOnly ? 'No changes.' : 'Empty directory.'}</Text>
         )}
         {rows.slice(treeWindow.start, treeWindow.end).map(r => {
@@ -932,6 +938,8 @@ export const register: Register = on => {
           )
         })}
         {treeWindow.after > 0 && space('tree-after', treeWindow.after)}
+        {/* Below the rows, so the rows keep their place: only changes git reports are drawn then. */}
+        {isRootUnreadable && <Text dimColor>Can't read this folder.</Text>}
         {virtual && virtual.total > virtual.paths.length && (
           <Text dimColor>
             Showing {virtual.paths.length} of {virtual.total} matches.
