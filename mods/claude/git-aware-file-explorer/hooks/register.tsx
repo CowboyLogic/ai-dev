@@ -324,8 +324,9 @@ async function binaryPaths($: $, root: string, paths: string[]): Promise<Set<str
  * Modification time and size of the open file, the files whose diff or preview is cached, the open
  * folders and the first STAMP_LIMIT changed files. An edit that leaves git's status and line totals
  * as they were (`bar` to `baz`) still changes this, so the scan that sees it redraws the pane and a
- * file closed and edited does not reopen from a stale cache. While the open preview can't be read,
- * or an open folder can't be listed, every stamp differs, so each scan redraws and tries again.
+ * file closed and edited does not reopen from a stale cache. While the open file's diff or preview
+ * can't be made, or an open folder can't be listed, every stamp differs, so each scan redraws and
+ * tries again.
  */
 async function stampFor($: $, s: Scan): Promise<string> {
   const selected = await read($, selectedAtom)
@@ -335,11 +336,14 @@ async function stampFor($: $, s: Scan): Promise<string> {
     [...paths].map(p => $.fs.stat(p === '' ? s.root : s.root + '/' + p).catch(() => undefined)),
   )
   const stamp = stats.map(st => (st ? st.mtimeMs + ':' + st.size : '-')).join(',')
-  const isRetried = (previewCache?.isFailed && previewCache.path === selected) || treeCache?.isFailed
+  const isRetried =
+    (previewCache?.isFailed && previewCache.path === selected) ||
+    (diffCache?.isFailed && diffCache.path === selected) ||
+    treeCache?.isFailed
   return isRetried ? stamp + ',retry' + ++retries : stamp
 }
 
-/** Counts the scans that retried a preview or folder that could not be read (see stampFor). */
+/** Counts the scans that retried a diff, preview or folder that could not be read (see stampFor). */
 let retries = 0
 
 /** A short fingerprint of a file list: its length and a 32-bit hash of its paths. */
@@ -658,13 +662,18 @@ type FileDiff = {
 }
 
 /** The open file's parsed diff and what it was read for, so a scroll redraws without running git. */
-let diffCache: { scanKey: string; path: string; diff: Promise<FileDiff> } | undefined
+let diffCache: { scanKey: string; path: string; diff: Promise<FileDiff>; isFailed?: boolean } | undefined
 
 /** The parsed diff of `c`, read again only when the scan changed (a content edit changes its stamp). */
 function cachedDiff($: $, s: Scan, c: Change, scanKey: string): Promise<FileDiff> {
   if (diffCache?.scanKey !== scanKey || diffCache.path !== c.path) {
     // Cache the in-flight work too: overlapping redraws share one process and one parse.
-    diffCache = { scanKey, path: c.path, diff: prepareDiff($, s, c) }
+    const entry: NonNullable<typeof diffCache> = { scanKey, path: c.path, diff: prepareDiff($, s, c) }
+    // A diff git failed to make may work later with the file's status, time and size unchanged (see stampFor).
+    void entry.diff.then(d => {
+      if (d.error !== undefined) entry.isFailed = true
+    })
+    diffCache = entry
   }
   return diffCache.diff
 }

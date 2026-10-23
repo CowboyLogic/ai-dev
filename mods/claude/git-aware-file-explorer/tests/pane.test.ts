@@ -51,6 +51,8 @@ type Live = {
   /** A path from the root that can't be read for now, and a folder that can't be listed for now ('' the root). */
   unreadable?: string
   unlistable?: string
+  /** git's error for README.md's diff, failing for now. */
+  diffError?: string
   /** Every process run, as its argv. */
   runs?: (readonly string[])[]
 }
@@ -179,6 +181,7 @@ function fakeRepo(
     }
     if (args.includes('README.md')) {
       live.diffRuns = (live.diffRuns ?? 0) + 1
+      if (live.diffError !== undefined) return { value: { ...ok('', 128).value, stderr: live.diffError } }
       return ok(live.diff, 0, isCut)
     }
     return ok('', 1)
@@ -672,6 +675,29 @@ describe('git-aware-file-explorer pane', () => {
     await ui.press({ key: 'refresh' })
 
     expect(await ui.find({ key: 'node:src' })).toBeDefined()
+
+    await ui.unmount()
+  })
+
+  test('retries a diff git could not make on the next scan', async ($, on) => {
+    const live: Live = { diff: DIFF, mtimeMs: 1, diffError: 'fatal: unable to read README.md' }
+    fakeRepo(on, { live })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+    await ui.press({ key: 'node:README.md' })
+    await ui.press({ key: 'refresh' })
+    expect(await ui.find({ type: 'Text', text: 'fatal: unable to read README.md' })).toBeDefined()
+
+    // git can make it again, with the file's status, time and size unchanged.
+    live.diffError = undefined
+    await ui.press({ key: 'refresh' })
+
+    expect(await ui.find({ type: 'Text', text: 'fatal: unable to read README.md' })).toBeUndefined()
 
     await ui.unmount()
   })
