@@ -281,7 +281,9 @@ async function lineTotals($: $, root: string, changes: Change[]) {
   if (out.isStdoutTruncated || isUncounted || out.exitCode !== 0) total.isTruncated = true
   const untracked = changes.filter(c => c.x === '?')
   if (untracked.length > UNTRACKED_LIMIT) total.partial = true
-  for (const c of untracked.slice(0, UNTRACKED_LIMIT)) {
+  const counted = untracked.slice(0, UNTRACKED_LIMIT)
+  const binary = counted.length > 0 ? await binaryPaths($, root, counted.map(c => c.path)) : new Set<string>()
+  for (const c of counted) {
     const path = root + '/' + c.path
     const stat = await $.fs.stat(path).catch(() => undefined)
     // Gone since git listed it, or unreadable: uncounted, so the total is a floor.
@@ -294,7 +296,8 @@ async function lineTotals($: $, root: string, changes: Change[]) {
       total.added += 1
       continue
     }
-    if (stat.kind !== 'file') continue
+    // .gitattributes marks it binary (`binary`, `-diff`): git counts no lines for it.
+    if (stat.kind !== 'file' || binary.has(c.path)) continue
     if (stat.size > UNTRACKED_BYTES) {
       total.partial = true
       continue
@@ -305,6 +308,16 @@ async function lineTotals($: $, root: string, changes: Change[]) {
     else total.added += countLines(text)
   }
   return total
+}
+
+/** The paths .gitattributes diffs as binary (`binary` or `-diff`); none when git can't say. */
+async function binaryPaths($: $, root: string, paths: string[]): Promise<Set<string>> {
+  const out = await git($, root, ['check-attr', '-z', 'diff', '--', ...paths])
+  const parts = out.exitCode === 0 ? out.stdout.split('\0') : []
+  const binary = new Set<string>()
+  // Records come as path, attribute, value.
+  for (let i = 0; i + 2 < parts.length; i += 3) if (parts[i + 2] === 'unset') binary.add(parts[i] as string)
+  return binary
 }
 
 /**

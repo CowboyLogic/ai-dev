@@ -66,7 +66,7 @@ type Live = {
  * committed version passes 4 MiB; with `isBlobMissing`, git cannot show it. With `isUnreadable`, no file can be read. With `isIgnoredCut`,
  * the list of ignored paths comes back cut. With `isNewGone`, src/new.ts is gone by the time it is
  * looked at, and with `isNewLink` it is a symbolic link to a file. With `isDiffFailed`, git cannot read README.md, so every diff against the base fails.
- * With `isSrcUnreadable`, src can't be listed; with `isSrcSubmodule`, src is a changed submodule. With `statusError`, git status fails with that message. `gone` names the deleted file; git's line counts quote
+ * With `isNewBinary`, .gitattributes marks src/new.ts binary. With `isSrcUnreadable`, src can't be listed; with `isSrcSubmodule`, src is a changed submodule. With `statusError`, git status fails with that message. `gone` names the deleted file; git's line counts quote
  * it outside printable ASCII unless asked for `-z`.
  */
 function fakeRepo(
@@ -89,6 +89,7 @@ function fakeRepo(
     isNewLink = false,
     isSrcUnreadable = false,
     isSrcSubmodule = false,
+    isNewBinary = false,
     statusError,
     isDiffFailed = false,
   }: {
@@ -109,6 +110,7 @@ function fakeRepo(
     isNewLink?: boolean
     isSrcUnreadable?: boolean
     isSrcSubmodule?: boolean
+    isNewBinary?: boolean
     statusError?: string
     isDiffFailed?: boolean
   } = {},
@@ -153,6 +155,7 @@ function fakeRepo(
     }
     if (args.startsWith('ls-files')) return isCut ? ok('README.md\0src/a.ts\0docs/ind', 0, true) : ok(live.files ?? 'README.md\0src/a.ts\0docs/index.md\0')
     if (args === 'branch --show-current') return ok('feat/x\n')
+    if (args.startsWith('check-attr')) return ok(isNewBinary ? 'src/new.ts\0diff\0unset\0' : 'src/new.ts\0diff\0unspecified\0')
     if (args === `show HEAD:${gone}` && isBlobMissing) return { value: { ...ok('', 128).value, stderr: `fatal: bad object HEAD:${gone}` } }
     if (args === `show HEAD:${gone}`) return isBlobCut ? ok('a\nb', 0, true) : ok('a\nb\nc\n')
     if (args.endsWith(`--no-index -- /dev/null ${gone}`)) return ok(`diff --git a/${gone} b/${gone}\n@@ -0,0 +1,3 @@\n+a\n+B\n+c\n`, 1)
@@ -630,6 +633,22 @@ describe('git-aware-file-explorer pane', () => {
     await ui.press({ key: 'refresh' })
 
     expect(await ui.find({ key: 'node:src/a.ts' })).toBeDefined()
+
+    await ui.unmount()
+  })
+
+  test('counts no lines for a new file .gitattributes marks binary, as git does', async ($, on) => {
+    fakeRepo(on, { isNewBinary: true })
+    const ui = await $.ui.mount({
+      plugin: 'git-aware-file-explorer',
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: 'git-aware-file-explorer',
+      props: PROPS,
+    })
+
+    // README.md's 1 added line; git counts no lines for src/new.ts, so the total is exact.
+    expect(await ui.find({ type: 'Text', text: '+1' })).toBeDefined()
 
     await ui.unmount()
   })
