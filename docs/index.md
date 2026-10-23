@@ -18,6 +18,7 @@ This site complements the vendors' own documentation with ready-to-use configura
 
 - **[Agents](agents/index.md)**: two multi-agent topologies, Lane and Matrix, plus a roster of domain specialist agents (API, architecture, security, testing, and more).
 - **[Skills](skills/index.md)**: structured instruction sets that teach AI agents domain-specific tasks.
+- **[Mods](mods/index.md)**: additions to a client's own interface, such as a git-aware Files pane for Claude Code.
 - **[Harness](harness/index.md)**: configurations and guides for Claude Code, OpenCode, and VS Code.
 - **[MCP Servers](mcp/index.md)**: working examples for Model Context Protocol server integrations.
 

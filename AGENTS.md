@@ -189,11 +189,14 @@ ai-dev/
 │   ├── opencode/            # OpenCode config for the Matrix Topology
 │   ├── opencode-lane/       # OpenCode config for the Lane Topology
 │   └── opencode-samples/    # Sample OpenCode configs readers copy (standard, modular, MCP)
+├── mods/                    # Client interface mods (one folder per client)
+│   └── claude/              # Claude Code mods: one folder per mod (plugin.json + hooks module)
 ├── skills/                  # Installable skill definitions (GitHub CLI discoverable)
 │   └── <skill-name>/        # Each skill: SKILL.md + README + references/
 ├── docs/                    # MkDocs source — PUBLICATION ONLY, not directives
 │   ├── agents/              # Agent catalog pages (links to agents/ at root)
 │   ├── skills/              # Skills catalog (index.md) + one lightweight overview page per skill
+│   ├── mods/                # Mods catalog (index.md) + one lightweight overview page per mod
 │   ├── harness/             # Claude Code, OpenCode, VS Code configuration guides
 │   └── mcp/                 # MCP server documentation
 ├── agent-output/            # Legacy output folder — gitignored
@@ -214,7 +217,7 @@ topologies are independent patterns and changes do not propagate between them.
 
 ## Documentation Synchronization
 
-The artifact directories `agents/`, `skills/`, and `harness/` are covered by the
+The artifact directories `agents/`, `skills/`, `mods/`, and `harness/` are covered by the
 documentation site. Whenever an item in one of these directories is added,
 removed, renamed, or updated, update the corresponding content page or pages
 under `docs/` in the same change. Keep catalog entries, descriptions, links,
@@ -366,6 +369,17 @@ as local files.
 4. Add the skill to `skills/README.md` and `cerebro-catalog.yaml`.
 5. Run `python scripts/validate_artifact_sync.py`.
 
+### Adding a new mod
+
+1. Create `mods/<client>/<name>/` with the client's plugin layout (for Claude Code:
+   `.claude-plugin/plugin.json`, `hooks/hooks.json`, the hooks module, and tests).
+2. Create the lightweight overview page `docs/mods/<name>.md` (what the mod does, how to load
+   it, and a link to `mods/<client>/<name>/` in the GitHub repo; no embedded mod code) and add
+   it to the `nav:` tree in `mkdocs.yml` under its client.
+3. Add the mod to the catalog table in `docs/mods/index.md` and to the client's harness page
+   (for Claude Code, `docs/harness/claudecode/index.md`).
+4. Run `python scripts/validate_artifact_sync.py`; it fails when a mod is missing from any of these.
+
 ### Adding a new agent
 
 - **Domain specialist** (single `.agent.md` at repo root): create the file under
@@ -417,7 +431,7 @@ mkdocs serve
 
 Run the relevant topology validators, the artifact synchronization validator, and
 the strict documentation build before committing changes to `agents/`, `harness/`,
-`skills/`, or `docs/`. Resolve every failure before committing.
+`skills/`, `mods/`, or `docs/`. Resolve every failure before committing.
 
 ---
 

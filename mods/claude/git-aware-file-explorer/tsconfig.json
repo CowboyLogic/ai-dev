@@ -1,0 +1,6 @@
+{
+  // The base config and the API types it names are written to .claude-plugin/types/ by Claude Code
+  // when it loads this mod, for the build that loads it, and are git-ignored there. Load the mod
+  // once (claude --plugin-dir <this folder>) before running tsc -p <this folder>.
+  "extends": "./.claude-plugin/types/tsconfig.json"
+}
