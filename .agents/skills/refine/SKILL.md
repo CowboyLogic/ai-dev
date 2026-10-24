@@ -79,13 +79,15 @@ and set the label to `refining`.
 Read every reply since the last refinement comment. Resolve each decision: the user's
 answer if given, the recommendation if not.
 
-- **If the answers open new forks and this is round 1:** ask once more, in a "Refinement:
-  round 2" comment, as in step 3. This is the last round.
-- **Otherwise, or after round 2:** make every remaining call yourself and record each
-  one under Assumptions. A wrong assumption that is written down is cheaper than a
-  third round.
+- **If the answers open new forks and the thread has no round 2 comment yet:** ask once
+  more, in a "Refinement: round 2" comment, as in step 3. This is the last round. Post
+  it after approval, leave the issue `refining`, and **end this invocation there**. Do
+  not write the issue up until a later run finds replies to round 2.
+- **Otherwise, or once round 2 has replies:** make every remaining call yourself and
+  record each one under Assumptions. A wrong assumption that is written down is cheaper
+  than a third round. Then continue below.
 
-Then write the issue up, and show the user both the new body and a closing comment.
+Write the issue up, and show the user both the new body and a closing comment.
 
 **Body** uses the headings `AGENTS.md` names for an issue (the problem, the solution,
 alternatives considered and why they were rejected, dependencies by issue number), plus:
