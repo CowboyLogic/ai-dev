@@ -123,7 +123,16 @@ unaddressed, and never push while a review of the branch is still pending.
    can raise new findings. The loop ends when Copilot has reviewed the latest commit and
    no review thread on the PR is unresolved. Resolving a thread does not delete its
    comment, and a round with no fix pushes nothing (so no re-review follows),
-   so end on thread state, not on the absence of comments.
+   so end on thread state, not on the absence of comments. The loop is also capped, as
+   described next.
+
+**Cap: three rounds.** A round is one review's findings answered: classified, fixed,
+pushed, and its threads replied to and resolved. After the third round, stop. Do not wait
+for, read, or answer any further review of the PR, from Copilot or any other reviewer,
+including reviews that arrive after the push. Report the PR link, the rounds spent, and
+any finding still open, so the user decides whether another round is worth the usage. A
+long review loop on one PR has spent a significant share of the usage on every
+subscription involved.
 
 List and resolve review threads with `gh api graphql`:
 
@@ -444,6 +453,8 @@ types; schema version is `"1"`.
 - Do not push once per review finding, or push while a review is pending. Each push to a
   PR branch starts another paid review; commit each fix separately, then push the whole
   review's fixes together.
+- Do not run more than three rounds of the Copilot review loop on one PR without the
+  user asking for another.
 - Do not record planned features or design decisions in local files, and do not post an
   issue before the user has seen the draft.
 - Do not write temporary or generated files anywhere other than `.agent-output/`.
