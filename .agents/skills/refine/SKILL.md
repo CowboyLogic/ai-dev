@@ -15,7 +15,7 @@ Usage: `/refine <issue-number>`
 
 ## Status labels
 
-An issue's refinement state is one label. Move it forward as the work does:
+An issue carries exactly one of these labels at a time. Move it forward as the work does:
 
 | Label | Meaning |
 |---|---|
@@ -76,7 +76,7 @@ the agent offloading its job.
 
 Show the user the draft. Post it only after a yes, with
 `gh issue comment <n> --repo CowboyLogic/ai-dev --body-file .agent-output/refine-<n>.md`,
-and set the state to `refining`.
+and move the state to `refining`, removing any other status label first.
 
 ## 4. Follow-up: converge
 
@@ -107,7 +107,7 @@ alternatives considered and why they were rejected, dependencies by issue number
 reason. The body says what to build; this comment preserves why.
 
 After a yes, apply the body with `gh issue edit <n> --repo CowboyLogic/ai-dev --body-file`,
-post the comment, and set the state to `ready`. Record any blocking dependency with the
+post the comment, and move the state to `ready`, removing any other status label first. Record any blocking dependency with the
 GitHub *blocked by* relationship described in `AGENTS.md`, not only in the text.
 
 ## Limits
