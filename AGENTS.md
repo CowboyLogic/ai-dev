@@ -297,7 +297,7 @@ instead.
 - **After opening or updating a PR**, run the [Copilot review loop](#copilot-review-loop):
   wait, address every finding of the review with one commit per fix and a single push,
   resolve every thread, and repeat until the latest commit has been reviewed and no thread
-  is left unresolved.
+  is left unresolved, or until the three-round cap ends the loop, whichever comes first.
 - **Merging a PR into `main`** is a human action. No agent merges a PR, ever.
 - **Updating a feature branch from `main`** (`git merge origin/main` or
   `git rebase origin/main`) is normal agent work — see
@@ -448,8 +448,8 @@ types; schema version is `"1"`.
   feature branch the task owns.
 - Do not `git add -A` or `git add .` — stage the files the work actually changed.
 - Do not open a PR without asking first.
-- Do not treat a freshly opened PR as finished — run the Copilot review loop and leave
-  no unresolved review threads.
+- Do not treat a freshly opened PR as finished — run the Copilot review loop, within its
+  three-round cap, and leave no unresolved review threads for the rounds you ran.
 - Do not push once per review finding, or push while a review is pending. Each push to a
   PR branch starts another paid review; commit each fix separately, then push the whole
   review's fixes together.
