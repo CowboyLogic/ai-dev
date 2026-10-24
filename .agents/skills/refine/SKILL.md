@@ -52,6 +52,9 @@ affected artifacts, `AGENTS.md` and any topology `AGENTS.md`, and the docs pages
 must change with them (see Documentation Synchronization in `AGENTS.md`). A question the
 repository already answers is not a question; put it under Assumed.
 
+The draft must cite, by path, the repository files that each Assumed entry and each
+Decision rests on, so the user can check the grounding.
+
 Draft one comment to `.agent-output/refine-<n>.md`:
 
 ```markdown
