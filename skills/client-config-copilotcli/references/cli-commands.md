@@ -85,6 +85,7 @@ the authority.
 | `--continue` | Resume most recent session in cwd (else globally) |
 | `--session-id ID` | Exact session/task ID; creates a new session only for a valid UUID |
 | `--connect[=SESSION-ID]` | Connect to a remote session |
+| `--sync-session[=on\|off]` | Turn read-only session-history syncing on or off for this run. Without a value it turns syncing on. It does not enable remote control; use `/remote on` for that |
 | `-C DIRECTORY` | Change directory first |
 | `-w`, `--worktree[=NAME]` | Start in a Git worktree under `<repo>.worktrees/` |
 | `--mode=interactive\|plan\|autopilot` | Initial mode; `--plan --mode autopilot` = plan-then-autopilot |
@@ -97,7 +98,7 @@ the authority.
 | `--effort=LEVEL`, `--reasoning-effort=LEVEL` | `low`, `medium`, `high`, `xhigh`, `max` |
 | `--context default\|long_context` | Context tier |
 | `--max-ai-credits=CREDITS` | Soft per-response AI credit cap |
-| `--acp` | Run as Agent Client Protocol server |
+| `--acp` | Run as Agent Client Protocol server. Sessions honor saved sandbox settings and `--sandbox`/`--no-sandbox`, including on resume; a managed policy that enforces sandboxing overrides `--no-sandbox` |
 
 ### Permissions and tools
 
@@ -120,6 +121,7 @@ the authority.
 | `--extension-sdk-path=DIRECTORY` | Override the bundled `@github/copilot-sdk` injected into extension subprocesses (invalid paths fall back to the bundled SDK) |
 | `--no-custom-instructions` | Skip `AGENTS.md` and related instruction files |
 | `--enable-memory` | Enable memory in prompt mode |
+| `--disable-client-telemetry` | Turn off first-party client-side telemetry, unrestricted and restricted, for this invocation only; not saved. It does not affect server-side collection, OpenTelemetry exports you or your enterprise configure, or telemetry an SDK application explicitly forwards from the CLI |
 
 ### Output and UI
 
@@ -127,8 +129,17 @@ the authority.
 while valid variable references are preserved), `-s`/`--silent`, `--stream=on|off`, `--share=PATH`,
 `--share-gist`, `--attachment PATH`, `--log-dir`, `--log-level`, `--banner`/`--no-banner`,
 `--no-color`, `--plain-diff`, `--screen-reader`, `--mouse[=on|off]`/`--no-mouse`,
-`--experimental`/`--no-experimental`, `--no-auto-update`, `--bash-env`/`--no-bash-env`,
-`--remote`/`--no-remote`, `--remote-export`/`--no-remote-export`.
+`--experimental`/`--no-experimental`, `--no-auto-update`, `--bash-env`/`--no-bash-env`.
+
+### Removed and renamed remote options
+
+Per the command reference, `--no-remote` is removed, `--remote-export` is renamed
+`--sync-session=on`, and `--no-remote-export` is renamed `--sync-session=off`. `--remote` is not
+supported for interactive startup or with `-p`; use `/remote on` in a session (`/remote off` ends
+the connection). It remains supported only for legacy SDK server startup with `--server` or
+`--headless`. The release notes for v1.0.103 say the legacy `--remote`/`--no-remote` startup flags
+were retired in favor of clearer hosting and connection flags; they don't name the new flags, so
+run `copilot --help` for them.
 
 ### Deprecated options
 
@@ -156,7 +167,10 @@ copilot --continue                  # most recent session in this directory
 | `/clear`, `/new`, `/reset` | Start a new conversation |
 | `/undo`, `/rewind` | Roll back to an earlier turn (optionally restore files) |
 | `/restart` | Restart the CLI, restoring live sessions |
-| `/share [link\|off\|file\|html\|gist\|research]`, `/export` | Share/export the session |
+| `/share [link\|off\|file\|html\|gist\|research]`, `/export` | Share/export the session. With no subcommand it opens a sharing menu and shares nothing; `link` shares and prints a GitHub link, `off` (or `link off`) stops link sharing |
+
+`/session cleanup` shows a storage summary of your other local sessions grouped by age and suggests
+deletion commands. It deletes nothing; preview with `/session prune --older-than DAYS --dry-run`.
 
 Session history lives in `~/.copilot/session-state/`.
 
@@ -184,12 +198,12 @@ Session history lives in `~/.copilot/session-state/`.
 |---------|---------|
 | `/mcp [config\|list\|show\|add\|edit\|delete\|disable\|enable\|auth\|reload\|search] [NAME]` | MCP servers |
 | `/skills [list\|info\|add\|remove\|reload]` | Skills |
-| `/plugin [install\|update\|uninstall\|list\|marketplace ...]` | Plugins |
-| `/agent` | Pick or create a custom agent |
+| `/plugin [install\|update\|uninstall\|list\|marketplace ...]` | Plugins. `list` shows team-assigned plugins that are default-enabled as enabled, unless you disable them or managed settings override the default; plugins enforced through managed `enabledPlugins` can't be disabled locally |
+| `/agent` | Pick a custom agent; press `N` in the list to create one |
 | `/subagents`, `/agents` | Per-agent subagent models |
 | `/instructions` | View and toggle instruction files |
 | `/lsp [show\|test\|reload\|logs\|help] [NAME]` | Language servers |
-| `/extensions`, `/extension` | Extensions (experimental) |
+| `/extensions`, `/extension` | Extensions (experimental). `/extensions mode` sets **Load & Augment** (default; extensions run and the agent can manage them), **Load Only** (run, no agent management tools), or **Disabled** (none run; persists for future sessions). `/extensions manage` inspects them |
 | `/env` | Show loaded instructions, MCP, skills, agents, hooks, plugins, LSPs, extensions |
 | `/init` | Create/update `copilot-instructions.md` (`/init suppress` hides the startup hint) |
 

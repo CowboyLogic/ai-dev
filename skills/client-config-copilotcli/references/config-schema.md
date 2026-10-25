@@ -103,6 +103,7 @@ the shared cross-tool subset (such as `companyAnnouncements`, `disableAllHooks`,
 |-----|---------------|---------|---------|
 | `allowedUrls` | `string[]` | `[]` | URLs/domains allowed without prompting; supports `*.github.com` |
 | `askUser` | boolean | `true` | Allow clarifying questions (`--no-ask-user` disables) |
+| `assistedApprovalInstructions` | not documented | not documented | **v1.0.101 release notes only:** guides Assisted Permissions confirmation decisions. The settings reference doesn't list it, so its value type is unverified |
 | `autoTier` | `"efficiency"` \| `"balance"` \| `"intelligence"` | unset | Default Auto routing tier when `model` is `auto` (see `/model auto TIER`); `"fast"` is no longer selectable and falls back to `"balance"` |
 | `autoUpdate` | boolean | `true` | Auto-download CLI updates and update first-party plugins |
 | `autoUpdatesChannel` | `"stable"` \| `"prerelease"` | `"stable"` | Update channel |
@@ -143,14 +144,15 @@ the shared cross-tool subset (such as `companyAnnouncements`, `disableAllHooks`,
 | `pinnedPrompts` | boolean | `true` | Pin current prompt while scrolling |
 | `powershellFlags` | `string[]` | `["-NoProfile", "-NoLogo"]` | Windows only |
 | `proxyUrl` / `proxyKerberosServicePrincipal` | string | unset | HTTP(S) proxy; `HTTP_PROXY`/`HTTPS_PROXY` override |
-| `remote` | `"on"` \| `"off"` | `"on"` | Session sync and remote control |
-| `remoteExport` | boolean | `true` | Export sessions remotely when sync is available |
+| `remoteSessions` | boolean | `false` | Enable remote control by default for interactive sessions when it is available; `/remote on`/`/remote off` change it per session. Separate from `remoteExport`. The settings reference no longer lists the old `remote` (`"on"`/`"off"`) key |
+| `remoteExport` | boolean | `true` | Sync session history to your account when sync is available. `remoteSessions: true` also enables export. Syncing alone does not enable remote control; `--sync-session=on\|off` overrides it for one run |
 | `renderHexColors` / `renderMarkdown` | boolean | `true` | Terminal rendering |
 | `respectGitignore` | boolean | `true` | Hide gitignored files from `@` picker |
 | `sandbox.*` | object | — | Local sandbox: `enabled`, `allowBypass`, `auth.git`, `auth.gh`, `credentials.envVars`, `userPolicy.*` (see `permissions.md`) |
 | `screenReader` | boolean | `false` | Screen reader optimizations |
 | `scrollbar` | boolean | `true` | Scrollbar in scrollable views |
 | `shellShortcut` | boolean | `true` | Lone `$` + `Enter` opens a shell (user/managed scope only) |
+| `showReasoning` | boolean | unset | Show model reasoning in the timeline; set with `/config` or `/settings`, or toggle with `Ctrl+T`. Saved across sessions |
 | `showTimestamps` / `showTipsOnStartup` | boolean | `true` | UI toggles |
 | `sidebar` | boolean | `true` | Current-session sidebar |
 | `skillDirectories` | `string[]` | `[]` | Extra skill search directories |
@@ -273,8 +275,8 @@ world-writable.
 Supported keys: `allowedMcpServers`, `autoTier`, `deniedMcpServers`, `enabledPlugins`,
 `extraKnownMarketplaces`, `forceLoginOrgs`, `forceRemoteSettingsRefresh`, `model`, `permissions`
 (including `disableBypassPermissionsMode`, `deny`/`ask`/`allow` rules, and `limitTo`),
-`policyHelper`, `remoteControl`, `sandbox`, `shellShortcut`, `strictKnownMarketplaces`,
-`telemetry`. See `permissions.md` for managed permission rules and `mcp.md` for the MCP
+`policyHelper`, `remoteControl`, `requireBase64ImageAttachments`, `sandbox`, `shellShortcut`,
+`strictKnownMarketplaces`, `telemetry`. See `permissions.md` for managed permission rules and `mcp.md` for the MCP
 allow/deny list.
 
 - `model` is a top-level key; the legacy nested `permissions.model` still works as a fallback.
@@ -299,8 +301,12 @@ allow/deny list.
   device's first startup, deliver it through MDM or file-based settings; policy helper scripts
   can't set it. In the Windows registry or macOS managed preferences, store it as a string
   `true`/`false`, not a DWORD or native Boolean.
+- `requireBase64ImageAttachments: true` requires base64-encoded image attachments instead of
+  attachment URLs; `false` or unset keeps the existing behavior.
 - `telemetry` pushes baseline OpenTelemetry export settings: `enabled`, `endpoint`, `protocol`,
-  `headers`, `resourceAttributes`, `serviceName`, and the capture controls below (see
+  `headers`, `headersProvider` (a command that supplies fresh OTLP headers, or `false`; see
+  [Dynamic authentication headers](#dynamic-authentication-headers)), `resourceAttributes`,
+  `serviceName`, and the capture controls below (see
   [OpenTelemetry monitoring](#opentelemetry-monitoring)). `capture` is an object of independent
   switches, each defaulting to `false`: `identity` (account name as `user.name`, OS account as
   `process.user.name`, machine as `host.name`), `prompts` (prompt text and model input,
@@ -393,6 +399,34 @@ administrators can push a baseline through the managed `telemetry` key.
 | `COPILOT_OTEL_SOURCE_NAME` | `github.copilot` | Instrumentation scope name for the tracer and meter |
 | `OTEL_LOG_LEVEL` | — | Diagnostic level: `NONE`, `ERROR`, `WARN`, `INFO`, `DEBUG`, `VERBOSE`, `ALL` |
 | `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` | `false` | Capture full prompts, responses, tool schemas, and tool arguments and results |
+
+### Dynamic authentication headers
+
+Set `telemetry.headersProvider` in user settings or in a managed telemetry policy to run a command
+that supplies fresh OTLP headers. Repository settings never apply it; `false` disables it.
+
+```json
+{
+  "telemetry": {
+    "headersProvider": {
+      "path": "node",
+      "args": ["bin/otel-headers.js"],
+      "refreshIntervalMs": 1740000
+    }
+  }
+}
+```
+
+- `path` is an executable name, absolute path, or home-relative path, not a shell command;
+  workspace-relative paths are rejected. `args` are passed literally, so name an interpreter for
+  scripts. `refreshIntervalMs` defaults to 29 minutes.
+- The command runs from your home directory with a 30-second deadline and must print a JSON object
+  of string header values to stdout; an empty object clears dynamic headers.
+- It runs only for active HTTP OTLP exporters. Use HTTPS: an HTTP endpoint produces a warning and
+  OTLP redirects are rejected.
+- Precedence, highest first: managed helper output, managed static headers, user helper output,
+  then `OTEL_EXPORTER_OTLP_HEADERS`. A managed `false` disables helpers.
+- If a refresh fails, exports that need dynamic headers are blocked until the next refresh.
 
 ### Signals
 

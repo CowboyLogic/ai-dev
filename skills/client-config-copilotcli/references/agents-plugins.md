@@ -28,7 +28,11 @@ order.
 **v1.0.97 release notes only:** discovery now finds all custom agents even when a repository
 defines more than 100 or nests agent files deeply.
 
-Create interactively with `/agent` → **Create new agent** (Project or User), then restart the CLI.
+Create interactively with `/agent`, then press `N` to create a new agent (Project or
+User), then restart the CLI. A custom agent can also be selected for the whole session, not only
+delegated to as a subagent. **v1.0.99 release notes only:** custom agents that declare the
+documented `search`, `web`, or `todo` tool aliases, or name `github-mcp-server/web_search`, now
+receive the matching tools.
 
 ### Frontmatter
 
@@ -162,6 +166,10 @@ copilot plugin marketplace remove NAME [--force]
 
 Install specs: `plugin@marketplace`, `OWNER/REPO`, `OWNER/REPO:PATH/TO/PLUGIN`, a Git URL, or a
 local path. In a session use `/plugin` (dashboard) or `/plugin install|update|uninstall|list|marketplace ...`.
+**Release notes only:** v1.0.100 installs verified skills and plugins from GitHub install links
+(`copilot plugin install "ghapp://air/install?..."`; the quoted URL is truncated in the notes), and
+v1.0.102 lets plugin marketplaces use `git-subdir` sources and long plugin descriptions. Neither
+is in the plugin reference, so the field layout of a `git-subdir` source is unverified.
 `--plugin-dir=DIR` loads a local plugin for one session (v1.0.97 release notes: its skills and
 custom agents now reach autocomplete and invocation). The old cross-kind flags
 (`--kind`, `--scope`, `--mcp`, `--skill`) were removed — use `copilot mcp|skill|instruction|lsp`.
