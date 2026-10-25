@@ -2,7 +2,7 @@
 
 Reference for the YAML frontmatter properties in custom agent profiles (`.agent.md`). Load this file when writing or modifying agent frontmatter.
 
-**Sources (last verified October 2026, against GitHub Copilot CLI v1.0.98):**
+**Sources (last verified October 2026, against GitHub Copilot CLI v1.0.103):**
 
 - GitHub configuration reference: <https://docs.github.com/en/copilot/reference/custom-agents-configuration>
 - VS Code: <https://code.visualstudio.com/docs/agent-customization/custom-agents>
@@ -23,7 +23,7 @@ Custom agents are used by several products that each read the profile differentl
 - **Copilot cloud agent on GitHub.com**: agents tab/panel, issue assignment, pull requests
 - **GitHub Copilot app**: listed by GitHub as a place custom agents are available
 - **GitHub Copilot CLI**: `/agent`, `--agent`, or inferred delegation to a subagent
-- **VS Code** (and JetBrains IDEs, Eclipse, Xcode, which are in public preview for custom agents): the agents dropdown in chat. VS Code has several harnesses (**Local**, **Copilot**, Claude, Codex, Cloud) and the selected harness decides which fields and tool names take effect; handoffs and agent-scoped hooks work only with **Local**.
+- **VS Code** (and JetBrains IDEs, Eclipse, Xcode, which are in public preview for custom agents): the agents dropdown in chat. VS Code has several harnesses (**Local**, **Copilot**, Claude, Codex, Cloud) and the selected harness decides which fields and tool names take effect; handoffs work only with **Local**. Agent-scoped hooks run in Local, and the Copilot harness supports them too, but VS Code currently drops `hooks` when it converts plugin-provided agents (see [`hooks`](#hooks)).
 
 Every surface ignores tool names it does not recognize, and GitHub.com explicitly ignores the IDE-only `argument-hint` and `handoffs` properties.
 
@@ -36,7 +36,7 @@ Every surface ignores tool names it does not recognize, and GitHub.com explicitl
 | `name` | ✅ | ✅ | ✅ |
 | `description` | ✅ (header optional) | ✅ **Required** | ✅ **Required** |
 | `target` | ✅ | ✅ | Not listed in CLI reference |
-| `tools` | ✅ (aliases, tool sets, tool names) | ✅ (aliases, MCP tools) | ✅ |
+| `tools` | ✅ (aliases, tool names; user-defined tool sets are deprecated) | ✅ (aliases, MCP tools) | ✅ |
 | `model` | ✅ string or array | ⚠️ See [`model`](#model) | ✅ string |
 | `user-invocable` | ✅ | ✅ | Not listed in CLI reference |
 | `disable-model-invocation` | ✅ (blocks subagent use unless a coordinator lists the agent in `agents`) | ✅ (blocks auto-selection) | Not listed in CLI reference |
@@ -44,7 +44,7 @@ Every surface ignores tool names it does not recognize, and GitHub.com explicitl
 | `argument-hint` | ✅ | ❌ Ignored | Not listed |
 | `handoffs` | ✅ Local harness | ❌ Ignored | Not listed |
 | `agents` | ✅ | Not listed | Not listed |
-| `hooks` | ✅ Preview, Local harness only | Not listed | ✅ Agent-scoped hooks (v1.0.97), documented in the hooks reference; not in the CLI frontmatter table |
+| `hooks` | ✅ Local harness; the Copilot harness supports them but plugin-agent conversion omits the field (see [`hooks`](#hooks)) | Not listed | ✅ Agent-scoped hooks (v1.0.97), documented in the hooks reference; not in the CLI frontmatter table |
 | `mcp-servers` | ❌ Not used (only passed through for `target: github-copilot`) | ✅ | ✅ |
 | `metadata` | ❌ Not used | ✅ | Not listed |
 | `reasoning-effort` | ✅ Copilot harness | Not listed | Not listed (the CLI uses `reasoningEffort`) |
@@ -80,7 +80,7 @@ handoffs:                             # VS Code / IDEs only
     prompt: Implement the plan above.
     send: false
     model: GPT-5.5 (copilot)
-hooks:                                # VS Code Local harness (Preview) and Copilot CLI
+hooks:                                # VS Code (Local harness) and Copilot CLI
   PostToolUse:
     - type: command
       command: "./scripts/format-changed-files.sh"
@@ -151,7 +151,7 @@ target: github-copilot   # GitHub.com cloud agent only
 **Default:** all tools
 **Platforms:** All
 
-Filters the tools available to the agent, whether built-in or from MCP servers. See `tools-reference.md` for aliases, VS Code tool sets, and MCP namespacing.
+Filters the tools available to the agent, whether built-in or from MCP servers. See `tools-reference.md` for aliases, VS Code tool names, and MCP namespacing.
 
 ```yaml
 tools: ["read", "search"]           # specific aliases (least privilege)
@@ -350,10 +350,10 @@ Common workflows:
 
 ---
 
-### `hooks` *(Preview in VS Code)*
+### `hooks`
 
 **Type:** object (map of event name → list of hook entries)
-**Platforms:** VS Code **Local** harness (Preview) and **Copilot CLI** (v1.0.97). Not listed for the GitHub.com cloud agent.
+**Platforms:** VS Code (**Local** harness, and the Copilot harness subject to the conversion limitation below) and **Copilot CLI** (v1.0.97). Not listed for the GitHub.com cloud agent.
 
 Hook commands that run only while this agent is active, in addition to user, workspace, repository, and plugin hooks. The two surfaces document and implement this separately, each with its own settings and event reference:
 
@@ -363,7 +363,7 @@ Hook commands that run only while this agent is active, in addition to user, wor
 | Event names | PascalCase: `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `SubagentStart`, `SubagentStop`, `Stop` | Runtime names such as `postToolUse` and aliases such as `PostToolUse` |
 | Per-platform commands | Local hook format uses `command` with `windows`, `linux`, `osx` overrides (hooks doc) | `command` is the fallback; `windows`, `linux`, `osx` override it; paths resolve from the repository root |
 | Subagent `Stop` | The agent's `Stop` hook is treated as `SubagentStop` | The scoped `Stop` (`agentStop`) hooks run at `SubagentStop`; after eight consecutive scoped blocks, further blocks are ignored |
-| Not supported | Other harnesses (Copilot, Claude, Codex) | Remote or organization-hosted agent definitions |
+| Not supported | Claude and Codex harnesses; plugin-provided agents converted for the Copilot harness lose the field (below) | Remote or organization-hosted agent definitions |
 
 The VS Code hooks reference also lists a `PreCompact` event for Local hooks; it doesn't state whether agent-scoped hooks accept it, so test before relying on it.
 
@@ -374,7 +374,7 @@ hooks:
       command: "./scripts/format-changed-files.sh"
 ```
 
-The VS Code docs describe the `hooks` property as Local harness only, and the GitHub hooks reference describes agent-scoped hooks as Copilot CLI only. Whether a Copilot harness session in VS Code runs them isn't documented, so don't rely on it. The event list may have more entries than shown here: check the [VS Code hooks reference](https://code.visualstudio.com/docs/agents/reference/hooks-reference) and the [GitHub hooks reference](https://docs.github.com/en/copilot/reference/hooks-reference#agent-scoped-hooks) for the complete lists.
+VS Code's hooks article says the Copilot harness supports agent-scoped hooks, but VS Code currently omits the `hooks` field when it converts plugin-provided custom agents for that harness, so such an agent can appear and run without its scoped hooks (tracked in [microsoft/vscode#341681](https://github.com/microsoft/vscode/issues/341681)). For an affected agent, keep the definition and treat its hook migration as incomplete; don't move the command to a repository-wide or plugin-wide event, which changes which agents trigger it. The event list may have more entries than shown here: check the [VS Code hooks reference](https://code.visualstudio.com/docs/agents/reference/hooks-reference) and the [GitHub hooks reference](https://docs.github.com/en/copilot/reference/hooks-reference#agent-scoped-hooks) for the complete lists.
 
 ---
 
@@ -453,7 +453,7 @@ VS Code and Copilot CLI both load agents from `.claude/agents/` (plain `.md` fil
 | `model` | Model name or array (see [`model`](#model)) | `sonnet`, `opus`, `haiku`, or `inherit` (default) |
 | `permissionMode` | Not listed | `default`, `acceptEdits`, `dontAsk`, `bypassPermissions`, or `plan` |
 | `skills`, `mcpServers`, `memory` | Not listed | Skills to load into the agent's context at startup, MCP servers, and persistent memory scope (`user`, `project`, or `local`) |
-| `hooks` | Object (see [`hooks`](#hooks-preview-in-vs-code)) | Lifecycle hooks scoped to the agent |
+| `hooks` | Object (see [`hooks`](#hooks)) | Lifecycle hooks scoped to the agent |
 
 ```markdown
 ---
@@ -484,15 +484,15 @@ Versioning follows Git commit SHAs of the profile file. An assigned task uses th
 
 ### File detection (VS Code)
 
-VS Code's file-locations table lists `.agent.md` or `.md` files for `.github/agents` and `~/.copilot/agents`; prefer `.agent.md`. The settings `chat.agentFilesLocations` and `chat.modeFilesLocations` are deprecated (Local agent only). Legacy `.chatmode.md` files should be renamed to `.agent.md`.
+VS Code's file-locations table lists `.agent.md` or `.md` files for `.github/agents` and `~/.copilot/agents`; prefer `.agent.md`. The `chat.agentFilesLocations` setting remains supported and is not deprecated (VS Code forwards agents from the extra locations to the Copilot harness), but VS Code recommends native folders because Copilot CLI and the GitHub Copilot app don't read it; the older `chat.modeFilesLocations` setting is deprecated. Legacy `.chatmode.md` files should be renamed to `.agent.md`.
 
 ### Moving a Local agent to the Copilot harness (VS Code)
 
 VS Code's migration guide describes what changes when a custom agent that worked in a Local session is used in a Copilot (Agent Host) session:
 
-- The Copilot harness doesn't read custom agents from VS Code profile user data or from the `chat.agentFilesLocations`, `chat.modeFilesLocations`, `chat.instructionsFilesLocations`, or `chat.agentSkillsLocations` settings. The migration list moves agents to `.github/agents` (workspace) or `~/.copilot/agents` (user), and the migrated user files aren't included in Settings Sync.
+- The Copilot harness doesn't read custom agents from VS Code profile user data, so user agents need to move to `~/.copilot/agents`. The `chat.agentFilesLocations`, `chat.instructionsFilesLocations`, and `chat.agentSkillsLocations` settings remain supported and not deprecated: VS Code forwards files from those extra locations to Agent Host harnesses including Copilot, but Copilot CLI and the GitHub Copilot app don't read the settings, so the migration list moves agents to `.github/agents` (workspace) or `~/.copilot/agents` (user). Migrated user files aren't included in Settings Sync.
 - Prompt files (`*.prompt.md`) aren't loaded in Copilot sessions. The migration converts them to skills with `disable-model-invocation: true`; the prompt's `agent`, `model`, and `tools` aren't carried over.
-- Agents that depend on Local tool names, tool sets, or hooks need semantic changes. VS Code has no automatic migration for hooks or tool-set files, and the Copilot harness doesn't support VS Code tool-set files; the guide says to review the tools directly in the custom agent or the chat tools picker. It points to **Migrate with Agent** (which uses Copilot credits) for guided conversions.
+- Agents that depend on Local tool names, tool sets, or hooks need semantic changes. VS Code has no automatic migration for hooks or tool-set files; user-defined tool sets are deprecated and the Copilot harness doesn't support them, so replace them with tools named in the agent's `tools` list or managed in the **Tools** tab. Local references such as `agent/runSubagent` and `vscode/toolSearch` aren't portable: Copilot delegates with its native `task` tool, and an instruction that names a Local tool doesn't switch automatically. It points to **Migrate with Agent** (which uses Copilot credits) for guided conversions.
 
 ---
 

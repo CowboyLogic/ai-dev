@@ -132,7 +132,7 @@ options, integration with VS Code and CI, and automated fix workflows.
 
 Create custom `.agent.md` files for GitHub Copilot across VS Code, the Copilot CLI, and the
 GitHub.com cloud agent. Covers frontmatter schema and per-surface compatibility, tool aliases
-and VS Code tool sets, current model selection, handoffs, hooks, and MCP servers. Includes
+and VS Code tool names, current model selection, handoffs, hooks, and MCP servers. Includes
 working examples for workspace agents, user-profile agents, and cloud agents with MCP.
 
 [Skill Overview](agent-creator-copilot.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-copilot)

@@ -58,18 +58,20 @@ Use these aliases for portability. All aliases are case-insensitive.
 | `web` | `WebSearch`, `WebFetch` | Not applicable on cloud agent | Fetch URLs and search the web |
 | `todo` | `TodoWrite` | Not applicable on cloud agent | Structured task lists (supported by VS Code) |
 
-In VS Code, `read`, `search`, `edit`, `execute`, `web`, and `agent` are also names of built-in **tool sets**, so the aliases enable the whole set there.
+In VS Code, these aliases are separate from user-defined tool-set files, which are deprecated (below).
+
+Per the Copilot CLI v1.0.99 release notes (not in the CLI docs), custom agents that declare the documented `search`, `web`, or `todo` aliases, or name `github-mcp-server/web_search`, now receive the matching tools in the CLI.
 
 > [!NOTE]
 > VS Code's current tools reference lists the todo tool as `#todos`, while the GitHub alias table uses `todo`. Both documents are current. If `todo` does not enable the todo list in VS Code, add `todos` too, because unknown names are ignored.
 
 ---
 
-## VS Code Tool Sets and Tool Names
+## VS Code Tool Names
 
-VS Code accepts tool sets, individual `set/tool` names, MCP tools, and extension tools in `tools`. The Copilot harness (Agent Host sessions) doesn't support VS Code tool-set files; VS Code's migration guide says to review the tools directly in the custom agent or the chat tools picker instead. Names from the current VS Code reference:
+In the Local harness, VS Code accepts individual `set/tool` names, MCP tools, and extension tools in `tools`. User-defined tool sets (`.toolsets.jsonc` files) are deprecated and not supported in the Copilot harness (Agent Host sessions); they remain only as a Local-harness compatibility feature. VS Code's migration guide says to replace them by naming supported tools in a custom agent's `tools` list or managing availability in the **Tools** tab. The current VS Code tools reference no longer lists tool sets, and notes its names are Local harness reference names that don't map directly to Copilot harness tools. Names from that reference:
 
-| Tool set | Individual tools |
+| Group | Individual tools |
 |---|---|
 | `read` | `read/readFile`, `read/problems`, `read/terminalLastCommand`, `read/terminalSelection`, `read/getNotebookSummary`, `read/readNotebookCellOutput` |
 | `search` | `search/changes`, `search/codebase`, `search/fileSearch`, `search/listDirectory`, `search/textSearch`, `search/usages` |
@@ -77,7 +79,6 @@ VS Code accepts tool sets, individual `set/tool` names, MCP tools, and extension
 | `execute` | `execute/createAndRunTask`, `execute/getTerminalOutput`, `execute/runInTerminal`, `execute/testFailure`, `execute/runNotebookCell` |
 | `web` | `web/fetch` |
 | `agent` | `agent/runSubagent` |
-| `browser` | Browser navigation and interaction tools |
 | `vscode` | `vscode/askQuestions`, `vscode/extensions`, `vscode/getProjectSetupInfo`, `vscode/installExtension`, `vscode/runCommand`, `vscode/VSCodeAPI` |
 
 Standalone tools: `githubRepo`, `githubTextSearch`, `todos`, `newWorkspace`.
