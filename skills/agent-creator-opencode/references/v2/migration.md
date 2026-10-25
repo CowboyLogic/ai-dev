@@ -3,7 +3,7 @@
 Field-by-field mapping for converting V1 agent definitions to the native V2
 format.
 
-**Sources (checked 2026-10-14):** <https://opencode.ai/v2/docs/migrate-v1/> ·
+**Sources (checked 2026-10-25, V2 2.1.4):** <https://opencode.ai/v2/docs/migrate-v1/> ·
 <https://opencode.ai/v2/docs/agents/> · <https://opencode.ai/v2/docs/permissions/>
 
 Load this file when converting an existing V1 agent, or when a user on V1 asks
@@ -40,8 +40,8 @@ what changes in V2.
 | `permission` (map) | `permissions` (ordered array) | See conversion below |
 | `tools` (boolean map) | `permissions` deny/allow rules | `false` becomes a `deny` rule |
 | `model` + `variant` | `model: provider/model#variant` | Remove the separate `variant` |
-| `temperature`, `top_p` | `request.body.temperature`, `request.body.top_p` | Not sent yet in V2 (see warning) |
-| Provider pass-through keys (`reasoningEffort`, and so on) | `request.body` | Not sent yet in V2 |
+| `temperature`, `top_p` | Model variant `body` / `settings` (see warning) | The 2.1.4 docs say not to use these fields on new V2 agents; `request.body` is not sent |
+| Provider pass-through keys (`reasoningEffort`, and so on) | Model variant `settings` / `body` | `request.body` is not sent in V2 |
 | `maxSteps` | `steps` | `steps` already existed in V1 |
 | `steps`, `description`, `mode`, `hidden`, `color` | same name | See behavior changes below |
 | `name` inside a V1 JSON agent | remove | Ignored by V2 with a warning |
@@ -49,11 +49,20 @@ what changes in V2.
 | `subagent_depth` (top level) | `experimental.subagent_depth` | V2 ignores top-level with a warning |
 
 > [!WARNING]
-> The V2 docs state that `request` values are preserved but not yet sent with
-> model requests. Converting `temperature` or `reasoningEffort` into
-> `request.body` keeps the value but it has no effect today. To keep the
-> behavior, move the setting onto a model variant under `providers` and reference
-> it with `#variant`. See `../models.md`.
+> The V2 docs (still true in 2.1.4) state that `request` values are preserved but
+> not sent with model requests, and tell you to configure active request settings
+> on the provider, model, or model variant. The migration guide's older advice to
+> use `request.body` therefore keeps the value with no effect. Move the setting
+> onto a model variant under `providers` and reference it with `#variant`. See
+> `../models.md`.
+
+For Markdown agent files:
+
+> [!NOTE]
+> Convert a Markdown agent file all at once. A file using any of `permissions`,
+> `request`, `system`, or `disabled` is read as V2 and its V1 fields (`name`,
+> `tools`, `permission`, `temperature`) are ignored with a warning; other files
+> with V1 fields are read as V1 (2.1.4 release notes).
 
 ### Behavior changes that are not renames
 
@@ -65,6 +74,7 @@ what changes in V2.
 | Built-in `scout` | Exists | Does not exist |
 | `.env` reads | `deny` | `ask` |
 | No matching rule | Tool default (mostly `allow`) | `ask` (base policy allows all first) |
+| Access outside the project | `ask` (`external_directory`) | Allowed by default; add an `external_directory` `ask` rule to keep the V1 prompt |
 | `always` approval | Rest of the current session | Durable, project-scoped |
 | `doom_loop`, `lsp` permissions | Supported | Not V2 core actions |
 
@@ -91,8 +101,9 @@ Conversion steps for one agent:
    wildcard rule. Place a `"*"` action rule before per-tool rules so the specific
    rules can override it (this ordering is inferred from V1's "specific key
    overrides `*`" example; the migration guide does not state it).
-5. Drop `doom_loop` and `lsp`. Drop `list` and `todowrite` (no documented V2
-   action). Tell the user what was dropped.
+5. Drop `doom_loop` and `lsp`. Drop `list`. Drop `todowrite` unless the
+   user sets `experimental.todo: true` (the tool is off by default in V2, and the
+   2.1.4 source asserts a `todowrite` action when it is on). Tell the user what was dropped.
 6. Legacy `tools` entries: `false` becomes `deny` with `resource: "*"`. The V1
    docs define `true` as `{"*": "allow"}`.
 
@@ -130,7 +141,7 @@ Example from the migration guide:
   "agent": {
     "reviewer": {
       "prompt": "Review for correctness and missing tests.",
-      "model": "anthropic/claude-sonnet-5",
+      "model": "anthropic/claude-sonnet-5-5",
       "variant": "high",
       "disable": false,
       "permission": { "edit": "deny" }
@@ -145,7 +156,7 @@ Example from the migration guide:
   "agents": {
     "reviewer": {
       "system": "Review for correctness and missing tests.",
-      "model": "anthropic/claude-sonnet-5#high",
+      "model": "anthropic/claude-sonnet-5-5#high",
       "disabled": false,
       "permissions": [
         { "action": "edit", "resource": "*", "effect": "deny" }
@@ -163,7 +174,7 @@ V1 `.opencode/agents/reviewer.md`:
 ---
 description: Code review without edits
 mode: subagent
-model: anthropic/claude-sonnet-5
+model: anthropic/claude-sonnet-5-5
 variant: high
 temperature: 0.1
 permission:
@@ -183,7 +194,7 @@ V2 `.opencode/agents/reviewer.md`:
 ---
 description: Code review without edits
 mode: subagent
-model: anthropic/claude-sonnet-5#high
+model: anthropic/claude-sonnet-5-5#high
 permissions:
   - action: edit
     resource: "*"
@@ -197,17 +208,14 @@ permissions:
   - action: webfetch
     resource: "*"
     effect: deny
-request:
-  body:
-    temperature: 0.1
 ---
 
 Only analyze code and suggest changes.
 ```
 
-`temperature` moved to `request.body` as the migration guide directs, but V2
-does not send it yet. Tell the user the setting is currently inert, and offer a
-model variant if the behavior matters.
+`temperature` is dropped from the V2 file: the migration guide moves it to
+`request.body`, but V2 does not send that. Tell the user, and offer a model
+variant (`providers.<id>.models.<model>.variants[]`) if the behavior matters.
 
 `git diff*` became `git diff *`: in V2 a pattern ending in `" *"` also matches the
 bare command, which is the usual intent.

@@ -3,7 +3,7 @@
 The native V2 `permissions` array: rule shape, matching, actions, defaults, and
 policies.
 
-**Sources (checked 2026-10-14):** <https://opencode.ai/v2/docs/permissions/> ·
+**Sources (checked 2026-10-25, V2 2.1.4):** <https://opencode.ai/v2/docs/permissions/> ·
 <https://opencode.ai/v2/docs/tools/> · <https://opencode.ai/v2/docs/policies/> ·
 <https://opencode.ai/v2/docs/skills/>
 
@@ -98,15 +98,19 @@ string.
 | `websearch` | Search query | `websearch` |
 | `external_directory` | Canonical external directory boundary, normally ending in `/*` | Paths outside the Location and project worktree |
 | `<server>_<tool>` | `*` | One MCP tool (unsupported characters become `_`) |
-| `execute` | `*` | Code Mode availability; nested tools still enforce their own rules |
+| `opencode_list_mcp_resources` | MCP server name | Listing a server's MCP resources |
+| `opencode_read_mcp_resource` | `<server>:<uri>` | Reading one MCP resource |
+| `execute` | `*` | A deny removes Code Mode and the tools reached only through it (including MCP tools from servers that do not set `codemode: false`); nested tools still enforce their own rules |
 
 - Action names are strings, so plugins may add actions.
 - `doom_loop` and `lsp` are **not** V2 core permission actions.
-- V1 keys `list` and `todowrite` have no action in the V2 permissions or tools
-  pages checked. Do not emit rules for them in native V2.
+- The V1 key `list` has no action in the V2 permissions or tools pages. Do not
+  emit a rule for it in native V2. `todowrite` is not in the docs table either,
+  but the 2.1.4 source asserts it (resource `*`) when `experimental.todo` is
+  `true`; the tool does not exist otherwise.
 - The tools page says a `browser` deny rule with resource `*` removes the browser
   Code Mode catalog; it is not in the permissions page's action table.
-- The tools page (unchanged through 2.0.29) lists Code Mode worktree utilities. `worktree_remove`
+- The tools page (these lines unchanged through 2.1.4) lists Code Mode worktree utilities. `worktree_remove`
   uses `edit` with the worktree directory as the resource, so an `edit` rule that
   denies that directory blocks it for the agent (`force: true` can discard
   modified or untracked files). `worktree_create` and `worktree_list` request no
@@ -146,7 +150,6 @@ Every agent, including custom agents, starts with this ordered base policy:
 ```json
 [
   { "action": "*", "resource": "*", "effect": "allow" },
-  { "action": "external_directory", "resource": "*", "effect": "ask" },
   { "action": "read", "resource": "*.env", "effect": "ask" },
   { "action": "read", "resource": "*.env.*", "effect": "ask" },
   { "action": "read", "resource": "*.env.example", "effect": "allow" }
@@ -157,23 +160,30 @@ Note the change from V1: `.env` reads **ask** in V2 (V1 denied them).
 
 Shipped agents append policies: `build` and `plan` allow questions; `plan` denies
 edits except under `~/.opencode/plan`; `general` denies questions and launching
-subagents; `explore` denies everything except read, glob, grep, webfetch, and
-websearch; `title` and `summary` deny all; `compaction` keeps the base policy.
+subagents; `explore` denies everything except shell, read, glob, grep, webfetch,
+websearch, and external directories (and asks for `.env` reads); `title` and
+`summary` deny all; `compaction` keeps the base policy.
 
-OpenCode also allows external-directory access to its own tool-output,
-shell-output, temporary, and global configuration directories. The underlying
-read or edit action still applies its own rules.
+No default rule asks for `external_directory`, so reads and edits outside the
+Location and worktree are **not prompted** unless you add a rule (V1 asked). The
+permissions page said otherwise until upstream commit `20d172e462` corrected it
+after the 2.0.29 tag; the source (`packages/schema/src/agent.ts`) had no such
+rule in 2.0.29 or 2.1.4. The underlying read or edit action still applies its
+own rules.
 
 ---
 
 ## External directories
 
-A path outside both the active Location and its project worktree needs
-`external_directory` approval **before** its `read` or `edit` approval:
+A path outside both the active Location and its project worktree is checked
+against `external_directory` **before** its `read` or `edit` rules. Because the
+default allows it, add an `ask` rule first to be prompted, then narrow with later
+rules (last match wins):
 
 ```json
 {
   "permissions": [
+    { "action": "external_directory", "resource": "*", "effect": "ask" },
     { "action": "external_directory", "resource": "~/projects/reference/*", "effect": "allow" },
     { "action": "read", "resource": "~/projects/reference/*", "effect": "allow" },
     { "action": "edit", "resource": "~/projects/reference/*", "effect": "deny" }
@@ -219,7 +229,7 @@ and can only turn `allow` or `ask` into `deny`.
 ```
 
 - `action` is `provider.use`, `tool.use`, or `integration.use`. `permission` is
-  not a valid action (the config schema at 2.0.27 and 2.0.29 accepts only those
+  not a valid action (the config schema at 2.0.27, 2.0.29, and 2.1.4 accepts only those
   three); an invalid statement is dropped with a server-log warning.
 - `tool.use` resource format: `<action>:<value>`, for example
   `subagent:general` or `github_delete_repository:*`.

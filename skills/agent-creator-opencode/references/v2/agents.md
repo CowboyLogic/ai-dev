@@ -2,7 +2,7 @@
 
 Native V2 agent fields, file locations, defaults, and merge rules.
 
-**Sources (checked 2026-10-14):** <https://opencode.ai/v2/docs/agents/> ·
+**Sources (checked 2026-10-25, V2 2.1.4):** <https://opencode.ai/v2/docs/agents/> ·
 <https://opencode.ai/v2/docs/config/> · <https://opencode.ai/v2/docs/models/> ·
 <https://opencode.ai/v2/docs/tools/> · <https://opencode.ai/v2/docs/migrate-v1/>
 
@@ -140,7 +140,8 @@ child uses its own configured permissions, not a subset of the parent's.
 
 The default subagent nesting depth is one (subagents cannot launch subagents).
 The migration guide names `experimental.subagent_depth` as the V2 location of the
-V1 top-level `subagent_depth` setting.
+V1 top-level `subagent_depth` setting. Since 2.1.4 a session with no model of its
+own uses the selected agent's model (2.1.4 release notes).
 
 ### model
 
@@ -180,13 +181,11 @@ A non-empty `system` replaces the provider's base prompt for that agent. Project
 instructions (`AGENTS.md`), skills, and references are still added.
 
 > [!NOTE]
-> The V2 docs do not document `{file:...}` substitution for `system`, but it works:
-> verified on OpenCode 2.0.27 with `opencode debug config` (the substitution source is
-> unchanged through 2.0.29; not re-run on the 2.0.29 binary), where
-> `"system": "{file:./prompts/plan.txt}"` resolved to the file's contents, relative to
-> the config file, including when OpenCode was started from a subdirectory. Because
-> the behavior is undocumented, a Markdown agent file (body = prompt) is still the
-> more durable choice for a long prompt.
+> The 2.1.4 docs document `{env:NAME}` and `{file:path}` substitution (a "Variables"
+> section). Verified on the 2.1.4 binary with `opencode debug config`:
+> `"system": "{file:./prompts/plan.txt}"` resolved to the file's contents (earlier
+> verified on 2.0.27, when the docs did not mention it). A Markdown agent file
+> (body = prompt) is still the simpler choice for a long prompt.
 
 ### steps
 
@@ -248,7 +247,11 @@ are not documented for V2.
 > with model requests. Per-agent temperature, `top_p`, and provider options
 > therefore have no effect in V2 today. Configure active request settings on the
 > provider, model, or a model variant (see `../models.md`) and select the variant
-> with `model: provider/model#variant`.
+> with `model: provider/model#variant`. Still true in the 2.1.4 docs.
+
+Agent **files** are read as one format: a Markdown file using any of `permissions`,
+`request`, `system`, or `disabled` is read as V2, and V1 fields in it (`name`, `tools`,
+`permission`, `temperature`) are ignored with a log warning (2.1.4 release notes).
 
 ---
 
@@ -256,10 +259,10 @@ are not documented for V2.
 
 | Agent | Mode | Purpose and default policy |
 |---|---|---|
-| `build` | primary | Default coding agent. Tools allowed; `.env` reads and access outside the workspace ask. Allows questions. |
+| `build` | primary | Default coding agent. Tools and access outside the workspace allowed; `.env` reads ask. Allows questions. |
 | `plan` | primary | Explores and plans. Denies edits except files under `~/.opencode/plan`. Shell stays permission-controlled. |
 | `general` | subagent | Research and multi-step work with broad tool access. Denies questions and launching subagents. |
-| `explore` | subagent | Reads code and web sources. Denies everything except read, glob, grep, webfetch, websearch. |
+| `explore` | subagent | Reads code and web sources. Denies everything except shell, read, glob, grep, webfetch, websearch, and external directories; asks for `.env` reads. |
 
 Hidden maintenance agents: `compaction`, `title`, `summary`. They cannot be
 selected directly. **V2 has no built-in `scout` agent** (V1 had one).

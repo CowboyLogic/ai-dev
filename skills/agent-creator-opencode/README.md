@@ -6,15 +6,17 @@ on V1 or their existing files are V1-shaped.
 
 > [!NOTE]
 > **OpenCode version:** verified against OpenCode V2
-> [2.0.29](https://github.com/anomalyco/opencode/tree/v2.0.29) (tagged 2026-10-14) and V1
-> [1.19.0](https://github.com/anomalyco/opencode/releases/tag/v1.19.0) (released 2026-10-11),
-> checked 2026-10-14. Against the previous baseline (V2 2.0.27) the V2 agents and migration docs are
-> unchanged; the permissions page moved policies from `experimental.policies` to top-level `policies`,
-> noted in `references/v2/permissions.md`. No V1 release has shipped since 1.19.0. The Copilot model
-> table in `references/models.md` was re-checked against GitHub's model data and the models.dev catalog
-> on the same date and gained Gemini 4 Argon. The 2.0.29 binary was not run for this check, so V2
-> notes that were verified on the 2.0.27 binary keep that basis. Re-verify when either line ships a
-> new release.
+> [2.1.4](https://github.com/anomalyco/opencode/tree/v2.1.4) (tagged 2026-10-23) and V1
+> [1.19.4](https://github.com/anomalyco/opencode/releases/tag/v1.19.4) (released 2026-10-22),
+> checked 2026-10-25, with the 2.1.4 binary run for `{file:...}` substitution in agent `system`.
+> Against the previous baseline (V2 2.0.29): agent files that use V2-only fields are now read as V2
+> agents; `request.body` is still not sent to the model; the permissions reference gained the MCP
+> resource actions and corrects the `external_directory` default (allowed, not `ask`; the source did
+> not change, the docs did). V1 1.19.1 discontinued session sharing; no other V1 agent docs changed.
+> The Copilot model table in `references/models.md` was re-checked against GitHub's supported-models
+> and retirement pages and the models.dev catalog on the same date: GPT-5 mini, GPT-5.4, GPT-5.4 mini,
+> GPT-5.5, and Gemini 3.7 Flash were retired on 2026-10-19 and moved to the retired list. Re-verify
+> when either line ships a new release.
 
 ## When to Load This Skill
 

@@ -31,7 +31,10 @@ Detect the shape from what is already there:
 > by side at the top level of a config file, but it does not infer formats inside
 > an individual agent. Never mix `permission` with `permissions`, or `prompt` with
 > `system`, in one agent. V1 cannot read native V2 files, so do not convert files
-> a V1 install still uses.
+> a V1 install still uses. `.md` agent files are read as a whole too: a file that uses any of `permissions`,
+> `request`, `system`, or `disabled` is read as V2, and its V1 fields (`name`, `tools`,
+> `permission`, `temperature`) are ignored with a warning (2.1.4 release notes);
+> other files with V1 fields are read as V1.
 
 If the user asks to convert V1 agents, load `references/v2/migration.md`.
 
@@ -117,8 +120,11 @@ V2 essentials (details in `references/v2/`):
   Actions include `read`, `edit` (covers write and patch), `glob`, `grep`,
   `shell`, `subagent`, `skill`, `question`, `webfetch`, `websearch`,
   `external_directory`, and `<server>_<tool>` for MCP tools.
-- Per-agent `temperature` / `top_p` / provider options go in `request.body`, but
-  V2 **does not send `request` yet**. Use a model variant instead.
+- Per-agent `temperature` / `top_p` / provider options would go in `request.body`,
+  but V2 **still does not send `request`** (2.1.4 docs). Put them on a model
+  variant (`providers.<id>.models.<model>.variants[]`) and select it with `#variant`.
+- Access outside the project (`external_directory`) is **allowed** by default in
+  V2; V1 asked. Add an `ask` rule first if the agent should be prompted.
 - `hidden: true` also removes the agent from the subagent catalog. Do not hide a
   subagent an orchestrator must discover.
 - Built-ins: `build`, `plan` (primary); `general`, `explore` (subagent). No

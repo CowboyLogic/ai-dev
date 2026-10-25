@@ -3,7 +3,7 @@
 Model ID format, variants, and common provider values for OpenCode agents. Applies
 to both V1 and V2; syntax differences are called out.
 
-**Sources (checked 2026-10-14):**
+**Sources (checked 2026-10-25):**
 
 - <https://docs.github.com/en/copilot/reference/ai-models/supported-models>
 - <https://docs.github.com/en/copilot/reference/ai-models/model-comparison>
@@ -63,7 +63,7 @@ Variants are named per-model option sets, often reasoning effort.
 
 > [!NOTE]
 > In V2, per-agent `request.body` (where `temperature` now lives) is preserved but
-> not yet sent. A variant is the documented way to change request settings per
+> not sent (still true in the 2.1.4 docs). A variant is the documented way to change request settings per
 > agent today. Whether a given option such as `temperature` belongs in a variant's
 > `settings` or `body` depends on the provider package; the V2 docs do not give a
 > temperature example.
@@ -77,18 +77,14 @@ OpenCode IDs use the `github-copilot/` provider prefix.
 
 > [!NOTE]
 > The table lists models on GitHub's supported-models page whose IDs also appear
-> under `github-copilot` in the models.dev catalog (2026-10-14). Model
+> under `github-copilot` in the models.dev catalog (2026-10-25). Model
 > availability changes often. Re-check with `/models` or `opencode models`
 > before hard-coding a model on an agent.
 
 | Model ID | Display name | Best for (GitHub model comparison) |
 |---|---|---|
-| `github-copilot/gpt-5-mini` | GPT-5 mini | Fast, cheap subagents; completions and explanations |
 | `github-copilot/gpt-5.3-codex` | GPT-5.3-Codex | Agentic software development; GitHub's LTS fallback model |
-| `github-copilot/gpt-5.4` | GPT-5.4 | Deep reasoning, debugging, architecture-level analysis |
-| `github-copilot/gpt-5.4-mini` | GPT-5.4 mini | Codebase exploration with grep-style tools |
 | `github-copilot/gpt-5.4-nano` | GPT-5.4 nano | GitHub lists it for the Codex VS Code extension only (Pro+); may not appear |
-| `github-copilot/gpt-5.5` | GPT-5.5 | Deep reasoning and multi-step problem solving |
 | `github-copilot/gpt-5.6-luna` | GPT-5.6 Luna | Quick, cost-efficient simple or repetitive tasks |
 | `github-copilot/gpt-5.6-sol` | GPT-5.6 Sol | Complex reasoning over large codebases; long agentic work |
 | `github-copilot/gpt-5.6-terra` | GPT-5.6 Terra | Balanced everyday interactive and agentic coding |
@@ -102,7 +98,6 @@ OpenCode IDs use the `github-copilot/` provider prefix.
 | `github-copilot/claude-opus-5.5` | Claude Opus 5.5 | Long-running agentic coding and knowledge work |
 | `github-copilot/claude-sonnet-5` | Claude Sonnet 5 | Orchestrators, general coding and agent tasks |
 | `github-copilot/claude-sonnet-5.5` | Claude Sonnet 5.5 | General-purpose coding and agent tasks; completes tasks with fewer steps, tokens, and tool calls |
-| `github-copilot/gemini-3.7-flash` | Gemini 3.7 Flash | Fast, cheap analysis subagents |
 | `github-copilot/gemini-3.8-flash` | Gemini 3.8 Flash | Fast, cheap analysis subagents |
 | `github-copilot/gemini-4-argon` | Gemini 4 Argon | Complex coding, agentic, and reasoning tasks; thorough work that tests edge cases before finishing |
 | `github-copilot/mai-code-1.1-flash` | MAI-Code-1.1-Flash | Fast code completions, explanations, tool use |
@@ -113,8 +108,11 @@ OpenCode IDs use the `github-copilot/` provider prefix.
 
 ### Retired — avoid for new agents
 
-| Model ID | Status on GitHub (2026-10-14) | Suggested replacement |
+| Model ID | Status on GitHub (2026-10-25) | Suggested replacement |
 |---|---|---|
+| `github-copilot/gpt-5-mini`, `github-copilot/gpt-5.4-mini` | Retired 2026-10-19 | `gpt-6-luna` (GitHub: "latest GPT Luna model") |
+| `github-copilot/gpt-5.4`, `github-copilot/gpt-5.5` | Retired 2026-10-19 | `gpt-6.1-sol` (GitHub: "latest GPT Sol model") |
+| `github-copilot/gemini-3.7-flash` | Retired 2026-10-19 | `gemini-3.8-flash` |
 | `github-copilot/claude-opus-4.7` | Retired 2026-10-02 | `claude-opus-5.5` |
 | `github-copilot/gemini-3.5-flash` | Retired 2026-10-02 | `gemini-3.8-flash` |
 | `github-copilot/gemini-3.6-flash` | Retired 2026-10-02 | `gemini-3.8-flash` |
@@ -124,9 +122,9 @@ OpenCode IDs use the `github-copilot/` provider prefix.
 | `claude-opus-4.5`, `claude-opus-4.6`, `claude-sonnet-4.5`, `gemini-3.1-pro-preview` | Retired 2026-09-01 | `claude-opus-5.5`, `claude-sonnet-5.5`, `gemini-3.8-flash` |
 | `gpt-4.1`, `gpt-5.2`, `gpt-5.2-codex`, `claude-sonnet-4`, `gemini-2.5-pro`, Raptor mini | Retired | See GitHub's retirement table |
 
-The models.dev catalog can lag GitHub: on 2026-10-14 it still listed `claude-opus-4.7`, `gemini-3.5-flash`,
-`gemini-3.6-flash`, `kimi-k2.7-code`, and `mai-code-1-flash-picker` under `github-copilot` after GitHub retired
-them. Check GitHub's retirement table, not the catalog, before choosing a model that looks old.
+The models.dev catalog can lag GitHub: on 2026-10-25 it still listed `claude-opus-4.7`, `gemini-3.5-flash`,
+`gemini-3.6-flash`, `kimi-k2.7-code`, `gemini-3.7-flash`, `gpt-5-mini`, `gpt-5.4`, `gpt-5.4-mini`, and `gpt-5.5` under
+`github-copilot` after GitHub retired them. Check GitHub's retirement table, not the catalog, before choosing a model that looks old.
 
 ### Extreme-cost models — do not auto-select
 
@@ -170,13 +168,13 @@ them. Check GitHub's retirement table, not the catalog, before choosing a model 
 | Complex reasoning / architecture | `claude-opus-5`, `claude-opus-5.5`, `gpt-5.6-sol` |
 | Code generation / agentic coding | `gpt-5.3-codex`, `claude-sonnet-5.5`, `gpt-6.1-sol` |
 | Fast / cheap subagent | `claude-haiku-5.5`, `gpt-5.6-luna`, `gemini-3.8-flash` |
-| Read-only review / analysis | `gpt-5.6-terra`, `claude-sonnet-5.5`, `gpt-5.4-mini` |
+| Read-only review / analysis | `gpt-5.6-terra`, `claude-sonnet-5.5`, `gpt-6-luna` |
 
 ---
 
 ## Other common providers
 
-IDs below appear in the models.dev catalog on 2026-10-14.
+IDs below appear in the models.dev catalog on 2026-10-25.
 
 | Provider | Example model IDs |
 |---|---|
