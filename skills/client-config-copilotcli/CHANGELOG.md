@@ -2,6 +2,50 @@
 
 Changes to the `client-config-copilotcli` skill, newest first.
 
+## 2026-10-25 — v2.6 (refresh to Copilot CLI v1.0.103)
+
+Basis: GitHub Copilot CLI **v1.0.103** (released 2026-10-22), the latest stable release on
+2026-10-25: the GitHub releases "latest" and the npm `latest` dist-tag both point to it.
+v1.0.104-0 through v1.0.104-3 are prereleases and are not covered. There is no stable v1.0.99
+release; its notes come from the v1.0.99-0 to v1.0.99-2 prereleases and are repeated in the
+v1.0.100 notes. Claims were checked against the published docs.github.com pages (fetched through
+the article API on 2026-10-25) and the v1.0.99 to v1.0.103 release notes. Items found only in
+release notes are labeled as such in the references.
+
+- `references/cli-commands.md`: `--sync-session[=on|off]`; `--disable-client-telemetry`; the
+  `--remote`, `--no-remote`, `--remote-export`, and `--no-remote-export` startup options are removed
+  or renamed (use `/remote on`, or `--sync-session`); `/share` with no subcommand opens a menu
+  and `link` does the sharing; `/session cleanup`; `/extensions mode`; team-assigned plugin
+  defaults under `/plugin list`; `/agent` creates an agent with `N`; ACP sessions honor
+  saved sandbox settings and `--sandbox`/`--no-sandbox`.
+- `references/config-schema.md`: `remoteSessions` replaces the old `remote` key in the settings
+  reference, and `remoteExport` semantics changed; `showReasoning`; managed
+  `requireBase64ImageAttachments`; `telemetry.headersProvider` (user and managed) with a new
+  "Dynamic authentication headers" section; `assistedApprovalInstructions` (release notes only,
+  type unverified).
+- `references/permissions.md`: the sandbox's upstream-proxy selection (`HTTPS_PROXY`,
+  `HTTP_PROXY`, `ALL_PROXY`) and `NO_PROXY` behavior. Records an unresolved conflict: the v1.0.99
+  release notes say local network access is allowed by default, but the settings reference still
+  lists `allowLocalNetwork` as `false`.
+- `references/mcp.md`: LSP `bash`, `powershell`, and `cwd` launch fields, `command` is no longer
+  required, plus the `initializationTimeoutMs`, `spawnTimeoutMs`, and `warmupTimeoutMs` fields;
+  managed `serverName` allowlist character set.
+- `references/agents-plugins.md`: creating an agent with `N`; release-notes-only items for
+  the `search`/`web`/`todo` tool aliases, `ghapp://` plugin install links, and `git-subdir`
+  marketplace sources.
+- `references/skills.md`: release-notes-only `allowed-tools` comma handling.
+- `SKILL.md`: quick operations for `--sync-session` and `--disable-client-telemetry`.
+- `sources.json`: added the v1.0.99-0 to v1.0.103 release pages and the ACP, session, and remote
+  control pages; updated `covers`.
+- `README.md`: Copilot CLI v1.0.103 basis and 2026-10-25 refresh date.
+- Reviewed and not carried into the references: docs commits that only moved or reworded pages
+  (the Copilot IA "customizations" concepts reorganization moved the concept pages for custom
+  agents, skills, hooks, MCP, plugins, and LSP servers to `concepts/customizations/`; the local
+  sandbox concept page moved to `security-governance-and-network-settings`), and release-note
+  fixes that change no configuration surface (Gemini and Windows fixes, MCP loading, and similar).
+- Not done: the benchmark in `README.md` was not re-run, and the CLI itself was not run, because the
+  npm release-age guard blocks installing a version this new.
+
 ## 2026-10-18 — v2.5 (documentation refresh, Copilot CLI v1.0.98 still the basis)
 
 Basis: GitHub Copilot CLI **v1.0.98** (released 2026-10-14). It is still the latest stable
