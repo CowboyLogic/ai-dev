@@ -3,15 +3,18 @@
 Reference for the YAML frontmatter fields of Claude Code agent files. Load this file when
 writing, reviewing, or debugging agent frontmatter.
 
-**Source (last verified 2026-10-18 against Claude Code 2.1.302; the docs page references
-versions up to v2.1.296):**
+**Source (last verified 2026-10-25 against Claude Code 2.1.310; the docs page references
+versions up to v2.1.304):**
 <https://code.claude.com/docs/en/sub-agents#supported-frontmatter-fields>
 
 Every field in this file is in the docs table. Where a note below is labeled "changelog only",
 the Claude Code changelog is its only source.
 
 Field names are camelCase and case-sensitive. **Unrecognized fields are ignored without an
-error**, so a misspelling looks exactly like a working file.
+error**, so a misspelling looks exactly like a working file. To find one in a file that
+loaded, run `claude --debug` and search `~/.claude/debug/<session-id>.txt` for
+`does not recognize or apply`: it names up to five top-level fields Claude Code did not
+recognize, with the likely intended name when a supported field is close (v2.1.296+).
 
 ---
 
@@ -87,8 +90,9 @@ delegation. Combined `name` + `description` text across all non-built-in agents 
 | MCP server | `tools: mcp__github__*` |
 
 - If entries are given but **none** resolve, launch is refused ("zero tools" error).
-- A server whose normalized name contains `__` is listed as `mcp__<whole name>__*` (v2.1.299,
-  changelog only).
+- A server whose normalized name contains `__` (such as `reports__v2`) is listed as
+  `mcp__<whole name>__*`, here `mcp__reports__v2__*`; without the trailing `__*`,
+  `mcp__reports__v2` matches none of that server's tools (v2.1.299).
 - Do not list `Skill` to preload skills; use the `skills` field.
 - Legacy `Task(...)` still works as an alias for `Agent(...)` (renamed in v2.1.63).
 
@@ -110,7 +114,8 @@ both is removed. A specifier entry such as `Bash(git push *)` removes the **whol
 | Omitted | Falls through the resolution order |
 
 Resolution order: (1) per-invocation `model` parameter, (2) frontmatter `model`,
-(3) `CLAUDE_CODE_SUBAGENT_MODEL`, (4) main conversation's model. With
+(3) `CLAUDE_CODE_SUBAGENT_MODEL`, (4) main conversation's model. A mod's `agent.spawn`
+hook that sets a model replaces the per-invocation parameter. With
 `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` (v2.1.257+) frontmatter and per-invocation values are
 ignored for every subagent, including built-in Explore and Plan.
 
@@ -138,9 +143,13 @@ per-agent thinking field.
 | `plan` | Read-only exploration; keeps `ExitPlanMode` |
 
 **The parent wins in some cases.** If the parent is in `bypassPermissions`, `acceptEdits`, or
-`auto`, the agent runs in the parent's mode and this field is ignored. If the parent is in
-`default`, `dontAsk`, or `plan`, the field applies (except `bypassPermissions`, which falls
-back to the parent's mode). Ignored for plugin agents. Unset = inherit the parent's mode.
+`auto`, the agent runs in the parent's mode and this field is ignored; under `auto` the
+classifier also reviews the subagent's work and final report. If the parent is in `plan`, the
+agent stays in plan mode whatever the field says (an agent-team teammate is the exception),
+and `dontAsk` there denies what plan mode would ask about. If the parent is in `default` or
+`dontAsk`, the field applies, except that the agent keeps the parent's mode when you set
+`bypassPermissions`, or `auto` where auto mode is unavailable to it (`disableAutoMode`, or a
+model without auto mode support). Ignored for plugin agents. Unset = inherit the parent's mode.
 
 ### `maxTurns`
 
@@ -202,25 +211,26 @@ prompt to consult and update memory.
 `true` keeps the agent in the background even if Claude asks for the foreground. Background
 agents get a reduced built-in tool set and route permission prompts to the main session.
 
-Which mode a given run gets is the first of these that applies (sub-agents docs, "Run
-subagents in foreground or background"):
+Which mode a given run gets (sub-agents docs, "Run subagents in foreground or background"):
 
-1. Spawned by an in-process agent-team teammate: foreground. A teammate spawning an agent
-   whose definition sets `background: true` is refused with an error.
-2. `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`: foreground, in every kind of session.
-3. Fork mode on (the default in an interactive session): background, and Claude cannot ask
-   for the foreground.
-4. Fork mode off (`-p`, the Agent SDK unless turned on): background by default, foreground
-   when Claude needs the result before continuing. `background: true` keeps the agent in the
-   background even then.
+- Spawned by an in-process agent-team teammate: foreground. A teammate spawning an agent
+  whose definition sets `background: true` is refused with an error.
+- `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`: Claude waits for every subagent, in every kind of
+  session. Background commands are off too.
+- Otherwise a subagent Claude spawns from the main conversation starts in the background, and
+  `background: true` keeps it there even when Claude asks to wait. Whether Claude can ask to
+  wait depends on the session: in an interactive terminal, VS Code, or desktop session on your
+  machine it cannot while fork mode is on, and fork mode is on by default (v2.1.232 in an
+  interactive terminal, v2.1.302 elsewhere), so set `CLAUDE_CODE_FORK_SUBAGENT=0` to let it wait. In
+  `claude -p` and the Agent SDK, Claude can wait on its own judgment or when you ask.
 
-Changelog only (v2.1.302): fork mode is now also on by default in `claude -p`, the Agent SDK,
-the desktop app and VS Code, so case 3 applies there; `CLAUDE_CODE_FORK_SUBAGENT=0` turns it
-off, and `claude mcp serve` never offers forks. The desktop app and VS Code always run the
-main conversation's subagents in the background, as the terminal does. The exception to
-case 3 is a subagent's own Agent calls in `-p`, the Agent SDK, the desktop app and VS Code,
-which run in the foreground by default. The sub-agents docs page still says fork mode is off for `-p` and the SDK (checked
-2026-10-18), so case 4 as written above is the pre-2.1.302 behavior there.
+Nested subagents: in an interactive terminal session a subagent that launches background
+subagents waits for their results before it finishes. In `claude -p` and the Agent SDK the
+spawning subagent waits while fork mode is on; with fork mode off, nested subagents start in
+the background and the spawner does not wait.
+
+Changelog only (v2.1.302): `claude mcp serve` never offers forks, and the desktop app and VS
+Code always run the main conversation's subagents in the background, as the terminal does.
 
 A skill with `context: fork` follows the skills docs instead. Background agents get a smaller
 built-in tool set than foreground ones, except forks and resumed foreground agents.
@@ -327,4 +337,11 @@ claude --agent code-reviewer
 
 or `{"agent": "code-reviewer"}` in `settings.json`. The session then uses the agent's system
 prompt, tool restrictions, and model. `initialPrompt` fires, `Agent(type)` spawn allowlists
-apply, and `omitClaudeMd` is ignored.
+apply, and `omitClaudeMd` is ignored (CLAUDE.md still loads). An agent with a non-empty prompt
+replaces the default Claude Code system prompt, as `--system-prompt` does; with `-p` it also
+starts without the git status snapshot. The choice persists on resume; if the agent no longer
+exists the session continues with default tools and a warning.
+
+In non-interactive mode, `--append-subagent-system-prompt <text>` (v2.1.205+) appends text to
+every subagent's system prompt, nested subagents included but not forks, and
+`--append-subagent-system-prompt-file <path>` (v2.1.261+) reads it from a file.

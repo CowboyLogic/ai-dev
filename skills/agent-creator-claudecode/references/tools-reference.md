@@ -25,7 +25,7 @@ Names are case-sensitive (`Grep`, not `grep`). Common ones for agent files:
 | `SendMessage` | Message or resume another agent |
 | `Skill` | Invoke skills (do not list it to preload; use `skills`) |
 | `TodoWrite`, `TaskCreate`/`TaskGet`/`TaskList`/`TaskUpdate` | Task tracking |
-| `Monitor`, `TaskStop` | Background command monitoring and stopping |
+| `Monitor`, `TaskStop` | Background command monitoring and stopping. `Monitor` follows the Bash permission rules; on Bedrock, Claude Platform on AWS, Google Cloud's Agent Platform, Microsoft Foundry, or with `DISABLE_TELEMETRY` / `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` set, it needs v2.1.310+ when feature-flag fetching is off; on Windows it needs Git Bash |
 | `EnterWorktree`, `ExitWorktree` | Worktree switching |
 | `Artifact`, `ToolSearch` | Artifacts; deferred-tool loading |
 
@@ -48,7 +48,7 @@ These are removed even if listed in `tools`:
 
 ## Removed From Background Subagents
 
-Background is the default in interactive sessions. A background subagent keeps every MCP
+Background is the default for subagents Claude spawns from the main conversation. A background subagent keeps every MCP
 tool but only these built-ins (plus `SubagentHandback` where used): `Read`, `Grep`, `Glob`,
 `LSP`, `Bash`, `PowerShell`, `Edit`, `Write`, `NotebookEdit`, `WebFetch`, `WebSearch`,
 `TodoWrite`, `Skill`, `ToolSearch`, `EnterWorktree`, `ExitWorktree`, `Monitor`, `TaskStop`,
@@ -74,16 +74,18 @@ same context.
 | Need | How |
 |---|---|
 | Start one yourself | `/subtask <task>` (v2.1.212+; `/fork` on v2.1.161 through v2.1.211, and `/fork` also starts one when agent view is turned off) |
-| Fork mode default | On in interactive sessions (v2.1.232+); off with `-p` and in the Agent SDK per the docs page. Changelog only (v2.1.302): also on by default in `-p`, the Agent SDK, the desktop app and VS Code, and `claude mcp serve` never offers forks |
-| Force fork mode | `CLAUDE_CODE_FORK_SUBAGENT=1` on, `0` off, in every kind of session except `claude mcp serve`, which never offers forks (changelog only, v2.1.302) |
+| Fork mode default | On in an interactive terminal session since v2.1.232 and in every kind of session (including `-p`, the Agent SDK, VS Code, and the desktop app) since v2.1.302. Changelog only (v2.1.302): `claude mcp serve` never offers forks |
+| Turn fork mode off | `CLAUDE_CODE_FORK_SUBAGENT=0` (for example in the `env` block of `settings.json`). Changelog only: `=1` turns it on where it is off, and from v2.1.307 forks launched together are each told which launch is their own |
 | Keep fork mode but stop Claude spawning forks | Deny the `fork` type: `Agent(fork)` in `permissions.deny` |
 | Isolate a fork's edits | Claude passes `isolation: "worktree"` on the Agent call |
 
-With fork mode on, Claude Code runs every subagent Claude spawns in the background, forks
-and non-fork alike, and removes the Agent tool's `run_in_background` parameter (apart from the
-cases that stay in the foreground; changelog only, v2.1.302: a subagent's own Agent calls in
-`-p`, the Agent SDK, the desktop app and VS Code run in the foreground by default). A fork cannot
-spawn further forks. Source: <https://code.claude.com/docs/en/sub-agents#fork-the-current-conversation>.
+With fork mode on, Claude can't wait for a subagent in an interactive terminal, VS Code, or
+desktop session on your machine, so subagents Claude spawns there run in the background. In
+`claude -p` and the Agent SDK Claude can still wait. A fork cannot spawn further forks, and at
+the nesting depth limit it keeps `Agent` listed but the call errors. Changelog only (v2.1.302):
+a subagent's own Agent calls in `-p`, the Agent SDK, the desktop app and VS Code run in the
+foreground by default. Sources: <https://code.claude.com/docs/en/sub-agents#fork-the-current-conversation>,
+<https://code.claude.com/docs/en/sub-agents#turn-fork-mode-on-or-off>.
 
 ---
 
@@ -112,9 +114,12 @@ want "everything except writes" and expect MCP tools to come along.
 An allowlist that names an MCP server with no connected server resolves to nothing for that
 entry, which can trigger the zero-tools refusal if nothing else in the list resolves.
 
-Changelog only (v2.1.299): a `tools` entry now takes only the named MCP server's tools. For a
-server whose normalized name contains `__`, list it as `mcp__<whole name>__*`; the shorter
-`mcp__a` form no longer reaches a server named `a__b`.
+A `tools` entry reaches only the named MCP server's tools (v2.1.299). For a server whose
+name contains `__`, such as `reports__v2`, write `mcp__reports__v2__*`; without the trailing
+`__*`, `mcp__reports__v2` matches none of that server's tools. In `disallowedTools`,
+`mcp__reports` and `mcp__reports__*` withhold the `reports` server and, because the tool names
+share the prefix, every `reports__v2` tool too; list `mcp__reports__run_query`-style names to
+withhold only `reports`.
 
 ## Specifiers Remove the Whole Tool
 
@@ -161,8 +166,8 @@ least one other tool. To keep a reviewer read-only and non-spawning, omit `Agent
 Tools listed in `tools` still go through permission checks. `permissionMode` decides whether
 the agent is prompted, and the parent's mode can override it: a parent in `bypassPermissions`,
 `acceptEdits`, or `auto` forces its own mode on the subagent. Background agents route prompts
-to the main session. `dontAsk` denies anything not explicitly allowed. See
-`frontmatter-reference.md` for the full table.
+to the main session. `dontAsk` denies anything not explicitly allowed. A parent in `plan` keeps the subagent in
+plan mode. See `frontmatter-reference.md` for the full table.
 
 Permission rules in `settings.json` (`permissions.allow` / `deny`) apply to subagents too.
 For a plugin agent that needs a rule its frontmatter cannot carry, either copy the file to

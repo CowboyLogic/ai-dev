@@ -8,7 +8,7 @@ Reports the conditions under which Claude Code silently skips an agent file, plu
 unknown or mis-cased fields, bad enum values, and fields ignored in a given scope.
 Requires PyYAML. Exit status is 1 when any error is found (or any warning with --strict).
 
-Field list last verified 2026-10-18 against Claude Code 2.1.302:
+Field list last verified 2026-10-25 against Claude Code 2.1.310:
 https://code.claude.com/docs/en/sub-agents#supported-frontmatter-fields
 """
 
@@ -300,7 +300,8 @@ def validate(path: Path, plugin: bool) -> Report:
                      "session is already in that mode; avoid it in shared agent files")
         if isinstance(pm, str) and pm in PERMISSION_MODES and pm != "bypassPermissions":
             rep.warn("permissionMode is overridden when the parent session is in auto, "
-                     "acceptEdits, or bypassPermissions (the agent uses the parent's mode)")
+                     "acceptEdits, or bypassPermissions (the agent uses the parent's mode), "
+                     "and a parent in plan mode keeps the agent in plan mode")
 
     mt = data.get("maxTurns")
     if mt is not None and (isinstance(mt, bool) or not isinstance(mt, int) or mt < 1):

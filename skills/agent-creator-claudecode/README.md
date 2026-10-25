@@ -3,13 +3,14 @@
 A skill for creating and troubleshooting custom subagents for Claude Code.
 
 > [!NOTE]
-> **Claude Code version:** verified against [Claude Code 2.1.302](https://github.com/anthropics/claude-code/releases/tag/v2.1.302)
-> (released 2026-10-16; the npm `latest` and `next` tags on 2026-10-18, with `stable` at 2.1.292).
+> **Claude Code version:** verified against [Claude Code 2.1.310](https://github.com/anthropics/claude-code/releases/tag/v2.1.310)
+> (released 2026-10-23; the npm `latest` and `next` tags on 2026-10-25, with `stable` at 2.1.308).
 > Field behavior comes from <https://code.claude.com/docs/en/sub-agents>, with failure
 > behavior from <https://code.claude.com/docs/en/errors>, checked against the changelog
-> through 2.1.302. Where only the changelog supports a claim (`CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL`,
-> MCP server names containing `__` in `tools`, fork mode defaulting on in `-p`, the Agent SDK,
-> the desktop app and VS Code), the reference says so. Last re-verified 2026-10-18.
+> through 2.1.310. Where only the changelog supports a claim (`CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL`,
+> `claude mcp serve` never offering forks, the desktop app and VS Code always backgrounding
+> the main conversation's subagents, a subagent's own Agent calls running in the foreground in
+> `-p`, the SDK, the desktop app and VS Code), the reference says so. Last re-verified 2026-10-25.
 > Re-verify when Claude Code ships a new release.
 
 ## Overview
@@ -35,8 +36,8 @@ This skill covers:
 
 ## Quick Start
 
-1. Run `/agents` in Claude Code and choose **Create new agent**, or create
-   `.claude/agents/<name>.md` by hand.
+1. Ask Claude to write the agent, or create `.claude/agents/<name>.md` by hand (from v2.1.198
+   `/agents` only prints a reminder to do one of those).
 2. Set `name` and `description`, add `tools`, and write the prompt body.
 3. Validate: `python scripts/validate-agent.py .claude/agents/`
 4. Test with an @-mention (`@agent-<name>`), and run `claude --debug` if it does not appear.

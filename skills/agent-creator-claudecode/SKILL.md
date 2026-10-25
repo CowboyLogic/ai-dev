@@ -114,8 +114,8 @@ disallowedTools: Write, Edit       # denylist, applied first
   commands, add a `permissions.deny` rule in settings.
 - A `tools` list that resolves to nothing (typo, unavailable tool) makes Claude Code refuse
   to launch the agent with "would be spawned with zero tools".
-- Background subagents (the default in interactive sessions) get a reduced built-in tool
-  set, so the same file can behave differently in the foreground.
+- Background subagents (the default for subagents Claude spawns from the main conversation)
+  get a reduced built-in tool set, so the same file can behave differently in the foreground.
 - `Agent(worker, reviewer)` restricts spawnable types **only** when the file runs as the
   main session via `--agent`. Inside a subagent the parenthesized list is ignored.
 
@@ -206,8 +206,9 @@ return. For principles and anti-patterns, load `references/prompt-writing-guide.
 
 ### Step 2: Create the File
 
-- Interactively: run `/agents` in Claude Code and choose **Create new agent**, or ask
-  Claude to write one.
+- Ask Claude to write one, naming the scope and what you want. (`/agents` only prints a
+  reminder to do that or edit the directories directly from v2.1.198; the **Create new
+  agent** wizard exists on v2.1.197 and earlier.)
 - Manually: create `.claude/agents/<name>.md` (project) or `~/.claude/agents/<name>.md`
   (user). Prefer lowercase-with-hyphens filenames; the filename does not have to match
   `name`.
