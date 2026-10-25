@@ -44,6 +44,8 @@ hooks:
 
 A `UserPromptSubmit` hook in a skill's own frontmatter first runs on the prompt *after* the one that invokes the skill (changelog only, v2.1.299).
 
+**Skill hook limits (v2.1.304+, hooks docs):** each source of skills (the project, your personal skills folder, and each plugin) may register at most 1,024 hooks and 16,384 characters of matchers per session; a matcher with several hooks under it counts once per hook. A skill that goes past the limit registers none of its hooks, and the debug log (`claude --debug`) says `registers none of its hooks` with the skill's name. Under the managed `strictPluginOnlyCustomization` hooks lock, a skill keeps its frontmatter hooks only if it is a plugin skill, a bundled skill, or in the managed settings directory. If `/hooks` lists none of a skill's hooks, check those two causes.
+
 ---
 
 ## Hook events (lifecycle order)
@@ -212,7 +214,9 @@ Optional `model` (defaults to the model Claude Code uses for background function
 
 Same response schema as `prompt`. Agent can use Read, Grep, Glob to inspect the codebase.
 
-Changelog only: from v2.1.300 an agent hook honors its `model` (an alias such as `haiku` resolves, a subagent's own model no longer overrides it, and an unavailable model falls back to the caller's model instead of allowing the action). From v2.1.302 at most 12 `prompt` or `agent` hooks of one event run at a time; the rest wait their turn.
+Changelog only: from v2.1.300 an agent hook honors its `model` (an alias such as `haiku` resolves, a subagent's own model no longer overrides it, and an unavailable model falls back to the caller's model instead of allowing the action).
+
+When an event fires its matching hooks run in parallel, but at most 12 `prompt` or `agent` hooks of one event run at once (v2.1.302+); the rest start as running ones finish, and each waiting hook's `timeout` starts when that hook starts (hooks docs).
 
 ---
 
@@ -270,7 +274,7 @@ A failure is: the hook can't start; exit code other than 0 or 2 (even if it prin
 
 **Changelog only (v2.1.299), three fail-closed changes:**
 
-- On Windows, a `PreToolUse` or `PermissionRequest` hook that sets no `shell` used to fail open when Git for Windows isn't installed; a guard that fails now blocks the call.
+- On Windows, a `PreToolUse` or `PermissionRequest` hook that sets no `shell` used to fail open when Git for Windows isn't installed; a guard that fails now blocks the call. Changelog only (v2.1.309): the same fix for hooks with `"shell": "powershell"`, and PowerShell hooks now block when the program exits with code 2. Changelog only (v2.1.310): the same fail-open fix for a hook whose command is only quoted strings.
 - Plan mode no longer runs a write (an MCP tool's, a file's, a shell command's) that a `PreToolUse` hook allowed.
 - `UserPromptSubmit` hooks now run before a skill or custom slash command expands, so a hook that blocks the prompt also stops the command's embedded shell commands.
 
@@ -360,7 +364,7 @@ An **async** hook's JSON response must be alone on stdout or on one line of its 
 echo "$HOME/.claude/worktrees/$NAME"
 ```
 
-Changelog only (v2.1.300): plugin `WorktreeCreate` and `WorktreeRemove` hooks now also run when Claude Code starts with `--worktree` (not yet with `--tmux`).
+A plugin's `WorktreeCreate` hook runs with `--worktree` (v2.1.300+) but not with `--worktree --tmux`, because Claude Code creates the worktree before it loads plugins; define the hook in a settings file to have it run with both flags. A `WorktreeCreate` hook doesn't run for a worktree Claude adds with `git worktree add` through Bash; use a `PreToolUse` hook with the `Bash` matcher for that. (Hooks docs. That `WorktreeRemove` plugin hooks follow the same rule is changelog only, v2.1.300.)
 
 ---
 

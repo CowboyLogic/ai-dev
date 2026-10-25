@@ -2,6 +2,45 @@
 
 Changes to the `client-config-claudecode` skill, newest first.
 
+## 2026-10-25 — v2.5 (verified against Claude Code 2.1.310)
+
+Basis: Claude Code 2.1.310 (released 2026-10-23; npm `latest` and `next`, `stable` is
+2.1.308), the 2.1.303–2.1.310 changelog, and the `code.claude.com/docs` pages fetched
+2026-10-25. Claims only the changelog supports are labeled "changelog only" in the references.
+
+- `scripts/validate-settings.py`: `axScreenReader` moves from any-file to user-or-managed (the
+  settings reference now says project and local settings ignore it); adds `sshHostCommands`
+  (user or managed; required `id`, `name`, `command` checked); warns on a `true`
+  `sandbox.allowNestedUserNamespaces` in project or local settings (a `false` counts from any
+  file); the `env` ignore lists add the `CLAUDE_AX_` prefix for project and local settings and
+  `CLAUDE_CODE_DISABLE_MOUNTED_DRIVE_RM_PROMPT`, `CLAUDE_CODE_WARN_DISK_FREE_GIB`, and
+  `CLAUDE_CODE_WARN_MEMORY_FREE_GIB` for every file.
+- `references/settings-schema.md`: `axScreenReader` scope and precedence (`--ax-screen-reader`
+  over `CLAUDE_AX_SCREEN_READER` over the key); new `sshHostCommands` and
+  `sandbox.allowNestedUserNamespaces` rows; the `env` ignore lists above. The undocumented
+  `CLAUDE_CODE_DISABLE_ADMIN_ENV_UNION` (present in the 2.1.310 binary, on no docs page) is kept
+  and marked unverified.
+- `references/permissions.md`: the `-p`/Agent SDK start mode (`default`) and
+  `CLAUDE_CODE_AUTO_MODE_MODEL` are now on the permission-modes page, so they lose their
+  "changelog only" labels; adds when `CLAUDE_CODE_AUTO_MODE_MODEL` is ignored; new section on
+  the 2.1.307–2.1.310 permission and sandbox changes (docs-backed: `claude ultrareview` trust and
+  `claude_code.safety_event`; changelog only: `sed -i`, sandbox-excluded commands, bypass-mode `rm`
+  denial, symlink targets in read prompts, sandbox fixes).
+- `references/hooks.md`: the 12-hook concurrency cap and plugin `WorktreeCreate` with
+  `--worktree` (not `--worktree --tmux`) are now on the hooks page; adds the skill-hook limits
+  (1,024 hooks and 16,384 matcher characters per source, v2.1.304+); changelog only: PowerShell
+  hooks block on exit code 2 and fail-closed fixes for `"shell": "powershell"` (v2.1.309) and
+  quoted-string-only commands (v2.1.310).
+- `references/mcp.md`: reserved server names (`workspace`, `claude-in-chrome`, `computer-use`,
+  `Claude Preview`, `Claude Browser`) and the `managed-mcp.json` / `allowedMcpServers` change in
+  v2.1.305 are now docs-backed; the HTTP retry rule for read-only and idempotent tools is
+  documented; changelog only: v2.1.309/v2.1.310 disabled-server, `--mcp-config`, and elicitation
+  timeout fixes.
+- Checked and unchanged: all 247 rows of the settings reference index are in the references and
+  the validator; every hook event in the hooks docs is covered.
+- Evals: new `user-or-managed-keys-in-project-settings` eval; not yet run (the README results
+  predate it).
+
 ## 2026-10-18 — v2.4 (verified against Claude Code 2.1.302)
 
 Basis: Claude Code 2.1.302 (released 2026-10-16; npm `latest` and `next`, `stable` is

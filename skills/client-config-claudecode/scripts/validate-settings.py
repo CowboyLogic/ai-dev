@@ -85,7 +85,7 @@ ANY_FILE_KEYS = {
     "alwaysThinkingEnabled", "apiKeyHelper", "attribution", "autoCompactEnabled",
     "autoCompactWindow", "autoMemoryDirectory", "autoMemoryEnabled", "autoScrollEnabled",
     "autoUpdatesChannel", "availableModels", "awaySummaryEnabled", "awsAuthRefresh",
-    "awsCredentialExport", "axScreenReader", "bashOutputMaxChars", "claudeMdExcludes",
+    "awsCredentialExport", "bashOutputMaxChars", "claudeMdExcludes",
     "cleanupPeriodDays", "companyAnnouncements", "crossSessionInbound", "defaultShell",
     "deniedMcpServers", "disableAgentView", "disableAllHooks", "disableAutoMode",
     "disableBundledSkills", "disableClaudeAiConnectors", "disableDeepLinkRegistration",
@@ -112,10 +112,10 @@ ANY_FILE_KEYS = {
 # Read only from user settings, --settings, and managed settings
 USER_OR_MANAGED_KEYS = {
     "appendPlugins", "askUserQuestionTimeout", "autoContinueAtUsageLimit", "autoMode",
-    "bashEditDiffEnabled", "desktopSessionCleanupPeriodDays", "dialogExpiry", "feedbackDrafts",
-    "footerLinksRegexes", "forceLoginGatewayUrl", "modelPicker", "pluginConfigs",
+    "axScreenReader", "bashEditDiffEnabled", "desktopSessionCleanupPeriodDays", "dialogExpiry",
+    "feedbackDrafts", "footerLinksRegexes", "forceLoginGatewayUrl", "modelPicker", "pluginConfigs",
     "prependPlugins", "processWrapper", "skipAutoPermissionPrompt", "spellcheck", "sshConfigs",
-    "vimInsertModeRemaps",
+    "sshHostCommands", "vimInsertModeRemaps",
 }
 # Read from user, local, managed (and --settings) — not from shared project settings
 USER_LOCAL_OR_MANAGED_KEYS = {
@@ -203,7 +203,8 @@ ENV_IGNORED_EVERYWHERE = {
     "CLAUDE_CODE_MESSAGING_TOKEN", "CLAUDE_CODE_PROJECT_DIR_NAME", "CLAUDE_CODE_RESTRICTED",
     "CLAUDE_CODE_DISABLE_POWERSHELL_CMD_RM_DENY", "CLAUDE_CODE_DISABLE_DANGEROUS_RM_TIMEOUT",
     "CLAUDE_CODE_DISABLE_SUBSTITUTION_RM_PROMPT", "CLAUDE_CODE_DISABLE_INLINE_SHELL_RM_PROMPT",
-    "CLAUDE_CODE_DISABLE_ADMIN_ENV_UNION",
+    "CLAUDE_CODE_DISABLE_ADMIN_ENV_UNION", "CLAUDE_CODE_DISABLE_MOUNTED_DRIVE_RM_PROMPT",
+    "CLAUDE_CODE_WARN_DISK_FREE_GIB", "CLAUDE_CODE_WARN_MEMORY_FREE_GIB",
 }
 ENV_IGNORED_IN_PROJECT_LOCAL = {
     "CLAUDE_CONFIG_DIR", "CLAUDE_CODE_TMPDIR", "HOME", "TMPDIR", "TMP", "TEMP",
@@ -217,7 +218,7 @@ ENV_IGNORED_IN_PROJECT_LOCAL = {
     "CLAUDE_CODE_USER_DIALOG_TIMEOUT_MS", "CLAUDE_AFK_TIMEOUT_MS", "CLAUDE_AFK_COUNTDOWN_MS",
     "CLAUDE_CODE_DISABLE_ATTACHMENTS", "CLAUDE_CODE_DISABLE_FILE_MENTIONS",
 }
-ENV_IGNORED_PREFIXES = ("XDG_",)
+ENV_IGNORED_PREFIXES = ("XDG_", "CLAUDE_AX_")
 # Windows environment names are case-insensitive, so these match upper-cased.
 ENV_IGNORED_WINDOWS_NAMES = {"SYSTEMROOT", "COMSPEC", "PROGRAMDATA", "LOCALAPPDATA", "PATHEXT", "PSMODULEPATH",
                               "PROGRAMW6432"}
@@ -420,6 +421,9 @@ def validate_sandbox(sb, scope):
     for keys in USER_OR_MANAGED_SANDBOX_PATHS:
         if dig(sb, keys) is not None and scope in {"project", "local"}:
             warn(f"sandbox.{'.'.join(keys)}: user-or-managed only; ignored in {scope} settings")
+    # A false value counts from any file; only a true value is dropped from project and local settings.
+    if sb.get("allowNestedUserNamespaces") and scope in {"project", "local"}:
+        warn(f"sandbox.allowNestedUserNamespaces: user-or-managed only; a true value is ignored in {scope} settings")
     creds = sb.get("credentials", {})
     if isinstance(creds, dict):
         for lst in ("files", "envVars"):
@@ -489,6 +493,21 @@ def validate(data, scope):
         whole = isinstance(mpw, int) or (isinstance(mpw, float) and mpw.is_integer())
         if isinstance(mpw, bool) or not whole or mpw < 40:
             warn(f"maxProseWidth: {mpw!r} is ignored; must be a whole number of at least 40")
+
+    if "sshHostCommands" in data:
+        shc = data["sshHostCommands"]
+        if not isinstance(shc, list):
+            err("sshHostCommands: must be an array of objects")
+        else:
+            for idx, entry in enumerate(shc):
+                if not isinstance(entry, dict):
+                    err(f"sshHostCommands[{idx}]: must be an object")
+                    continue
+                for req in ("id", "name", "command"):
+                    if not isinstance(entry.get(req), str) or not entry[req]:
+                        err(f"sshHostCommands[{idx}].{req}: required non-empty string")
+                for k in sorted(set(entry) - {"id", "name", "command", "sshIdentityFile", "startDirectory"}):
+                    warn(f"sshHostCommands[{idx}].{k}: unknown field")
 
     if "allowedProviders" in data:
         ap = data["allowedProviders"]

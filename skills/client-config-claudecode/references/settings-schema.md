@@ -123,7 +123,7 @@ claude auto-mode critique   # AI review of your custom rules
 | `viewMode` | Starting transcript view: `"default"`\|`"verbose"`\|`"focus"` (focus needs fullscreen renderer) | `"focus"` |
 | `tui` | Renderer: `"fullscreen"`\|`"default"` (unset = Claude Code picks) | `"fullscreen"` |
 | `verbose` | Full tool output (default `false`) | `true` |
-| `axScreenReader` | Screen-reader friendly flat output; forces classic renderer | `true` |
+| `axScreenReader` | *(User or managed)* Screen-reader friendly flat output; forces classic renderer. Ignored in project and local settings; `--ax-screen-reader` beats `CLAUDE_AX_SCREEN_READER`, and both beat the key. An `env` block in project or local settings can't set `CLAUDE_AX_SCREEN_READER` either | `true` |
 | `editorMode` | `"normal"` (default) \| `"vim"` | `"vim"` |
 | `maxProseWidth` | Wrap response prose at this many columns (whole number, minimum `40`; tables and code blocks keep the full width) (v2.1.282+) | `80` |
 | `awaySummaryEnabled` | One-line session recap when you return after a few minutes away (unset = on); `CLAUDE_CODE_ENABLE_AWAY_SUMMARY` overrides it per session | `false` |
@@ -237,9 +237,10 @@ Project and local settings can't set variables a checked-out repository shouldn'
 - Session-content export: `OTEL_LOG_RAW_API_BODIES`, `OTEL_LOG_MANAGED_SETTINGS`, `ENABLE_BETA_TRACING_DETAILED`, `BETA_TRACING_ENDPOINT`.
 - OpenTelemetry exporter variables that turn telemetry on, choose where it goes, or choose what it captures (`CLAUDE_CODE_ENABLE_TELEMETRY`, the `OTEL_*_EXPORTER` selectors, `OTEL_LOG_USER_PROMPTS` and the other content variables, `OTEL_EXPORTER_OTLP_*` endpoint/header/protocol/certificate variables, `OTEL_EXPORTER_PROMETHEUS_HOST`/`_PORT`). Needs v2.1.282+.
 - Startup and sync: `CLAUDE_CODE_PROCESS_WRAPPER`, `CLAUDE_CODE_SYNC_SKILLS`, `CLAUDE_CODE_SYNC_PLUGINS`, `CLAUDE_CODE_PLUGIN_CACHE_DIR`, `CLAUDE_CODE_PLUGIN_SEED_DIR`.
+- Screen-reader mode: `CLAUDE_AX_SCREEN_READER` and every other `CLAUDE_AX_*` variable.
 - Unanswered-dialog timers (`CLAUDE_CODE_USER_DIALOG_TIMEOUT_MS`, `CLAUDE_AFK_TIMEOUT_MS`, `CLAUDE_AFK_COUNTDOWN_MS`), `CLAUDE_CODE_DISABLE_ATTACHMENTS`, and `CLAUDE_CODE_DISABLE_FILE_MENTIONS` (stops `@` mention expansion; the variable is new in v2.1.299). The timers and `CLAUDE_CODE_DISABLE_ATTACHMENTS` became ignored in project and local settings in v2.1.290.
 
-Variables ignored from every settings file (launch environment only): identity variables such as `CLAUDE_CODE_REMOTE` and `CLAUDE_CODE_ACCOUNT_UUID`, `CLAUDE_CODE_MESSAGING_SOCKET`, `CLAUDE_CODE_MESSAGING_TOKEN`, `CLAUDE_CODE_PROJECT_DIR_NAME`, `CLAUDE_CODE_RESTRICTED`, `CLAUDE_CODE_DISABLE_POWERSHELL_CMD_RM_DENY`, `CLAUDE_CODE_DISABLE_DANGEROUS_RM_TIMEOUT`, `CLAUDE_CODE_DISABLE_SUBSTITUTION_RM_PROMPT`, and `CLAUDE_CODE_DISABLE_INLINE_SHELL_RM_PROMPT`, and `CLAUDE_CODE_DISABLE_ADMIN_ENV_UNION`.
+Variables ignored from every settings file (launch environment only): identity variables such as `CLAUDE_CODE_REMOTE` and `CLAUDE_CODE_ACCOUNT_UUID`, `CLAUDE_CODE_MESSAGING_SOCKET`, `CLAUDE_CODE_MESSAGING_TOKEN`, `CLAUDE_CODE_PROJECT_DIR_NAME`, `CLAUDE_CODE_RESTRICTED`, `CLAUDE_CODE_DISABLE_POWERSHELL_CMD_RM_DENY`, `CLAUDE_CODE_DISABLE_DANGEROUS_RM_TIMEOUT`, `CLAUDE_CODE_DISABLE_SUBSTITUTION_RM_PROMPT`, and `CLAUDE_CODE_DISABLE_INLINE_SHELL_RM_PROMPT`, `CLAUDE_CODE_DISABLE_MOUNTED_DRIVE_RM_PROMPT`, `CLAUDE_CODE_WARN_DISK_FREE_GIB` and `CLAUDE_CODE_WARN_MEMORY_FREE_GIB` (the last two need v2.1.304+), and `CLAUDE_CODE_DISABLE_ADMIN_ENV_UNION` (undocumented: it is in the 2.1.310 binary's environment-variable registry but on no docs page, so treat it as unverified).
 
 Source: the `env` section of the settings reference.
 
@@ -363,6 +364,7 @@ See `https://code.claude.com/docs/en/sub-agents.md` for the file format.
 | `credentials.awsPairs` | *(User or managed)* Pair non-standard AWS var names for SigV4 re-signing: `{accessKeyIdVar, secretAccessKeyVar, sessionTokenVar?}` (v2.1.224+) | — |
 | `credentials.sigv4` | *(User or managed)* `{streaming, presigned, sigv4a}` each `"deny"` (default) \| `"passthrough"` (v2.1.224+) | `{"streaming": "passthrough"}` |
 | `allowAppleEvents` | *(macOS, user or managed)* Allow Apple Events (`open`/`osascript`). **Removes code-execution isolation** | `true` |
+| `allowNestedUserNamespaces` | *(Linux/WSL2, user or managed; v2.1.305+)* Let sandboxed commands create user namespaces (Chromium/Electron, nested bubblewrap, `unshare`). **Turns off a security boundary.** A `true` counts only from user settings, `--settings`, or managed settings; a `false` counts from any file. For rootless Podman or Buildah use `excludedCommands` instead | `true` |
 | `enableWeakerNestedSandbox` | *(Linux/WSL2)* Weaker sandbox for unprivileged Docker. **Reduces security** | `true` |
 | `enableWeakerNetworkIsolation` | *(macOS)* Allow system TLS trust service. **Reduces security** | `true` |
 | `bwrapPath` / `socatPath` | *(Managed only, Linux/WSL2)* Absolute path to `bwrap`/`socat` | `"/opt/admin/bwrap"` |
@@ -434,6 +436,7 @@ See `https://code.claude.com/docs/en/sub-agents.md` for the file format.
 | `disableMobileSimulatorTools` | *(Managed only)* Block iOS Simulator pane tools | `true` |
 | `disableDesktopLocalSessions` | *(Managed only)* Turn off on-device Desktop Code sessions | `true` |
 | `sshHostAllowlist` | *(Managed only, Desktop only)* SSH host patterns; `[]` disables SSH sessions | `["*.example.com"]` |
+| `sshHostCommands` | *(User or managed, Desktop only)* Array of SSH connections whose host a command prints: required `id`, `name`, `command`; optional `sshIdentityFile`, `startDirectory`. Desktop runs `command` without a shell. Needs Claude Desktop v3.6556.0+ on macOS or Linux, signed in; managed entries come from one managed settings file or MDM policy (server-managed settings are ignored). The Edit tool refused this key before Claude Code v2.1.307 | `[{"id": "devbox", "name": "Dev box", "command": "acme-dev create"}]` |
 | `allowClaudeInChromeWithManagedMcp` | *(Managed only, on-machine)* `true` lets the built-in Claude in Chrome server run alongside a deployed `managed-mcp.json`, which otherwise blocks it in terminal sessions (v2.1.282+). Ignored in server-managed settings, HKCU, user, and project settings | `true` |
 | `allowAllClaudeAiMcps` / `managedMcpServers` | *(Managed only)* See `references/mcp.md` | — |
 

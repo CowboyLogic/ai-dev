@@ -110,6 +110,14 @@ A JSON entry with a `url` but no `type` is an error — Claude Code reads it as 
 - `alwaysLoad` — `true` skips tool-search deferral (all the server's tools load at session start; valid on every server type, `ws` included); `false` keeps all of the server's tools deferred (v2.1.287+). See [Tool loading, limits, and runtime](#tool-loading-limits-and-runtime).
 - `oauth` — `{clientId, callbackPort, authServerMetadataUrl, scopes}`; pass a secret with `claude mcp add-json ... --client-secret`.
 
+Claude Code reserves the names of its built-in servers, including `workspace`, `claude-in-chrome`, `computer-use`, `Claude Preview`, and `Claude Browser`. A configured server with a reserved name is skipped at load time with a warning asking you to rename it, and `claude mcp add` rejects the name with an error (MCP docs).
+
+**`managed-mcp.json` and `allowedMcpServers`** (MCP managed docs): servers in `managed-mcp.json` need no `allowedMcpServers` entry, except that Claude Code checks a server against the allowlist when it uses `${VAR}` expansion outside `env`. Before v2.1.305 it also checked a server that used `${VAR}` only in `env`, so if you used `allowedMcpServers` to keep such a server from loading, add `deniedMcpServers` entries for it (or deploy a separate `managed-mcp.json` per group) before users upgrade: it starts loading on each user's first launch of a newer version, with no prompt or notice.
+
+**Tools safe to call twice** (MCP docs, "Mark tools that are safe to call twice"): Claude Code repeats a call that was pending when an HTTP or claude.ai connector connection closed once, on a new connection, only for tools whose `tools/list` annotations set `readOnlyHint` or `idempotentHint` to `true` (retry limited to those tools since v2.1.307).
+
+Changelog only, v2.1.309–2.1.310: a disabled server is no longer reconnected by a later permission prompt in print and SDK sessions, and the `--mcp-config` file can't be modified by sandboxed commands or auto-accepted edits (v2.1.309); a tool call that times out in a non-interactive session while the server's elicitation is unanswered now tells Claude no answer came and not to repeat the call (v2.1.310).
+
 `widgets` is a reserved server name in cloud sessions and on self-hosted runners: a server of that name, or a close spelling such as `widgets_`, no longer loads, so rename it (v2.1.285; changelog only).
 
 Stdio servers receive `CLAUDE_PROJECT_DIR` (project root) in their environment. Referencing it in `command`/`args` of `.mcp.json` or `~/.claude.json` entries needs a default: `${CLAUDE_PROJECT_DIR:-.}` (plugin configs substitute it directly).

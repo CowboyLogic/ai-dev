@@ -212,6 +212,26 @@
           "description": "Notes the same wildcard form is needed for a server name that ends in an underscore"
         }
       ]
+    },
+    {
+      "id": 9,
+      "name": "user-or-managed-keys-in-project-settings",
+      "prompt": "My team's repo has a .claude/settings.json where I set axScreenReader to true and sandbox.allowNestedUserNamespaces to true so Chromium can run in the sandbox for everyone who clones it. It doesn't seem to do anything. Why, and where should these go?",
+      "expected_output": "Explains that both keys are read only from user settings, --settings, or managed settings; Claude Code ignores axScreenReader, and a true allowNestedUserNamespaces, in project and local settings, so a repository cannot turn them on; says where to set them and warns that allowNestedUserNamespaces turns off a security boundary",
+      "assertions": [
+        {
+          "id": "scope-ignored",
+          "description": "States that axScreenReader and a true sandbox.allowNestedUserNamespaces are ignored in project and local settings (user or managed scope only)"
+        },
+        {
+          "id": "where-to-set",
+          "description": "Says to put them in ~/.claude/settings.json, a file passed with --settings, or managed settings"
+        },
+        {
+          "id": "security-boundary",
+          "description": "Warns that allowNestedUserNamespaces: true turns off a security boundary and suggests excludedCommands for rootless Podman or Buildah instead"
+        }
+      ]
     }
   ]
 }

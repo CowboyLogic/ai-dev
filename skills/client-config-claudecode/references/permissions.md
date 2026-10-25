@@ -184,15 +184,15 @@ One parameter per rule; `*` wildcard supported; omitted params never match. A to
 | Session | Starts in |
 | --- | --- |
 | Any settings file sets `disableAutoMode: "disable"` | `default` |
-| `claude -p` or the Agent SDK | `default` in sessions that fetch feature flags. Where flags aren't fetched (third-party provider, telemetry off): `auto` from v2.1.285, `default` before |
+| `claude -p` or the Agent SDK | `default` (v2.1.302+; shown as Manual, and calls needing approval are denied unless an allow rule, hook, `canUseTool` callback, or `--permission-prompt-tool` approves them). Before v2.1.302, where flags weren't fetched (third-party provider, telemetry off): `auto` from v2.1.285 |
 | Org HIPAA configuration applied and the session is eligible | `default` from v2.1.285 (auto mode stays available to switch to) |
 | Terminal or VS Code extension | `auto` from v2.1.283; earlier: `auto` on Pro/Max/Team in sessions that fetch flags, `default` otherwise |
 
-Changelog only (v2.1.302): `claude -p` and Agent SDK sessions with no permission mode now start in `default` on third-party providers, with telemetry off, or on a fresh install, where the `-p` row above says `auto`; `--permission-mode auto` keeps `auto`. The permission-modes docs page still shows the earlier behavior.
+`claude -p --permission-mode auto` keeps `auto`. To get approvals in `-p` runs, add allow rules (`--allowedTools "Bash(npm test)"`) or start in auto mode.
 
 When `auto` is selected but unavailable to the session (a settings file turned it off, an unsupported model, or Anthropic disabled it server-side), the session starts in Manual. The first session after an install or upgrade can choose its mode before flags arrive and so can differ from this table.
 
-**Auto mode classifier model:** it runs on Claude Sonnet 5 by default, not on your `/model` choice, and a classifier model Anthropic configures server-side takes precedence. When the session model is Claude Sonnet 4.6, or `availableModels` excludes Sonnet 5, it runs on the session's model instead, or on an Opus model when the session runs on a Fable model. `CLAUDE_CODE_AUTO_MODE_MODEL` (v2.1.302, changelog only) picks the model for the client-side classifier; it does not change the model for server-side auto mode. From v2.1.302 (changelog only), a conversation too long for the server-side classifier's safety check is compacted instead of every checked tool call being denied.
+**Auto mode classifier model:** it runs on Claude Sonnet 5 by default, not on your `/model` choice, and a classifier model Anthropic configures server-side takes precedence. When the session model is Claude Sonnet 4.6, or `availableModels` excludes Sonnet 5, it runs on the session's model instead, or on an Opus model when the session runs on a Fable model. `CLAUDE_CODE_AUTO_MODE_MODEL` (v2.1.302+) takes a full model ID (your cloud provider's full IDs work too) for the client-side classifier; it does not change the model for server-side auto mode (`/status` shows `Auto mode server` as `Enabled`), and it is ignored when an Anthropic-configured classifier model applies, when you name Claude Opus 5, Sonnet 5.5, or Opus 5.5 or a model your organization's `availableModels` policy excludes (the default classifier reviews instead), or when your provider can't serve it (every checked action is then denied). From v2.1.302 (changelog only), a conversation too long for the server-side classifier's safety check is compacted instead of every checked tool call being denied.
 
 **Actions no mode auto-approves** (even `bypassPermissions`): explicit `ask` rules; org connector tools set to `ask`; `AskUserQuestion` and MCP tools marked `requiresUserInteraction`; `rm`/`rmdir` targeting a critical path (circuit breaker — no allow rule or hook `"allow"` approves it; `dontAsk` denies it, `auto` sends it to the classifier); cross-session messaging safeguards; reads outside working dirs while `blockReadsOutsideWorkingDirectories` is on.
 
@@ -316,3 +316,17 @@ Deny always wins regardless of scope — a user-level deny blocks a project-leve
 ## Hooks and permissions
 
 PreToolUse hooks run before the permission prompt. A hook `"allow"` does not bypass matching deny/ask rules. A hook exiting 2 blocks even when an allow rule would permit the call.
+
+## Permission and sandbox changes in 2.1.307–2.1.310
+
+Checked against the docs and changelog on 2026-10-25. Items marked "docs" are on a docs page; the rest are changelog only. Each can alter a prompt you relied on:
+
+- `claude ultrareview` requires workspace trust (v2.1.309+; errors reference): it asks on a terminal and refuses otherwise. Scripts pass `--trust-workspace`, which takes no value (put a PR number or base branch before it), or set `CLAUDE_CODE_DISABLE_ULTRAREVIEW_TRUST_CHECK=1` (env-vars docs). Docs.
+- `claude_code.safety_event` OpenTelemetry event for each tool call a permission rule, auto mode, a safety check, a hook, or the sandbox stopped, prompted, or sent back (v2.1.307; monitoring docs). Docs.
+- `sed -i` gets the standard Bash prompt and runs as written, not as a simulated file-edit preview; like other Bash edits it is no longer restored by `/rewind` (v2.1.309). The Agent SDK docs say `rewindFiles()` doesn't undo what `sed -i` did.
+- A command the settings exclude from the sandbox asks before writing to the sandbox's write-list paths while the sandbox is enabled but cannot run, and the unsandboxed fallback is refused there (v2.1.309).
+- In `bypassPermissions` mode in the Desktop app and VS Code, the dangerous `rm`/`rmdir` prompt now denies the command at once with a rewrite hint, so unattended sessions keep going (v2.1.309).
+- File read permission prompts show where a symbolic link leads (v2.1.309).
+- Sandbox: shell startup files no longer run outside the sandbox before each command; macOS `denyWrite` glob patterns apply at a path's real location when the folder is reached through a symlink; sandboxed commands and auto-accepted edits can no longer modify the file passed with `--mcp-config` (v2.1.309).
+- Auto mode's prompt before the first read outside the working directories says when blocking those reads makes shell commands ask for permission (v2.1.310).
+- A skill under a policy that allows hooks from plugins only loses its `allowed-tools` (v2.1.304); Desktop-mounted plugins lose `allowed-tools` under `allowManagedPermissionRulesOnly` (v2.1.305).
