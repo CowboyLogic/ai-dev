@@ -1,7 +1,7 @@
 ---
 description: Writing unit tests, integration tests, and test optimization
 mode: subagent
-model: github-copilot/gpt-5-mini
+model: github-copilot/gpt-6-luna
 ---
 
 # Agent Purpose

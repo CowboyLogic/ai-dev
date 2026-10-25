@@ -1,7 +1,7 @@
 ---
 description: CI/CD pipelines, Docker, Kubernetes, and deployment automation
 mode: subagent
-model: github-copilot/gpt-5-mini
+model: github-copilot/gpt-6-luna
 ---
 
 # Agent Purpose

@@ -15,14 +15,14 @@
   "agents": {
     // The built-in title agent replaces the V1 `small_model` setting.
     "title": {
-      "model": "github-copilot/gpt-5-mini"
+      "model": "github-copilot/gpt-6-luna"
     },
 
     // Fast general tasks. No rules: full tool access through the base policy.
     "quick": {
       "description": "Fast agent for basic tasks like code formatting, simple queries, and quick fixes",
       "mode": "primary",
-      "model": "github-copilot/gpt-5-mini"
+      "model": "github-copilot/gpt-6-luna"
     },
 
     // Code review — read-only. Deny everything first (V2 starts from allow-all),

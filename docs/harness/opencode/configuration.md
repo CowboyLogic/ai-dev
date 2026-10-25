@@ -14,14 +14,12 @@ in this repository.
 > because V2 does not infer mixed formats inside a single entry. Do not point an
 > OpenCode V1 client at files converted to the native V2 shape.
 
-One limitation affects editor validation:
+For editor validation:
 
-> [!WARNING]
-> There is no published V2 schema for `opencode.json` yet.
-> `https://opencode.ai/config.json` still describes V1 and rejects unknown keys, so an
-> editor using it may flag valid V2 fields such as `agents`, `permissions`,
-> `policies`, and `mcp.servers`. Keep the `$schema` line for the fields it does cover, and treat
-> those particular warnings as expected.
+> [!NOTE]
+> `https://opencode.ai/config.json` accepts both the V1 and the native V2 shape (since
+> V2 2.0.30; checked against 2.1.4) and rejects unknown keys, so keep the `$schema` line and
+> let your editor flag mistakes. There is still no separate `https://opencode.ai/v2/config.json`.
 
 ## Where configuration lives
 
@@ -43,7 +41,7 @@ Both `.json` and `.jsonc` accept comments and trailing commas.
 
 Machine-wide managed settings live in the system directory: `/Library/Application Support/opencode`
 on macOS, `/etc/opencode` on Linux, and `%ProgramData%\opencode` on Windows. As of OpenCode V2
-2.0.29 its `opencode.json(c)` overrides every user and project file, and the directory also loads
+2.0.29 (and still in 2.1.4) its `opencode.json(c)` overrides every user and project file, and the directory also loads
 `agents/`, `commands/`, `skills/`, and `plugins/` for every user on the machine.
 
 ## Configuration approaches
@@ -78,7 +76,7 @@ Its sections are described below.
   "model": "github-copilot/claude-sonnet-5",
   "default_agent": "build",
   "agents": {
-    "title": { "model": "github-copilot/gpt-5-mini" }
+    "title": { "model": "github-copilot/gpt-6-luna" }
   }
 }
 ```
@@ -99,7 +97,7 @@ Its sections are described below.
     "quick": {
       "description": "Fast agent for basic tasks like code formatting, simple queries, and quick fixes",
       "mode": "primary",
-      "model": "github-copilot/gpt-5-mini"
+      "model": "github-copilot/gpt-6-luna"
     },
     "reviewer": {
       "description": "Code review agent that analyzes code without making changes",
@@ -121,8 +119,8 @@ Its sections are described below.
 |---|---|
 | `description` | Purpose. Required in practice for subagents: the model reads it to choose which agent to launch. |
 | `mode` | `primary`, `subagent`, or `all`. **A new custom agent defaults to `primary`.** |
-| `model` | `provider/model`, optionally `#variant` (for example `anthropic/claude-sonnet-5#high`). A subagent without a model inherits the parent session's model. |
-| `system` | System prompt (JSON only). In a Markdown agent the body is the prompt. Supports `{file:./path}`. |
+| `model` | `provider/model`, optionally `#variant` (for example `anthropic/claude-sonnet-5-5#high`). A subagent without a model inherits the parent session's model. |
+| `system` | System prompt (JSON only). In a Markdown agent the body is the prompt. Supports `{file:./path}` and `{env:NAME}` (documented since 2.1.4). |
 | `permissions` | Ordered rule list. See [Permissions](#permissions). |
 | `steps` | Maximum model steps before OpenCode forces a text summary. |
 | `hidden` | Removes the agent from listings, `@` discovery, **and the subagent catalog**. |
@@ -136,10 +134,16 @@ replace earlier ones, and permission rules append.
 
 > [!NOTE]
 > **Temperature is not active per agent in V2.** V1's `temperature`, `top_p`, and
-> provider options move under `request.body`, which V2 preserves but does not yet send
-> with model requests. Configure request settings on a provider, model, or model
-> variant instead, and select the variant with `model: provider/model#variant`. The
+> provider options have no per-agent equivalent that takes effect: `request.body` is
+> preserved but not sent with model requests (the 2.1.4 docs say so, and say not to use
+> the V1 fields on new V2 agents). Configure request settings on a provider, model, or
+> model variant instead, and select the variant with `model: provider/model#variant`. The
 > samples in this repository no longer set a temperature.
+
+A Markdown agent file is read as one format: a file that uses any of `permissions`,
+`request`, `system`, or `disabled` is read as V2, and V1 fields in it (`name`, `tools`,
+`permission`, `temperature`) are ignored with a warning in the log (V2 2.1.4 release
+notes). Convert a file's frontmatter all at once.
 
 ### Commands
 
@@ -186,8 +190,7 @@ above as frontmatter and the body as the template.
       }
     }
   },
-  "update": "notify",
-  "share": "manual"
+  "update": "notify"
 }
 ```
 
@@ -201,7 +204,8 @@ above as frontmatter and the body as the template.
   `tool.use`, `integration.use`). Policies never prompt and only tighten what permissions and
   providers allow, and statements from broader configuration win over project ones. Releases
   before 2.0.29 read it from `experimental.policies`, which still works.
-- `share` is accepted, but session sharing is not supported yet in V2.
+- Session sharing is gone: V2 2.0.30 removed the sharing backend and `/share`, and V1 1.19.1 discontinued
+  it. The `share` key is still in the schema but does nothing, so leave it out.
 - `theme` and keybinds are not `opencode.json` fields in V2. They live in the terminal
   client config, `~/.config/opencode/cli.json`, which V2 migrates from `tui.json` on
   first start.
@@ -253,7 +257,7 @@ OpenCode discovers Markdown agents from `~/.config/opencode/agents/` and from ev
 > [!CAUTION]
 > Agents are **not** loaded through `instructions`. Older versions of this guide
 > listed `"instructions": ["agent/*.md"]` as the discovery mechanism. That never
-> registered agents, and in V2 `instructions` entries are not loaded at all.
+> registered agents. In V2 `instructions` loads rule files, not agents.
 
 ### Agent file format
 
@@ -325,7 +329,7 @@ so `git status *` matches `git status`.
 | `read`, `glob`, `grep` | Local discovery tools |
 | `webfetch`, `websearch` | Web tools |
 | `skill` | Skill loading; resource is the skill ID |
-| `external_directory` | Paths outside the project |
+| `external_directory` | Paths outside the project (allowed by default in V2; V1 asked) |
 | `<server>_<tool>` | An MCP tool |
 
 ### The default is allow
@@ -336,7 +340,6 @@ it:
 ```json
 [
   { "action": "*", "resource": "*", "effect": "allow" },
-  { "action": "external_directory", "resource": "*", "effect": "ask" },
   { "action": "read", "resource": "*.env", "effect": "ask" },
   { "action": "read", "resource": "*.env.*", "effect": "ask" },
   { "action": "read", "resource": "*.env.example", "effect": "allow" }
@@ -464,10 +467,11 @@ Nested `AGENTS.md` files below the workspace are loaded as the agent reads files
 that area. V2 does not fall back to `CLAUDE.md`.
 
 > [!CAUTION]
-> **`instructions` is accepted but not loaded in V2.** A V1 config that loaded
-> guardrails or rules through `"instructions": ["guardrails.md"]` silently stops
-> applying them under V2. Move that guidance into an `AGENTS.md` that V2 discovers,
-> for example by linking the file to `~/.config/opencode/AGENTS.md`.
+> **`instructions` was not loaded in V2 before 2.0.30.** Since 2.0.30 the array loads
+> files, globs, and HTTP(S) URLs after the discovered `AGENTS.md` files (5-second URL
+> timeout), so a V1 config such as `"instructions": ["guardrails.md"]` applies again. On an
+> older V2, move that guidance into an `AGENTS.md` that V2 discovers, for example by linking
+> the file to `~/.config/opencode/AGENTS.md`. `CLAUDE.md` is still not a fallback.
 
 ---
 
@@ -507,14 +511,14 @@ file to native V2:
 | `disable` | `disabled` |
 | `maxSteps` | `steps` |
 | `model` + `variant` | `model: provider/model#variant` |
-| `temperature`, `top_p`, options | `request.body` (preserved, not yet sent) |
+| `temperature`, `top_p`, options | a model variant (`request.body` is preserved but not sent) |
 | `tools` + `permission` maps | ordered `permissions` rules |
 | `bash`, `task`, `write`/`patch` actions | `shell`, `subagent`, `edit` |
 | `command`, `subtask` | `commands`, `subagent` |
 | `mcp.<name>`, `enabled` | `mcp.servers.<name>`, `disabled` |
 | `small_model` | `agents.title.model` |
 | `autoupdate` | `update` |
-| `autoshare: true` | `share: "auto"` |
+| `autoshare: true` | no equivalent: sharing was removed |
 | `snapshot` | `snapshots` |
 | `plugin` | `plugins` (V1 plugin code does not run in V2) |
 | `tui.json` | `~/.config/opencode/cli.json` (migrated on first start) |
@@ -562,8 +566,8 @@ Run it again.
 | Delegation to `x` fails, but `x.agent` exists | File is named `x.agent.md`. Rename it to `x.md` |
 | Read-only agent edited a file or launched a subagent | No catch-all deny. Omitted actions are allowed |
 | Scoped edit grant denies everything | Catch-all `"*"` rule placed after the specific rule |
-| Rules in `guardrails.md` are ignored | Loaded through `instructions`, which V2 does not load. Use `AGENTS.md` |
-| Editor flags `agents` or `permissions` | The published schema is V1-only. See the warning at the top |
+| Rules in `guardrails.md` are ignored | Loaded through `instructions` on a V2 before 2.0.30, which did not load it. Upgrade, or use `AGENTS.md` |
+| Editor flags `agents` or `permissions` | Stale cached schema, or a typo. `https://opencode.ai/config.json` accepts the V2 keys since 2.0.30 |
 | Model request fails | Pinned model is retired or not enabled for your Copilot plan |
 
 ## Next steps

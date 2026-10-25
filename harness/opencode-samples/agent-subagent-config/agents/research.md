@@ -1,7 +1,7 @@
 ---
 description: Technical discovery, product research, and documentation analysis
 mode: subagent
-model: github-copilot/gpt-5-mini
+model: github-copilot/gpt-6-luna
 permissions:
   - { action: edit, resource: "*", effect: deny }
 ---

@@ -1,7 +1,7 @@
 ---
 description: Data analysis, ETL pipelines, and data validation
 mode: subagent
-model: github-copilot/gpt-5-mini
+model: github-copilot/gpt-6-luna
 ---
 
 # Agent Purpose
