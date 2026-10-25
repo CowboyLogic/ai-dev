@@ -54,7 +54,7 @@ remote executor environment and requires remote MCP stdio.
 | `http_headers` | No | Map of header name to static value |
 | `env_http_headers` | No | Map of header name to env var name; values come from the environment |
 | `http_headers_helper` | No | Local command that prints a JSON object of header names and string values |
-| `auth` | No | `oauth` (default) uses stored MCP OAuth credentials; `chatgpt` uses the current ChatGPT session for the trusted first-party ChatGPT origin, with stored OAuth as fallback |
+| `auth` | No | `oauth` (default) uses stored MCP OAuth credentials; `chatgpt` uses the current ChatGPT session for the trusted first-party ChatGPT origin, with stored OAuth as fallback; `ema_auth` exchanges an enterprise IdP refresh token for resource-specific authorization and allows no alternate credentials and no OAuth fallback (see [Enterprise-managed authentication](#enterprise-managed-authentication)) |
 
 Credential order: configured bearer tokens and authorization headers come first, then `auth`. If no
 credential source resolves, Codex connects without authentication; run `codex mcp login NAME`
@@ -87,8 +87,8 @@ Authorization = "EXAMPLE_AUTH_HEADER"
 | `enabled` | `false` disables a server without deleting it |
 | `required` | `true` fails startup if this enabled server cannot initialize |
 | `startup_timeout_sec` | Seconds to wait for startup (default `10`) |
-| `startup_timeout_ms` | Integer milliseconds form of the same setting, present in the 0.163.0 config schema; when both are set, `startup_timeout_sec` wins and `startup_timeout_ms` is ignored (0.163.0 loader), so editing only the millisecond value has no effect while the seconds key remains; set only one |
-| `startup_readiness` | `connection` (use the live connection to decide readiness) or `catalog` (allow a valid cached tool catalog while the live connection starts; tool execution still needs the live connection). With `required = true`, a valid cached catalog satisfies startup even if the live connection fails; the failure then surfaces when a tool is invoked, so `catalog` removes the live-connectivity guarantee of `required`. From the 0.163.0 config schema, not in the official docs page |
+| `startup_timeout_ms` | Integer milliseconds form of the same setting, present in the 0.164.0 config schema; when both are set, `startup_timeout_sec` wins and `startup_timeout_ms` is ignored (0.164.0 loader source, unchanged since 0.163.0), so editing only the millisecond value has no effect while the seconds key remains; set only one |
+| `startup_readiness` | `connection` (use the live connection to decide readiness) or `catalog` (allow a valid cached tool catalog while the live connection starts; tool execution still needs the live connection). With `required = true`, a valid cached catalog satisfies startup even if the live connection fails; the failure then surfaces when a tool is invoked, so `catalog` removes the live-connectivity guarantee of `required`. From the 0.164.0 config schema, not in the official docs page |
 | `tool_input_schema_max_bytes` | UTF-8 byte threshold for compacting each ordinary tool input schema; default 5,000. Larger limits keep more parameter descriptions |
 | `tool_timeout_sec` | Seconds to wait for a tool run (default `60`) |
 | `enabled_tools` | Tool allow list |
@@ -159,7 +159,7 @@ per the release notes; the upstream docs still say any other argument prints usa
 Codex reads the `instructions` field a server returns at initialization and uses it as the
 model-visible description of the server's tool namespace (connector servers use the connector
 description instead). The upstream docs advise keeping the first 512 characters self-contained; that
-is guidance, not a limit. In the 0.163.0 source the description is cut at 512 KiB (524,288 bytes)
+is guidance, not a limit. In the 0.164.0 source the description is cut at 512 KiB (524,288 bytes)
 for ordinary MCP servers and at 1,000 bytes for MCP servers loaded through the agent-plugin path.
 
 ## OAuth
@@ -191,6 +191,30 @@ callback_url = "http://127.0.0.1/callback"
 | `mcp_oauth_callback_port` | Global | Fixed listener port, for example `5555` |
 | `mcp_servers.<name>.oauth.callback_port` | Per server | Overrides the global port |
 | `mcp_servers.<name>.oauth.client_id`, `.callback_url` | Per server | Pre-registered client |
+
+### Enterprise-managed authentication
+
+Enterprise-managed authentication (EMA) lets an organization sign users in once with its own identity
+provider (IdP) and exchange that sign-in for per-server MCP access. The 0.164.0 release notes
+mention eligible Codex account grants, dedicated sign-in, and OAuth clients that require secrets.
+The upstream docs do not describe the keys yet; these come from the 0.164.0 config schema and
+source. Only the config validation below was exercised on 0.164.0 (with `codex mcp list` against
+placeholder values); nothing was run against a real IdP.
+
+- `auth = "ema_auth"` on an HTTP server selects the flow.
+- `mcp_enterprise_managed_auth.idp` (top level) is the trusted IdP shared by EMA-enabled servers and
+  plugins: `issuer` (required) and `client_id` (required), plus, new in 0.164.0, `client_secret`
+  (omit for a public client) and `token_endpoint_auth_method` (`client_secret_basic`, the default
+  when a secret is set, or `client_secret_post`; it requires a client secret).
+- Per server, `oauth.authorization_server_issuer` is the expected issuer for the token exchange, and
+  `scopes` and `oauth_resource` also apply to it. New in 0.164.0, `oauth.token_endpoint_auth_method`
+  takes the same two values. The loader rejects it unless `auth = "ema_auth"` and
+  `oauth.client_secret` are both set (errors: `oauth.token_endpoint_auth_method requires auth =
+  "ema_auth"` and `... requires oauth.client_secret`), and `oauth.client_secret` in turn needs
+  `oauth.client_id`. The same rule holds for the IdP table: `token_endpoint_auth_method` without
+  `client_secret` fails to load.
+- Never put a real `client_secret` literal in a shared config; the project rule against credential
+  literals applies here too.
 
 Callback rules that matter when editing:
 

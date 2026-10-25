@@ -3,8 +3,8 @@
 A skill for viewing, editing, and explaining OpenAI Codex CLI configuration.
 
 > [!NOTE]
-> **Codex version:** verified against [Codex CLI 0.163.0](https://github.com/openai/codex/releases/tag/rust-v0.163.0)
-> (released 2026-10-15). The reference files distill the official Codex documentation and
+> **Codex version:** verified against [Codex CLI 0.164.0](https://github.com/openai/codex/releases/tag/rust-v0.164.0)
+> (released 2026-10-23). The reference files distill the official Codex documentation and
 > record where the installed CLI differs from it. Codex changes quickly, so re-verify when it
 > ships a new release (see [Refreshing the references](#refreshing-the-references)).
 

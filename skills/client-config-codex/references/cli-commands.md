@@ -1,17 +1,18 @@
 # CLI Commands, Options, and Slash Commands
 
 Run `codex --help` or `codex <command> -h` for built-in help. Run `/` in a session to open the
-slash-command popup. Flag tables below were verified against `codex-cli 0.163.0`; slash commands come
+slash-command popup. Flag tables below were verified against `codex-cli 0.164.0`; slash commands come
 from the Codex docs and release notes and cannot be listed from the terminal.
 
 > [!NOTE]
 > Prefer local `-h` output over the docs when they differ. The upstream developer-commands page
-> renders its flag tables as components, so most flag-level detail here comes from `-h`. In 0.163.0,
+> renders its flag tables as components, so most flag-level detail here comes from `-h`. In 0.164.0,
 > `codex <group> <sub> --help` and `-h` both print the subcommand help; a single quoted string such
 > as `codex 'mcp list' --help` is parsed as a prompt and prints the root help.
 
 The CLI reads defaults from `~/.codex/config.toml`. Any `-c key=value` override applies to that one
-invocation and wins over the file.
+invocation and wins over the file. From 0.164.0 (release notes) overrides given at more than one
+command level, such as `codex -c a=1 exec -c b=2 ...`, are all kept.
 
 ## Terminal commands
 
@@ -33,20 +34,23 @@ invocation and wins over the file.
 | `codex execpolicy check -r RULES... COMMAND...` | Check execpolicy rule files against a command (preview; not listed in `codex --help`, but `codex help execpolicy` works). Flags: `--pretty`, `--resolve-host-executables` |
 | `codex agents` | Browse all agent sessions on the shared local app-server daemon (the agent command center). Takes `--remote`, `--remote-auth-token-env`, `-C`, `--no-alt-screen` |
 | `codex migrate-rollouts [--apply]` | Report, or with `--apply` migrate, legacy local sessions to paginated thread history. Also `--thread ID`, `--max-mib-per-second N`, `--json`, `--verbose` |
-| `codex app [PATH]` | Open a workspace in the ChatGPT desktop app (macOS, Windows); offers the installer when missing |
+| `codex migrate-nfs-db [--staging-dir DIR]` | [experimental] Migrate the configured SQLite databases to DELETE mode in place, for state on NFS (new in 0.164.0). Its help says to stop SQLite clients on every host first, that the NFS mount must support cross-client POSIX locks, and that it keeps WAL backups. Its own flags are `-c`, `--enable`, `--disable`, and `--staging-dir`; the root `codex -p NAME migrate-nfs-db` form is also accepted (the `--profile` applicability error lists it from 0.164.0) |
+| `codex app [PATH]` | Open a workspace in the ChatGPT desktop app (macOS, Windows); offers the installer when missing. `--download-url URL` overrides the installer URL (advanced) |
 | `codex apply TASK_ID` (`codex a`) | Apply the latest diff from a Codex cloud task with `git apply` |
 | `codex cloud [list\|exec\|status\|apply\|diff]` | Browse and submit Codex cloud tasks (experimental). `exec --env ENV_ID [--attempts N] [--branch B] [QUERY]`; `list [--env ID] [--limit N] [--cursor C] [--json]`; `status TASK_ID`; `apply`/`diff TASK_ID [--attempt N]` |
 | `codex completion [SHELL]` | Shell completion script: `bash` (default), `elvish`, `fish`, `powershell`, `zsh` |
 | `codex update` | Self-update when the installed release supports it |
 | `codex app-server`, `codex remote-control`, `codex exec-server` | Experimental server tooling; may change without notice |
 
-`codex mcp-server` was removed (the docs point to the Codex app server); `0.163.0` confirms it is gone.
+`codex mcp-server` was removed (the docs point to the Codex app server); `0.164.0` confirms it is gone.
 
-Experimental server tooling, from `-h` on 0.163.0:
+Experimental server tooling, from `-h` on 0.164.0:
 
 - `codex app-server daemon` has `bootstrap`, `start`, `restart`, `update`, `enable-remote-control`,
   `disable-remote-control`, `stop`, and `version` subcommands (`/daemon` in the TUI manages the same
-  background server).
+  background server). From 0.164.0 `daemon restart` applies `--enable`/`--disable` and
+  `-c features.<name>=<bool>` overrides to the restarted server, and rejects a non-boolean feature
+  value (release notes and source).
 - `codex app-server` takes `--listen stdio://|unix://[PATH]|ws://IP:PORT|off`, `--code-mode-host`, and
   `--ws-*` authentication options, and has subcommands `daemon`, `proxy`, `generate-ts`, and
   `generate-json-schema`.
@@ -78,7 +82,7 @@ codex --enable unified_exec --profile review
 ```
 
 > [!NOTE]
-> The docs describe `--profile` only as "profiles" in config. The `0.163.0` CLI defines `-p, --profile`
+> The docs describe `--profile` only as "profiles" in config. The `0.164.0` CLI defines `-p, --profile`
 > as a separate file layer, `$CODEX_HOME/<name>.config.toml`. Note also that `-p` means `--profile`,
 > not `--prompt`. `codex features` does not accept `--profile`.
 
@@ -207,8 +211,13 @@ in CI to capture progress and a final summary.
 
 `codex login` opens a browser for ChatGPT OAuth by default. Alternatives: `--device-auth`,
 `--with-api-key` (reads the key from stdin, for example `printenv OPENAI_API_KEY | codex login --with-api-key`), and `--with-access-token` (reads the token from stdin).
+On 0.164.0, saving an API key prints `API key saved. Authentication is checked when you send a
+request.` and `codex login status` prints `API key configured - <redacted key>` plus that sentence
+(checked with a dummy key in a throwaway `CODEX_HOME`). 0.163.0 printed `Successfully logged in` and
+`Logged in using an API key - <redacted key>` (from the source diff), so a script that matches the
+old text needs updating.
 
-`codex sandbox` runs a command under the same policy Codex uses. The `0.163.0` CLI has one run form,
+`codex sandbox` runs a command under the same policy Codex uses. The `0.164.0` CLI has one run form,
 `codex sandbox [OPTIONS] [COMMAND]...`, with `-P`/`--permission-profile NAME`, `-p`/`--profile`,
 `-C`/`--cd`, `--include-managed-config`, `--allow-unix-socket PATH` (repeatable), `--log-denials`
 (macOS), and `--sandbox-state-json`, `--sandbox-state-readable-root`, and
@@ -216,7 +225,7 @@ in CI to capture progress and a final summary.
 
 > [!NOTE]
 > The docs list separate `macos`, `linux`, and `windows` sandbox subcommands (with `seatbelt` and
-> `landlock` aliases) and `sandbox` under `codex debug`. Neither exists in 0.163.0: `codex sandbox`
+> `landlock` aliases) and `sandbox` under `codex debug`. Neither exists in 0.164.0: `codex sandbox`
 > has only `uninstall`, and `codex debug` has only `models`, `app-server`, and `prompt-input`. The
 > canonical flag is `-P/--permission-profile`; the docs' plural `--permissions-profile` is still
 > accepted as a hidden legacy alias that `-h` does not show. Check `codex sandbox -h` on the target
@@ -248,7 +257,7 @@ in CI to capture progress and a final summary.
 ## Slash commands by area
 
 Slash commands come from the docs and, for names and one-line purposes, from the `SlashCommand`
-enum in the Codex source at `rust-v0.163.0`; behavior was not verifiable from the terminal.
+enum in the Codex source at `rust-v0.164.0`; behavior was not verifiable from the terminal.
 Availability varies by model, platform, and state. Codex hides `/fast` when the model lacks support.
 
 ### Session and chat
@@ -272,7 +281,8 @@ Availability varies by model, platform, and state. Codex hides `/fast` when the 
 
 | Command | Purpose |
 |---------|---------|
-| `/model` | Choose model and reasoning effort |
+| `/model [MODEL] [--reasoning=LEVEL] [--speed=TIER]` | Choose model and reasoning effort. From 0.164.0 (release notes) the model, reasoning level, and speed can be given inline, and the source applies them to the current session only. An unsupported level or speed returns an error listing the available ones. `--speed` takes `standard`, `flex`, or a tier the model offers |
+| `/presets` | Run or save reusable prompts and slash commands in ten numbered slots (new in 0.164.0). Slots are the `tui.presets.<digit>` tables in `config-schema.md` |
 | `/fast` | Toggle the Fast service tier when the model catalog offers one |
 | `/plan [PROMPT]` | Plan mode; unavailable while Codex is working |
 | `/goal [OBJECTIVE\|edit\|pause\|resume\|clear]` | Persistent task goal, max 4,000 characters |
@@ -280,13 +290,13 @@ Availability varies by model, platform, and state. Codex hides `/fast` when the 
 | `/experimental` | Toggle experimental features; may need a restart |
 | `/daybreak` | Turn Daybreak on or off. 0.163.0 release notes: Daybreak is on by default for eligible accounts, and `codex exec` can select it with an OpenAI API key when the server offers access |
 | `/voice` | Start or stop voice; `/voice settings` chooses a voice |
-| `/personality` | Choose `friendly`, `pragmatic`, or `none`; hidden when the model lacks support. The `personality` feature is `removed` in 0.163.0, so treat this as legacy |
+| `/personality` | Choose `friendly`, `pragmatic`, or `none`; hidden when the model lacks support. The `personality` feature is `removed` in 0.164.0, so treat this as legacy |
 
 ### Permissions and safety
 
 | Command | Purpose |
 |---------|---------|
-| `/permissions` | Change approval preset mid-session (for example Auto or Read Only), including named custom profiles |
+| `/permissions [PROFILE]` | Change approval preset mid-session (for example Auto or Read Only), including named custom profiles. From 0.164.0 (release notes) a permission profile id can be given inline; in the source an unknown id returns `Unknown permission profile` and `:approve-for-me` needs the auto-review (`guardian_approval`) feature |
 | `/approve` | Retry one recently denied action from the automatic reviewer |
 | `/hooks` | Inspect, trust, or disable non-managed lifecycle hooks; managed hooks cannot be disabled |
 | `/setup-default-sandbox`, `/sandbox-add-read-dir PATH` | Windows only: elevated sandbox setup / read access to an extra directory |

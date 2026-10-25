@@ -2,7 +2,7 @@
 
 Covers the Codex configuration directory, `config.toml` layers, profile files, project trust,
 model providers, feature flags, telemetry and notifications, managed configuration, environment
-variables, and authentication. Verified against `codex-cli 0.163.0`.
+variables, and authentication. Verified against `codex-cli 0.164.0`.
 
 Permissions and sandboxing (`[permissions.<name>]`, network proxy rules) are in `permissions.md`.
 CLI commands and flags are in `cli-commands.md`. Hooks, MCP, skills, agents, and plugins have their
@@ -24,7 +24,7 @@ Default `~/.codex`. Override the root with `CODEX_HOME`; the directory must alre
 | `hooks.json` | User lifecycle hooks (alternative to inline `[hooks]`) | Yes |
 | `auth.json` | Cached credentials when the credential store is `file` (see `## Auth`) | Never; secret |
 | `history.jsonl` | Session transcripts when history persistence is on | No |
-| `log/` | Logs (`log_dir` overrides); `codex-tui.log` appears only when `log_dir` is set explicitly | No |
+| `log/` | Logs (`log_dir` overrides); `codex-tui.log` appears only when `log_dir` is set explicitly. From 0.164.0 an explicit `log_dir` also holds the SQLite logs database | No |
 | `themes/` | Custom `.tmTheme` syntax themes | Yes |
 | `skills/` | Bundled system skills under `.system/`, not a documented user scan location; put your own skills in `~/.agents/skills` (see `references/skills.md`) | No |
 
@@ -38,7 +38,7 @@ Scopes outside `CODEX_HOME`:
 | `/etc/codex/config.toml` | System configuration defaults (Unix) |
 | `/etc/codex/requirements.toml` | System admin-enforced requirements (Unix) |
 | `/etc/codex/managed_config.toml` | Legacy managed defaults (Unix only) |
-| `%ProgramData%\OpenAI\Codex\config.toml` | System configuration defaults (Windows; confirmed in the config loader source at `rust-v0.163.0`, not run on Windows here) |
+| `%ProgramData%\OpenAI\Codex\config.toml` | System configuration defaults (Windows; confirmed in the config loader source at `rust-v0.164.0`, not run on Windows here) |
 | `%ProgramData%\OpenAI\Codex\requirements.toml` | System requirements (Windows) |
 
 Rules:
@@ -109,7 +109,7 @@ Codex ignores these keys in a project `.codex/config.toml` and prints a startup 
 | `experimental_compact_prompt_file` | path | Loads the compaction prompt override from a file (experimental) |
 | `model_catalog_json` | path | Startup model catalog; a profile may override it |
 | `service_tier` | string | Preferred tier; `fast` maps to request value `priority` |
-| `personality` | `none` \| `friendly` \| `pragmatic` | Deprecated: the `personality` feature is `removed` and the value had no effect on the rendered prompt in 0.158.0 or 0.163.0. Do not recommend it; only `none` remains meaningful as an opt-out |
+| `personality` | `none` \| `friendly` \| `pragmatic` | Deprecated: the `personality` feature is `removed` and the value had no effect on the rendered prompt in 0.158.0, 0.163.0, or 0.164.0. Do not recommend it; only `none` remains meaningful as an opt-out |
 | `oss_provider` | `lmstudio` \| `ollama` | Default local provider for `--oss` |
 
 ```toml
@@ -152,7 +152,7 @@ Semantics and permission profiles live in `permissions.md`. Keys to recognize:
 | `model_instructions_file` | Replaces built-in instructions (renamed from `experimental_instructions_file`) |
 | `project_doc_max_bytes`, `project_doc_fallback_filenames` | `AGENTS.md` byte cap and fallback filenames |
 | `history.persistence` | `save-all` \| `none`; `history.max_bytes` caps file size |
-| `log_dir` | Log directory (default `$CODEX_HOME/log`) |
+| `log_dir` | Log directory (default `$CODEX_HOME/log`). Setting it explicitly also enables the TUI text log there and, from 0.164.0, routes the SQLite logs database there; when unset, SQLite logs stay under `sqlite_home`. Existing SQLite logs in `sqlite_home` are not migrated automatically, and a managed `sqlite_home` requirement keeps SQLite logs in the required directory |
 | `file_opener` | `vscode` \| `vscode-insiders` \| `windsurf` \| `cursor` \| `none` |
 | `hide_agent_reasoning`, `show_raw_agent_reasoning` | Suppress reasoning events / show raw reasoning |
 | `check_for_update_on_startup` | Set `false` only when updates are centrally managed |
@@ -162,7 +162,7 @@ Semantics and permission profiles live in `permissions.md`. Keys to recognize:
 | `include_environment_context_time` | Whether the environment context includes the current date and timezone (new in 0.163.0) |
 | `include_environment_context`, `include_permissions_instructions`, `include_apps_instructions`, `include_collaboration_mode_instructions` | Booleans that control whether Codex injects the `<environment_context>` user block and the `<permissions instructions>`, `<apps_instructions>`, and `<collaboration_mode>` developer blocks |
 | `skills.include_instructions` | Whether turns receive the automatic skills instructions block |
-| `thread_unload_delay_secs` | App-server only: seconds a thread must have no subscribers and no activity before it is unloaded; default `1800` (30 minutes; it was `60` through 0.162.1), `0` unloads immediately, a restart is needed to change it |
+| `thread_unload_delay_secs` | App-server only: seconds a thread must have no subscribers and no activity before it is unloaded; default `1800` (30 minutes; it was `60` through 0.162.1), `0` unloads immediately. From 0.164.0 the value is resolved when each thread is loaded, so a request's config overrides apply per thread (through 0.163.0 a server restart was needed to change it) |
 | `allow_symlinked_codex_home` | macOS only: let sandbox writable roots at or beneath `CODEX_HOME` traverse symlinks. Default `false`; it trusts symlink targets even if they change or lie outside `CODEX_HOME`. Read only from the user config at startup |
 | `goals.max_goal_token_budget` | Maximum token budget for a goal and the default budget for new goals |
 
@@ -198,14 +198,22 @@ set = { MY_FLAG = "1" }
   (added in 0.162.0; the loader rejects zero, negative, and non-finite values).
 - `tui.auto_recap`: automatic recaps when the terminal is unfocused; default `true`, and `/recap`
   stays available when disabled.
-- `tui.copy_on_select`: copy selected transcript or footer text on mouse release (footer selection
-  is new in 0.163.0). `auto` (default) copies
+- `tui.copy_on_select`: copy selected transcript, footer, or composer text on mouse release (footer
+  selection is new in 0.163.0, composer selection in 0.164.0). `auto` (default) copies
   except in direct terminals known to forward their native copy shortcut (Ghostty 1.2+, Kitty on
   macOS, Windows Terminal, VS Code on Windows); unknown terminals, Ghostty without a recognized
   version, and tmux/Zellij copy. `always` copies every nonempty selection; `never` requires an
   explicit copy action.
-- `tui.copy_on_select_clear_selection`: deselect the text after copy-on-select confirms clipboard
-  delivery. Default `false`; no effect when copy-on-select is off (new in 0.163.0).
+- `tui.copy_on_select_clear_selection`: deselect read-only transcript or footer text after
+  copy-on-select confirms delivery; an editable composer selection stays visible (the composer part
+  is 0.164.0). Default `false`; no effect when copy-on-select is off (new in 0.163.0).
+- `tui.presets.<digit>`: saved prompts or slash commands in slots `0` through `9` (new in 0.164.0).
+  Each slot is a table with `input` (required, nonempty plain text up to 8,000 UTF-8 bytes) and an
+  optional `label` for the picker and shortcut hints. An `input` starting with `!` (a shell command)
+  and a slot other than a single digit are rejected, and the config then fails to load (checked on
+  0.164.0 with `codex doctor`). `/presets` runs or saves them. The keymap action
+  `tui.keymap.chat.open_presets` opens the menu; unless you bind or unbind it explicitly, the
+  default is the `leader p` chord (from the 0.164.0 source).
 - `tui.right_click_paste`: right-click paste fallback for the fullscreen transcript. Default `auto`
   (Windows, WSL, Linux; WSL only when VS Code detection is conclusive); `on` also enables macOS
   and other supported local platforms; `off` leaves right-click paste to the terminal. Over SSH
@@ -276,7 +284,7 @@ trust_level = "trusted"   # or "untrusted"
 
 - `trusted`: project `.codex/` layers load (config, hooks, rules).
 - `untrusted`: project `.codex/` layers are skipped, and so is the project `AGENTS.md` chain (global
-  instructions still load; verified on 0.158.0 and 0.163.0, see `references/instructions.md`). With no explicit `approval_policy`, Codex derives
+  instructions still load; verified on 0.158.0, 0.163.0, and 0.164.0, see `references/instructions.md`). With no explicit `approval_policy`, Codex derives
   stricter approvals; setting `approval_policy = "on-request"` explicitly overrides that.
 - Quote the path key. Trust entries belong in user config, not project config.
 - Admins keep `untrusted` in `allowed_approval_policies` to permit the derived behavior; it does not
@@ -337,7 +345,9 @@ base_url = "http://localhost:11434/v1"
 ```
 
 Amazon Bedrock is built in; only the nested AWS overrides are supported, and omitting `profile` uses
-the standard AWS credential chain:
+the standard AWS credential chain. The `bedrock_setup_wizard` feature is stable and on by default
+in 0.164.0 (`codex features list`), and the 0.164.0 release notes say API key entry now sits with the
+other AWS sign-in methods when credentials are detected:
 
 ```toml
 model_provider = "amazon-bedrock"
@@ -387,7 +397,7 @@ Commonly relevant flags (docs defaults; confirm with `codex features list`):
 | `prevent_idle_sleep` | false | Experimental; keep the machine awake during a turn |
 
 `web_search_cached` and `web_search_request` are deprecated; use top-level `web_search`. The docs also
-list a deprecated `features.web_search`, which `codex features list` does not show. As of 0.163.0,
+list a deprecated `features.web_search`, which `codex features list` does not show. As of 0.164.0,
 many historical flags (for example `undo`, `steer`, `js_repl`, `tool_search`, `collaboration_modes`,
 `shell_zsh_fork`, `unified_exec_zsh_fork`) report `removed`; do not add them to new configs. The
 0.163.0 release notes say Codex no longer bundles a patched `zsh`, uses its standard shell executor,
@@ -405,7 +415,7 @@ feature values in `requirements.toml`; conflicting writes are rejected.
 ## Memories
 
 The `memories` feature flag (above) turns memories on; `[memories]` tunes them. Keys in the
-0.163.0 config schema:
+0.164.0 config schema:
 
 | Key | Purpose |
 |-----|---------|
@@ -420,13 +430,13 @@ The `memories` feature flag (above) turns memories on; `[memories]` tunes them. 
 | `max_raw_memories_for_consolidation` | Recent raw memories retained for global consolidation |
 | `min_rate_limit_remaining_percent` | Minimum remaining rate-limit percentage before memory startup runs |
 | `dedicated_tools` | `true` exposes dedicated memory tools through the extension tool surface |
-| `dual_write` | Generate both pipeline versions while the selected version supplies context |
+| `dual_write` | Generate both pipeline versions while `v1` is selected; `v2` runs alone after cutover (the 0.163.0 schema said the selected version supplies context) |
 
 ## Apps
 
 `[apps._default]` sets defaults for every app (connector); `[apps.<id>]` overrides them for one app.
-The `apps` feature flag (stable, on by default in 0.163.0) gates app integrations. Keys in the
-0.163.0 config schema:
+The `apps` feature flag (stable, on by default in 0.164.0) gates app integrations. Keys in the
+0.164.0 config schema:
 
 | Key | Purpose |
 |-----|---------|
@@ -444,7 +454,7 @@ The `apps` feature flag (stable, on by default in 0.163.0) gates app integration
 
 `[otel]` log export is disabled by default and cannot be set from project config. The reference
 documents `metrics_exporter` as defaulting to `statsig`; set it to `none` to send no metrics. In
-0.163.0 the `statsig` default follows `[analytics] enabled`, while a custom OTLP metrics exporter
+0.164.0 the `statsig` default follows `[analytics] enabled`, while a custom OTLP metrics exporter
 (`otlp-http`, `otlp-grpc`) is independent of it and stays on when analytics is disabled.
 
 ```toml
@@ -471,9 +481,11 @@ log_user_prompt = false        # keep prompts redacted unless policy allows othe
 > interpolate environment variables. Verify before relying on it.
 
 Other switches: `[analytics] enabled = false` disables OpenAI analytics (anonymous usage and health
-metrics) across the desktop app, CLI, and IDE. As of 0.163.0 it does not turn off a custom OTLP
+metrics) across the desktop app, CLI, and IDE. As of 0.164.0 it does not turn off a custom OTLP
 metrics exporter; set `otel.metrics_exporter = "none"` for that. When `[analytics] enabled` is
-unset, the default depends on the client. `[feedback] enabled = false` disables `/feedback`.
+unset, the default depends on the client. `[feedback] enabled = false` disables `/feedback`; the
+0.164.0 schema says it also disables feedback uploads and background Guardian review retention,
+while explicit local exports stay available.
 
 Notifications:
 
@@ -508,7 +520,7 @@ Omitted keys stay unconstrained.
 | `allowed_web_search_modes` | Allowed `web_search` values; `disabled` always allowed |
 | `[features]` | Pin feature flags by canonical name |
 | `[rules]` | `prefix_rules` with `decision = "prompt"` or `"forbidden"` (never `allow`) |
-| `[hooks]`, `allow_managed_hooks_only` | Managed hooks; `managed_dir` (macOS/Linux) or `windows_managed_dir` (Windows) must be an existing absolute path |
+| `[hooks]`, `allow_managed_hooks_only` | Managed hooks (including `PreModelRequest` and `PostModelRequest` from 0.164.0); `managed_dir` (macOS/Linux) or `windows_managed_dir` (Windows) must be an existing absolute path |
 | `[mcp_servers.<id>]` | Allowlist by `identity` (`command` or `url`); an empty table disables all MCP servers |
 | `[marketplaces]` | `restrict_to_allowed_sources` plus `allowed_sources` rules |
 | `[models.new_thread]` | Managed defaults, not enforcement; ignored if the user overrides model or effort |
@@ -523,6 +535,8 @@ Omitted keys stay unconstrained.
 | `[auto_review]` `required_on_models`, `ignore_rules` | Model slugs that must use auto-review (no provider namespace; lists from several sources are combined) / full model slugs for which Codex ignores `allow` prefix rules (deny and network rules still apply) |
 | `allow_browser_and_computer_use`, `allow_appshots`, `allow_remote_control` | `false` blocks Browser Use and Computer Use / disables Appshots / disables device remote control for managed users. `true` or omitted enables nothing; other product checks still apply |
 | `[browser_use]`, `[computer_use]`, `[in_app_browser]`, `[application.network]` | Desktop and agent-browser controls; keys under [Browser Use and Computer Use requirements](#browser-use-and-computer-use-requirements) |
+| `[application.storage]` `default_project_parent`, `projectless_workspace_root` | Absolute paths that fix where the Desktop app creates new workspaces (applied as `desktop.defaultProjectParent` and `desktop.projectlessWorkspaceRoot`). Not filesystem access restrictions (new in 0.164.0; from the config source, not in the upstream docs) |
+| `[config_server]` `base_url`, `oauth` | Trusted customer-hosted configuration server whose managed bundle the client is required to use. Only local managed requirements may set it. `base_url` must be HTTPS with no userinfo, fragment, or query; Codex appends `codex/config/bundle`. The `oauth` URLs must be HTTPS too (new in 0.164.0; from the config source, not in the upstream docs) |
 
 ```toml
 allowed_approval_policies = ["untrusted", "on-request"]
@@ -539,7 +553,7 @@ requirements file or macOS MDM; Codex ignores them in cloud-managed requirements
 ### Browser Use and Computer Use requirements
 
 These tables constrain the desktop app's agent-driven browser and native-app control. A local
-`config.toml` value cannot relax a managed deny. Key names are confirmed against the 0.163.0
+`config.toml` value cannot relax a managed deny. Key names are confirmed against the 0.164.0
 `ConfigRequirementsToml` source; descriptions follow the official reference.
 
 | Key | Values | Purpose |
@@ -565,7 +579,7 @@ These tables constrain the desktop app's agent-driven browser and native-app con
 ### managed_config.toml and MDM defaults
 
 - Path: `/etc/codex/managed_config.toml` (Unix only). A missing file skips the layer. The docs list
-  `~/.codex/managed_config.toml` for Windows, but the 0.163.0 config loader source warns "Ignoring
+  `~/.codex/managed_config.toml` for Windows, but the 0.164.0 config loader source warns "Ignoring
   deprecated managed config file ... no longer supported on Windows" and points to
   `%ProgramData%\OpenAI\Codex\requirements.toml` (enforced settings) or `config.toml` (defaults).
   Confirmed from source, not run on Windows here.
@@ -575,9 +589,11 @@ These tables constrain the desktop app's agent-driven browser and native-app con
 - Legacy order, top wins: managed preferences (MDM), `managed_config.toml`, user `config.toml`.
   `--config` overrides apply to the base, and managed layers override them. Cloud `config.toml` uses
   normal precedence instead.
-- The 0.163.0 model catalog (`codex debug models`) no longer lists `gpt-5.5`, which the earlier
-  guidance said was retiring on 2026-10-14. A managed default that still pins it must move to a
-  model the catalog lists (`gpt-6.1-sol`, `gpt-6-sol`, `gpt-6-astra`, `gpt-6-luna`, or a
+- The refreshed model catalog (`codex debug models`, checked on 0.164.0 with a signed-in account)
+  does not list `gpt-5.5`, which the earlier guidance said was retiring on 2026-10-14. The catalog
+  bundled in the binary (`codex debug models --bundled`) still lists it, so the answer depends on
+  the catalog Codex has refreshed. A managed default that still pins it must move to a model the
+  refreshed catalog lists (`gpt-6.1-sol`, `gpt-6-sol`, `gpt-6-astra`, `gpt-6-luna`, or a
   `gpt-5.6-*` model there). Use whichever the admin has enabled.
 
 > [!NOTE]

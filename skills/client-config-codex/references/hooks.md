@@ -1,7 +1,7 @@
 # Hooks Reference
 
 Hooks run scripts (or MCP tools) at lifecycle points in a Codex session. They are enabled by
-default. Verified against codex-cli 0.163.0.
+default. Verified against codex-cli 0.164.0.
 
 ## Where hooks are loaded from
 
@@ -36,7 +36,11 @@ Non-managed hooks are skipped until reviewed and trusted.
   disable or re-enable individual non-managed hooks. Codex warns at startup when hooks need
   review and points at `/hooks`.
 - Managed hooks are trusted by policy and cannot be disabled from `/hooks`.
-- Installing or enabling a plugin does not trust its hooks. Review them the same way.
+- Installing or enabling a plugin does not trust its hooks. Review them the same way. From 0.164.0
+  a plugin hook's approval also covers the plugin's contents: if any file in the plugin changes,
+  Codex does not run the hook until it is approved again (the source's error text is `plugin
+  contents changed; hook approval required`; this is not in the docs), so re-trust it in
+  `/hooks` after a plugin update.
 - Editing a hook definition means re-trusting it. After any edit to `hooks.json`, open `/hooks`
   and confirm the hook shows as trusted.
 - `--dangerously-bypass-hook-trust` (root `codex` flag, also accepted by `codex exec`, `resume`, and
@@ -44,10 +48,11 @@ Non-managed hooks are skipped until reviewed and trusted.
   that vets hook sources itself.
 
 > [!NOTE]
-> The docs do not say where trust is persisted. On 0.163.0 it appears as
+> The docs do not say where trust is persisted. On 0.164.0 it appears as
 > `[hooks.state."<hooks-file-path>:<event_snake_case>:<group>:<index>"]` tables in
-> `~/.codex/config.toml` holding a `trusted_hash`, plus `enabled` once a hook is disabled or
-> re-enabled from `/hooks`. The event segment is snake_case (`pre_tool_use`) even though
+> `~/.codex/config.toml` holding a `trusted_hash` (plus a `trusted_content_hash` for a plugin hook,
+> the approved plugin contents, per the 0.164.0 config schema), and `enabled` once a hook is
+> disabled or re-enabled from `/hooks`. The event segment is snake_case (`pre_tool_use`) even though
 > `hooks.json` uses PascalCase. Treat those tables as machine state: do not hand-edit or copy them
 > between machines. Re-trust through `/hooks`.
 
@@ -65,8 +70,8 @@ hooks = false   # turn all hooks off
   `--enable hooks` / `--disable hooks` override it for one run.
 - Admins can pin it in `requirements.toml` with `[features].hooks = true` (enforce) or `false`.
 
-`codex features list` also lists `plugin_hooks` as `removed`. Do not set it; 0.163.0 accepts it
-without error but it does nothing.
+`codex features list` also lists `plugin_hooks` as `removed`. Do not set it; 0.164.0 accepts it
+without error but it does nothing (also true on 0.163.0).
 
 ## File format (`hooks.json`)
 
@@ -108,7 +113,8 @@ statusMessage = "Checking Bash command"
 
 Event names are PascalCase: `SessionStart`, `SessionEnd`, `UserPromptSubmit`, `PreToolUse`,
 `PermissionRequest`, `PostToolUse`, `PreCompact`, `PostCompact`, `SubagentStart`,
-`SubagentStop`, `Stop`, `Interrupt`.
+`SubagentStop`, `Stop`, `Interrupt`, and, from 0.164.0, `PreModelRequest` and `PostModelRequest`
+(in the config schema and source, not yet in the upstream hooks page; see the table below).
 
 ## Handler types
 
@@ -171,6 +177,14 @@ command hook.
 | `SubagentStop` | A subagent finishes | `agent_type` |
 | `Stop` | The main turn is about to end | Not supported (ignored) |
 | `Interrupt` | You interrupt an active turn on the main thread. Not idle threads or subagents | Not supported (ignored) |
+| `PreModelRequest` | Before each model request in a turn (0.164.0) | Not supported (ignored) |
+| `PostModelRequest` | After each model request finishes, fails, or is cancelled (0.164.0) | Not supported (ignored) |
+
+`PreModelRequest` and `PostModelRequest` are observation-only. Their stdout is only logged, never
+read as a decision, a nonzero exit marks the run failed, and stderr is shown as an error entry. If
+any `PostModelRequest` handler is synchronous (not `"async": true`), tool dispatch waits for the
+hook to finish. The payload has no `permission_mode`. All of this comes from the 0.164.0 source (`hooks/src/events/model_request.rs`,
+`core/src/session/turn.rs`), because the upstream docs do not list these events yet.
 
 ## Matchers
 
@@ -220,6 +234,8 @@ Event-specific additions (`turn_id` is also present on turn-scoped events):
 | `SubagentStop` | `turn_id`, `agent_id`, `agent_type`, `agent_transcript_path`, `stop_hook_active`, `last_assistant_message` |
 | `Stop` | `turn_id`, `stop_hook_active`, `last_assistant_message` |
 | `Interrupt` | `turn_id` |
+| `PreModelRequest` | `turn_id`, plus `agent_id` and `agent_type` inside a subagent |
+| `PostModelRequest` | `turn_id`, `status` (`completed`, `failed`, `cancelled`), `error`, `token_usage` (`null` when unavailable), plus `agent_id` and `agent_type` inside a subagent |
 
 `tool_input` for `Bash` and `apply_patch` is an object with `command`. MCP and other function
 tools send their arguments.
@@ -324,7 +340,7 @@ The `reason` becomes a new user-style prompt. Always check `stop_hook_active`. P
 
 There is no `codex debug` hooks subcommand, and `codex debug prompt-input` renders prompt input
 only: it does not surface hook discovery or trust errors (an invalid matcher exited 0 with no
-warning on 0.163.0). Test scripts directly:
+warning on 0.163.0 or 0.164.0). Test scripts directly:
 
 ```bash
 echo '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"rm -rf /"},"cwd":"/tmp"}' \

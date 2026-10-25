@@ -42,12 +42,12 @@ actual workspace directories.
 | `on-failure` | **Deprecated** per the config reference; use `on-request` or `never` |
 
 Granular keys: `sandbox_approval`, `rules`, `mcp_elicitations`, `request_permissions`,
-`skill_approval` (booleans; `true` keeps that prompt interactive). On 0.163.0 `sandbox_approval`,
+`skill_approval` (booleans; `true` keeps that prompt interactive). On 0.164.0 `sandbox_approval`,
 `rules`, and `mcp_elicitations` are required (a missing one is a config error);
 `request_permissions` and `skill_approval` are optional.
 
 > [!NOTE]
-> The installed CLI (0.163.0) accepts only `on-request` and `never` for `--ask-for-approval`
+> The installed CLI (0.164.0) accepts only `on-request` and `never` for `--ask-for-approval`
 > (`untrusted`, `on-failure`, and `granular` are rejected as flag values). `granular` works only in
 > `config.toml`.
 >
@@ -98,7 +98,7 @@ allow_login_shell = false   # optional hardening: no login shells for shell-base
 > [!NOTE]
 > The docs call `--yolo` an alias of `--dangerously-bypass-approvals-and-sandbox`. The installed CLI
 > accepts `--yolo` but hides it from `--help`. The docs say `codex exec --full-auto` remains as a
-> deprecated compatibility path; 0.163.0 rejects `--full-auto` on both bare `codex` and
+> deprecated compatibility path; 0.164.0 rejects `--full-auto` on both bare `codex` and
 > `codex exec` (`unexpected argument`). Do not recommend either flag. Use explicit `--sandbox` and
 > `--ask-for-approval` instead. `codex exec` has no `-a/--ask-for-approval` flag; set
 > `-c approval_policy=...` there instead.
@@ -187,7 +187,7 @@ One-off: `codex -c 'features.network_proxy=true' -c 'sandbox_workspace_write.net
 The proxy enforces rules only; it never grants access. Where policy permits full sandbox
 escalation and it is approved, that execution can bypass the command proxy; a narrow network
 grant is not the same thing. `network_proxy` is `experimental` and off by
-default in 0.163.0 (`codex features list`).
+default in 0.164.0 (`codex features list`).
 
 Domain rules: exact host matches itself; `*.example.com` matches subdomains only;
 `**.example.com` matches apex plus subdomains; bare `*` is allow-only and broad. `deny` always wins.
@@ -328,7 +328,7 @@ approvals_reviewer = "auto_review"   # default is "user"
   policy; copy the full default first. Managed `guardian_policy_config` takes precedence.
   `[auto_review].extra_policy` adds policy text alongside the main policy; managed
   `guardian_extra_policy` takes precedence over it.
-- Other `[auto_review]` keys in the 0.163.0 schema: `circuit_break_action` (default `default`; a
+- Other `[auto_review]` keys in the 0.164.0 schema: `circuit_break_action` (default `default`; a
   strict mode writes structured errors that older clients may not recognize when reading shared
   history) and `conversation_history_max_output_tokens` (default 4,000 estimated tokens per
   history-tool response).
@@ -430,7 +430,7 @@ docs point to the Codex secure devcontainer example (firewalled egress plus `bub
 codex sandbox -P <profile> --log-denials -- <command> [args...]
 ```
 
-Runs a command under the sandbox without starting a session. Options in 0.163.0: `-P`,
+Runs a command under the sandbox without starting a session. Options in 0.164.0: `-P`,
 `--permission-profile <NAME>`, `--include-managed-config` (include managed requirements when
 resolving an explicit profile), `--log-denials` (macOS: print sandbox denials after exit),
 `--allow-unix-socket <PATH>` (repeatable), `-C`, `-p`, `-c`, `--enable`/`--disable`, and the
@@ -440,7 +440,7 @@ machine-wide accounts and network rules.
 
 > [!NOTE]
 > The docs show per-platform subcommands (`codex sandbox macos|linux|windows`, with aliases
-> `seatbelt` and `landlock`) and `sandbox` available under `codex debug`. The installed 0.163.0 CLI
+> `seatbelt` and `landlock`) and `sandbox` available under `codex debug`. The installed 0.164.0 CLI
 > has a flat `codex sandbox [OPTIONS] [COMMAND]...` whose only subcommand is `uninstall`, and
 > `codex debug` has only `models`, `app-server`, and `prompt-input`. The canonical profile flag is
 > `-P/--permission-profile`; the docs' plural `--permissions-profile` is still accepted as a hidden
