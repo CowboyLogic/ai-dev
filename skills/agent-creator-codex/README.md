@@ -3,8 +3,8 @@
 A skill for creating and troubleshooting custom subagents for OpenAI Codex.
 
 > [!NOTE]
-> **Codex version:** verified against [Codex CLI 0.163.0](https://github.com/openai/codex/releases/tag/rust-v0.163.0)
-> (released 2026-10-15). Role-file behavior comes from the Codex source at tag `rust-v0.163.0`
+> **Codex version:** verified against [Codex CLI 0.164.0](https://github.com/openai/codex/releases/tag/rust-v0.164.0)
+> (released 2026-10-23). Role-file behavior comes from the Codex source at tag `rust-v0.164.0`
 > and from running that CLI. Re-verify when Codex ships a new release.
 
 ## Overview

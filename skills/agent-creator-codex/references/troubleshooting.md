@@ -7,7 +7,7 @@ causes below, except project trust.
 
 Codex does not abort on a bad agent file. It prints
 `warning: Ignoring malformed agent role definition: <reason>` at session start and continues
-without that agent. Messages below were observed on codex-cli 0.163.0 with `codex doctor`,
+without that agent. Messages below were observed on codex-cli 0.164.0 with `codex doctor`,
 which lists them as `startup warning` lines without starting a session or calling a model.
 
 | Symptom (warning text, abridged) | Cause | Fix |

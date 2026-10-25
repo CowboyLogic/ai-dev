@@ -23,10 +23,10 @@ string inside the TOML.
 >
 > The official subagents page says the same: `sandbox_mode`, `approval_policy`,
 > `model_provider`, and `mcp_servers` in a custom agent file "don't override the parent
-> configuration". The Codex source and its tests at `rust-v0.163.0` agree: a role "must not
+> configuration". The Codex source and its tests at `rust-v0.164.0` agree: a role "must not
 > control" them. See [What a Role File Can Set](#what-a-role-file-can-set).
 
-Verified against **Codex CLI 0.163.0** (released 2026-10-15, the latest stable release when
+Verified against **Codex CLI 0.164.0** (released 2026-10-23, the latest stable release when
 this skill was last reviewed).
 
 Official docs: <https://developers.openai.com/codex/subagents> (redirects to
@@ -100,7 +100,7 @@ Rules that avoid load failures:
 
 ## What a Role File Can Set
 
-Verified in the Codex source at tag `rust-v0.163.0` (`codex-rs/core/src/agent/role.rs`,
+Verified in the Codex source at tag `rust-v0.164.0` (`codex-rs/core/src/agent/role.rs`,
 described there as "bounded agent-role overrides"), and by the upstream test
 `codex-rs/core/src/agent/role_tests.rs`, which asserts the role layer holds none of
 `openai_base_url`, `chatgpt_base_url`, `model_provider`, `approval_policy`, `sandbox_mode`,
@@ -214,7 +214,7 @@ config reference lists it. `agents.interrupt_message` (default `true`) controls 
 model-visible message is recorded when an agent turn is interrupted.
 `agents.max_depth` limits nesting for V1 agent threads and is ignored by V2.
 `agents.job_max_runtime_seconds` is a removed setting kept as a no-op. Neither of those two
-is in the public config reference; both are accepted without error in 0.163.0.
+is in the public config reference; both are accepted without error in 0.164.0.
 
 > [!WARNING]
 > Under `[agents]`, any key Codex does not know is parsed as a role table. A typo such as
@@ -284,7 +284,7 @@ and match the filename.
 
 Codex does **not** stop on a bad agent file. It prints
 `warning: Ignoring malformed agent role definition: <reason>` and carries on without that
-agent, so the agent is simply missing. Verified against codex-cli 0.163.0 with `codex doctor`:
+agent, so the agent is simply missing. Verified against codex-cli 0.164.0 with `codex doctor`:
 
 | Defect | Codex message (abridged) |
 |---|---|

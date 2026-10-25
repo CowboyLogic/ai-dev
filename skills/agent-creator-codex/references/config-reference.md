@@ -2,8 +2,8 @@
 
 Sources: <https://developers.openai.com/codex/subagents> and
 <https://developers.openai.com/codex/config-reference>, the Codex source at tag
-`rust-v0.163.0`, plus load behavior observed with `codex doctor` against test agent files on
-codex-cli 0.163.0. Re-verify when the CLI version moves on.
+`rust-v0.164.0`, plus load behavior observed with `codex doctor` against test agent files on
+codex-cli 0.164.0. Re-verify when the CLI version moves on.
 
 ## Agent file fields
 
@@ -20,9 +20,9 @@ One agent per `.toml` file in `.codex/agents/` (project, trusted projects only) 
 
 ### What Codex applies from a role file
 
-Verified in `codex-rs/core/src/agent/role.rs` at tag `rust-v0.163.0` (identical to
-`rust-v0.162.1`; `role_tests.rs` differs only in dropping its `main_execve_wrapper_exe`
-assertions), which describes the mechanism as
+Verified in `codex-rs/core/src/agent/role.rs` at tag `rust-v0.164.0` (it differs from
+`rust-v0.163.0` only in config-server plumbing passed to the child, and `codex-rs/agent-roles` is
+unchanged), which describes the mechanism as
 "bounded agent-role overrides": roles "may customize the child or reduce its capabilities, but
 never replace the parent session's authority."
 
@@ -47,7 +47,7 @@ Configure them on the parent session.
 The official subagents page states the same ("Other session settings, including `sandbox_mode`,
 `approval_policy`, `model_provider`, and `mcp_servers`, don't override the parent configuration
 when placed in a custom agent file. The service tier also follows the root session's
-preference."). The source agrees: the `role_tests.rs` test at `rust-v0.163.0` writes a role file
+preference."). The source agrees: the `role_tests.rs` test at `rust-v0.164.0` writes a role file
 with `approval_policy`, `sandbox_mode`, and `[mcp_servers.*]` and asserts that the child's
 permissions and MCP servers equal the parent's and that the role layer contains none of those
 keys; `apply_spawn_agent_service_tier` in `core/src/agent/child_config.rs` runs after the role is
@@ -68,7 +68,7 @@ none). Do not rely on a role-file `sandbox_mode` for isolation.
 `agents.max_depth` limits nesting for V1 agent threads and is ignored by V2.
 `agents.job_max_runtime_seconds` is a removed setting kept as a no-op for compatibility
 (`config_toml.rs`: "Removed agent-job setting retained as a no-op"). Both are absent from the
-public reference and accepted without error in 0.163.0. The public reference also notes that
+public reference and accepted without error in 0.164.0. The public reference also notes that
 scalar setting names are reserved and cannot be used as custom role names.
 
 Any other key under `[agents]` is parsed as a role table. An unknown scalar such as
