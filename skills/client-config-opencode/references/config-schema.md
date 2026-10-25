@@ -35,7 +35,7 @@ TUI schema: `https://opencode.ai/tui.json`
 | `small_model` | string | Model for lightweight tasks like title generation; defaults to a cheaper model from your provider if available, else the main model | `"anthropic/claude-haiku-4-5"` |
 | `default_agent` | string | Default primary agent (must be `primary` mode; falls back to `build` with a warning if invalid). Applies across TUI, `opencode run`, desktop app, GitHub Action | `"build"` |
 | `subagent_depth` | integer | Max subagent nesting depth (default `1`: primary can launch subagents, they can't launch more; `0` blocks all subagent launches) | `2` |
-| `share` | enum | `"manual"` (default) \| `"auto"` \| `"disabled"` | `"manual"` |
+| `share` | enum | `"manual"` (default) \| `"auto"` \| `"disabled"`. **Session sharing was discontinued in 1.19.1** (1.19.1 release notes), so this key no longer does anything useful; do not add it | `"manual"` |
 | `autoupdate` | bool \| `"notify"` | Update checks and notices. Since 1.19.0 updates are never installed automatically: `true` and `"notify"` keep the default (a notice, installed with `/update` or `opencode upgrade`); `false` turns checks and notices off. The published JSON schema description still says `true` auto-updates; the docs and release notes say otherwise | `"notify"` |
 | `snapshot` | boolean | Track filesystem changes for undo/revert (default `true`); disable on large repos to avoid slow indexing | `true` |
 | `logLevel` | enum | `"DEBUG"` \| `"INFO"` \| `"WARN"` \| `"ERROR"` | `"INFO"` |
@@ -51,7 +51,7 @@ TUI schema: `https://opencode.ai/tui.json`
 | `enterprise` | object | `{ "url": "https://your-enterprise" }` | — |
 | `reference` | object | **Deprecated** — use `references` | — |
 | `mode` | object | **Deprecated** — use `agent` | — |
-| `autoshare` | boolean | **Deprecated** — use `share` | — |
+| `autoshare` | boolean | **Deprecated** — sharing was discontinued in 1.19.1; do not add | — |
 | `layout` | string | **Deprecated** — always stretch layout | — |
 
 Legacy `theme`, `keybinds`, and `tui` keys in `opencode.json` are deprecated and auto-migrated to `tui.json` when
@@ -134,7 +134,7 @@ Custom slash commands. Also loadable as Markdown in `~/.config/opencode/commands
 | `variant` | No | Model variant (schema field) |
 | `subtask` | No | `true` forces a subagent invocation even for a primary agent; `false` disables the default subagent behavior |
 
-A custom command with the same name as a built-in (`/init`, `/undo`, `/redo`, `/share`, `/help`) overrides it.
+A custom command with the same name as a built-in (`/init`, `/undo`, `/redo`, `/help`) overrides it.
 
 ### Prompt template syntax
 
@@ -349,7 +349,6 @@ Verify with `opencode debug config`.
   "enabled_providers": ["anthropic", "openai"],
 
   // Behavior
-  "share": "manual",
   "autoupdate": "notify",
   "snapshot": true,
   "logLevel": "INFO",

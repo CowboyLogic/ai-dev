@@ -1,15 +1,15 @@
 # V2 Agents Reference
 
-Source: <https://opencode.ai/v2/docs/agents/>. Permission rules: [permissions.md](permissions.md).
+Source: <https://opencode.ai/v2/docs/agents/> (2.1.4 tag). Permission rules: [permissions.md](permissions.md).
 
 ## Built-in agents
 
 | Agent | Mode | Purpose |
 |-------|------|---------|
-| `build` | `primary` | Default coding agent; tools allowed, `.env` reads and external dirs ask |
+| `build` | `primary` | Default coding agent; tools and access outside the workspace allowed, `.env` reads ask |
 | `plan` | `primary` | Explores and plans; no edits to normal project files (may write OpenCode plan files) |
 | `general` | `subagent` | Research and multi-step work; cannot launch more subagents |
-| `explore` | `subagent` | Searches and reads code or web sources without editing |
+| `explore` | `subagent` | Searches and reads code or web sources without editing; shell stays allowed, so it is permission-controlled rather than blocked |
 | `compaction`, `title`, `summary` | hidden | Maintenance; not selectable |
 
 V2 has **no built-in `scout` agent** (V1 had one). Override a built-in by defining the same ID.
@@ -29,11 +29,16 @@ V2 still discovers the V1 directories `agent/`, `mode/`, and `modes/` (files und
 
 Frontmatter accepts the same fields as an `agents` entry; the body becomes `system`.
 
+V1 frontmatter fields are deprecated but still translated. Each file is read as **one** format: a file that uses any
+of `permissions`, `request`, `system`, or `disabled` is read as V2 (2.1.4 release notes), and V1 fields in it, such as
+`name`, `tools`, `permission`, or `temperature`, are ignored with a warning in the log. Other files that use V1
+fields are read as V1. Convert a file's frontmatter all at once; do not mix the two.
+
 ```markdown
 ---
 description: Reviews changes for correctness and regressions
 mode: subagent
-model: anthropic/claude-sonnet-4-5#high
+model: anthropic/claude-sonnet-5-5#high
 permissions:
   - action: edit
     resource: "*"
@@ -55,7 +60,7 @@ Review the current changes. List findings in severity order with file and line r
     "reviewer": {
       "description": "Reviews current changes",
       "mode": "subagent",
-      "model": "anthropic/claude-sonnet-4-5#high",
+      "model": "anthropic/claude-sonnet-5-5#high",
       "system": "Report findings in severity order.",
       "steps": 8,
       "color": "#ff6b6b",
@@ -113,6 +118,7 @@ Definitions merge in configuration order: later scalars replace earlier ones, `r
 
 The parent's `subagent` rules decide which agents it may launch; the child uses its own permissions.
 Default nesting depth is one; raise it with `experimental.subagent_depth` (top-level `subagent_depth` is ignored in V2).
+Since 2.1.4 a session that has no model of its own uses the selected agent's model (2.1.4 release notes).
 
 ```jsonc
 {

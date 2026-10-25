@@ -336,6 +336,7 @@ Fields under `provider.<id>.models.<model-id>` (from the V1 schema):
 | `options` | object | Provider-specific model options |
 | `headers` | object | Per-model HTTP headers |
 | `variants` | object | Variant name → config; `{"disabled": true}` disables one |
+| `reasoning_options` | array | Describes the model's reasoning controls so OpenCode builds its reasoning variants (1.19.3): entries `{"type": "effort", "values": ["low", "high", null]}`, `{"type": "toggle"}`, `{"type": "budget_tokens", "min": 1024, "max": 32000}`. They replace the catalog's variants for the model; `variants` you configure still apply on top (from the 1.19.3 source, `packages/core/src/v1/config/provider.ts` and `packages/opencode/src/provider/transform.ts`) |
 
 ## Model whitelist / blacklist
 

@@ -15,7 +15,9 @@ Sources: <https://opencode.ai/v2/docs/cli/config/>, <https://opencode.ai/v2/docs
 | `$XDG_CONFIG_HOME/opencode/cli.json` | Used when `XDG_CONFIG_HOME` is set |
 
 - There is **no project-local** CLI settings file.
-- **Unknown settings are rejected.** Valid edits hot-reload while the TUI runs.
+- **Unknown settings are ignored** (2.1.4 docs; the 2.0.29 docs said rejected), and unknown keybind command IDs are
+  ignored too. The published schema still sets `additionalProperties: false`, so keep `$schema` and let your editor
+  flag mistakes. Valid edits hot-reload while the TUI runs.
 - On first V2 startup without `cli.json`, OpenCode migrates supported **global** `tui.json` settings (V1 files are
   left unchanged; project-local `tui.json` is not migrated).
 - `OPENCODE_CLI_CONFIG_CONTENT='{"tabs":{"mode":"off"}}' opencode` merges inline JSON over `cli.json` (objects
@@ -65,6 +67,7 @@ Sources: <https://opencode.ai/v2/docs/cli/config/>, <https://opencode.ai/v2/docs
 | `diffs.source` | `branch` \| `committed` \| `working` \| `turn` | Initial `/diff` scope; `turn` is the session's last turn and falls back to `branch` outside a session |
 | `diffs.wrap` | `word` \| `none` | |
 | `diffs.tree` / `diffs.single` | boolean | File tree / single-patch view |
+| `diffs.fullscreen` | boolean | Open the `/diff` side panel full screen; remembers the last full-screen toggle (key `f`). `/diff` opens beside the session by default since 2.0.30 |
 | `diffs.view` | `auto` \| `split` \| `unified` | |
 | `attention.notifications` | boolean | System notifications |
 | `attention.sound` | boolean | Attention sounds |
@@ -80,7 +83,7 @@ Sources: <https://opencode.ai/v2/docs/cli/config/>, <https://opencode.ai/v2/docs
 | `plugins` | array | CLI-only plugins (see below) |
 | `debug.devtools` / `debug.timing` | boolean | Debug bar diagnostics |
 | `debug.turn_tokens` | boolean \| `verbose` | Per-turn token usage |
-| `experimental` | object of feature ID → boolean | Only IDs listed in the TUI Experiments dialog |
+| `experimental` | object of feature ID → boolean | Only IDs listed in the TUI Experiments dialog; 2.1.4 added **TUI tools**, which lets agents open and type into the session terminal (`tui_open_terminal`, `tui_write_terminal`) without taking keyboard focus (release notes) |
 
 > [!NOTE]
 > V2 `attention` has no `enabled` flag (V1 `tui.json` did). Set `notifications` and `sound` directly.
@@ -156,13 +159,19 @@ Common IDs and defaults:
 While OpenCode is working, **Enter** steers the active session and `prompt.queue` (**Ctrl+X** then **Enter** by
 default) queues the prompt.
 
+New command IDs in the 2.1.4 docs and schema: `location.reload` (reload configuration), `diff.toggle_fullscreen` (`f`),
+`pane.focus.left` / `pane.focus.right`, `terminal.select` / `terminal.close`, `session.copy.id`,
+`session.verbosity.cycle`, `composer.terminal.up` / `.down` / `.select`, `dialog.integration.rename` / `.delete`, and
+`dialog.plugins.error`. The 2.1.4 docs no longer list `session.share` / `session.unshare`, though the schema still
+accepts them.
+
 For the full list (diff viewer, input editing, composer, dialogs, which-key), see
 <https://opencode.ai/v2/docs/cli/keybinds/>. Retired diff IDs (`diff.toggle`, `diff.expand`, `diff.expand_all`,
 `diff.collapse`, `diff.switch_focus`) are accepted but register nothing.
 
 > [!NOTE]
 > The `permission.mode` keybind (auto-approve toggle) and the plugin install IDs `plugins.install` and
-> `dialog.plugins.install` are absent from the 2.0.29 docs and published `cli.json` schema. To auto-approve, set
+> `dialog.plugins.install` are absent from the 2.1.4 docs and published `cli.json` schema (checked 2026-10-25). To auto-approve, set
 > `session.permissions: "autoaccept"` or start with `--auto`, which auto-approves permissions that are not
 > explicitly denied.
 
@@ -198,7 +207,7 @@ The V2 theme format is **not** the V1 format. Every V2 theme has one complete `b
 - Colors: 3/4/6/8-digit hex, `transparent`, or `$` references (`$hue.<name>.<step>`, `$text.muted`).
 - Hues: `gray`, `red`, `orange`, `yellow`, `green`, `cyan`, `blue`, `purple`; aliases `accent`, `interactive`,
   `neutral`; steps `100`–`900`.
-- Token groups: `text`, `background` (incl. `raised.base/high/max`), `border`, `scrollbar`, `diff`, `syntax`,
+- Token groups: `text` (including `faint`, which defaults to `muted`; 2.1.4 docs), `background` (incl. `raised.base/high/max`), `border`, `scrollbar`, `diff`, `syntax`,
   `markdown`; action states `$hovered`, `$focused`, `$pressed`, `$selected`, `$disabled`; `@dialog` overrides.
 - Use the official theme tool to generate a complete `base` before customizing (the excerpt above is incomplete).
 

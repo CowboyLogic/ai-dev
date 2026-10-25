@@ -2,6 +2,48 @@
 
 Changes to the `client-config-opencode` skill, newest first.
 
+## 2026-10-25 — v2.4 (verified against V2 2.1.4 and V1 1.19.4)
+
+Baselines: V2 2.0.29 → 2.1.4 (401 commits; 51 docs pages changed); V1 1.19.0 → 1.19.4. Sources are the
+tag-to-tag diff `v2.0.29...v2.1.4` of the V2 docs source (`services/www/src/docs/content`) and the config
+schema/core source, the V2 `CHANGELOG.md` (the 2.1.4 notes come from `dev`, since the tag's own copy lags), the
+published `config.json` and `cli.json` schemas, and the V1 1.19.0..1.19.4 release notes and source. Unlike the last
+two updates, the **2.1.4 binary was run**: `--help` output for the CLI commands and `{file:...}` substitution in an
+agent `system` field were checked on it.
+
+- `references/v2/permissions.md`: **docs correction, not a behavior change.** The base policy has no
+  `external_directory` rule (identical in 2.0.29 and 2.1.4; upstream commit `20d172e462` fixed the docs), so
+  access outside the project is allowed by default, and `explore` allows shell and external directories. Earlier
+  versions of this skill listed an `ask` rule from the older docs. Added `opencode_list_mcp_resources` and
+  `opencode_read_mcp_resource` actions, the effect of denying `execute`, and `todowrite` (only with
+  `experimental.todo`).
+- `references/v2/config-schema.md`: `config.json` now accepts the V1 and native V2 shape (the "V1-only" notes are
+  gone); `instructions` loads files, globs, and URLs (2.0.30); `share` is inert (sharing was removed in 2.0.30);
+  compaction `buffer` default is 15% (at least 16k), summaries cover the whole conversation,
+  `agents.compaction.model`, and `experimental.background_compaction`; new Experimental section (`todo`,
+  `subagent_depth`, `portable_shell_scanner`, `background_compaction`, `location_idle_timeout`); nested skill
+  directories; `OPENCODE_DISABLE_CLAUDE_CODE*`, `OPENCODE_DISABLE_FREE_MODELS`; `{env:}` / `{file:}` are documented.
+- `references/v2/mcp.md`: OAuth client registration order (pre-registered, CIMD, DCR); MCP resources, server
+  instructions, and elicitation forms; `mcp.timeout` scope; `opencode mcp auth` without a name.
+- `references/v2/plugins.md`: configured local plugin paths must be directories; `ctx.permission.assert` details;
+  build-API changes between 2.0.29 and 2.1.4 (the `native` replay-data rename, `metadata`, paginated
+  `session.list`, and others); `effect@4.0.1` and OpenTUI 0.6 peer ranges.
+- `references/v2/agents.md`: agent files using V2-only fields are read as V2 (2.1.4); `request.body` is still not
+  sent; the `build` and `explore` descriptions match the source.
+- `references/v2/cli.md`: unknown settings and keybind IDs are ignored; `diffs.fullscreen`; new keybind command
+  IDs; `/diff` opens docked; the TUI-tools experiment; theme `faint` token.
+- `references/v2/providers.md`: `capabilities.reasoning`, `releaseDate`, `streamUsage`, the ChatGPT sign-in
+  context caps and how to disable them, `OPENCODE_DISABLE_FREE_MODELS`, the Bedrock `mantle/messages` package; the
+  docs now agree on the 15-minute chunk timeout.
+- `references/v2/migration.md`: `instructions` loads; `autoshare` has no V2 equivalent; V1 `external_directory`
+  prompted but V2 does not; the `temperature` / `top_p` mapping points at model variants; `upgrade --major` is a V1
+  option (not in the 2.1.4 `upgrade --help`).
+- V1 references: `reasoning_options` model config (1.19.3); sharing discontinued in 1.19.1 (`share`, `autoshare`,
+  `/share`, `session_share`).
+- `SKILL.md`: the instructions row, schema note, `{file:}` note, model IDs, and three new quick edits.
+- Not changed: `references/mcp.md`, `references/agents.md`, `references/permissions.md` (V1; no related V1 docs
+  changes in 1.19.0..1.19.4 beyond `zen.mdx`).
+
 ## 2026-10-14 — v2.3 (verified against V2 2.0.29 and V1 1.19.0)
 
 Baselines: V2 2.0.27 → 2.0.29 (108 commits; 11 docs pages changed); V1 1.19.0 is unchanged. Sources are

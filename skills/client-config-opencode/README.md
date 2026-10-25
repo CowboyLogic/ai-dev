@@ -5,11 +5,11 @@ Evaluation results for the `client-config-opencode` skill. The skill itself is
 
 > [!NOTE]
 > **OpenCode version:** references verified against OpenCode V2
-> [2.0.29](https://github.com/anomalyco/opencode/tree/v2.0.29) (tagged 2026-10-14) and V1
-> [1.19.0](https://github.com/anomalyco/opencode/releases/tag/v1.19.0) (released 2026-10-11),
-> checked 2026-10-14. The 2.0.29 binary was not run for this check: claims that depend on a binary
-> (`--help` output, `{file:...}` substitution) keep their 2.0.27 basis, and everything else comes
-> from the tagged docs and source and the published `cli.json` schema. V2 ships as git tags and
+> [2.1.4](https://github.com/anomalyco/opencode/tree/v2.1.4) (tagged 2026-10-23) and V1
+> [1.19.4](https://github.com/anomalyco/opencode/releases/tag/v1.19.4) (released 2026-10-22),
+> checked 2026-10-25. The 2.1.4 binary was run for this check (CLI `--help` output and `{file:...}`
+> substitution); everything else comes from the tagged docs and source and the published `config.json`
+> and `cli.json` schemas. V2 ships as git tags and
 > binaries rather than GitHub Releases, so its version is the tag; its release notes are the repository's
 > [CHANGELOG.md](https://github.com/anomalyco/opencode/blob/dev/CHANGELOG.md). Re-verify when either
 > line ships a new release; what changed in this skill is in [CHANGELOG.md](CHANGELOG.md).

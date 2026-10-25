@@ -93,7 +93,7 @@ Native packages:
 @opencode/ai/providers/azure             @opencode/ai/providers/azure/chat
 @opencode/ai/providers/azure/responses   @opencode/ai/providers/amazon-bedrock
 @opencode/ai/providers/amazon-bedrock/mantle   @opencode/ai/providers/amazon-bedrock/mantle/chat
-@opencode/ai/providers/amazon-bedrock/mantle/responses
+@opencode/ai/providers/amazon-bedrock/mantle/messages   @opencode/ai/providers/amazon-bedrock/mantle/responses
 @opencode/ai/providers/openrouter        @opencode/ai/providers/xai
 ```
 
@@ -114,7 +114,7 @@ AI SDK package, the migration guide shows the `aisdk:` prefix (`"package": "aisd
     "openai": {
       "models": {
         "coding-default": {
-          "modelID": "gpt-5.2",
+          "modelID": "gpt-6.1-sol",
           "name": "Coding default",
           "capabilities": { "tools": true, "input": ["text", "image"], "output": ["text"] },
           "limit": { "context": 200000, "output": 32000 },
@@ -136,9 +136,10 @@ AI SDK package, the migration guide shows the `aisdk:` prefix (`"package": "aisd
 | `modelID` | ID sent to the provider (map key is the OpenCode ID) |
 | `name` | Display name |
 | `family` | Grouping |
+| `releaseDate` | `YYYY-MM-DD` or `YYYY-MM` (in the 2.1.4 schema and providers docs) |
 | `package` | Per-model runtime override |
 | `settings` / `headers` / `body` | Per-model request options |
-| `capabilities` | `tools`, `input`, `output` media types |
+| `capabilities` | `tools`, `input`, `output` media types, `temperature`, and `reasoning` (see [Reasoning variants](#reasoning-variants)) |
 | `compatibility` | Per-model overrides of the provider's `compatibility` (see [Compatibility](#compatibility)) |
 | `variants` | **Array** of `{ id, settings?, headers?, body? }` |
 | `cost` | Input/output and optional `cache.read`/`cache.write` per million tokens |
@@ -149,12 +150,45 @@ Unknown models default to tools on, text+image in, text out, 200,000 context, 32
 Options apply provider → model → variant; `settings` and `body` deep-merge, arrays/scalars replace, headers match
 case-insensitively.
 
+## Reasoning variants
+
+To replace a model's catalog reasoning variants, describe its reasoning controls in `capabilities.reasoning`
+(models.dev v2 shape; 2.1.4 models docs and schema). OpenCode builds the variants for the model's package from them,
+and variants listed in `variants` still apply on top.
+
+```jsonc
+{ "providers": { "openai": { "models": { "gpt-6.1-sol": {
+  "capabilities": { "reasoning": { "supported": true, "effort": ["low", "medium", "high"] } }
+} } } } }
+```
+
+| Field | Purpose |
+|-------|---------|
+| `supported` | Whether the model reasons; `false`, or `true` without controls, adds no variants |
+| `toggle` | Adds a `none` variant that turns reasoning off |
+| `effort` | Effort levels to offer; `default` keeps the provider default and adds no variant |
+| `budget` | Optional `{ min, max }` thinking tokens; ignored when `effort` is set |
+
+## ChatGPT sign-in
+
+Connect **OpenAI** and choose **Sign in with ChatGPT** (or a legacy **Codex** method) to use a ChatGPT Plus or Pro
+plan; usage counts against the plan, so these models show no cost. By default OpenCode caps the context window for
+these sign-ins below each model's real limit, matching Codex defaults: 500,000 input tokens for GPT-6.1 Sol and newer,
+272,000 for older models. The cap is a built-in plugin; turn it off with `"plugins": ["-opencode.provider.openai-context-caps"]`
+(2.1.4 docs and release notes; the `-` prefix disables a built-in plugin and leaves the others enabled).
+
+## Free models
+
+`OPENCODE_DISABLE_FREE_MODELS=1` (or `true`) on the server process hides free `opencode` and `opencode-go` models
+(no input price) from the catalog and defaults; explicitly selecting one fails with `Model unavailable`. For the
+shared background server: `opencode service set env OPENCODE_DISABLE_FREE_MODELS 1`. Signed out, the `opencode`
+provider is absent until you connect an OpenCode Console account or set `OPENCODE_API_KEY` (2.1.2 release notes and
+the 2.1.4 models docs).
+
 ## Timeouts
 
-Requests wait up to five minutes for response headers and up to fifteen minutes between streamed chunks. The 2.0.28
-release notes raised the default streamed-chunk timeout from 5 to 15 minutes and the 2.0.29 source sets it to
-`900_000` ms, but the 2.0.29 providers docs page still says five, so set `chunkTimeout` explicitly if you depend on a
-value. Set these on the provider's `settings` (provider-wide; not per model or variant), in milliseconds, or `false`
+Requests wait up to five minutes for response headers and up to fifteen minutes between streamed chunks (raised
+from five in 2.0.28; the providers docs page said five through 2.0.29 and says fifteen in 2.1.4). Set these on the provider's `settings` (provider-wide; not per model or variant), in milliseconds, or `false`
 to disable a limit:
 
 ```jsonc
@@ -172,7 +206,7 @@ A request that exceeds a limit fails with a transport error; OpenCode retries a 
 ## Compatibility
 
 `compatibility` adjusts how OpenCode talks to an OpenAI-compatible or otherwise non-standard endpoint. Set it on a
-provider to apply to all its models, or on a model to override single fields. Fields (from the 2.0.29 config schema):
+provider to apply to all its models, or on a model to override single fields. Fields (from the 2.1.4 config schema):
 
 | Field | Values | Purpose |
 |-------|--------|---------|
@@ -182,6 +216,7 @@ provider to apply to all its models, or on a model to override single fields. Fi
 | `requireFinishReason` | boolean | OpenAI-compatible chat: a stream that ends without `finish_reason` is an error (default `true`); set `false` for endpoints that omit it |
 | `requireAssistantAfterTool` | boolean | OpenAI-compatible chat: append a `Done.` assistant message when the last message is a tool result (default on only for Mistral) |
 | `supportsPromptCacheKey` | boolean | Send a prompt cache key (V1 `options.setCacheKey` migrates here) |
+| `streamUsage` | boolean | For providers that reject `stream_options` (2.1.0 release notes; in the 2.1.4 schema on providers and models) |
 | `cacheFormat` | `anthropic` \| `alibaba` | Prompt-cache marker syntax the endpoint accepts |
 | `supportsThinkingBlockBinding`, `supportsEffortUpdates` | boolean | **Model-only**; override model-ID detection |
 
@@ -198,7 +233,7 @@ them automatically.
       "package": "@opencode/ai/providers/openai-compatible",
       "settings": { "baseURL": "https://litellm.example.com/v1" },
       "models": {
-        "claude-sonnet-5": { "compatibility": { "cacheFormat": "anthropic" } },
+        "claude-sonnet-5-5": { "compatibility": { "cacheFormat": "anthropic" } },
       },
     },
   },
@@ -220,9 +255,9 @@ providers and gateways reject compressed bodies. OpenAI defaults to `"zstd"` whe
 ## Model references
 
 ```text
-openai/gpt-5.2
-openai/gpt-5.2#high
-openrouter/anthropic/claude-sonnet-4.5#high
+openai/gpt-6.1-sol
+openai/gpt-6.1-sol#high
+openrouter/anthropic/claude-sonnet-5.5#high
 ```
 
 Provider ends at the first `/`; model may contain `/`; `#variant` is optional; IDs are case-sensitive. Root, agent,
@@ -277,14 +312,14 @@ change it. The V1 ID `azure-cognitive-services` is rejected — use `azure`.
 **Deployments.** Azure serves a model only through a deployment, so OpenCode lists your resource's deployments in
 the background (after startup, connecting, and switching accounts) and shows those instead of the whole catalog.
 The whole catalog stays available until the list loads or if it fails. Deployment names become lowercase model IDs
-(`azure/gpt-production`); a deployment named after its model (`gpt-5-mini`) keeps the catalog ID. Restart OpenCode
+(`azure/gpt-production`); a deployment named after its model (`gpt-6-luna`) keeps the catalog ID. Restart OpenCode
 or connect again to pick up a new deployment. A custom `settings.baseURL` keeps the catalog.
 
 Configure a deployment explicitly when its model is not in the catalog (a fine-tuned model), or to map a model ID to
 a deployment yourself; explicitly configured models are always kept:
 
 ```jsonc
-{ "providers": { "azure": { "models": { "gpt-5-mini": { "modelID": "gpt-production" } } } } }
+{ "providers": { "azure": { "models": { "gpt-6-luna": { "modelID": "gpt-production" } } } } }
 ```
 
 ### GitHub Copilot
@@ -294,7 +329,7 @@ Device OAuth only: `/connect` → GitHub Copilot → GitHub.com or GitHub Enterp
 ### OpenRouter
 
 ```jsonc
-{ "model": "openrouter/anthropic/claude-sonnet-4" }
+{ "model": "openrouter/anthropic/claude-sonnet-5.5" }
 ```
 
 Use `OPENROUTER_API_KEY` or `/connect`. Keep the native package when overriding `settings.baseURL`.

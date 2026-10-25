@@ -58,18 +58,22 @@ All three fields are required strings.
 | `websearch` | Search query |
 | `external_directory` | Canonical external directory boundary, normally ending in `/*` |
 | `<server>_<tool>` | `*` — one MCP tool (unsupported characters become `_`) |
-| `execute` | `*` — whether Code Mode is available (nested tools still enforce their own rules) |
+| `opencode_list_mcp_resources` | MCP server name |
+| `opencode_read_mcp_resource` | `<server>:<uri>` |
+| `execute` | `*` — a `deny` removes Code Mode and the tools reached only through it (including MCP tools from servers that do not set `codemode: false`); nested tools still enforce their own rules |
 | `browser` | `*` — a `deny` removes the desktop browser Code Mode namespace |
+| `todowrite` | `*` — only exists when `experimental.todo` is `true` (2.1.0) |
 
 Plugins may define more actions (actions are free-form strings).
 
-The tools page (unchanged through 2.0.29) lists Code Mode worktree utilities in the `opencode` namespace. `worktree_remove` uses
+The tools page (these lines unchanged through 2.1.4) lists Code Mode worktree utilities in the `opencode` namespace. `worktree_remove` uses
 `edit` with the worktree directory as the resource, so an `edit` rule that denies that directory blocks it
 (`force: true` can discard modified or untracked files). `worktree_create` and `worktree_list` request no built-in
 permission action. The namespace is part of Code Mode, which `execute` controls.
 
-The docs state `doom_loop` and `lsp` are not V2 Core actions. The V1 keys `list` and `todowrite` do not appear in
-the V2 action table. V1 names map as: `bash` → `shell`, `task` → `subagent`, `write`/`patch` → `edit`.
+The docs state `doom_loop` and `lsp` are not V2 Core actions. The V1 key `list` does not appear in the V2 action
+table. `todowrite` is not in the docs table either, but the 2.1.4 source asserts it (resource `*`) when the
+experimental todo tool is enabled. V1 names map as: `bash` → `shell`, `task` → `subagent`, `write`/`patch` → `edit`.
 
 ## Defaults
 
@@ -78,7 +82,6 @@ Every agent starts from this base, then the shipped agent adds its own rules:
 ```json
 [
   { "action": "*", "resource": "*", "effect": "allow" },
-  { "action": "external_directory", "resource": "*", "effect": "ask" },
   { "action": "read", "resource": "*.env", "effect": "ask" },
   { "action": "read", "resource": "*.env.*", "effect": "ask" },
   { "action": "read", "resource": "*.env.example", "effect": "allow" }
@@ -90,9 +93,16 @@ Every agent starts from this base, then the shipped agent adds its own rules:
 | `build` | Allows questions |
 | `plan` | Allows questions; denies edits except files under `~/.opencode/plan` |
 | `general` | Denies questions and launching subagents |
-| `explore` | Denies everything except reads, globs, grep, webfetch, websearch; asks for external dirs and `.env` reads |
+| `explore` | Denies everything except shell, reads, globs, grep, webfetch, websearch, and external directories; asks for `.env` reads |
 | `title`, `summary` | Deny all actions |
 | `compaction` | Base policy only |
+
+**Docs correction after 2.0.29 (upstream commit `20d172e462`, `docs: document external_directory allow default`):**
+the base policy has no `external_directory` rule (`packages/schema/src/agent.ts`, identical in 2.0.29 and 2.1.4), so
+the `*` allow applies and reads/edits outside the Location and worktree proceed without a prompt. V1 asked. Earlier
+versions of this skill, following the older docs, listed an `ask` base rule and `explore` asking for external
+directories; neither matches the source. `explore` allows `shell` and `external_directory`
+(`packages/core/src/plugin/agent.ts`). Add the `ask` rule shown below to restore the V1 prompt.
 
 ## Global vs per-agent
 
@@ -119,12 +129,15 @@ subset of its parent's.
 
 ## External directories
 
-A path outside the active Location and its project worktree needs `external_directory` approval **before** its
-`read`/`edit` rule is evaluated:
+A path outside the active Location and its project worktree is checked against `external_directory` **before** its
+`read`/`edit` rule. The default policy **allows** `external_directory`, so nothing is
+prompted unless you add a rule. To be asked before any access outside the project, then narrow with later rules
+(last match wins):
 
 ```jsonc
 {
   "permissions": [
+    { "action": "external_directory", "resource": "*", "effect": "ask" },
     { "action": "external_directory", "resource": "~/projects/reference/*", "effect": "allow" },
     { "action": "read", "resource": "~/projects/reference/*", "effect": "allow" },
     { "action": "edit", "resource": "~/projects/reference/*", "effect": "deny" },
@@ -199,8 +212,8 @@ Policies live under the top-level `policies` array. They are binary (`allow`/`de
 | `resource` | Wildcard pattern; meaning depends on the action |
 | `effect` | `allow` \| `deny` |
 
-`permission` is **not** an action value (the 2.0.27 policies page listed it, but the config schema at 2.0.27 and
-2.0.29 only accepts the three above). Invalid statements are dropped with a server-log warning; the rest still
+`permission` is **not** an action value (the 2.0.27 policies page listed it, but the config schema at 2.0.27,
+2.0.29, and 2.1.4 only accepts the three above). Invalid statements are dropped with a server-log warning; the rest still
 apply, so check the log after editing a `deny`. Last matching statement wins; no match = allowed. `*` matches zero
 or more characters and `?` matches one; a trailing space-and-star, as in `shell:git push *`, also matches the
 value without arguments.

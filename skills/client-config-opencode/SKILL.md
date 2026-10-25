@@ -35,7 +35,7 @@ You help the user manage OpenCode configuration. OpenCode has two config formats
 
 | What | V2 | V1 |
 |------|----|----|
-| Core settings (system, managed) | macOS `/Library/Application Support/opencode`, Linux `/etc/opencode`, Windows `%ProgramData%\opencode`; highest precedence (2.0.29 docs) | same directories; see `references/config-schema.md` (Managed / enterprise) |
+| Core settings (system, managed) | macOS `/Library/Application Support/opencode`, Linux `/etc/opencode`, Windows `%ProgramData%\opencode`; highest precedence (2.0.29+ docs) | same directories; see `references/config-schema.md` (Managed / enterprise) |
 | Core settings (global) | `~/.config/opencode/opencode.json(c)` | same |
 | Core settings (project) | `opencode.json(c)` and `.opencode/opencode.json(c)`, searched cwd → filesystem root; `.opencode/` files override direct ones | `opencode.json` in cwd or nearest up to the Git root |
 | Terminal client (theme, keybinds) | `~/.config/opencode/cli.json` — global only | `~/.config/opencode/tui.json` + project `tui.json` |
@@ -44,11 +44,11 @@ You help the user manage OpenCode configuration. OpenCode has two config formats
 | Skills | `.opencode/skills/<id>/SKILL.md` (+ `.claude/skills`, `.agents/skills`) | same |
 | Plugins | `.opencode/plugins/`, `~/.config/opencode/plugins/` | same |
 | Themes | `~/.config/opencode/themes/*.json`, `.opencode/themes/*.json` (new V2 format) | same dirs, V1 format |
-| Instructions | `AGENTS.md` only (`instructions` array is not loaded) | `AGENTS.md`, `CLAUDE.md` fallback, `instructions` array |
+| Instructions | `AGENTS.md` only for discovery (no `CLAUDE.md` fallback); the `instructions` array (files, globs, URLs) loads after it since 2.0.30 | `AGENTS.md`, `CLAUDE.md` fallback, `instructions` array |
 | Credentials | SQLite DB (`opencode debug paths db`) — use `/connect` / `opencode auth` | `~/.local/share/opencode/auth.json` — use `/connect` / `opencode auth` |
 
-Schemas: `https://opencode.ai/config.json` (both formats use this URL; it currently validates only the V1 shape, so
-editors may flag V2 keys), `https://opencode.ai/v2/cli.json`, `https://opencode.ai/tui.json` (V1).
+Schemas: `https://opencode.ai/config.json` (both formats use this URL; since 2.0.30 it accepts the V1 and the native
+V2 shape), `https://opencode.ai/v2/cli.json`, `https://opencode.ai/tui.json` (V1).
 
 Merge behavior: config files merge; later/closer files override conflicting keys. V2 exceptions: `permissions`,
 `plugins`, and `skills` arrays accumulate, and policies let broader config win.
@@ -70,7 +70,7 @@ Merge behavior: config files merge; later/closer files override conflicting keys
 ## Common quick edits (V2 native)
 
 ```jsonc
-{ "model": "anthropic/claude-sonnet-4-5" }                       // default model (no #variant at root)
+{ "model": "anthropic/claude-sonnet-5-5" }                       // default model (no #variant at root)
 { "agents": { "title": { "model": "anthropic/claude-haiku-4-5" } } } // V1: "small_model"
 { "default_agent": "build" }
 { "update": "notify" }                                            // "disable" | "notify" | "auto"; V1: "autoupdate"
@@ -80,6 +80,9 @@ Merge behavior: config files merge; later/closer files override conflicting keys
 { "permissions": [{ "action": "shell", "resource": "git push *", "effect": "ask" }] }
 { "policies": [{ "action": "provider.use", "resource": "openai", "effect": "deny" }] }   // 2.0.29+; was "experimental.policies"
 { "tool_output": { "max_lines": 2000, "max_bytes": 51200 } }      // same in V1
+{ "permissions": [{ "action": "external_directory", "resource": "*", "effect": "ask" }] }  // V2 allows outside-project access by default; V1 asked
+{ "instructions": ["CONTRIBUTING.md", "docs/guidelines/*.md"] }  // loaded after AGENTS.md (V2 2.0.30+)
+{ "experimental": { "todo": true } }                              // todowrite tool; experimental keys can change or vanish
 ```
 
 V1 equivalents for provider filtering: `"enabled_providers": [...]`, `"disabled_providers": [...]`. V1 log level
@@ -87,12 +90,14 @@ V1 equivalents for provider filtering: `"enabled_providers": [...]`, `"disabled_
 
 > [!NOTE]
 > V1 deprecations: `autoshare` → `share`; agent `maxSteps` → `steps`; `tools` → `permission`; `mode` → `agent`.
-> In V2, `share` is accepted but session sharing is not supported yet.
+> Session sharing is discontinued: V1 1.19.1 removed it and V2 2.0.30 removed the backend and `/share`. `share` and
+> `autoshare` are still accepted by the schema but do nothing useful; do not add them.
 
 ## Variable substitution
 
 - `{env:MY_API_KEY}` — environment variable (V1 and V2)
-- `{file:~/.secrets/key.txt}` — file contents (documented for V1; not shown in V2 docs, but verified working in V2 2.0.27 for agent `system`)
+- `{file:~/.secrets/key.txt}` — file contents (V1, and documented for V2 since 2.1.4; verified on the 2.1.4 binary for
+  agent `system`). A missing env var or file becomes an empty string.
 
 V2 runs a shared background server: env vars must reach it (`opencode service set env NAME value`, or run
 `opencode --standalone` from a shell that has them).
