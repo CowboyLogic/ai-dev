@@ -12,9 +12,11 @@ v1.0.100 notes. Claims were checked against the published docs.github.com pages 
 the article API on 2026-10-25) and the v1.0.99 to v1.0.103 release notes. Items found only in
 release notes are labeled as such in the references.
 
-- `references/cli-commands.md`: `--sync-session[=on|off]`; `--disable-client-telemetry`; the
-  `--remote`, `--no-remote`, `--remote-export`, and `--no-remote-export` startup options are removed
-  or renamed (use `/remote on`, or `--sync-session`); `/share` with no subcommand opens a menu
+- `references/cli-commands.md`: `--sync-session[=on|off]`; `--disable-client-telemetry`;
+  `--no-remote` is removed, and `--remote-export` and `--no-remote-export` are renamed to
+  `--sync-session=on` and `--sync-session=off`; `--remote` no longer works for interactive or `-p`
+  startup (use `/remote on`) and remains only for legacy SDK server startup with `--server` or
+  `--headless`; `/share` with no subcommand opens a menu
   and `link` does the sharing; `/session cleanup`; `/extensions mode`; team-assigned plugin
   defaults under `/plugin list`; `/agent` creates an agent with `N`; ACP sessions honor
   saved sandbox settings and `--sandbox`/`--no-sandbox`.
