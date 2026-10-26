@@ -85,10 +85,9 @@ tell the user if it says anything else.
 
 This repository has automatic GitHub Copilot code review enabled. Every PR gets one
 Copilot review without being asked, and **unresolved review threads block merging**.
-That review is the only one: Copilot is not asked to review again, and unless the user
-asks for another, no agent waits for, reads, or answers a second review of the PR, from
-Copilot or any other reviewer.
-Re-reviews spent too much of the user's AI credits, so one review is all a PR gets.
+That review is Copilot's one shot: it is not asked to review again, and no agent waits
+for, reads, or answers a second Copilot review of the PR. Re-reviews spent too much of
+the user's AI credits.
 Opening a PR is therefore the start of that review, not the end of the task.
 
 Answer the review in a single pass: **one commit per fix** and a **single push** once
@@ -121,7 +120,7 @@ the review is still pending.
 5. **Reply on every thread, then resolve it**, valid or not. Name the fix's commit for a
    fix and give the reason for the rest. A thread left open blocks the merge even when the
    finding was wrong.
-6. **Stop.** Do not wait for a second review. Report the PR link, the findings fixed, and
+6. **Stop.** Do not wait for a second Copilot review. Report the PR link, the findings fixed, and
    any finding left open, so the user decides whether anything further is worth the
    usage. The work is finished when Copilot's review has been answered and no review
    thread on the PR is unresolved. Resolving a thread does not delete its comment, so
@@ -289,7 +288,7 @@ instead.
   the push updates it — do not open a second.
 - **After opening a PR**, answer the [Copilot review](#copilot-review): wait for it,
   address every finding with one commit per fix and a single push, and resolve every
-  thread. Copilot reviews once, so do not wait for a second review after the push.
+  thread. Copilot reviews once, so do not wait for a second Copilot review after the push.
 - **Merging a PR into `main`** is a human action. No agent merges a PR, ever.
 - **Updating a feature branch from `main`** (`git merge origin/main` or
   `git rebase origin/main`) is normal agent work — see
@@ -444,7 +443,7 @@ types; schema version is `"1"`.
   unresolved review threads.
 - Do not push once per review finding, or push while the review is pending; commit each
   fix separately, then push the whole review's fixes together.
-- Do not wait for, read, or answer a second review of a PR unless the user asks for one.
+- Do not wait for, read, or answer a second Copilot review of a PR.
 - Do not record planned features or design decisions in local files, and do not post an
   issue before the user has seen the draft.
 - Do not write temporary or generated files anywhere other than `.agent-output/`.
