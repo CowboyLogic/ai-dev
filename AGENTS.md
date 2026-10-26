@@ -85,8 +85,9 @@ tell the user if it says anything else.
 
 This repository has automatic GitHub Copilot code review enabled. Every PR gets one
 Copilot review without being asked, and **unresolved review threads block merging**.
-That review is the only one: Copilot is not asked to review again, and no agent waits
-for, reads, or answers a second review of the PR, from Copilot or any other reviewer.
+That review is the only one: Copilot is not asked to review again, and unless the user
+asks for another, no agent waits for, reads, or answers a second review of the PR, from
+Copilot or any other reviewer.
 Re-reviews spent too much of the user's AI credits, so one review is all a PR gets.
 Opening a PR is therefore the start of that review, not the end of the task.
 
