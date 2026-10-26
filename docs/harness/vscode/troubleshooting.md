@@ -9,7 +9,7 @@ Check these in order:
 
 1. **Location.** The file must be in `.github/agents/` or `.claude/agents/` in the workspace, or
    `~/.copilot/agents/` or `~/.claude/agents/` for your user. A file in `.github/copilot-instructions/` or any
-   other folder is not detected. In a Copilot (Agent Host) session, user-level agents are read from the host's
+   other folder is not detected by default, unless that folder is listed in `chat.agentFilesLocations` (see below). In a Copilot (Agent Host) session, user-level agents are read from the host's
    `~/.copilot/agents/` (`~/.claude/agents/` applies only to Anthropic Claude harness sessions), not from VS Code profile user data. VS Code forwards agents from folders named in
    `chat.agentFilesLocations` (supported, not deprecated) to the Copilot harness, but Copilot CLI and the GitHub Copilot app don't read that setting.
 2. **Extension.** Prefer `.agent.md` in `.github/agents/` and `~/.copilot/agents/` (plain `.md` is also listed there). Files in `.claude/agents/` are plain `.md`. A legacy `.chatmode.md` file should be renamed.
