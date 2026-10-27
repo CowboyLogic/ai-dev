@@ -1,0 +1,10 @@
+{
+  "name": "git-aware-file-explorer",
+  "version": "0.1.0",
+  "description": "A git-aware Files pane: browse the workspace, see changed files highlighted, and view a file's diff in a panel beside the tree.",
+  "author": {
+    "name": "Cowboy Logic",
+    "email": "my.cowboy.logic@gmail.com"
+  },
+  "types": "./types/index.d.ts"
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate documentation coverage for repository agents, harnesses, and skills.
+"""Validate documentation coverage for repository agents, harnesses, skills, and mods.
 
 Run with ``--write`` after changing an agent roster or client format to refresh
 the generated inventory, roster, and install blocks in the topology pages and the
@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 from dataclasses import dataclass
@@ -590,6 +591,92 @@ def validate_skills() -> None:
         )
 
 
+MOD_HARNESS_PAGES = {"claude": "docs/harness/claudecode/index.md"}
+# Each client's plugin manifest, relative to a mod's folder.
+MOD_MANIFESTS = {"claude": ".claude-plugin/plugin.json"}
+
+
+def mod_rows(text: str, prefix: str = "") -> set[str]:
+    """Mods a page lists in a table row's first cell, as `[Name](<prefix><mod>.md)`; a link
+    anywhere else on the page does not list one."""
+    pattern = r"^\|\s*\[[^\]]*\]\(" + re.escape(prefix) + r"([a-z0-9-]+)\.md\)"
+    return set(re.findall(pattern, text, flags=re.MULTILINE))
+
+
+def mods_link_prefix(page: str) -> str:
+    """How a page links into docs/mods/ (`../../mods/` from docs/harness/claudecode/index.md)."""
+    return Path(os.path.relpath(ROOT / "docs/mods", (ROOT / page).parent)).as_posix() + "/"
+
+
+def validate_mods() -> None:
+    """Every mod under mods/<client>/ has an overview page in the nav, a catalog row,
+    and an entry on its client's harness page."""
+    folders = sorted(
+        path for path in (ROOT / "mods").glob("*/*") if path.is_dir() and not path.name.startswith(".")
+    )
+    mods: dict[str, str] = {}
+    for folder in folders:
+        identifier, client = folder.name, folder.parent.name
+        mods[identifier] = client
+        manifest = MOD_MANIFESTS.get(client)
+        if manifest is None:
+            continue  # reported below as an unknown client
+        path = folder / manifest
+        if not path.is_file():
+            check(False, f"mod {identifier} has no plugin manifest", str(path.relative_to(ROOT)))
+            continue
+        try:
+            name = json.loads(path.read_text()).get("name")
+        except (json.JSONDecodeError, AttributeError):
+            check(False, "mod manifest is not a JSON object", str(path.relative_to(ROOT)))
+            continue
+        check(
+            name == identifier,
+            "mod manifest name does not match directory",
+            str(path.relative_to(ROOT)),
+        )
+    # With no mods left the docs are still checked, so entries for a removed mod fail.
+    index = ROOT / "docs/mods/index.md"
+    index_text = index.read_text() if index.is_file() else ""
+    catalogued = mod_rows(index_text)
+    check(
+        catalogued == set(mods),
+        "docs/mods/index.md mod coverage drift",
+        f"expected {sorted(mods)}, found {sorted(catalogued)}",
+    )
+
+    mkdocs = yaml.load((ROOT / "mkdocs.yml").read_text(), Loader=_MkdocsLoader)
+    nav = nav_files(mkdocs.get("nav", []) if isinstance(mkdocs, dict) else [])
+    stale_nav = {page for page in nav if page.startswith("mods/") and page != "mods/index.md"} - {
+        f"mods/{identifier}.md" for identifier in mods
+    }
+    check(not stale_nav, "mkdocs.yml nav lists mod pages with no mod", f"{sorted(stale_nav)}")
+    for client, harness in sorted(MOD_HARNESS_PAGES.items()):
+        listed = mod_rows((ROOT / harness).read_text(), mods_link_prefix(harness))
+        stale = listed - {identifier for identifier, owner in mods.items() if owner == client}
+        check(not stale, "harness page lists mods with no mod", f"{harness}: {sorted(stale)}")
+    for identifier, client in sorted(mods.items()):
+        page = f"mods/{identifier}.md"
+        check(
+            (ROOT / "docs" / page).is_file(),
+            f"mod {identifier} has no overview page",
+            f"docs/{page}",
+        )
+        check(
+            page in nav,
+            f"mod {identifier} overview page is not in the mkdocs.yml nav",
+            page,
+        )
+        harness = MOD_HARNESS_PAGES.get(client)
+        check(harness is not None, f"mod {identifier} is for an unknown client", client)
+        if harness is not None:
+            check(
+                identifier in mod_rows((ROOT / harness).read_text(), mods_link_prefix(harness)),
+                f"mod {identifier} is not listed on its client's harness page",
+                harness,
+            )
+
+
 def validate_discovery() -> None:
     discovered_topologies = {
         path.name for path in (ROOT / "agents").glob("*-topology") if path.is_dir()
@@ -636,6 +723,10 @@ def main() -> int:
         validate_skills()
     except (OSError, ValueError, yaml.YAMLError) as error:
         failures.append(f"skills: {error}")
+    try:
+        validate_mods()
+    except (OSError, ValueError, yaml.YAMLError) as error:
+        failures.append(f"mods: {error}")
 
     print(f"artifact-sync: {checks_run} checks")
     if failures:
