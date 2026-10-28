@@ -36,7 +36,8 @@ as well as POSIX shell syntax.
 The first run downloads the Copilot runtime the SDK pins, into the SDK's cache.
 
 The SDK, the runtime it carries, and every package it needs are pinned to exact
-versions (`scripts/pins.json` and the header of `scripts/copilot_worker.py`). The worker
+versions (`scripts/pins.json` and the header of `scripts/copilot_worker.py`). The current
+SDK/runtime pair is **1.0.28 / 1.0.105**. The worker
 refuses to start when the installed versions differ, and `check` reports it. Upgrading is a
 deliberate change; [references/upgrading.md](references/upgrading.md) has the procedure.
 
