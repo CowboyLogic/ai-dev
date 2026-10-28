@@ -18,21 +18,21 @@ import worker_engine as engine  # noqa: E402
 
 
 class PinTests(unittest.TestCase):
-    PINS = {"sdk": "1.0.14", "runtime": "1.0.85"}
+    PINS = {"sdk": "1.0.28", "runtime": "1.0.105"}
 
     def test_matching_versions_are_not_a_problem(self) -> None:
-        info = {"sdkVersion": "1.0.14", "runtimeVersion": "1.0.85"}
+        info = {"sdkVersion": "1.0.28", "runtimeVersion": "1.0.105"}
         self.assertIsNone(engine.pin_problem(info, self.PINS))
 
     def test_a_different_sdk_is_reported(self) -> None:
-        info = {"sdkVersion": "1.0.15", "runtimeVersion": "1.0.85"}
+        info = {"sdkVersion": "1.0.29", "runtimeVersion": "1.0.105"}
         problem = engine.pin_problem(info, self.PINS)
-        self.assertIn("github-copilot-sdk is 1.0.15, pinned to 1.0.14", problem)
+        self.assertIn("github-copilot-sdk is 1.0.29, pinned to 1.0.28", problem)
         self.assertNotIn("runtime", problem)
 
     def test_a_different_runtime_is_reported(self) -> None:
-        info = {"sdkVersion": "1.0.14", "runtimeVersion": "1.0.86"}
-        self.assertIn("runtime is 1.0.86, pinned to 1.0.85", engine.pin_problem(info, self.PINS))
+        info = {"sdkVersion": "1.0.28", "runtimeVersion": "1.0.106"}
+        self.assertIn("runtime is 1.0.106, pinned to 1.0.105", engine.pin_problem(info, self.PINS))
 
     def test_both_differences_are_reported_together(self) -> None:
         info = {"sdkVersion": "2.0.0", "runtimeVersion": "2.0.1"}
@@ -41,8 +41,8 @@ class PinTests(unittest.TestCase):
         self.assertIn("runtime", problem)
 
     def test_a_pins_file_missing_a_key_is_a_problem_not_a_pass(self) -> None:
-        info = {"sdkVersion": "1.0.14", "runtimeVersion": "1.0.85"}
-        self.assertIsNotNone(engine.pin_problem(info, {"sdk": "1.0.14"}))
+        info = {"sdkVersion": "1.0.28", "runtimeVersion": "1.0.105"}
+        self.assertIsNotNone(engine.pin_problem(info, {"sdk": "1.0.28"}))
 
     def run_main(self, info: dict, argv: list[str]) -> tuple[int, str, str, unittest.mock.MagicMock]:
         stdout, stderr = io.StringIO(), io.StringIO()
@@ -55,7 +55,7 @@ class PinTests(unittest.TestCase):
         return code, stdout.getvalue(), stderr.getvalue(), run
 
     def test_a_run_refuses_to_start_on_mismatched_pins(self) -> None:
-        info = {"sdkVersion": "9.9.9", "runtimeVersion": "1.0.85"}
+        info = {"sdkVersion": "9.9.9", "runtimeVersion": "1.0.105"}
         code, _, stderr, run = self.run_main(info, ["/some/run/dir"])
         self.assertEqual(code, 3)
         self.assertIn("pin mismatch", stderr)
@@ -63,16 +63,16 @@ class PinTests(unittest.TestCase):
         run.assert_not_called()
 
     def test_a_run_starts_when_the_pins_match(self) -> None:
-        info = {"sdkVersion": "1.0.14", "runtimeVersion": "1.0.85"}
+        info = {"sdkVersion": "1.0.28", "runtimeVersion": "1.0.105"}
         code, _, _, run = self.run_main(info, ["/some/run/dir"])
         self.assertEqual(code, 0)
         run.assert_called_once()
 
     def test_check_pins_reports_and_never_starts_a_run(self) -> None:
-        bad = {"sdkVersion": "1.0.14", "runtimeVersion": "9.9.9"}
+        bad = {"sdkVersion": "1.0.28", "runtimeVersion": "9.9.9"}
         code, stdout, _, run = self.run_main(bad, ["--check-pins"])
         self.assertEqual((code, "pin mismatch" in stdout), (1, True))
-        good = {"sdkVersion": "1.0.14", "runtimeVersion": "1.0.85"}
+        good = {"sdkVersion": "1.0.28", "runtimeVersion": "1.0.105"}
         code, stdout, _, run = self.run_main(good, ["--check-pins"])
         self.assertEqual((code, stdout.strip()), (0, "pins ok"))
         run.assert_not_called()

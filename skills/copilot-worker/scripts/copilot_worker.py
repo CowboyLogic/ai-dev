@@ -6,18 +6,19 @@
 # dependencies = [
 #     "annotated-types==0.8.0",
 #     "anyio==4.15.1",
-#     "certifi==2026.7.22",
-#     "github-copilot-sdk==1.0.14",
+#     "certifi==2026.10.23",
+#     "github-copilot-sdk==1.0.28",
 #     "h11==0.16.0",
 #     "httpcore==1.0.9",
 #     "httpx==0.28.1",
 #     "idna==3.20",
-#     "pydantic==2.13.5",
-#     "pydantic-core==2.46.5",
-#     "python-dateutil==2.9.0.post0",
+#     "pydantic==2.14.1",
+#     "pydantic-core==2.50.1",
+#     "python-dateutil==3.0.0",
 #     "six==1.17.0",
 #     "typing-extensions==4.16.0",
 #     "typing-inspection==0.4.4",
+#     "tzdata==2026.5",
 # ]
 # ///
 """Run GitHub Copilot as a bounded worker for Claude Code.
