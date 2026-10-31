@@ -64,8 +64,11 @@ benchmark you did not re-run). Write "None" only if it is true.
 - [ ] `mkdocs build --clean --strict` passes with no warnings
 - [ ] Topology validators pass if `agents/` or `harness/` changed
 - [ ] markdownlint reports no issues on the changed files
-- [ ] Each skill's `CHANGELOG.md` and version/verification dates in `README.md` and `SKILL.md` are updated
-- [ ] Matching `docs/skills/` pages and `docs/skills/index.md` are updated; no skill content is copied into them
+- [ ] Skills changed: each skill's `CHANGELOG.md` and version/verification dates in `README.md` and `SKILL.md` are updated (N/A if no skill changed)
+- [ ] Documentation updated for every artifact type changed, per AGENTS.md "Documentation Synchronization", and no artifact content is copied into it:
+  - skills: `docs/skills/<name>.md` and `docs/skills/index.md`
+  - agents: the matching `docs/agents/` pages, with `python scripts/validate_artifact_sync.py --write` run
+  - harness: the matching `docs/harness/` pages
 - [ ] Source URLs were checked and resolve
 - [ ] No hardcoded secrets or tokens
 - [ ] Only the files this refresh changed are staged
