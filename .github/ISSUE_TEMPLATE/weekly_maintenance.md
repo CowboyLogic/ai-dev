@@ -1,7 +1,7 @@
 ---
 name: Weekly maintenance
 about: Recurring refresh of agents or skills against their upstream tools
-title: '[skills/<name>] Weekly refresh against <tool> <version>'
+title: '[<affected path>] Weekly refresh against <tool> <version>'
 labels: documentation
 type: Maintenance
 assignees: ''
@@ -9,10 +9,11 @@ assignees: ''
 ---
 
 <!--
-For agents: one issue per refresh. Name the affected item first in the title, as in
-AGENTS.md "Recording Planned Work". Add the kind label (`skill`, `agent`, or `harness`)
-when you file it. When the refresh covers several skills for one client, name the client
-folder family, for example `[skills/client-config-codex, agent-creator-codex]`.
+For agents: one issue per refresh. Replace `<affected path>` with the path of the affected
+item, as in AGENTS.md "Recording Planned Work": `skills/client-config-codex`,
+`agents/matrix-topology`, or `harness/opencode`. When the refresh covers several items for
+one client, list them, for example `[skills/client-config-codex, skills/agent-creator-codex]`.
+Add the kind label (`skill`, `agent`, or `harness`) when you file it.
 -->
 
 ## Scope
@@ -37,8 +38,11 @@ folder family, for example `[skills/client-config-codex, agent-creator-codex]`.
 
 - [ ] Check every source in `sources.json` (or the skill's upstream docs) and the release notes for the window
 - [ ] Update `SKILL.md` and `references/` where claims changed; leave accurate sections alone
-- [ ] Record each change in the skill's `CHANGELOG.md`; update version and verification dates in `README.md`
-- [ ] Update the matching `docs/skills/<name>.md` pages and `docs/skills/index.md` wording
+- [ ] For each skill: record each change in its `CHANGELOG.md` and update version and verification dates in its `README.md`
+- [ ] Update the documentation for every artifact type changed, per AGENTS.md "Documentation Synchronization":
+  - skills: `docs/skills/<name>.md` and the `docs/skills/index.md` wording
+  - agents: the matching `docs/agents/` pages, then `python scripts/validate_artifact_sync.py --write`
+  - harness: the matching `docs/harness/` pages
 - [ ] Run the validators from AGENTS.md "Build Commands" that apply
 
 ## Out of scope
