@@ -88,6 +88,14 @@ def state_home() -> Path:
     return Path(os.environ.get("COPILOT_WORKER_HOME") or Path.home() / ".copilot-worker")
 
 
+def private_state_home() -> Path:
+    """Create the worker state root if needed and keep it owner-only (Windows ignores the mode)."""
+    root = state_home()
+    root.mkdir(parents=True, exist_ok=True)
+    os.chmod(root, 0o700)
+    return root
+
+
 ENGINE = Path(__file__).with_name("worker_engine.py")
 
 
@@ -402,8 +410,7 @@ def execute_run(
     run_id = new_run_id()
     # Tasks, diffs, responses, and worktrees are private: keep the state root owner-only.
     # Windows ignores these mode bits; there the directory keeps the ACL it inherits.
-    state_home().mkdir(parents=True, exist_ok=True)
-    os.chmod(state_home(), 0o700)
+    private_state_home()
     run_dir = state_home() / "runs" / run_id
     run_dir.mkdir(parents=True)
     workspace, branch, base = root, None, None
@@ -648,7 +655,7 @@ def describe_profile(name: str) -> str:
 
 def available_models() -> tuple[dict[str, dict[str, Any]] | None, str]:
     """Ask the engine for the models this login offers. Return (models by ID, problem)."""
-    home = state_home() / "copilot-home"
+    home = private_state_home() / "copilot-home"
     home.mkdir(parents=True, exist_ok=True)
     try:
         done = subprocess.run(

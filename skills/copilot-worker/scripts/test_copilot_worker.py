@@ -349,6 +349,14 @@ class RunTests(WorkerTestCase):
         self.assertEqual(json.loads((run_dir / "result.json").read_text()), result)
 
     @unittest.skipIf(WINDOWS, "Windows has no mode bits; the directory keeps its inherited ACL")
+    def test_listing_models_creates_the_state_directory_private_to_the_owner(self) -> None:
+        # check --live lists models before any run creates the state root.
+        previous = os.umask(0o022)
+        self.addCleanup(os.umask, previous)
+        worker.available_models()
+        self.assertEqual(self.home.stat().st_mode & 0o077, 0)
+
+    @unittest.skipIf(WINDOWS, "Windows has no mode bits; the directory keeps its inherited ACL")
     def test_state_directory_is_private_to_the_owner(self) -> None:
         # Task text, diffs, responses, and worktrees live here; other users must not read them.
         previous = os.umask(0o022)
