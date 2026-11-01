@@ -14,9 +14,17 @@
         "https://docs.github.com/en/copilot/reference/enterprise-administrators/enterprise-managed-settings",
         "https://github.com/github/copilot-cli/releases/tag/v1.0.96",
         "https://github.com/github/copilot-cli/releases/tag/v1.0.97",
-        "https://github.com/github/copilot-cli/releases/tag/v1.0.98"
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.98",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.99-0",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.99-1",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.99-2",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.100",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.101",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.102",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.103",
+        "https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli/steer-remotely"
       ],
-      "covers": "~/.copilot directory layout, settings.json (user/repo/local keys and precedence), config.json (trustedFolders), allowed_models.txt, MDM managed settings (including forceRemoteSettingsRefresh and minimum client versions for managed sandbox), environment variables, authentication, BYOK providers and providers.json, model usage, OpenTelemetry monitoring (environment variables and content capture), supported model IDs; Copilot CLI v1.0.96-v1.0.98 release notes"
+      "covers": "~/.copilot directory layout, settings.json (user/repo/local keys and precedence), config.json (trustedFolders), allowed_models.txt, MDM managed settings (including forceRemoteSettingsRefresh and minimum client versions for managed sandbox), environment variables, authentication, BYOK providers and providers.json, model usage, OpenTelemetry monitoring (environment variables, content capture, and dynamic headersProvider), remoteSessions/remoteExport, showReasoning, supported model IDs; Copilot CLI v1.0.96-v1.0.103 release notes"
     },
     "references/permissions.md": {
       "urls": [
@@ -28,9 +36,16 @@
         "https://docs.github.com/en/copilot/concepts/security-governance-and-network-settings/about-cloud-and-local-sandboxes",
         "https://github.com/github/copilot-cli/releases/tag/v1.0.96",
         "https://github.com/github/copilot-cli/releases/tag/v1.0.97",
-        "https://github.com/github/copilot-cli/releases/tag/v1.0.98"
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.98",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.99-0",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.99-1",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.99-2",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.100",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.101",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.102",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.103"
       ],
-      "covers": "Trusted directories (including --trust-folder), tool/path/URL permission flags, permission patterns, tool names, approval prompts and modes, permissions-config.json schema, local and cloud sandboxing and sandbox settings, allow-all restriction, managed permission rules, built-in safety checks (plan mode, command safety analysis, environment-variable denylist, web_fetch SSRF protection), sandbox tool-directory grants; Copilot CLI v1.0.96-v1.0.98 release notes"
+      "covers": "Trusted directories (including --trust-folder), tool/path/URL permission flags, permission patterns, tool names, approval prompts and modes, permissions-config.json schema, local and cloud sandboxing and sandbox settings, allow-all restriction, managed permission rules, built-in safety checks (plan mode, command safety analysis, environment-variable denylist, web_fetch SSRF protection), sandbox tool-directory grants; Copilot CLI v1.0.96-v1.0.103 release notes"
     },
     "references/cli-commands.md": {
       "urls": [
@@ -39,17 +54,28 @@
         "https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli/ask-a-side-question",
         "https://github.com/github/copilot-cli/releases/tag/v1.0.96",
         "https://github.com/github/copilot-cli/releases/tag/v1.0.97",
-        "https://github.com/github/copilot-cli/releases/tag/v1.0.98"
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.98",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.99-0",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.99-1",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.99-2",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.100",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.101",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.102",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.103",
+        "https://docs.github.com/en/copilot/reference/copilot-cli-reference/acp-server",
+        "https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli/chronicle",
+        "https://docs.github.com/en/copilot/how-tos/copilot-cli/use-copilot-cli/steer-remotely"
       ],
-      "covers": "Terminal subcommands, command-line options, session management, programmatic-mode options (including --trust-folder), slash commands (including /ask and /sandbox session scope), supported model IDs, debug-log collection; Copilot CLI v1.0.96-v1.0.98 release notes"
+      "covers": "Terminal subcommands, command-line options, session management, programmatic-mode options (including --trust-folder), slash commands (including /ask and /sandbox session scope), supported model IDs, debug-log collection, --sync-session and the removed remote options, --disable-client-telemetry, /share, /session cleanup, /extensions mode, ACP sandbox behavior; Copilot CLI v1.0.96-v1.0.103 release notes"
     },
     "references/mcp.md": {
       "urls": [
         "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers",
         "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference",
-        "https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/add-lsp-servers"
+        "https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/add-lsp-servers",
+        "https://docs.github.com/en/copilot/reference/enterprise-administrators/enterprise-managed-settings"
       ],
-      "covers": "mcp-config.json and project .mcp.json/.github/mcp.json, loading priority, transport types and fields, private npm registries, trust levels, OAuth, /mcp and copilot mcp commands, enterprise allowlist governance, LSP servers (lsp-config.json, .github/lsp.json, /lsp)"
+      "covers": "mcp-config.json and project .mcp.json/.github/mcp.json, loading priority, transport types and fields, private npm registries, trust levels, OAuth, /mcp and copilot mcp commands, enterprise allowlist governance, LSP servers (lsp-config.json, .github/lsp.json, /lsp), LSP bash/powershell launch and timeout fields, managed serverName character set"
     },
     "references/hooks.md": {
       "urls": [
@@ -57,14 +83,28 @@
         "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/use-hooks",
         "https://github.com/github/copilot-cli/releases/tag/v1.0.96",
         "https://github.com/github/copilot-cli/releases/tag/v1.0.97",
-        "https://github.com/github/copilot-cli/releases/tag/v1.0.98"
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.98",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.99-0",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.99-1",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.99-2",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.100",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.101",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.102",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.103"
       ],
-      "covers": "Hook sources and load order, cloud agent execution environment, agent-scoped hooks in custom agent frontmatter, file format, command/http/prompt entries, all hook events, input payloads (including the subagent fields), decision output, matchers, exit codes, disableAllHooks, debugging; Copilot CLI v1.0.96-v1.0.98 release notes"
+      "covers": "Hook sources and load order, cloud agent execution environment, agent-scoped hooks in custom agent frontmatter, file format, command/http/prompt entries, all hook events, input payloads (including the subagent fields), decision output, matchers, exit codes, disableAllHooks, debugging; Copilot CLI v1.0.96-v1.0.103 release notes"
     },
     "references/skills.md": {
       "urls": [
         "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-skills",
-        "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference"
+        "https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.99-0",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.99-1",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.99-2",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.100",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.101",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.102",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.103"
       ],
       "covers": "SKILL.md frontmatter fields, skill locations and priority, commands format, /skills and copilot skill commands, allowed-tools"
     },
@@ -77,9 +117,16 @@
         "https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/plugins-finding-installing",
         "https://github.com/github/copilot-cli/releases/tag/v1.0.96",
         "https://github.com/github/copilot-cli/releases/tag/v1.0.97",
-        "https://github.com/github/copilot-cli/releases/tag/v1.0.98"
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.98",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.99-0",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.99-1",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.99-2",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.100",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.101",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.102",
+        "https://github.com/github/copilot-cli/releases/tag/v1.0.103"
       ],
-      "covers": "Custom agent locations and frontmatter, subagent settings, built-in and sidekick agents, plugin commands, marketplace fetch authentication retry, enabledPlugins/extraKnownMarketplaces, plugin.json and marketplace.json, precedence; Copilot CLI v1.0.96-v1.0.98 release notes"
+      "covers": "Custom agent locations and frontmatter, subagent settings, built-in and sidekick agents, plugin commands, marketplace fetch authentication retry, enabledPlugins/extraKnownMarketplaces, plugin.json and marketplace.json, precedence; Copilot CLI v1.0.96-v1.0.103 release notes"
     },
     "references/instructions.md": {
       "urls": [

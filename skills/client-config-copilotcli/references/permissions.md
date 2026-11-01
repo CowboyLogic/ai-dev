@@ -313,6 +313,16 @@ status|create|trust|rotate|remove`. Run `copilot help sandbox` for the full refe
 | `sandbox.userPolicy.filesystem.deniedPaths` | `[]` | Denied paths. If the host can't enforce them (older Windows), the command fails rather than running with weaker protection |
 | `sandbox.userPolicy.seatbelt.keychainAccess` | `false` | macOS only; `settings.json` only (not in `/sandbox` or `/settings`) |
 
+With no proxy set in sandbox settings, the local proxy takes its upstream proxy from the first
+non-empty of `HTTPS_PROXY`, `HTTP_PROXY`, `ALL_PROXY` on the host (only `http://` and `https://`
+proxies, not `socks5`). A host `NO_PROXY` match bypasses only that inherited upstream proxy; the
+local proxy still applies your host rules. A proxy set in sandbox settings ignores `NO_PROXY`.
+
+**Unresolved: local-network default.** The v1.0.99 release notes say the sandbox now allows local
+network access by default. The settings reference still lists `allowLocalNetwork` as `false`
+(table above), and no document says which is current. Run `/sandbox policy` to read the effective
+policy instead of assuming either.
+
 The `/sandbox` settings dialog suggests environment variables that may hold secrets and lets you
 add masking hosts before saving. Masking applies to commands, local MCP servers, and language
 servers inside the sandbox; Git and `gh` authentication are masked automatically while

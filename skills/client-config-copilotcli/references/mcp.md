@@ -220,6 +220,10 @@ that are off by default). Flags: `--disable-builtin-mcps`, `--disable-mcp-server
 - Managed settings may set `allowedMcpServers` / `deniedMcpServers` entries matching exactly one of
   `serverUrl` (wildcards allowed), `serverCommand` (exact command + args array), or `serverName`.
   Deny always wins; an empty `allowedMcpServers` array blocks all non-default servers.
+  `serverName` allowlist entries are case-sensitive, have no wildcards, and are limited to letters,
+  numbers, `_`, `.`, `/`, and `-` (so registry names such as `microsoft/playwright-mcp` work);
+  denylist entries accept any non-empty string. Users choose server names, so use `serverUrl` or
+  `serverCommand` when you need to enforce a server's identity.
 
 ## Migrating from `.vscode/mcp.json`
 
@@ -254,12 +258,18 @@ Server names: alphanumerics, underscores, hyphens.
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `command` | Yes | Command that starts the server |
-| `args` | No | Arguments |
+| `command` | No | Command that starts the server. At least one of `command`, `bash`, or `powershell` is required |
+| `bash` | No | Bash script run instead of `command`, for pipes or environment setup. Not used on Windows if `powershell` is also set |
+| `powershell` | No | PowerShell script run instead of `command`; used on Windows when set |
+| `args` | No | Arguments for `command`; ignored when the server starts from `bash` or `powershell` |
+| `cwd` | No | Working directory to launch from (default: the project root) |
 | `fileExtensions` | Yes | Map of extension to language ID |
 | `env` | No | Env vars (`${VAR}`, `${VAR:-default}`) |
 | `rootUri` | No | Root relative to the Git root (default `"."`) |
 | `initializationOptions` | No | Sent in the LSP `initialize` request |
 | `requestTimeoutMs` | No | Request timeout (default 90 seconds) |
+| `initializationTimeoutMs` | No | Startup handshake timeout (default 60 seconds); raise it if a server needs longer for initial project analysis |
+| `spawnTimeoutMs` | No | Timeout for spawning the server process, in milliseconds (no default documented) |
+| `warmupTimeoutMs` | No | Timeout for the server's warmup phase, in milliseconds (no default documented) |
 
 Manage with `/lsp` (`show`, `test NAME`, `reload`, `logs`, `help`) or `copilot lsp list [--json]`.

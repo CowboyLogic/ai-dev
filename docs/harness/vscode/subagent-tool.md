@@ -1,7 +1,7 @@
 # Subagents
 
 A subagent is an agent that another agent calls to do part of a task. In VS Code the tool that makes the
-call is `runSubagent`, part of the `agent` tool set. For VS Code's own description, see
+call is `runSubagent` (listed as `agent/runSubagent`; the `agent` alias enables it). For VS Code's own description, see
 [Subagents in VS Code](https://code.visualstudio.com/docs/agents/run/subagents). The details below describe
 VS Code's Local harness.
 

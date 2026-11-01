@@ -56,7 +56,7 @@ You are a planning agent. Produce a step-by-step plan and do not edit files.
 | `description` | Short summary, shown as the placeholder in the chat input |
 | `name` | Display name. Defaults to the file name without `.agent.md` |
 | `argument-hint` | Guidance text shown in the chat input |
-| `tools` | Tools and tool sets the agent may use. Omit it for all tools |
+| `tools` | Tools the agent may use. Omit it for all tools. User-defined tool sets are deprecated and not supported in the Copilot harness |
 | `agents` | Subagents this agent may call. `*` allows all, `[]` allows none |
 | `model` | One model name, or a prioritized list. Local subagents also use it when choosing their model |
 | `reasoning-effort` | `low`, `medium`, `high`, `xhigh`, or `max`, for the Copilot harness. Availability depends on the model |
@@ -64,17 +64,17 @@ You are a planning agent. Produce a step-by-step plan and do not edit files.
 | `disable-model-invocation` | Stops other agents from selecting this one as a subagent, unless a coordinator names it in its `agents` list |
 | `target` | `vscode` or `github-copilot`. Omit it for both |
 | `handoffs` | Suggested next steps, shown as buttons after a response (Local harness) |
-| `hooks` | Commands scoped to the agent (Preview, Local harness only) |
+| `hooks` | Commands scoped to the agent. Run in the Local harness; the Copilot harness supports them, but VS Code currently drops `hooks` when it converts plugin-provided agents |
 | `mcp-servers` | MCP server configuration, for GitHub Copilot only |
 
 An unrecognized property or tool name is ignored, not an error. That makes a mistyped name fail quietly, so check the spelling when an agent does not behave as written.
 
 ### Tools
 
-`tools` takes tool aliases, VS Code tool sets, individual tools, and MCP tools:
+`tools` takes tool aliases, individual tools, and MCP tools:
 
 ```yaml
-tools: ["read", "search"]               # tool sets, read-only
+tools: ["read", "search"]               # aliases, read-only
 tools: ["read", "edit", "execute"]      # can change files and run commands
 tools: ["search/codebase", "web/fetch"] # individual tools
 tools: ["agent"]                        # may invoke subagents

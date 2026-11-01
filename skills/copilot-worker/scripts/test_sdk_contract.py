@@ -51,6 +51,12 @@ def _header_pins() -> dict[str, str]:
     return pins
 
 
+def engine_efforts() -> tuple[str, ...]:
+    import copilot_worker
+
+    return copilot_worker.EFFORTS
+
+
 def _parameters(callable_: object) -> set[str]:
     return set(inspect.signature(callable_).parameters)
 
@@ -98,6 +104,18 @@ class SdkContractTests(unittest.TestCase):
             if dataclasses.is_dataclass(limit_type) else set(typing.get_type_hints(limit_type))
         )
         self.assertLessEqual(set(limits), fields)
+
+    def test_the_model_catalog_still_carries_what_a_profile_is_checked_against(self) -> None:
+        self.assertTrue(inspect.iscoroutinefunction(copilot.CopilotClient.list_models))
+        model_info = typing.get_type_hints(copilot.CopilotClient.list_models)["return"]
+        (item,) = typing.get_args(model_info)
+        fields = {field.name for field in dataclasses.fields(item)}
+        self.assertLessEqual({"id", "supported_reasoning_efforts", "default_reasoning_effort"}, fields)
+
+    def test_the_sdk_still_accepts_every_effort_the_worker_allows(self) -> None:
+        from copilot.session import ReasoningEffort
+
+        self.assertLessEqual(set(engine_efforts()), set(typing.get_args(ReasoningEffort)))
 
     def test_send_and_wait_accepts_the_timeout_the_engine_passes(self) -> None:
         self.assertLessEqual(set(engine.send_options(SAMPLE_CONFIG)), _parameters(copilot.CopilotSession.send_and_wait))

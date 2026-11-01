@@ -59,6 +59,10 @@ directory, passing the input SVG path as the first argument.
 | `user-invocable` | boolean | No | Allow `/SKILL-NAME` (default `true`) |
 | `disable-model-invocation` | boolean | No | Prevent automatic invocation (default `false`) |
 
+**v1.0.99 release notes only:** a rule in `allowed-tools` keeps commas that appear inside its
+arguments instead of splitting there, and where a list's structure is ambiguous its unscoped rules
+now prompt instead of being granted. Prefer a YAML array over a comma list for rules with arguments.
+
 > [!WARNING]
 > Only pre-approve `shell` or `bash` in `allowed-tools` for skills (and scripts) you have reviewed
 > and trust. It removes the confirmation step for terminal commands.

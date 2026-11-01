@@ -36,7 +36,8 @@ as well as POSIX shell syntax.
 The first run downloads the Copilot runtime the SDK pins, into the SDK's cache.
 
 The SDK, the runtime it carries, and every package it needs are pinned to exact
-versions (`scripts/pins.json` and the header of `scripts/copilot_worker.py`). The worker
+versions (`scripts/pins.json` and the header of `scripts/copilot_worker.py`). The current
+SDK/runtime pair is **1.0.28 / 1.0.105**. The worker
 refuses to start when the installed versions differ, and `check` reports it. Upgrading is a
 deliberate change; [references/upgrading.md](references/upgrading.md) has the procedure.
 
@@ -54,8 +55,8 @@ From inside a Git repository:
 uv run ~/.claude/skills/copilot-worker/scripts/copilot_worker.py check --live
 ```
 
-`check` confirms the SDK, its runtime version, and the repository. `--live` also sends one small prompt to each
-default model, which uses Copilot credits.
+`check` confirms the SDK, its runtime version, and the repository. `--live` also checks that the model catalog offers each profile's model and effort, then sends one small prompt
+to each of the four profiles, which uses Copilot credits.
 
 ## Make delegation reliable
 
@@ -71,15 +72,29 @@ go through the `copilot-worker` skill. Load it before reading three or more file
 
 ## Models
 
-| Mode | Default model |
-| --- | --- |
-| `research` | `gpt-6-luna` |
-| `review` | `gpt-6.1-sol` |
-| `implement` | `gpt-6.1-sol` |
+Each run uses a profile, which fixes one model and one reasoning effort:
 
-The defaults are the `DEFAULT_MODELS` constant in
-[scripts/copilot_worker.py](scripts/copilot_worker.py). Change them there, or pass
-`--model` for one run.
+| Profile | Model | Effort |
+| --- | --- | --- |
+| `light` | `gpt-6-luna` | `medium` |
+| `standard` | `gpt-6.1-terra` | `medium` |
+| `deep` | `gpt-6.1-sol` | `medium` |
+| `heavy` | `gpt-6-astra` | `medium` |
+
+| Mode | Default profile |
+| --- | --- |
+| `research` | `light` |
+| `review` | `deep` |
+| `implement` | `standard` |
+
+`review` defaults to a different model from `implement`, so worker-written code is not
+reviewed by the model that wrote it. A run off its mode's default needs a `--reason`,
+which `result.json` records, and a run that fails verification can be retried one
+profile up, at most twice. Effort is capped at `xhigh`.
+
+The profiles and defaults are the `PROFILES` and `DEFAULT_PROFILES` constants in
+[scripts/copilot_worker.py](scripts/copilot_worker.py). `check --live` confirms that the
+model catalog offers each profile's model and effort before it probes them.
 
 ## Safety
 

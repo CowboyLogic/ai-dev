@@ -105,9 +105,13 @@ copilot --resume=my-feature-work
 # Prevent system sleep during long sessions
 /keep-alive on                # on | off | busy | DURATION
 
-# Remote control
+# Remote control (--no-remote is removed and --remote no longer works for interactive or -p startup; it remains only for legacy --server/--headless; remoteSessions: true makes it the default)
 /remote on
 /remote off
+
+# Session-history syncing and client telemetry, one run only
+copilot --sync-session=off
+copilot --disable-client-telemetry
 
 # What's loaded right now (instructions, MCP, skills, agents, hooks, plugins)
 /env
