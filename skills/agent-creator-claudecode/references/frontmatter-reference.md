@@ -263,8 +263,9 @@ user prompt. Ignored for plugin agents. Does nothing when the file is used as a 
 
 Lets this agent auto-compact earlier than the main conversation's window (requires v2.1.296
 or later; supported in frontmatter and `--agents` definitions). A token count from `100000`
-to `1000000`. If `CLAUDE_CODE_AUTO_COMPACT_WINDOW` is set to a positive integer, the agent
-uses that variable's window and the field has no effect. Changelog only (v2.1.312): the field now lowers the window `CLAUDE_CODE_AUTO_COMPACT_WINDOW` sets, where it had no effect before; it still never raises that window.
+to `1000000`. If `CLAUDE_CODE_AUTO_COMPACT_WINDOW` is set to a positive integer, its window is
+the upper bound for the agent: the field can lower it but never raise it (changelog only,
+v2.1.312). Before v2.1.312 the field had no effect when the variable was set.
 
 Write a plain integer such as `200000`: in frontmatter `200k` is read as 200, which is out of
 range. An out-of-range value is ignored (the agent still loads and compacts as if the field
