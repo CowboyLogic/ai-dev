@@ -68,9 +68,11 @@
         "https://opencode.ai/v2/docs/network/",
         "https://opencode.ai/v2/docs/troubleshooting/",
         "https://opencode.ai/v2/docs/sharing/",
-        "https://raw.githubusercontent.com/anomalyco/opencode/dev/CHANGELOG.md"
+        "https://raw.githubusercontent.com/anomalyco/opencode/dev/CHANGELOG.md",
+        "https://raw.githubusercontent.com/anomalyco/opencode/v2.2.5/packages/schema/src/config.ts",
+        "https://raw.githubusercontent.com/anomalyco/opencode/v2.2.5/packages/schema/src/config/experimental.ts"
       ],
-      "covers": "V2: config locations/precedence (system directory, macOS managed preferences), all top-level fields, ignored V1 fields, commands, skills, formatters, compaction (percentage buffer), media, websearch, warming, references, worktree, instructions (loaded), variable substitution, experimental settings, service env, background service and remote pairing, V2 release notes (CHANGELOG.md)"
+      "covers": "V2: config locations/precedence (system directory, macOS managed preferences), all top-level fields, ignored V1 fields, commands, skills, formatters, compaction (percentage buffer), media, websearch, warming, references, worktree, instructions (loaded), variable substitution, experimental settings, service env, background service and remote pairing, V2 release notes (CHANGELOG.md), pinned v2.2.5 config schema source (top-level `timezone`, experimental keys)"
     },
     "references/v2/permissions.md": {
       "urls": [

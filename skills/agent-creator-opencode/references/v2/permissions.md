@@ -223,8 +223,8 @@ and can only turn `allow` or `ask` into `deny`.
 ```
 
 - `action` is `provider.use`, `tool.use`, `integration.connect`, `integration.use`,
-  `mcp.use`, `skill.use`, or `plugin.use` (the last four meanings need 2.2.3 or
-  newer; before 2.2.3, `integration.use` covered MCP servers, skills, and plugins
+  `mcp.use`, `skill.use`, or `plugin.use` (`integration.connect`, `mcp.use`, `skill.use`, `plugin.use`, and the new
+  meaning of `integration.use` need 2.2.3 or newer, and older clients ignore them; before 2.2.3, `integration.use` covered MCP servers, skills, and plugins
   through `mcp:`/`skill:`/`plugin:` prefixes, and a bare `integration.use` deny
   now blocks providers instead). `permission` is not a valid action; an invalid
   statement is dropped with a server-log warning. See the client-config-opencode
@@ -233,14 +233,19 @@ and can only turn `allow` or `ask` into `deny`.
   `subagent:general` or `github_delete_repository:*`.
 - `provider.use` resource: a provider ID. It replaces V1 `enabled_providers` and
   `disabled_providers`.
-- `integration.use` resource: `mcp:<server>`, `skill:<id>`, or `plugin:<target>`.
-  A denied MCP server or skill is removed and a denied plugin is not loaded.
+- `integration.connect` resource: an integration ID; `integration.use` resource:
+  `<integration>#<account>` or the bare integration ID (for example `opencode`,
+  `anthropic`). The old `mcp:<server>`, `skill:<id>`, `plugin:<target>` forms on
+  `integration.use` are pre-2.2.3 syntax, converted on load.
+- `mcp.use` resource: server name; `skill.use`: skill ID; `plugin.use`: package
+  name or absolute path. A denied MCP server or skill is removed and a denied
+  plugin is not loaded.
 - If nothing matches, the action is allowed. Last match wins.
 - A policy `allow` never grants access; it only lifts an earlier broader policy
   `deny`, after which the agent's own rules decide.
-- Precedence is reversed from normal config: the connected OpenCode Console
-  workspace wins, then macOS managed preferences, then the system `opencode.json(c)`
-  directory, then global config, then direct `opencode.json(c)` (outer beats
+- Precedence is reversed from normal config: macOS managed preferences win, then
+  the system `opencode.json(c)` directory, then the connected OpenCode Console
+  workspace (2.2.x docs; earlier docs ranked it first), then global config, then direct `opencode.json(c)` (outer beats
   inner), then `.opencode/opencode.json(c)`. A repository cannot re-enable what
   global config denies.
 
