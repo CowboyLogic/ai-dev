@@ -509,6 +509,17 @@ def resolve_profile(mode: str, profile: str | None, retry_of: str | None) -> tup
     if profile is not None:
         raise WorkerError("--retry-of picks the next profile itself; do not pass --profile with it")
     previous = load_result(retry_of)
+    # A retry extends the newest run in its chain. Retrying an older run would fork the chain
+    # and restart the attempt count, which is how the retry cap could be bypassed.
+    for later in sorted((state_home() / "runs").glob("*/result.json")):
+        try:
+            child = json.loads(later.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if child.get("retryOf") == retry_of:
+            raise WorkerError(
+                f"run {retry_of} was already retried as {child.get('runId')}; retry that run instead"
+            )
     if previous.get("mode") != mode:
         raise WorkerError(f"run {retry_of} was a {previous.get('mode')} run, not {mode}")
     attempt = int(previous.get("attempt") or 1) + 1
