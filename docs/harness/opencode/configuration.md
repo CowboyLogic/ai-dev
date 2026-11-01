@@ -198,10 +198,11 @@ above as frontmatter and the body as the template.
   automatically (`autoupdate: true` only notifies), so `"notify"`, not `"auto"`, is the
   V2 setting that matches it.
 - `policies` is a separate top-level array of `allow`/`deny` statements (`provider.use`,
-  `tool.use`, `integration.use`). Policies never prompt and only tighten what permissions and
+  `tool.use`, `integration.connect`, `integration.use`, `mcp.use`, `skill.use`, `plugin.use`; the
+  last four need V2 2.2.3 or newer). Policies never prompt and only tighten what permissions and
   providers allow, and statements from broader configuration win over project ones. Releases
   before 2.0.29 read it from `experimental.policies`, which still works.
-- `share` is accepted, but session sharing is not supported yet in V2.
+- `share` is accepted, but session sharing was removed (V2 2.0.30, V1 1.19.1).
 - `theme` and keybinds are not `opencode.json` fields in V2. They live in the terminal
   client config, `~/.config/opencode/cli.json`, which V2 migrates from `tui.json` on
   first start.
