@@ -6,7 +6,7 @@ conditions under which Claude Code silently skips a file, and tool and permissio
 
 - **Skill name:** `agent-creator-claudecode`
 - **Source:** [skills/agent-creator-claudecode](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-claudecode)
-- **Claude Code version:** verified against [Claude Code 2.1.302](https://github.com/anthropics/claude-code/releases/tag/v2.1.302) (released 2026-10-16), last re-verified 2026-10-18
+- **Claude Code version:** verified against [Claude Code 2.1.316](https://github.com/anthropics/claude-code/releases/tag/v2.1.316) (released 2026-10-31), last re-verified 2026-11-01
 
 ---
 
