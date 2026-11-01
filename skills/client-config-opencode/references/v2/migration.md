@@ -36,7 +36,7 @@ fields in memory without rewriting the file**. Converting to native V2 is option
 
 | V1 | V2 |
 |----|----|
-| `autoshare: true` | `share: "auto"` |
+| `autoshare: true` | `share: "auto"` (accepted, but session sharing was removed in 2.0.30 and the 2.2.5 docs drop this row) |
 | `permission` (object) + `tools` (booleans) | `permissions` (ordered array) |
 | `agent`, `mode` | `agents` (entries from `mode` become primary agents) |
 | `snapshot` | `snapshots` |
@@ -48,14 +48,14 @@ fields in memory without rewriting the file**. Converting to native V2 is option
 | `skills: { paths, urls }` | `skills: [ ...paths, ...urls ]` |
 | `autoupdate: false` / `"notify"` / `true` | `update: "disable"` / `"notify"` / `"auto"` |
 | `small_model` | `agents.title.model` |
-| `enabled_providers` / `disabled_providers` | `policies` with `provider.use` (`experimental.policies` is the pre-2.0.29 location and still works) |
+| `enabled_providers` / `disabled_providers` | `policies` with `provider.use` (`experimental.policies` is the pre-2.0.29 location, deprecated, and still merges in) |
 | Provider `options.setCacheKey` | Provider `compatibility.supportsPromptCacheKey` |
 | `subagent_depth` | `experimental.subagent_depth` |
 | `logLevel` | `OPENCODE_LOG_LEVEL` env var |
 | `server` | `opencode service set ...` / `serve` flags |
 
 Unchanged: `shell`, `model`, `default_agent`, `watcher`, `formatter`, `instructions`, `enterprise`, `tool_output`.
-(`instructions` is accepted but not loaded in V2 — move content into `AGENTS.md`.) `lsp` is preserved but inert.
+(`instructions` is loaded in V2 since 2.0.30, after `AGENTS.md` files; before that move content into `AGENTS.md`.) `lsp` is preserved but inert.
 
 > [!NOTE]
 > The migration guide maps `autoupdate: true` to `update: "auto"`, which installs updates automatically in V2. V1
@@ -63,6 +63,11 @@ Unchanged: `shell`, `model`, `default_agent`, `watcher`, `formatter`, `instructi
 > mapped value is more aggressive than the V1 behavior it replaces. Use `"notify"` to keep the 1.19.0 behavior.
 
 ## Permissions
+
+> [!WARNING]
+> V1 asks before accessing paths outside the project. V2 does not: `external_directory` is allowed by default (2.2.x
+> docs). To keep the V1 behavior add `{ "action": "external_directory", "resource": "*", "effect": "ask" }` to
+> `permissions`. Todos are also off by default in V2; `experimental.todo: true` turns them on.
 
 ```jsonc
 // V1
@@ -91,7 +96,7 @@ effect: "deny" }`.
 | `disable` | `disabled` |
 | `permission` | `permissions` |
 | `model` + `variant` | `model: "provider/model#variant"` |
-| `temperature`, `top_p`, `options` | `request.body` |
+| `temperature`, `top_p`, `options` | No agent equivalent that takes effect: agent `request.body` is kept but **not sent** to the model (2.2.x docs). Set them on a model variant (`body` for provider JSON fields, `settings` for provider package options) and reference it as `provider/model#variant` |
 | `maxSteps` | `steps` |
 | `tools` | `permissions` rules |
 | `name` (JSON) | ignored — use the map key |
@@ -122,7 +127,7 @@ effect: "deny" }`.
 `preserve_recent_tokens` → `keep.tokens`; `reserved` → `buffer`; `auto` unchanged; `tail_turns` and `prune` are
 ignored with a warning.
 
-V2 `buffer` defaults to 10% of the model's limit (see [config-schema.md](config-schema.md#compaction)), so a V1
+V2 `buffer` defaults to `"15%"` with a 16k floor in the 2.2.5 docs (10% in the 2.0.29 docs) and also accepts percentages (see [config-schema.md](config-schema.md#compaction)), so a V1
 `reserved` value is only carried over when it was set explicitly.
 
 ## Providers and models
@@ -160,6 +165,12 @@ hand.
 
 V2 imports supported credentials from the legacy `auth.json` into its SQLite database during migration; new
 credentials are not written back to `auth.json`.
+
+## Server authentication
+
+V2 servers still use HTTP Basic auth, with these changes (2.2.x docs): `OPENCODE_PASSWORD` sets the password and
+`OPENCODE_SERVER_PASSWORD` still works; `OPENCODE_SERVER_USERNAME` is no longer supported, and the username is always
+`opencode`.
 
 ## Suggested procedure
 

@@ -24,7 +24,7 @@ opencode auth import creds.json          # import a file produced by `auth expor
 
 `auth export` takes an optional integration ID or name (all integrations when omitted). `auth import` needs a file
 argument or piped stdin (`opencode auth export | opencode auth import`). Both appear in `opencode auth --help` on
-2.0.27 but not in the V2 docs. Treat the exported file as a secret and delete it after use. Create it owner-only
+2.0.27; the 2.2.5 CLI docs now show both. Treat the exported file as a secret and delete it after use. Create it owner-only
 (the `umask 077` above): a plain `>` uses the caller's umask, often `022`, which makes the file world-readable. The
 `rm -f` matters on a rerun, because redirecting onto an existing file keeps that file's mode.
 
@@ -138,12 +138,19 @@ AI SDK package, the migration guide shows the `aisdk:` prefix (`"package": "aisd
 | `family` | Grouping |
 | `package` | Per-model runtime override |
 | `settings` / `headers` / `body` | Per-model request options |
-| `capabilities` | `tools`, `input`, `output` media types |
+| `type` | What the model produces: `chat` (default), `image`, or `decision`; only chat models are offered for sessions (2.2.0) |
+| `releaseDate` | `YYYY-MM-DD` or `YYYY-MM` |
+| `capabilities` | `tools`, `input`, `output` media types, temperature support, and `reasoning` controls (see below) |
 | `compatibility` | Per-model overrides of the provider's `compatibility` (see [Compatibility](#compatibility)) |
 | `variants` | **Array** of `{ id, settings?, headers?, body? }` |
 | `cost` | Input/output and optional `cache.read`/`cache.write` per million tokens |
 | `limit` | `context`, `input`, `output` |
 | `disabled` | Hide from selection |
+
+`capabilities.reasoning` (2.2.x docs, models.dev v2 shape) replaces the model's reasoning variants; variants listed in
+`variants` still apply on top. Fields: `supported` (`false`, or `true` without controls, adds no variants), `toggle`
+(adds a `none` variant that turns reasoning off), `effort` (levels to offer; `default` keeps the provider default and
+adds no variant), and `budget` (`min`/`max` thinking tokens, ignored when `effort` is set).
 
 Unknown models default to tools on, text+image in, text out, 200,000 context, 32,000 output — set real values.
 Options apply provider → model → variant; `settings` and `body` deep-merge, arrays/scalars replace, headers match
@@ -152,9 +159,8 @@ case-insensitively.
 ## Timeouts
 
 Requests wait up to five minutes for response headers and up to fifteen minutes between streamed chunks. The 2.0.28
-release notes raised the default streamed-chunk timeout from 5 to 15 minutes and the 2.0.29 source sets it to
-`900_000` ms, but the 2.0.29 providers docs page still says five, so set `chunkTimeout` explicitly if you depend on a
-value. Set these on the provider's `settings` (provider-wide; not per model or variant), in milliseconds, or `false`
+release notes raised the default streamed-chunk timeout from 5 to 15 minutes; the 2.0.29 providers docs page still said
+five, and the 2.2.5 page says fifteen, so the conflict is resolved in favor of 15 minutes. Set these on the provider's `settings` (provider-wide; not per model or variant), in milliseconds, or `false`
 to disable a limit:
 
 ```jsonc
@@ -172,7 +178,7 @@ A request that exceeds a limit fails with a transport error; OpenCode retries a 
 ## Compatibility
 
 `compatibility` adjusts how OpenCode talks to an OpenAI-compatible or otherwise non-standard endpoint. Set it on a
-provider to apply to all its models, or on a model to override single fields. Fields (from the 2.0.29 config schema):
+provider to apply to all its models, or on a model to override single fields. Fields (from the 2.0.29 config schema, re-checked against the 2.2.5 docs):
 
 | Field | Values | Purpose |
 |-------|--------|---------|
@@ -182,6 +188,8 @@ provider to apply to all its models, or on a model to override single fields. Fi
 | `requireFinishReason` | boolean | OpenAI-compatible chat: a stream that ends without `finish_reason` is an error (default `true`); set `false` for endpoints that omit it |
 | `requireAssistantAfterTool` | boolean | OpenAI-compatible chat: append a `Done.` assistant message when the last message is a tool result (default on only for Mistral) |
 | `supportsPromptCacheKey` | boolean | Send a prompt cache key (V1 `options.setCacheKey` migrates here) |
+| `streamUsage` | boolean | OpenAI-compatible chat: request token usage with `stream_options.include_usage` (default `true`); set `false` for providers that reject `stream_options` (2.1.0) |
+| `mediaInput` | `assets` \| `state` \| `root` | System One decision requests: where images and other media go |
 | `cacheFormat` | `anthropic` \| `alibaba` | Prompt-cache marker syntax the endpoint accepts |
 | `supportsThinkingBlockBinding`, `supportsEffortUpdates` | boolean | **Model-only**; override model-ID detection |
 
@@ -286,6 +294,34 @@ a deployment yourself; explicitly configured models are always kept:
 ```jsonc
 { "providers": { "azure": { "models": { "gpt-5-mini": { "modelID": "gpt-production" } } } } }
 ```
+
+### ChatGPT sign-in
+
+`/connect` → OpenAI → **Sign in with ChatGPT** (or a legacy **Codex** method) uses a ChatGPT Plus or Pro plan instead of
+an API key; usage counts against the plan, so these models show no cost. By default OpenCode caps their input context
+below each model's real limit to match Codex defaults: 500,000 tokens for GPT-6.1 Sol and newer, 272,000 for older
+models. Opt out with `{ "plugins": ["-opencode.provider.openai-context-caps"] }` (2.1.4; the `-` prefix turns off a
+built-in plugin).
+
+### Claude Agent
+
+Added in 2.2.3. The 2.2.5 `claude-agent` docs page is marked `noindex`, so it is reachable by URL but not indexed.
+Claude Code runs the model call on the OpenCode server's machine; OpenCode keeps tools, permissions, compaction,
+subagents, `AGENTS.md`, skills, and MCP instructions. Install Claude Code 2.1.248 or later, run `claude auth login`,
+then pick **Claude Agent** in `/connect` (or `opencode auth login claude-agent`) and choose a model; effort levels are
+variants such as `claude-agent/opus#high`. OpenCode finds `claude` on `PATH`; `OPENCODE_CLAUDE_PATH` on the server
+overrides it (`opencode service set env OPENCODE_CLAUDE_PATH /opt/claude/bin/claude`).
+
+Settings on the `claude-agent` provider (or a model) pass to Claude Code and override the same shell variables:
+`settings.baseURL` → `ANTHROPIC_BASE_URL`, `settings.apiKey` → `ANTHROPIC_API_KEY`, `settings.authToken` →
+`ANTHROPIC_AUTH_TOKEN`, `settings.headerTimeout` → `API_TIMEOUT_MS`, `settings.chunkTimeout` →
+`CLAUDE_STREAM_IDLE_TIMEOUT_MS`, `headers` → `ANTHROPIC_CUSTOM_HEADERS`, `body` → `CLAUDE_CODE_EXTRA_BODY`.
+
+Limits from the docs: not available in remote workspaces; your Claude Code settings, `CLAUDE.md`, hooks, MCP servers,
+skills, and memory are not loaded; Claude Code's system prompt replaces OpenCode's built-in prompt (custom agent
+prompts still apply); temperature, top-p, top-k, seed, and stop sequences are unsupported; plugin `http.request` and
+`http.response` hooks do not run. Cost shown follows the Claude Code login (none for a subscription). This skill did
+not run it.
 
 ### GitHub Copilot
 

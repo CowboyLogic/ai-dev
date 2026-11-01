@@ -26,6 +26,7 @@ Native OpenCode V2 shape for `opencode.json(c)`. Sources: <https://opencode.ai/v
 - [References](#references)
 - [Worktrees](#worktrees)
 - [Instructions](#instructions)
+- [Experimental](#experimental)
 - [Environment and service settings](#environment-and-service-settings)
 - [Annotated example](#annotated-example)
 
@@ -76,7 +77,8 @@ Settings merge; non-conflicting keys are preserved. Exceptions to "closest wins"
 | `model` | string or object | `provider/model`; root default does **not** retain a `#variant` | [providers.md](providers.md) |
 | `default_agent` | string | Must exist, be visible, and be primary-capable; else falls back to `build`, then first visible primary agent | [agents.md](agents.md) |
 | `update` | `"disable"` \| `"notify"` \| `"auto"` | Default `"notify"`. Global config only. `auto` does not restart a running server | — |
-| `share` | `"manual"` \| `"auto"` \| `"disabled"` | Accepted, but V2 does not support session sharing yet | — |
+| `share` | `"manual"` \| `"auto"` \| `"disabled"` | Accepted by the schema, but the session-sharing backend and `/share` command were removed in 2.0.30 and the 2.2.5 docs drop the field | — |
+| `timezone` | string | IANA time zone for schedules (for example `America/Los_Angeles`); defaults to the server's zone. In the 2.2.5 config schema, not in the docs pages | — |
 | `username` | string | Accepted but not displayed in conversations | — |
 | `permissions` | array of `{action, resource, effect}` | Ordered, last match wins | [permissions.md](permissions.md) |
 | `agents` | object | Agent definitions keyed by ID | [agents.md](agents.md) |
@@ -91,13 +93,13 @@ Settings merge; non-conflicting keys are preserved. Exceptions to "closest wins"
 | `media` | object | `media.image` resize limits | [Media](#media-image-limits) |
 | `tool_output` | object | `max_lines`, `max_bytes` retained from a tool result (docs example: `2000`, `51200`) | — |
 | `websearch` | object or `false` | `{ "provider": "exa" \| "firecrawl" \| "parallel" \| "tavily" \| "tinyfish" \| "random" }` | [Web search](#web-search) |
-| `compaction` | object | `auto`, `keep.tokens`, `buffer` | [Compaction](#compaction) |
+| `compaction` | object | `auto`, `keep.tokens`, `buffer` (token count or percentage) | [Compaction](#compaction) |
 | `warming` | boolean or object | Disabled by default | [Warming](#warming) |
 | `references` | object | Named local dirs or Git repos | [References](#references) |
 | `worktree` | object | `{ "directory": "../worktrees" }` | [Worktrees](#worktrees) |
-| `instructions` | array | **Accepted but not loaded** in V2 — use `AGENTS.md` | [Instructions](#instructions) |
-| `policies` | array | Ordered `{ action, resource, effect }` statements; actions `provider.use`, `tool.use`, `integration.use` (2.0.29+; `experimental.policies` still works) | [permissions.md](permissions.md#policies) |
-| `experimental` | object | `subagent_depth`, `portable_shell_scanner` (and the legacy `policies` location) | [permissions.md](permissions.md) |
+| `instructions` | array | Files, globs, and HTTP(S) URLs loaded after `AGENTS.md` (2.0.30+) | [Instructions](#instructions) |
+| `policies` | array | Ordered `{ action, resource, effect }` statements; actions `provider.use`, `tool.use`, `integration.connect`, `integration.use`, `mcp.use`, `skill.use`, `plugin.use` (2.2.3+ for the last four; `experimental.policies` is deprecated but still merges in) | [permissions.md](permissions.md#policies) |
+| `experimental` | object | See [Experimental](#experimental) | [Experimental](#experimental) |
 
 Fields that keep the V1 shape and need no migration: `shell`, `model`, `default_agent`, `watcher`, `formatter`,
 `instructions`, `enterprise`, `tool_output`.
@@ -192,8 +194,14 @@ Template syntax:
 - URLs are HTTP catalogs: `<base>/index.json` listing `{ "name", "version", "files" }`.
 - Automatic discovery (no config needed): `~/.config/opencode/skills`, `~/.claude/skills`, `~/.agents/skills`,
   and project `.opencode/skills`, `.claude/skills`, `.agents/skills` from cwd up to the project root.
-- A source holds root-level `*.md` files or `SKILL.md` at any depth. The **path** determines the skill ID
-  (`git-release/SKILL.md` → `git-release`); frontmatter `name` is a display label only.
+- A source holds root-level `*.md` files or `SKILL.md` files nested in grouping directories
+  (`skills/git-release/SKILL.md`, `skills/teams/release/SKILL.md`). A directory containing `SKILL.md` is one skill and
+  is not searched for more; hidden files and directories and `node_modules` are skipped; search stops six directories
+  below the source root (2.2.5 docs). The **path** determines the skill ID (`git-release/SKILL.md` → `git-release`);
+  frontmatter `name` is a display label only. In an HTTP catalog each downloaded skill directory becomes a source root
+  named after the entry, so `git-release.md` and a root-level `SKILL.md` both get the ID `git-release`.
+- `OPENCODE_DISABLE_CLAUDE_CODE` and `OPENCODE_DISABLE_CLAUDE_CODE_SKILLS` are honored when discovering `.claude`
+  skills (2.0.30 release notes).
 - Frontmatter: `name`, `description` (required for the model to see it), `metadata.opencode/autoinvoke` (`false`
   hides the skill from the model's list), and `disable-model-invocation` (`true` has the same effect; if both are
   set, `opencode/autoinvoke` wins). The skill stays registered and can still be loaded explicitly by ID, or in a
@@ -246,15 +254,24 @@ Built-ins: `gofmt`, `mix`, `oxfmt`, `prettier`, `biome`, `zig`, `clang-format`, 
 |-------|---------|----------|
 | `auto` | `true` | Compact automatically near the context limit, and recover once when a provider rejects a request as too long; manual compaction always works |
 | `keep.tokens` | `15000` | Approximate recent conversation kept beside the summary |
-| `buffer` | 10% of the limit | Tokens kept free below the model's limit; larger starts compaction earlier |
+| `buffer` | `"15%"`, at least 16k (2.2.5 docs) | Share of the model's context window kept free; automatic compaction starts once the conversation reaches the rest |
 
-`keep.tokens` and `buffer` accept non-negative integers. The 2.0.16 docs gave `buffer` a fixed default of `20000`;
-the 2.0.29 docs say 10% of the limit, so set it explicitly if you depend on a specific value.
+`keep.tokens` accepts a non-negative integer. `buffer` (2.2.5) accepts a percentage string from `"1%"` to `"99%"`,
+decimals included, or a token count. `"20%"` compacts at 80% full, which is about 102k tokens on a 128k window and
+800k on a 1M window. A token count at least as large as the model's window is ignored and the default applies.
+The 2.0.16 docs gave `buffer` a fixed default of `20000` and the 2.0.29 docs said 10% of the limit; the 2.2.5 docs say
+`"15%"` with a 16k floor, so set it explicitly if you depend on a specific value.
+
+Summaries cover the entire current conversation and keep the most recent `keep.tokens` beside the summary; sending the
+full conversation lets the summary request reuse the normal request's prompt cache where the provider supports it
+(2.1.0 notes, 2.2.5 docs). Set `agents.compaction.model` to write summaries with a different model than the session's.
+`experimental.background_compaction: true` (2.1.4) prepares a summary in the background as a session nears its
+threshold; summaries that are never used still cost tokens.
 
 Native provider compaction is opt-in per provider or model:
 `providers.<id>.settings.compaction.type` = `"native"` or `"summary"` (model setting overrides provider). Native
 compaction supports OpenAI Responses models, and its encrypted checkpoint only works with the same provider, model,
-and endpoint. Compaction uses the session's model; there is no separate compaction model.
+and endpoint. Compaction uses the session's model unless `agents.compaction.model` is set.
 
 Request compaction on demand with `opencode api post /api/session/<session-id>/compact --data '{}'`.
 
@@ -341,8 +358,20 @@ V2 loads `AGENTS.md` files only: `~/.config/opencode/AGENTS.md` plus every `AGEN
 home (stops at the project root for workspaces outside home). Nested `AGENTS.md` files load as the agent reads
 those areas. `CLAUDE.md` is **not** discovered in V2.
 
-The `instructions` array is accepted by the schema but V2 **does not currently load** its files, globs, or URLs.
-`OPENCODE_DISABLE_PROJECT_CONFIG=1` skips project `AGENTS.md` discovery.
+The `instructions` array (2.0.30+; earlier releases accepted it without loading it) adds files, globs, or HTTP(S) URLs
+that load **after** the discovered `AGENTS.md` files, in listed order; entries from every config document combine:
+
+| Entry | Resolution |
+|-------|------------|
+| Relative path or glob | Searched in each directory from the workspace up to the project root |
+| `~/` path | Resolved from the home directory |
+| Absolute path | Used as written; the file name may be a glob |
+| `http://` or `https://` | Fetched when config loads, with a five-second timeout |
+
+Local files update like `AGENTS.md` when they change; new files matching a glob load on the next config change. Missing
+files are skipped, and an unreachable URL is skipped or keeps its last fetched content.
+`OPENCODE_DISABLE_PROJECT_CONFIG=1` skips project `AGENTS.md` discovery and resolves relative entries against the global
+config directory.
 
 ---
 
@@ -375,6 +404,8 @@ and were in the 2.0.27 `opencode pair --help`.
 | `OPENCODE_DB` | Override the SQLite database path |
 | `OPENCODE_CLI_CONFIG_CONTENT` | Inline JSON merged over `cli.json` |
 | `OPENCODE_DISABLE_PROJECT_CONFIG` | Skip project `AGENTS.md` discovery |
+| `OPENCODE_PASSWORD` | Server HTTP Basic password (`OPENCODE_SERVER_PASSWORD` still works; `OPENCODE_SERVER_USERNAME` is no longer supported and the username is always `opencode`) |
+| `OPENCODE_CLAUDE_PATH` | Override the Claude executable used by the Claude Agent provider |
 | `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY` | Proxy; `NO_PROXY` must include `localhost,127.0.0.1,::1` |
 | `NODE_EXTRA_CA_CERTS` | Extra CA bundle (PEM) |
 
@@ -384,13 +415,42 @@ and were in the 2.0.27 `opencode pair --help`.
 > relying on them in V2. System-directory and macOS managed-preference settings are documented in V2 from 2.0.29
 > (see [Locations and precedence](#locations-and-precedence)).
 
+The shared server listens on localhost only. Its default port is 49374 on macOS, Linux, and WSL and 28894 on Windows
+(2.1.3 notes and the 2.2.5 web docs; Windows reserves ports from 49152 up). `opencode service status` prints the current
+address. `opencode debug heap-dump [--directory <dir>]` writes a heap snapshot of the running server (2.1.4).
+
 Useful diagnostics: `opencode debug config` (list configuration sources), `opencode debug paths`,
 `opencode reload` (reload configuration without restarting the server), `opencode service status`.
 
-Variable substitution: V2 docs use `{env:NAME}` throughout. `{file:path}` is not shown in V2 docs,
-but works: on OpenCode 2.0.27 (the substitution source is unchanged through 2.0.29; not re-run on the 2.0.29 binary) an agent's `"system": "{file:./prompts/plan.txt}"` resolved to the
-file's contents, relative to the config file, as shown by `opencode debug config` run two directories below the
-config file. Treat it as undocumented behavior.
+Variable substitution: the 2.2.5 config docs document both forms inside JSON strings. `{env:NAME}` is replaced with
+the variable's value (empty string when unset). `{file:path}` is replaced with the file's contents; the path is
+relative to the config file's directory, absolute, or starts with `~/`; a missing file becomes an empty string. Earlier
+V2 docs showed only `{env:}`; `{file:}` was verified working on the 2.0.27 binary for an agent `system` value. The
+2.2.5 binary was not run.
+
+---
+
+## Experimental
+
+All keys live under `experimental` and may change or disappear in any release. Verified against the 2.2.5 docs and
+config schema (`packages/schema/src/config/experimental.ts`).
+
+| Key | Type / default | Effect |
+|-----|----------------|--------|
+| `todo` | boolean, `false` | Gives agents the `todowrite` tool (2.1.0; todos are off by default in V2) |
+| `subagent_depth` | integer, `1` | How deeply subagents can start their own subagents |
+| `background_compaction` | boolean, `false` | Writes the compaction summary in the background; unused summaries still cost tokens |
+| `image_generate` | boolean or `{ model }` | Default model for `experimental_image_generate` as `providerID/modelID[#variant]`; the tool appears while a connected provider has an image model, and since 2.2.2 needs no other setup |
+| `location_idle_timeout` | duration string or `false`, `"60 minutes"` | How long a project location can be idle before its services unload; running sessions and background jobs keep it loaded; project config can override global |
+| `schedules` | boolean, `false` | Opt-in scheduled prompts (`/schedule`, agent tools); `timezone` sets the zone. Release-notes only |
+| `artifacts` | boolean, `false` | Opt-in `artifact_create`/`artifact_read`/`artifact_update`/`artifact_delete` with a local static-file provider (2.2.4). Release-notes and schema only |
+| `media_blob` | boolean, `false` | Stores new session media once in a deduplicated blob table (2.2.0). Schema and release notes only |
+| `policies` | array | Deprecated; use top-level `policies` |
+| `portable_shell_scanner` | boolean | Deprecated; the scanner is always on |
+
+`OPENCODE_DISABLE_FREE_MODELS=1` (or `true`) on the server process hides zero-input-price `opencode` and `opencode-go`
+models from catalogs and defaults (2.1.2); selecting one then fails with `Model unavailable`. For the shared background
+server use `opencode service set env OPENCODE_DISABLE_FREE_MODELS 1`.
 
 ---
 
