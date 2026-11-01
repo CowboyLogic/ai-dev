@@ -46,11 +46,23 @@ from pathlib import Path
 from typing import Any
 
 MODES = ("research", "review", "implement")
-DEFAULT_MODELS = {"research": "gpt-6-luna", "review": "gpt-6.1-sol", "implement": "gpt-6.1-sol"}
+# Each profile fixes one model and one reasoning effort (None leaves the model's default).
+# They are ordered cheapest first: a retry moves exactly one step up this order.
+PROFILES: dict[str, dict[str, str | None]] = {
+    "light": {"model": "gpt-6-luna", "effort": None},
+    "standard": {"model": "gpt-6.1-terra", "effort": "high"},
+    "deep": {"model": "gpt-6.1-terra", "effort": "xhigh"},
+    "heavy": {"model": "gpt-6.1-sol", "effort": "high"},
+}
+# review defaults to a different model from implement, so worker-written code is not
+# reviewed by the model that wrote it.
+DEFAULT_PROFILES = {"research": "light", "review": "heavy", "implement": "standard"}
+# A run that fails verification may be retried one profile up at most this many times.
+MAX_RETRIES = 2
 DEFAULT_CREDITS = {"research": 30, "review": 30, "implement": 60}
 DEFAULT_TIMEOUTS = {"research": 600, "review": 600, "implement": 1800}
-# The values the SDK accepts for reasoning_effort.
-EFFORTS = ("low", "medium", "high", "xhigh", "max")
+# The reasoning efforts a run may use. The SDK also accepts "max"; the worker caps at xhigh.
+EFFORTS = ("low", "medium", "high", "xhigh")
 RUN_ID_PATTERN = re.compile(r"^\d{8}-\d{6}-[0-9a-f]{4}$")
 # Keeps an attached review diff to a size the worker can read alongside the files.
 MAX_DIFF_BYTES = 100_000
@@ -351,6 +363,9 @@ def execute_run(
     mode: str,
     task: str,
     cwd: Path,
+    profile: str | None = None,
+    reason: str | None = None,
+    retry_of: str | None = None,
     model: str | None = None,
     effort: str | None = None,
     credits: int | None = None,
@@ -360,9 +375,21 @@ def execute_run(
         raise WorkerError(f"unknown mode: {mode}")
     if not task.strip():
         raise WorkerError("the task is empty")
+    if effort == "max":
+        raise WorkerError("effort max is not allowed; the highest effort a run may use is xhigh")
     if effort is not None and effort not in EFFORTS:
         raise WorkerError(f"unknown effort: {effort}")
-    model = model or DEFAULT_MODELS[mode]
+    justification = reason.strip() if reason else None
+    profile, attempt = resolve_profile(mode, profile, retry_of)
+    default_profile = DEFAULT_PROFILES[mode]
+    off_default = profile != default_profile or model is not None or effort is not None
+    if off_default and not justification:
+        raise WorkerError(
+            f"this run is off the {mode} default profile ({default_profile}); "
+            "pass --reason to say why"
+        )
+    model = model or PROFILES[profile]["model"]
+    effort = effort if effort is not None else PROFILES[profile]["effort"]
     credits = DEFAULT_CREDITS[mode] if credits is None else credits
     timeout = DEFAULT_TIMEOUTS[mode] if timeout is None else timeout
     if credits < MIN_CREDITS:
@@ -438,6 +465,11 @@ def execute_run(
     result = {
         "runId": run_id,
         "mode": mode,
+        "profile": profile,
+        "defaultProfile": default_profile,
+        "reason": justification,
+        "attempt": attempt,
+        "retryOf": retry_of,
         "model": model,
         "effort": effort,
         "status": status,
@@ -461,6 +493,40 @@ def execute_run(
     return result
 
 
+def resolve_profile(mode: str, profile: str | None, retry_of: str | None) -> tuple[str, int]:
+    """Return the profile a run uses and its attempt number (1 for a first run)."""
+    if profile is not None and profile not in PROFILES:
+        raise WorkerError(f"unknown profile: {profile}")
+    if retry_of is None:
+        return profile or DEFAULT_PROFILES[mode], 1
+    if profile is not None:
+        raise WorkerError("--retry-of picks the next profile itself; do not pass --profile with it")
+    previous = load_result(retry_of)
+    if previous.get("mode") != mode:
+        raise WorkerError(f"run {retry_of} was a {previous.get('mode')} run, not {mode}")
+    attempt = int(previous.get("attempt") or 1) + 1
+    if attempt > MAX_RETRIES + 1:
+        raise WorkerError(
+            f"run {retry_of} was already retried {MAX_RETRIES} times; do the work yourself"
+        )
+    order = list(PROFILES)
+    if previous.get("profile") not in order:
+        raise WorkerError(f"run {retry_of} has no profile to step up from")
+    index = order.index(previous["profile"]) + 1
+    if index == len(order):
+        raise WorkerError(f"run {retry_of} used {order[-1]}, the top profile; do the work yourself")
+    return order[index], attempt
+
+
+def load_result(run_id: str) -> dict[str, Any]:
+    if not RUN_ID_PATTERN.match(run_id):
+        raise WorkerError(f"not a run ID: {run_id!r}")
+    result_path = state_home() / "runs" / run_id / "result.json"
+    if not result_path.exists():
+        raise WorkerError(f"no such run: {run_id}")
+    return json.loads(result_path.read_text(encoding="utf-8"))
+
+
 def _runtime_version(run_dir: Path) -> str:
     try:
         info = json.loads((run_dir / "runtime.json").read_text(encoding="utf-8"))
@@ -473,7 +539,8 @@ def print_summary(result: dict[str, Any]) -> None:
     print(f"status: {result['status']}")
     print(f"run: {result['runId']}")
     print(f"runDir: {result['runDir']}")
-    print(f"model: {result['model']}")
+    print(f"profile: {result['profile']} (attempt {result['attempt']})")
+    print(f"model: {result['model']} (effort {result['effort'] or 'model default'})")
     print(f"duration: {result['durationSeconds']}s")
     print(f"termination: {result['terminationReason']}")
     if result["mode"] != "implement":
@@ -503,7 +570,8 @@ def cmd_run(args: argparse.Namespace, cwd: Path) -> int:
     except OSError as error:
         raise WorkerError(f"cannot read the task file: {error}") from error
     result = execute_run(
-        mode=args.mode, task=task, cwd=cwd, model=args.model, effort=args.effort,
+        mode=args.mode, task=task, cwd=cwd, profile=args.profile, reason=args.reason,
+        retry_of=args.retry_of, model=args.model, effort=args.effort,
         credits=args.max_ai_credits, timeout=args.timeout,
     )
     print_summary(result)
@@ -512,12 +580,7 @@ def cmd_run(args: argparse.Namespace, cwd: Path) -> int:
 
 def cmd_clean(args: argparse.Namespace, cwd: Path) -> int:
     run_id = args.run_id
-    if not RUN_ID_PATTERN.match(run_id):
-        raise WorkerError(f"not a run ID: {run_id!r}")
-    result_path = state_home() / "runs" / run_id / "result.json"
-    if not result_path.exists():
-        raise WorkerError(f"no such run: {run_id}")
-    result = json.loads(result_path.read_text(encoding="utf-8"))
+    result = load_result(run_id)
     if result["mode"] != "implement":
         print(f"{run_id}: read-only run, nothing to clean")
         return 0
@@ -556,15 +619,64 @@ def cmd_check(args: argparse.Namespace, cwd: Path) -> int:
         ok = False
     if not ok or not args.live:
         return 0 if ok else 1
-    for model in sorted(set(DEFAULT_MODELS.values())):
+    models, problem = available_models()
+    if models is None:
+        print(f"models: could not list them: {problem}")
+        return 1
+    for name in PROFILES:
+        problem = profile_problem(name, models)
+        print(f"profile {name} ({describe_profile(name)}): {problem or 'offered'}")
+        ok = ok and problem is None
+    if not ok:
+        # Probing a profile the catalog does not offer only spends credits on a failure.
+        return 1
+    for name in PROFILES:
         result = execute_run(
             mode="research", task="Reply with the single word: ok", cwd=cwd,
-            model=model, timeout=120,
+            profile=name, reason="check --live probe", timeout=120,
         )
         passed = result["status"] == "completed"
-        print(f"model {model}: {'ok' if passed else result['status']} ({result['runDir']})")
+        print(f"probe {name}: {'ok' if passed else result['status']} ({result['runDir']})")
         ok = ok and passed
     return 0 if ok else 1
+
+
+def describe_profile(name: str) -> str:
+    profile = PROFILES[name]
+    return f"{profile['model']}, effort {profile['effort'] or 'model default'}"
+
+
+def available_models() -> tuple[dict[str, dict[str, Any]] | None, str]:
+    """Ask the engine for the models this login offers. Return (models by ID, problem)."""
+    home = state_home() / "copilot-home"
+    home.mkdir(parents=True, exist_ok=True)
+    try:
+        done = subprocess.run(
+            [*engine_base(), "--list-models", str(home)], capture_output=True, text=True,
+            timeout=120,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        return None, str(error)
+    if done.returncode != 0:
+        lines = (done.stderr or done.stdout).strip().splitlines()
+        return None, lines[-1] if lines else f"the engine exited {done.returncode}"
+    try:
+        return {model["id"]: model for model in json.loads(done.stdout)}, ""
+    except (ValueError, KeyError, TypeError) as error:
+        return None, f"unreadable model list: {error}"
+
+
+def profile_problem(name: str, models: dict[str, dict[str, Any]]) -> str | None:
+    """Say why the model catalog cannot serve a profile, or None when it can."""
+    profile = PROFILES[name]
+    model = models.get(profile["model"])
+    if model is None:
+        return f"NOT OFFERED: no model {profile['model']}"
+    supported = model.get("supportedReasoningEfforts") or []
+    if profile["effort"] is not None and profile["effort"] not in supported:
+        listed = ", ".join(supported) or "none"
+        return f"NOT OFFERED: {profile['model']} does not support effort {profile['effort']} (supports: {listed})"
+    return None
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -573,8 +685,12 @@ def build_parser() -> argparse.ArgumentParser:
     run = commands.add_parser("run", help="run one delegation and exit")
     run.add_argument("--mode", required=True, choices=MODES)
     run.add_argument("--task-file", required=True)
-    run.add_argument("--model")
-    run.add_argument("--effort", choices=EFFORTS)
+    run.add_argument("--profile", choices=tuple(PROFILES), help="default: the mode's profile")
+    run.add_argument("--reason", help="why this run is off its mode's default profile")
+    run.add_argument("--retry-of", metavar="RUN_ID", help="retry that run one profile up")
+    run.add_argument("--model", help="override the profile's model, only when the user names one")
+    # Not choices=: an argparse rejection would not say why max is refused.
+    run.add_argument("--effort", help="override the profile's effort, only when the user names one")
     run.add_argument("--max-ai-credits", type=int)
     run.add_argument("--timeout", type=int)
     run.set_defaults(handler=cmd_run)
@@ -582,7 +698,7 @@ def build_parser() -> argparse.ArgumentParser:
     clean.add_argument("run_id")
     clean.set_defaults(handler=cmd_clean)
     check = commands.add_parser("check", help="verify the Copilot SDK and repository")
-    check.add_argument("--live", action="store_true", help="also probe each default model")
+    check.add_argument("--live", action="store_true", help="also check and probe each profile")
     check.set_defaults(handler=cmd_check)
     return parser
 
