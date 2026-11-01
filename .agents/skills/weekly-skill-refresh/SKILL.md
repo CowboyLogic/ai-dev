@@ -124,7 +124,11 @@ Every run produces a PR, because the verification date and basis change every ru
    (head `refresh/<client>`, base `main`), body filled from
    `.github/PULL_REQUEST_TEMPLATE/weekly_maintenance.md`, with `Closes #<issue>`. Title:
    `docs(skills): weekly <Tool> skills refresh against <Tool> <version> (<YYYY-MM-DD>)`.
-   A date-only refresh says so under "Changes made" and lists the sources checked. Begin the
+   The body is the maintainer's review surface, since the maintainer reads it before
+   merging. It must summarize, in plain terms: what changed per skill and why (with the
+   source for each claim), what was verified with no change, what was deliberately left out
+   or could not be verified, and which claims rest on release notes alone. A date-only
+   refresh says so under "Changes made" and lists the sources checked. Begin the
    body with any attribution block the routine or session context requires.
 4. Comment on the issue with the PR link. Leave it open; it closes when the PR merges.
 5. Only if there is no diff at all (dates already match today), skip the PR: comment on the
@@ -184,6 +188,8 @@ unverified. Never merge.
 
 ## 8. Final report
 
+Also post this as a final comment on the PR (the maintainer reads the PR, not the session),
+and update the PR body if the review rounds changed its content.
 State: client and version, issue and PR links, whether the PR is draft or ready, rounds
 used, fixes (with commits), refutations, deferrals, and the merge-readiness result with
 anything unverified.
