@@ -6,15 +6,18 @@ on V1 or their existing files are V1-shaped.
 
 > [!NOTE]
 > **OpenCode version:** verified against OpenCode V2
-> [2.0.29](https://github.com/anomalyco/opencode/tree/v2.0.29) (tagged 2026-10-14) and V1
-> [1.19.0](https://github.com/anomalyco/opencode/releases/tag/v1.19.0) (released 2026-10-11),
-> checked 2026-10-14. Against the previous baseline (V2 2.0.27) the V2 agents and migration docs are
-> unchanged; the permissions page moved policies from `experimental.policies` to top-level `policies`,
-> noted in `references/v2/permissions.md`. No V1 release has shipped since 1.19.0. The Copilot model
-> table in `references/models.md` was re-checked against GitHub's model data and the models.dev catalog
-> on the same date and gained Gemini 4 Argon. The 2.0.29 binary was not run for this check, so V2
-> notes that were verified on the 2.0.27 binary keep that basis. Re-verify when either line ships a
-> new release.
+> [2.2.5](https://github.com/anomalyco/opencode/tree/v2.2.5) (tagged 2026-10-30) and V1
+> [1.19.5](https://github.com/anomalyco/opencode/tree/v1.19.5) (tagged 2026-10-28),
+> checked 2026-11-01. Against the previous baseline (V2 2.0.29) the V2 agents, permissions, and migration
+> docs changed: `external_directory` is now allowed by default, agent files are read as one format, agent
+> `request.body` is documented as not sent (sampling goes on a model variant), and the policy actions were
+> split into `mcp.use`, `skill.use`, `plugin.use`, `integration.connect`, and `integration.use`. V1 changes since 1.19.0
+> have no agent-authoring surface (V1 release notes were not reachable, so this rests on the tag diff and commit log).
+> The Copilot model table in `references/models.md` was re-checked against GitHub's supported-models and
+> retirement pages and the models.dev catalog on the same date: GPT-6.1 Terra was added, and GPT-5 mini, GPT-5.4,
+> GPT-5.4 mini, GPT-5.5, and Gemini 3.7 Flash moved to the retired table (retired 2026-10-19). Neither binary was
+> run for this check, so V2 notes that were verified on the 2.0.27 binary keep that basis. Re-verify when either
+> line ships a new release.
 
 ## When to Load This Skill
 
