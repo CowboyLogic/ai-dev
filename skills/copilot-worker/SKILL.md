@@ -156,7 +156,8 @@ WORKER run --mode implement --task-file path/to/task.md --retry-of <run-id> \
 reason names what failed verification. Sharpen the task file with what you learned
 before the retry; the previous run's work does not carry over, so `WORKER clean` it.
 
-A run is retried at most twice, and never above `heavy`. When the script refuses a
+A run is retried at most twice, and never above `heavy`. Retry the newest run in the chain:
+a run that already has a retry is refused, so the cap cannot be dodged by forking. When the script refuses a
 retry, do the work yourself. A `review` run starts at `deep`, so it can be retried
 once, on `heavy`.
 
