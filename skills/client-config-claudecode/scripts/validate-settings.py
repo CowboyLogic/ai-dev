@@ -114,7 +114,7 @@ USER_OR_MANAGED_KEYS = {
     "appendPlugins", "askUserQuestionTimeout", "autoContinueAtUsageLimit", "autoMode",
     "bashEditDiffEnabled", "desktopSessionCleanupPeriodDays", "dialogExpiry", "feedbackDrafts",
     "footerLinksRegexes", "forceLoginGatewayUrl", "modelPicker", "pluginConfigs",
-    "prependPlugins", "processWrapper", "skipAutoPermissionPrompt", "spellcheck", "sshConfigs",
+    "prependPlugins", "processWrapper", "skipAutoPermissionPrompt", "spellcheck", "sshConfigs", "sshHostCommands",
     "vimInsertModeRemaps",
 }
 # Read from user, local, managed (and --settings) — not from shared project settings
@@ -139,7 +139,7 @@ MANAGED_ONLY_SANDBOX_PATHS = {
     ("bwrapPath",), ("socatPath",),
 }
 USER_OR_MANAGED_SANDBOX_PATHS = {
-    ("allowAppleEvents",), ("ripgrep",), ("filesystem", "disabled"),
+    ("allowAppleEvents",), ("allowNestedUserNamespaces",), ("ripgrep",), ("filesystem", "disabled"),
     ("network", "strictAllowlist"), ("network", "tlsTerminate"),
     ("credentials", "allowPlaintextInject"), ("credentials", "awsPairs"), ("credentials", "sigv4"),
 }
@@ -169,7 +169,7 @@ KNOWN_TOP_LEVEL_KEYS = (
 )
 KNOWN_PERMISSION_KEYS = {
     "allow", "deny", "ask", "defaultMode", "additionalDirectories",
-    "blockReadsOutsideWorkingDirectories", "disableBypassPermissionsMode", "disableAutoMode",
+    "blockReadsOutsideWorkingDirectories", "blockWritesOutsideWorkingDirectories", "disableBypassPermissionsMode", "disableAutoMode",
 }
 
 PERMISSION_RULE_TOOLS = {
@@ -313,8 +313,9 @@ def validate_permissions(perms, path, scope):
             warn(f"{path}.defaultMode: '{mode}' doesn't take effect from {scope} settings; set it in ~/.claude/settings.json")
     if "additionalDirectories" in perms and not isinstance(perms["additionalDirectories"], list):
         err(f"{path}.additionalDirectories: must be an array")
-    if "blockReadsOutsideWorkingDirectories" in perms and not isinstance(perms["blockReadsOutsideWorkingDirectories"], bool):
-        err(f"{path}.blockReadsOutsideWorkingDirectories: must be a Boolean")
+    for bkey in ("blockReadsOutsideWorkingDirectories", "blockWritesOutsideWorkingDirectories"):
+        if bkey in perms and not isinstance(perms[bkey], bool):
+            err(f"{path}.{bkey}: must be a Boolean")
     for key in ["disableBypassPermissionsMode", "disableAutoMode"]:
         if key in perms and perms[key] != "disable":
             err(f'{path}.{key}: must be "disable"')
