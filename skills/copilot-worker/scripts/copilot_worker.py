@@ -46,17 +46,17 @@ from pathlib import Path
 from typing import Any
 
 MODES = ("research", "review", "implement")
-# Each profile fixes one model and one reasoning effort (None leaves the model's default).
+# Each profile fixes one model and one reasoning effort.
 # They are ordered cheapest first: a retry moves exactly one step up this order.
 PROFILES: dict[str, dict[str, str | None]] = {
-    "light": {"model": "gpt-6-luna", "effort": None},
-    "standard": {"model": "gpt-6.1-terra", "effort": "high"},
-    "deep": {"model": "gpt-6.1-terra", "effort": "xhigh"},
-    "heavy": {"model": "gpt-6.1-sol", "effort": "high"},
+    "light": {"model": "gpt-6-luna", "effort": "medium"},
+    "standard": {"model": "gpt-6.1-terra", "effort": "medium"},
+    "deep": {"model": "gpt-6.1-sol", "effort": "medium"},
+    "heavy": {"model": "gpt-6-astra", "effort": "medium"},
 }
 # review defaults to a different model from implement, so worker-written code is not
 # reviewed by the model that wrote it.
-DEFAULT_PROFILES = {"research": "light", "review": "heavy", "implement": "standard"}
+DEFAULT_PROFILES = {"research": "light", "review": "deep", "implement": "standard"}
 # A run that fails verification may be retried one profile up at most this many times.
 MAX_RETRIES = 2
 DEFAULT_CREDITS = {"research": 30, "review": 30, "implement": 60}
