@@ -42,7 +42,7 @@ hooks:
 ---
 ```
 
-A `UserPromptSubmit` hook in a skill's own frontmatter first runs on the prompt *after* the one that invokes the skill (changelog only, v2.1.299).
+A `UserPromptSubmit` hook in a skill's own frontmatter first runs on the prompt *after* the one that invokes the skill (changelog only, v2.1.299). From v2.1.304 the skills of one source (a project, your personal skills folder, or one plugin) can register at most 1,024 hooks and 16,384 matcher characters per session, a matcher with several hooks counting once per hook; search `claude --debug` output for `registers none of its hooks` to find the skill that went over.
 
 ---
 
@@ -118,7 +118,7 @@ The `if` field provides a second-level filter **without spawning the process unl
 }
 ```
 
-The `if` field holds exactly one permission rule (no `&&`/`||`/lists) and is only evaluated on tool events (`PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `PermissionDenied`). On other events a handler with `if` never runs.
+The `if` field holds exactly one permission rule (no `&&`/`||`/lists) and is only evaluated on tool events (`PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `PermissionRequest`, `PermissionDenied`). On other events a handler with `if` never runs. Changelog only (v2.1.314): an `if` such as `Monitor(tail *)` matches the Monitor tool's shell commands the way `Bash(tail *)` matches Bash's.
 
 ### `command` (most common)
 
@@ -212,7 +212,7 @@ Optional `model` (defaults to the model Claude Code uses for background function
 
 Same response schema as `prompt`. Agent can use Read, Grep, Glob to inspect the codebase.
 
-Changelog only: from v2.1.300 an agent hook honors its `model` (an alias such as `haiku` resolves, a subagent's own model no longer overrides it, and an unavailable model falls back to the caller's model instead of allowing the action). From v2.1.302 at most 12 `prompt` or `agent` hooks of one event run at a time; the rest wait their turn.
+Changelog only: from v2.1.300 an agent hook honors its `model` (an alias such as `haiku` resolves, a subagent's own model no longer overrides it, and an unavailable model falls back to the caller's model instead of allowing the action). From v2.1.302 at most 12 `prompt` or `agent` hooks of one event run at a time; the rest wait their turn. From v2.1.312 the cap is at most 24 at a time per session, subagents included, plus at most 12 that have waited longer than their event's timeout, and a `timeout` under 1 second counts as 1 second.
 
 ---
 
