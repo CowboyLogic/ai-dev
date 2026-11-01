@@ -2,6 +2,40 @@
 
 Changes to the `client-config-claudecode` skill, newest first.
 
+## 2026-11-01 — v2.5 (verified against Claude Code 2.1.316)
+
+Basis: Claude Code 2.1.316 (released 2026-10-31; npm `latest` and `next`, `stable` is 2.1.309),
+the 2.1.303–2.1.316 changelog (read from the repository `CHANGELOG.md`; the GitHub releases API
+was not reachable), and the `code.claude.com/docs` pages fetched 2026-11-01. The Claude Code
+binary was not run. Claims only the changelog supports are labeled "changelog only".
+
+- `references/mcp.md`: corrects tool search behind an `ANTHROPIC_BASE_URL` gateway. It is on by
+  default from v2.1.304 (it was off unless `ENABLE_TOOL_SEARCH` was `true`, `auto` or `auto:N`),
+  and from v2.1.305 a request rejected with a `400` or `422` of unknown cause is retried without
+  it; the old text said Claude Code fell back to loading every tool upfront on a non-first-party
+  host. Also documents that the `allowedMcpServers` allowlist checks a `managed-mcp.json` server
+  only when it uses `${VAR}` expansion outside `env` (v2.1.305).
+- `references/settings-schema.md`: adds `sandbox.allowNestedUserNamespaces` (v2.1.305; user or
+  managed) and `sshHostCommands` (Desktop; the Edit tool accepts it from v2.1.307), both with
+  the validator's key and scope tables. Changelog only: fast mode for Opus 4.8 is deprecated
+  (v2.1.316), `DISABLE_COMPACT` in a settings file can only turn compaction off (v2.1.311), and
+  an `autoMode.allow` list without `"$defaults"` keeps the built-in scheduled-task rule (v2.1.316).
+- `references/permissions.md` and the scripts: adds `permissions.blockWritesOutsideWorkingDirectories`
+  (changelog only, v2.1.314) to the reference, `validate-settings.py` and `show-settings.py`.
+- `references/hooks.md`: adds the per-source skill hook limits (1,024 hooks, 16,384 matcher
+  characters; v2.1.304, in the hooks docs). Changelog only: the `prompt`/`agent` hook cap is now
+  24 per session plus 12 that waited past their timeout, with a sub-second `timeout` counting as 1
+  second (v2.1.312), and `if` conditions such as `Monitor(tail *)` match Monitor commands like
+  Bash (v2.1.314).
+- Checked and unchanged: all 247 settings-reference index keys are now in the references and the
+  validator (the two gaps, `sandbox.allowNestedUserNamespaces` and `sshHostCommands`, are added above).
+- Not covered: environment variables that only the env-vars page documents
+  (`CLAUDE_CODE_DISABLE_ULTRATHINK`, `CLAUDE_CODE_RETRY_WATCHDOG_USAGE_LIMIT_RECHECK_MS`,
+  `CLAUDE_CODE_DISABLE_LOOPED_CROSS_CERT_DROP`, `CLAUDE_CODE_SIMPLE_SYSTEM_PROMPT`,
+  `CLAUDE_CODE_MODEL_CATALOG`): that page is not in `sources.json`, so the claims stay
+  unreferenced.
+- Evals: no new cases.
+
 ## 2026-10-18 — v2.4 (verified against Claude Code 2.1.302)
 
 Basis: Claude Code 2.1.302 (released 2026-10-16; npm `latest` and `next`, `stable` is
