@@ -40,8 +40,10 @@ It covers only that issue and that PR. It does not cover merging, any other issu
 
 ## 1. Prepare
 
-1. The clone may be shallow. Run `git fetch --unshallow origin 2>/dev/null || git fetch origin`,
-   then `git fetch origin main`.
+1. The clone may be shallow and single-branch, so a plain `git fetch origin <branch>` can
+   update only `FETCH_HEAD`. Always fetch into explicit remote-tracking refs:
+   `git fetch --unshallow origin 2>/dev/null || true`, then
+   `git fetch origin +refs/heads/main:refs/remotes/origin/main`.
 2. Set up tooling from the repo's own instructions (`AGENTS.md`, "Python environment"):
 
    ```bash
@@ -59,12 +61,14 @@ It covers only that issue and that PR. It does not cover merging, any other issu
    truncated or ambiguous result, retry once, then stop and report; never treat a failed
    lookup as "no open PR". If an open PR targets a base other than `main`, do not continue
    or reset the branch: stop and report.
-   - **Open PR exists:** continue it. `git fetch origin refresh/<client>` and
-     `git checkout -B refresh/<client> origin/refresh/<client>`. Take the issue number from the
+   - **Open PR exists:** continue it. `git fetch origin +refs/heads/refresh/<client>:refs/remotes/origin/refresh/<client>`
+     and `git checkout -B refresh/<client> origin/refresh/<client>`. Take the issue number from the
      `Closes #<n>` line in the PR body. Open no new issue or PR this run.
    - **No open PR:** start fresh. Cloud sessions cannot delete remote branches, so reset
      instead: `git checkout -B refresh/<client> origin/main`. If `refresh/<client>` exists on
-     origin (abandoned work with no open PR), the first push is
+     origin (check with `git ls-remote --heads origin refresh/<client>`; if it does, fetch it
+     with the same explicit refspec as above so `origin/refresh/<client>` exists), the first
+     push is
      `git push --force-with-lease=refresh/<client>:<sha-you-fetched> -u origin refresh/<client>`,
      where the sha is `git rev-parse origin/refresh/<client>`. Force only here, only on this
      branch, only when no open PR exists. If the branch is not on origin, plain
@@ -183,7 +187,7 @@ status methods; `gh api repos/CowboyLogic/ai-dev/pulls/<n>` as fallback):
 
 - Not a draft unless the routine said draft; `mergeable` is true and `mergeable_state` is
   `clean`; required checks pass. Unknown, pending or failing is unverified, not clean.
-- **Rebaseable onto `main` with no conflicts.** `git fetch origin main` and check
+- **Rebaseable onto `main` with no conflicts.** `git fetch origin +refs/heads/main:refs/remotes/origin/main` and check
   `git merge-tree --write-tree origin/main HEAD` exits 0. If `main` moved and conflicts,
   merge `origin/main` into `refresh/<client>` (never rebase a reviewed branch), resolve,
   rerun the validators, push, and repeat sections 6 and 7 on the new head. Pushes count
