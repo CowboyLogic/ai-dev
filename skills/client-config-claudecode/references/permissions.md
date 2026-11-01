@@ -13,6 +13,7 @@ Upstream: `https://code.claude.com/docs/en/permissions.md` and `https://code.cla
     "defaultMode": "default",
     "additionalDirectories": [],
     "blockReadsOutsideWorkingDirectories": false,
+    "blockWritesOutsideWorkingDirectories": false,
     "disableBypassPermissionsMode": "disable",
     "disableAutoMode": "disable"
   },
@@ -28,6 +29,7 @@ A **bare tool name** in `deny` (e.g. `Bash`, or the equivalent `Bash(*)`) remove
 | Key | Notes |
 | --- | --- |
 | `permissions.blockReadsOutsideWorkingDirectories` | Read/Grep/Glob/LSP refuse paths outside the working directories in every mode, incl. `bypassPermissions`; recognized Bash file readers (`cat` etc.) prompt. `true` from any source applies (v2.1.257+) |
+| `permissions.blockWritesOutsideWorkingDirectories` | Changelog only (v2.1.314): Write, Edit and NotebookEdit refuse paths outside the working directories in every permission mode |
 | `permissions.disableBypassPermissionsMode` | `"disable"` — rejects `--dangerously-skip-permissions` and ignores subagent `permissionMode: bypassPermissions` |
 | `permissions.disableAutoMode` | `"disable"` — same as top-level `disableAutoMode` |
 | `skipDangerousModePermissionPrompt` | *(User, local, or managed; top-level key)* Skip the bypass-mode confirmation dialog; Claude Code writes `true` when you accept it once |

@@ -69,7 +69,7 @@ Managed system dirs: macOS `/Library/Application Support/ClaudeCode/`, Linux/WSL
 | `advisorModel` | Model for the advisor tool: `"fable"`\|`"opus"`\|`"sonnet"` or a full ID (unset = advisor off). `CLAUDE_CODE_DISABLE_ADVISOR_TOOL=1` turns the advisor off and this key can't turn it back on. The settings reference lists Amazon Bedrock and Claude Platform on AWS as providers where the advisor is unavailable; the v2.1.300 changelog adds `/advisor` on Claude Platform on AWS (changelog only; the docs page has not caught up) | `"opus"` |
 | `fallbackModel` | Ordered fallback chain when primary is overloaded/unavailable; `"default"` expands to the default model. At most 3 distinct models kept; doesn't merge across files | `["claude-sonnet-5", "claude-haiku-4-5"]` |
 | `switchModelsOnFlag` | Default `true`. Auto-switch to fallback when a safety classifier flags a request | `false` |
-| `fastMode` | Turn on fast mode where available; `/fast` writes this | `true` |
+| `fastMode` | Turn on fast mode where available; `/fast` writes this. Changelog only (v2.1.316): fast mode for Opus 4.8 is deprecated as of 2026-10-30 and removed 2026-11-30; afterwards fast-mode requests on Opus 4.8 return an error and do not fall back to standard Opus 4.8 (migrate to Opus 5.5) | `true` |
 | `fastModePerSessionOptIn` | Fast mode resets each session (default `false`) | `true` |
 | `promptCacheTtl` | Prompt-cache lifetime for the main conversation: `"5m"` \| `"1h"` (v2.1.242+) | `"1h"` |
 | `subagentPromptCacheTtl` | Same, for subagents, workflows, and background helpers (v2.1.242+) | `"5m"` |
@@ -97,7 +97,7 @@ Managed system dirs: macOS `/Library/Application Support/ClaudeCode/`, Linux/WSL
 }
 ```
 
-**Important**: `autoMode` holds `environment`, `allow`, `soft_deny`, and `hard_deny` arrays of prose rules. Leaving `"$defaults"` out of an array **replaces** the built-in rules for that array; including it keeps them at that position. When several readable files set the same array, entries are concatenated. `autoMode` is *User or managed* (also `--settings`) — ignored in project/local settings.
+**Important**: `autoMode` holds `environment`, `allow`, `soft_deny`, and `hard_deny` arrays of prose rules. Leaving `"$defaults"` out of an array **replaces** the built-in rules for that array; including it keeps them at that position. When several readable files set the same array, entries are concatenated. Changelog only (v2.1.316): an `autoMode.allow` list without `"$defaults"` no longer removes the built-in rule on scheduled-task prompts. `autoMode` is *User or managed* (also `--settings`) — ignored in project/local settings.
 
 - `autoMode.classifyAllShell` (default `false`): send every Bash/PowerShell command through the classifier; by default only allow rules that could run arbitrary code (`Bash(*)`, `Bash(python *)` etc.) are suspended in auto mode.
 - `disableAutoMode: "disable"` — remove auto mode from the `Shift+Tab` cycle; also accepted as `permissions.disableAutoMode`.
@@ -201,7 +201,7 @@ claude auto-mode critique   # AI review of your custom rules
 
 | Key | Description | Example |
 | --- | --- | --- |
-| `env` | Env vars applied every session (string values) | `{"FOO": "bar"}` |
+| `env` | Env vars applied every session (string values). Changelog only (v2.1.311): `DISABLE_COMPACT` set in a settings file can only turn compaction off, not back on | `{"FOO": "bar"}` |
 | `apiKeyHelper` | Shell command that outputs the auth value | `"/bin/gen_key.sh"` |
 | `awsAuthRefresh` | Command that refreshes AWS credentials | `"aws sso login --profile myprofile"` |
 | `awsCredentialExport` | Command that outputs AWS credentials JSON | `"/bin/gen_aws.sh"` |
@@ -218,6 +218,7 @@ claude auto-mode critique   # AI review of your custom rules
 | `skipWebFetchPreflight` | Skip the WebFetch domain safety check | `true` |
 | `bashEditDiffEnabled` | *(User or managed)* `true` records which files a Bash command changed in every permission mode; a `true` in project/local settings doesn't count. Unset = recorded only in auto and `bypassPermissions` modes. `CLAUDE_CODE_BASH_EDIT_DIFF` overrides per session (v2.1.269+) | `true` |
 | `sshConfigs` | *(User or managed)* Desktop SSH connections `{id, name, sshHost, sshPort?, sshIdentityFile?}` | `[{"id": "dev-vm", "name": "Dev VM", "sshHost": "user@dev.example.com"}]` |
+| `sshHostCommands` | *(User or managed; Desktop only, v2.1.307+ for the Edit tool)* SSH connections whose host a command prints: `[{id, name, command, sshIdentityFile?, startDirectory?}]`; Desktop runs `command` without a shell on your computer when you create a connection or replace its host. Ignored in server-managed settings. Before v2.1.307 the Edit tool refused to add it (`Unrecognized field`); use a text editor there | `[{"id": "devbox", "name": "Dev box", "command": "acme-dev create"}]` |
 | `prUrlTemplate` | PR badge URL with `{host}`, `{owner}`, `{repo}`, `{number}`, `{url}` | `"https://reviews.example.com/{owner}/{repo}/pull/{number}"` |
 | `processWrapper` | *(User or managed)* Launcher prefix for background processes | `"/opt/corp/launcher --profile claude"` |
 | `disableClaudeAiConnectors` | Disable claude.ai MCP connectors (see `references/mcp.md`) | `true` |
@@ -363,6 +364,7 @@ See `https://code.claude.com/docs/en/sub-agents.md` for the file format.
 | `credentials.awsPairs` | *(User or managed)* Pair non-standard AWS var names for SigV4 re-signing: `{accessKeyIdVar, secretAccessKeyVar, sessionTokenVar?}` (v2.1.224+) | — |
 | `credentials.sigv4` | *(User or managed)* `{streaming, presigned, sigv4a}` each `"deny"` (default) \| `"passthrough"` (v2.1.224+) | `{"streaming": "passthrough"}` |
 | `allowAppleEvents` | *(macOS, user or managed)* Allow Apple Events (`open`/`osascript`). **Removes code-execution isolation** | `true` |
+| `allowNestedUserNamespaces` | *(Linux/WSL2, user or managed, v2.1.305+)* Let sandboxed commands create user namespaces (Chromium/Electron's own sandbox, nested bubblewrap, `unshare`). `true` turns off a security boundary: code from a sandboxed command can end up outside the sandbox, so no sandbox restriction should be relied on. For rootless Podman/Buildah use `excludedCommands` instead. A `true` is ignored in project settings and when `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1`; default `false` | `true` |
 | `enableWeakerNestedSandbox` | *(Linux/WSL2)* Weaker sandbox for unprivileged Docker. **Reduces security** | `true` |
 | `enableWeakerNetworkIsolation` | *(macOS)* Allow system TLS trust service. **Reduces security** | `true` |
 | `bwrapPath` / `socatPath` | *(Managed only, Linux/WSL2)* Absolute path to `bwrap`/`socat` | `"/opt/admin/bwrap"` |

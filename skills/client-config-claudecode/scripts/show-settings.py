@@ -94,7 +94,7 @@ def print_settings(data, path, label):
         if isinstance(value, dict):
             print(f"\n  [{key}]{note_str}")
             if key == "permissions":
-                for pkey in ["defaultMode", "allow", "deny", "ask", "additionalDirectories", "blockReadsOutsideWorkingDirectories", "disableBypassPermissionsMode", "disableAutoMode"]:
+                for pkey in ["defaultMode", "allow", "deny", "ask", "additionalDirectories", "blockReadsOutsideWorkingDirectories", "blockWritesOutsideWorkingDirectories", "disableBypassPermissionsMode", "disableAutoMode"]:
                     if pkey in value:
                         v = value[pkey]
                         if isinstance(v, list):
