@@ -55,8 +55,8 @@ From inside a Git repository:
 uv run ~/.claude/skills/copilot-worker/scripts/copilot_worker.py check --live
 ```
 
-`check` confirms the SDK, its runtime version, and the repository. `--live` also sends one small prompt to each
-default model, which uses Copilot credits.
+`check` confirms the SDK, its runtime version, and the repository. `--live` also checks that the model catalog offers each profile's model and effort, then sends one small prompt
+to each of the four profiles, which uses Copilot credits.
 
 ## Make delegation reliable
 
