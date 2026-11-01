@@ -3,7 +3,7 @@
 The native V2 `permissions` array: rule shape, matching, actions, defaults, and
 policies.
 
-**Sources (checked 2026-10-14):** <https://opencode.ai/v2/docs/permissions/> ·
+**Sources (checked 2026-11-01, V2 2.2.5):** <https://opencode.ai/v2/docs/permissions/> ·
 <https://opencode.ai/v2/docs/tools/> · <https://opencode.ai/v2/docs/policies/> ·
 <https://opencode.ai/v2/docs/skills/>
 
@@ -106,7 +106,7 @@ string.
   pages checked. Do not emit rules for them in native V2.
 - The tools page says a `browser` deny rule with resource `*` removes the browser
   Code Mode catalog; it is not in the permissions page's action table.
-- The tools page (unchanged through 2.0.29) lists Code Mode worktree utilities. `worktree_remove`
+- The tools page (unchanged on this point through 2.2.5) lists Code Mode worktree utilities. `worktree_remove`
   uses `edit` with the worktree directory as the resource, so an `edit` rule that
   denies that directory blocks it for the agent (`force: true` can discard
   modified or untracked files). `worktree_create` and `worktree_list` request no
@@ -146,19 +146,22 @@ Every agent, including custom agents, starts with this ordered base policy:
 ```json
 [
   { "action": "*", "resource": "*", "effect": "allow" },
-  { "action": "external_directory", "resource": "*", "effect": "ask" },
   { "action": "read", "resource": "*.env", "effect": "ask" },
   { "action": "read", "resource": "*.env.*", "effect": "ask" },
   { "action": "read", "resource": "*.env.example", "effect": "allow" }
 ]
 ```
 
-Note the change from V1: `.env` reads **ask** in V2 (V1 denied them).
+Note the changes from V1: `.env` reads **ask** in V2 (V1 denied them), and
+`external_directory` is **allowed** by default (V1 asked; the 2.0.29 docs listed an
+`ask` rule here, which the 2.2.x docs removed). Add
+`{ "action": "external_directory", "resource": "*", "effect": "ask" }` to restore
+the V1 prompt.
 
 Shipped agents append policies: `build` and `plan` allow questions; `plan` denies
 edits except under `~/.opencode/plan`; `general` denies questions and launching
-subagents; `explore` denies everything except read, glob, grep, webfetch, and
-websearch; `title` and `summary` deny all; `compaction` keeps the base policy.
+subagents; `explore` denies everything except shell, read, glob, grep, webfetch,
+websearch, and external directories (`.env` reads still ask); `title` and `summary` deny all; `compaction` keeps the base policy.
 
 OpenCode also allows external-directory access to its own tool-output,
 shell-output, temporary, and global configuration directories. The underlying
@@ -168,8 +171,9 @@ read or edit action still applies its own rules.
 
 ## External directories
 
-A path outside both the active Location and its project worktree needs
-`external_directory` approval **before** its `read` or `edit` approval:
+A path outside both the active Location and its project worktree is checked
+against `external_directory` **before** its `read` or `edit` rules. Because the
+default allows it, add a rule to be asked or to block it:
 
 ```json
 {
@@ -205,7 +209,7 @@ the current session.)
 ## Policies (hard deny)
 
 Policies live under the top-level `policies` array (2.0.29 and later; earlier
-releases read `experimental.policies`, which still works and merges into
+releases read `experimental.policies`, which is deprecated but still merges into
 `policies`). They run after permission rules and saved approvals, never prompt,
 and can only turn `allow` or `ask` into `deny`.
 
@@ -218,9 +222,13 @@ and can only turn `allow` or `ask` into `deny`.
 }
 ```
 
-- `action` is `provider.use`, `tool.use`, or `integration.use`. `permission` is
-  not a valid action (the config schema at 2.0.27 and 2.0.29 accepts only those
-  three); an invalid statement is dropped with a server-log warning.
+- `action` is `provider.use`, `tool.use`, `integration.connect`, `integration.use`,
+  `mcp.use`, `skill.use`, or `plugin.use` (the last four meanings need 2.2.3 or
+  newer; before 2.2.3, `integration.use` covered MCP servers, skills, and plugins
+  through `mcp:`/`skill:`/`plugin:` prefixes, and a bare `integration.use` deny
+  now blocks providers instead). `permission` is not a valid action; an invalid
+  statement is dropped with a server-log warning. See the client-config-opencode
+  skill for the full policy reference.
 - `tool.use` resource format: `<action>:<value>`, for example
   `subagent:general` or `github_delete_repository:*`.
 - `provider.use` resource: a provider ID. It replaces V1 `enabled_providers` and

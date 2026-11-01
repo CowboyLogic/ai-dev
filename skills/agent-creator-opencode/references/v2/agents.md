@@ -2,7 +2,7 @@
 
 Native V2 agent fields, file locations, defaults, and merge rules.
 
-**Sources (checked 2026-10-14):** <https://opencode.ai/v2/docs/agents/> ·
+**Sources (checked 2026-11-01, V2 2.2.5):** <https://opencode.ai/v2/docs/agents/> ·
 <https://opencode.ai/v2/docs/config/> · <https://opencode.ai/v2/docs/models/> ·
 <https://opencode.ai/v2/docs/tools/> · <https://opencode.ai/v2/docs/migrate-v1/>
 
@@ -112,6 +112,12 @@ Do not use these legacy V1 fields in a native V2 agent: `temperature`, `top_p`,
 `prompt`, `permission`, `tools`, `disable`, `maxSteps`. The V1 JSON `name` field
 inside an agent is ignored by V2 with a warning.
 
+Each agent **file** is read as one format (2.2.x docs): a file that uses any of
+`permissions`, `request`, `system`, or `disabled` is read as V2, and V1 fields in
+it (`name`, `tools`, `permission`, `temperature`, and so on) are ignored with a
+warning in the log. Other files that use V1 fields are read as V1. Convert a
+file's frontmatter all at once; never mix the formats in one file.
+
 ### description
 
 ```yaml
@@ -180,9 +186,9 @@ A non-empty `system` replaces the provider's base prompt for that agent. Project
 instructions (`AGENTS.md`), skills, and references are still added.
 
 > [!NOTE]
-> The V2 docs do not document `{file:...}` substitution for `system`, but it works:
-> verified on OpenCode 2.0.27 with `opencode debug config` (the substitution source is
-> unchanged through 2.0.29; not re-run on the 2.0.29 binary), where
+> The V2 agents page does not mention `{file:...}` substitution for `system`; the 2.2.5 config
+> docs document `{file:}` generally. It was verified on OpenCode 2.0.27 with
+> `opencode debug config` (not re-run on 2.2.5), where
 > `"system": "{file:./prompts/plan.txt}"` resolved to the file's contents, relative to
 > the config file, including when OpenCode was started from a subdirectory. Because
 > the behavior is undocumented, a Markdown agent file (body = prompt) is still the
@@ -256,10 +262,10 @@ are not documented for V2.
 
 | Agent | Mode | Purpose and default policy |
 |---|---|---|
-| `build` | primary | Default coding agent. Tools allowed; `.env` reads and access outside the workspace ask. Allows questions. |
+| `build` | primary | Default coding agent. Tools and access outside the workspace are allowed; `.env` reads ask. Allows questions. (The 2.0.29 docs said access outside the workspace asks; the 2.2.x docs and base policy allow it.) |
 | `plan` | primary | Explores and plans. Denies edits except files under `~/.opencode/plan`. Shell stays permission-controlled. |
 | `general` | subagent | Research and multi-step work with broad tool access. Denies questions and launching subagents. |
-| `explore` | subagent | Reads code and web sources. Denies everything except read, glob, grep, webfetch, websearch. |
+| `explore` | subagent | Reads code and web sources. Denies everything except shell, read, glob, grep, webfetch, websearch, and external directories; `.env` reads ask. |
 
 Hidden maintenance agents: `compaction`, `title`, `summary`. They cannot be
 selected directly. **V2 has no built-in `scout` agent** (V1 had one).

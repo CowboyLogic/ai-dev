@@ -3,7 +3,7 @@
 Field-by-field mapping for converting V1 agent definitions to the native V2
 format.
 
-**Sources (checked 2026-10-14):** <https://opencode.ai/v2/docs/migrate-v1/> ·
+**Sources (checked 2026-11-01, V2 2.2.5):** <https://opencode.ai/v2/docs/migrate-v1/> ·
 <https://opencode.ai/v2/docs/agents/> · <https://opencode.ai/v2/docs/permissions/>
 
 Load this file when converting an existing V1 agent, or when a user on V1 asks
@@ -40,8 +40,8 @@ what changes in V2.
 | `permission` (map) | `permissions` (ordered array) | See conversion below |
 | `tools` (boolean map) | `permissions` deny/allow rules | `false` becomes a `deny` rule |
 | `model` + `variant` | `model: provider/model#variant` | Remove the separate `variant` |
-| `temperature`, `top_p` | `request.body.temperature`, `request.body.top_p` | Not sent yet in V2 (see warning) |
-| Provider pass-through keys (`reasoningEffort`, and so on) | `request.body` | Not sent yet in V2 |
+| `temperature`, `top_p` | A model variant (`body`/`settings` under `providers`) | The 2.2.x migration guide no longer maps these to `request.body`: agent `request.body` is kept but not sent, so they have no agent-level equivalent |
+| Provider pass-through keys (`reasoningEffort`, and so on) | A model variant | Same reason |
 | `maxSteps` | `steps` | `steps` already existed in V1 |
 | `steps`, `description`, `mode`, `hidden`, `color` | same name | See behavior changes below |
 | `name` inside a V1 JSON agent | remove | Ignored by V2 with a warning |
@@ -49,11 +49,14 @@ what changes in V2.
 | `subagent_depth` (top level) | `experimental.subagent_depth` | V2 ignores top-level with a warning |
 
 > [!WARNING]
-> The V2 docs state that `request` values are preserved but not yet sent with
-> model requests. Converting `temperature` or `reasoningEffort` into
-> `request.body` keeps the value but it has no effect today. To keep the
-> behavior, move the setting onto a model variant under `providers` and reference
-> it with `#variant`. See `../models.md`.
+> The V2 docs state that agent `request` values are kept but not sent to the
+> model. Converting `temperature` or `reasoningEffort` into `request.body` keeps
+> the value but it has no effect. Move the setting onto a model variant under
+> `providers` (`body` for provider JSON fields, `settings` for provider package
+> options) and reference it with `#variant`. See `../models.md`. The 2.2.x
+> migration guide also states that a file using `permissions`, `request`,
+> `system`, or `disabled` is read as V2 and its V1 fields are ignored, so convert
+> a file's frontmatter all at once.
 
 ### Behavior changes that are not renames
 
@@ -205,9 +208,10 @@ request:
 Only analyze code and suggest changes.
 ```
 
-`temperature` moved to `request.body` as the migration guide directs, but V2
-does not send it yet. Tell the user the setting is currently inert, and offer a
-model variant if the behavior matters.
+`temperature` moved to `request.body` (the 2.0.29 migration guide's direction), but V2
+does not send agent `request` values, and the 2.2.x guide sets sampling on a model
+variant instead. Tell the user the setting is inert as written, and offer a model
+variant if the behavior matters.
 
 `git diff*` became `git diff *`: in V2 a pattern ending in `" *"` also matches the
 bare command, which is the usual intent.
