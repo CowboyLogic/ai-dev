@@ -48,7 +48,10 @@ Every surface ignores tool names it does not recognize, and GitHub.com explicitl
 | `mcp-servers` | ❌ Not used (only passed through for `target: github-copilot`) | ✅ | ✅ |
 | `metadata` | ❌ Not used | ✅ | Not listed |
 | `reasoning-effort` | ✅ Copilot harness | Not listed | Not listed (the CLI uses `reasoningEffort`) |
-| `include-custom-instructions` | Not listed | Not listed | ✅ |
+| `include-custom-instructions` | ⚠️ Copilot-harness editor schema field only; not forwarded when converting plugin-provided agents (see [VS Code Copilot-harness schema fields](#vs-code-copilot-harness-schema-fields)) | Not listed | ✅ |
+| `model-policy` | ⚠️ Copilot-harness editor schema field (`preferred` or `required`); not forwarded when converting plugin-provided agents | Not listed | Not listed (the CLI uses `modelPolicy`) |
+| `deferred-tool-loading` | ⚠️ Copilot-harness editor schema field; not forwarded when converting plugin-provided agents | Not listed | Not listed |
+| `strict-tools-list` | ⚠️ Copilot-harness editor schema field; not forwarded when converting plugin-provided agents | Not listed | Not listed |
 | `models` | Not listed | Not listed | ✅ |
 | `modelPolicy` | Not listed | Not listed | ✅ |
 | `reasoningEffort` | Not listed | Not listed | ✅ |
@@ -206,6 +209,14 @@ model: gpt-5.6-luna
 | `reasoningEffort` | string | Default reasoning effort, for example `"low"`, `"medium"`, `"high"`. Inherits the outer agent's effort when unset. |
 
 Precedence, highest first: explicit per-call value, then the `subagents` override in `~/.copilot/settings.json`, then the agent's `model`/`models`/`reasoningEffort`, then the parent session's value.
+
+---
+
+### VS Code Copilot-harness schema fields
+
+The VS Code custom agent file reference (page dated 10/30/2026) lists these fields as recognized by the Copilot harness editor schema, with completions and validation: `model-policy` (`preferred` or `required`), `deferred-tool-loading` (boolean, load tools on demand), `strict-tools-list` (boolean, omit standard required tools that are not explicitly listed), `include-custom-instructions` (boolean), `github` (an object with `toolsets` and `permissions`), `mcp-servers`, and `hooks`.
+
+Editor schema support does not guarantee runtime support. When VS Code converts agent files to SDK custom-agent configuration, including plugin-provided agents, it does not forward `model-policy`, `mcp-servers`, `github`, `deferred-tool-loading`, `strict-tools-list`, or `include-custom-instructions`. Do not rely on those fields for the runtime behavior of converted agents. The page also says `advancedOptions` is Local-only and not supported by the Copilot schema. The `model-policy` and `include-custom-instructions` fields have separate Copilot CLI semantics (`modelPolicy`, `include-custom-instructions` above) that are not the same claim.
 
 ---
 
