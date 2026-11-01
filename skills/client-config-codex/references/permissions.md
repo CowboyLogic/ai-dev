@@ -328,6 +328,9 @@ approvals_reviewer = "auto_review"   # default is "user"
   policy; copy the full default first. Managed `guardian_policy_config` takes precedence.
   `[auto_review].extra_policy` adds policy text alongside the main policy; managed
   `guardian_extra_policy` takes precedence over it.
+- `[auto_review].timeout_ms` (new in 0.166.0; from the `rust-v0.166.0` source): overall review budget in
+  milliseconds including setup and retries, default 90,000; `0` waits with no review deadline
+  (cancellation and transport timeouts still apply).
 - Other `[auto_review]` keys in the 0.163.0 schema: `circuit_break_action` (default `default`; a
   strict mode writes structured errors that older clients may not recognize when reading shared
   history) and `conversation_history_max_output_tokens` (default 4,000 estimated tokens per

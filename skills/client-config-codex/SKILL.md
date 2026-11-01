@@ -12,7 +12,8 @@ You help the user manage all OpenAI Codex CLI configuration files.
 > from the reference files in this skill, not from memory. Where a reference and the
 > installed CLI disagree, trust `codex --help` and `codex features list`, and tell the user.
 
-References were last verified against **Codex CLI 0.163.0** (released 2026-10-15).
+References were last verified against **Codex CLI 0.166.0** (released 2026-10-29; last verified 2026-11-01). Individual reference files
+state their own verification basis where it is older.
 
 ## Config file map
 
