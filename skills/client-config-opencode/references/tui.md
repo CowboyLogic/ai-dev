@@ -122,7 +122,7 @@ The leader key is `ctrl+x` by default. Override in `tui.json`:
 | `session_rename` | ctrl+r | Rename session |
 | `session_fork` | — | Fork session from a message |
 | `session_delete` | ctrl+d | Delete session |
-| `session_share` / `session_unshare` | — | Share / unshare session |
+| `session_share` / `session_unshare` | — | Share / unshare session (session sharing was discontinued in 1.19.1; the share UI is hidden) |
 | `session_interrupt` | escape | Interrupt current response |
 | `session_background` | — | Send session to background |
 | `session_compact` | Leader+c | Compact context manually |

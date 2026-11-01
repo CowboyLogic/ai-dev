@@ -2,6 +2,49 @@
 
 Changes to the `client-config-opencode` skill, newest first.
 
+## 2026-11-01 — v2.4 (verified against V2 2.2.5 and V1 1.19.5)
+
+Baselines: V2 2.0.29 → 2.2.5 (2.0.30, 2.0.31, 2.0.32, 2.1.0 to 2.1.4, 2.2.0 to 2.2.5; tags through `v2.2.5`, 2026-10-30);
+V1 1.19.0 → 1.19.5 (tag `v1.19.5`, 2026-10-28). Sources are the tag-to-tag diff `v2.0.29...v2.2.5` of the V2 docs
+source (`services/www/src/docs/content`, 63 pages changed), the V2 config schema source at `v2.2.5`, the V2
+`CHANGELOG.md`, and the `v1.19.0...v1.19.5` diff and commit log (the V1 GitHub release notes were not reachable from
+this run, so V1 claims rest on commits). Neither binary was run, so binary-dependent claims keep their 2.0.27 basis.
+
+- `references/v2/permissions.md`: `external_directory` is allowed by default (the `ask` rule was removed from the base
+  policy; V1 asked); `explore` and `build` defaults updated; the shell scanner is always on and
+  `experimental.portable_shell_scanner` is deprecated; `execute` deny semantics; new actions
+  `opencode_list_mcp_resources`, `opencode_read_mcp_resource`, `experimental_image_generate`. Policies: new
+  `integration.connect`, `mcp.use`, `skill.use`, `plugin.use`; `integration.use` now covers integrations only (breaking
+  change in 2.2.3, with the migration warning); policy precedence puts managed preferences and the system file above the
+  Console workspace.
+- `references/v2/config-schema.md`: `compaction.buffer` percentages and the new `"15%"` default; summaries cover the
+  whole conversation; `agents.compaction.model`; `instructions` now loads (2.0.30); documented `{env:}`/`{file:}`
+  substitution; new Experimental section (`todo`, `subagent_depth`, `background_compaction`, `image_generate`,
+  `location_idle_timeout`, `schedules`, `artifacts`, `media_blob`); top-level `timezone`; skill discovery rules;
+  `share` no longer functional; `OPENCODE_PASSWORD`, `OPENCODE_CLAUDE_PATH`, `OPENCODE_DISABLE_FREE_MODELS`; default
+  server ports.
+- `references/v2/mcp.md`: client registration order (pre-registered, CIMD, DCR), updated OAuth field semantics,
+  resources and their permission actions, server instructions, input requests (elicitation), `mcp auth` without a name,
+  `--env` and `--header` flags, global timeouts apply to config-file servers.
+- `references/v2/providers.md`: ChatGPT sign-in context caps and the `openai-context-caps` plugin, the Claude Agent
+  provider, model `type`, `releaseDate`, and `capabilities.reasoning`, compatibility `streamUsage` and `mediaInput`; the
+  streamed-chunk timeout conflict between the 2.0.29 docs (five minutes) and the 2.2.5 docs (fifteen) is recorded.
+- `references/v2/plugins.md`: configured local paths must be directories; desktop (GUI) plugins; OpenTUI 0.8; new
+  session, instruction-entry, idle, and artifact plugin APIs (release notes only); 2.1.0 provider replay data renamed to
+  `native`.
+- `references/v2/agents.md`, `references/v2/migration.md`: agent files are read as one format; agent `request.body` is
+  not sent so V1 `temperature`/`top_p`/`options` need a model variant; server authentication variables; `external_directory`
+  and todo defaults.
+- `references/v2/cli.md`: unknown `cli.json` settings and keybind IDs are now ignored (not rejected); `diff.toggle_fullscreen`
+  and `location.reload` keybinds.
+- V1 references (source and commits only): session sharing was discontinued in 1.19.1; `reasoning_options` on provider
+  models in 1.19.3.
+- `SKILL.md`, `sources.json`: instructions row, policy example, `{file:}` note, new source pages (Claude Agent, plugin
+  server and GUI pages), `covers` text.
+- Not changed: Desktop, GUI-plugin build details, SDK package, and TUI behavior; CLI command flags that are not config
+  surface (`opencode run --session`, `stats --project`, `uninstall`); and V1 changes with no config surface (1.19.2
+  keeps updates on 1.x; CI and Bun 1.4.4 changes).
+
 ## 2026-10-14 — v2.3 (verified against V2 2.0.29 and V1 1.19.0)
 
 Baselines: V2 2.0.27 → 2.0.29 (108 commits; 11 docs pages changed); V1 1.19.0 is unchanged. Sources are
