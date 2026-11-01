@@ -208,7 +208,7 @@ Policies live under the top-level `policies` array. They are binary (`allow`/`de
 
 | Field | Values |
 |-------|--------|
-| `action` | `provider.use` \| `tool.use` \| `integration.connect` \| `integration.use` \| `mcp.use` \| `skill.use` \| `plugin.use` (the last four meanings need 2.2.3+) |
+| `action` | `provider.use` \| `tool.use` \| `integration.connect` \| `integration.use` \| `mcp.use` \| `skill.use` \| `plugin.use` (`integration.connect`, `mcp.use`, `skill.use`, `plugin.use`, and the new meaning of `integration.use` need 2.2.3+; older clients ignore them) |
 | `resource` | Wildcard pattern; meaning depends on the action |
 | `effect` | `allow` \| `deny` |
 
