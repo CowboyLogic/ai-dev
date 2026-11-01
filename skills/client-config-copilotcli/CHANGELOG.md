@@ -2,6 +2,35 @@
 
 Changes to the `client-config-copilotcli` skill, newest first.
 
+## 2026-11-01 — v2.7 (refresh to Copilot CLI v1.0.105)
+
+Basis: GitHub Copilot CLI **v1.0.105** (released 2026-10-28), the latest stable release on
+2026-11-01: the npm `latest` dist-tag points to it. v1.0.106-0 to v1.0.106-2 are prereleases and
+are not covered. v1.0.104 (2026-10-27) and v1.0.105 are the stable releases in the window; the
+v1.0.104-0 to v1.0.104-4 prereleases were checked only for items repeated in v1.0.104. Claims were
+checked against docs.github.com pages (fetched through the article API on 2026-11-01) and the
+v1.0.104 and v1.0.105 release notes. Items found only in release notes are labeled as such.
+
+- `references/config-schema.md`: managed `fusionTier` (requires Copilot CLI 1.0.104-3 or later) and
+  `model: "fusion"`; managed `permissions.disableAssistedPermissionsMode` and `permissions.defaultMode`;
+  user `defaultPermissionMode`; `COPILOT_ASSISTED_APPROVAL`; corrected
+  `COPILOT_TASK_WAIT_TIMEOUT_SECONDS` (applies to `-p` and `-p --autopilot`, `0` exits immediately);
+  Copilot Fusion and local-model (MAI Code 1.1 Flash, Flint NVFP4, llama.cpp) notes in "Model usage".
+  Release-notes-only: managed `fusion` starting on Auto, Auto fallback when a saved preference is gone,
+  interactive and SDK Autopilot waiting for background tasks, Fusion High and Max from long-context
+  sessions.
+- `references/permissions.md`: `--assisted-approval`, `/permissions manual`, `defaultPermissionMode`,
+  `disableAssistedPermissionsMode`; release-notes-only: Assisted Permissions no longer need
+  experimental mode (v1.0.104).
+- `sources.json`: added the v1.0.104 and v1.0.105 release pages and the enterprise managed settings
+  page for permissions; updated `covers`.
+- `README.md`: Copilot CLI v1.0.105 basis and 2026-11-01 refresh date.
+- Reviewed and not carried into the references: the v1.0.105 and v1.0.104 items that change no
+  configuration surface.
+- Not done: the benchmark in `README.md` was not re-run, and the CLI itself was not run. The
+  github.com release pages were read through the web fetch tool only; the API and release URLs are
+  blocked from the cloud container, so `update-references.py` could not fetch them.
+
 ## 2026-10-25 — v2.6 (refresh to Copilot CLI v1.0.103)
 
 Basis: GitHub Copilot CLI **v1.0.103** (released 2026-10-22), the latest stable release on

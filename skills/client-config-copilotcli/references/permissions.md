@@ -161,7 +161,8 @@ directory approval (not covered in the docs reference).
 
 | Command | Effect |
 |---------|--------|
-| `/permissions default\|assisted\|allow-all\|show` | Switch or show mode. `assisted` attaches an LLM safety recommendation and can auto-approve acceptable requests |
+| `/permissions default\|assisted\|allow-all\|show` | Switch or show mode. `assisted` attaches an LLM safety recommendation and can auto-approve acceptable requests. The allowing-tools page also documents `/permissions manual` (return to manual approval) and `/permissions` with no argument (pick from a list). Set `defaultPermissionMode` to `assisted` to start new interactive sessions in it |
+| `--assisted-approval` (env `COPILOT_ASSISTED_APPROVAL=true`) | Assisted permissions for a non-interactive run (`-p`/`--prompt` or no terminal). When enabled it takes precedence over `--allow-all-tools` but not `--allow-all-paths` or `--allow-all-urls` |
 | `/allow-all [off\|auto\|show]`, `/yolo` | Aliases for `/permissions allow-all` |
 | `/permissions reset` | Clear in-memory approvals for this session |
 | `/reset-allowed-tools` | Revert to startup flags **and** clear saved approvals for this location in `permissions-config.json` |
@@ -357,7 +358,10 @@ disable` turns sandboxing off for the current session only.
   `--allow-all`, `--yolo`, and `/permissions allow-all` (`/allow-all`, `/yolo`).
 - `"allow-auto-only"` — blocks full allow-all but permits assisted approval.
 - Unrecognized values fail closed to `"disable"`.
-- The v1.0.94 release notes add that managed policy can disable Assisted Permissions and keep
+- Managed `permissions.disableAssistedPermissionsMode: true` prevents users enabling assisted
+  permissions without disabling bypass mode (enterprise managed settings reference). The v1.0.104
+  release notes say Assisted Permissions no longer need experimental mode (release notes only). The
+  v1.0.94 release notes add that managed policy can keep
   sessions in Manual Approval mode, and that a policy warning is shown when startup bypass flags
   are suppressed by managed settings.
 
