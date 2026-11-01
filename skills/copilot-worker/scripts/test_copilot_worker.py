@@ -426,6 +426,13 @@ class RunTests(WorkerTestCase):
         self.assertEqual((third["profile"], third["attempt"]), ("heavy", 3))
         self.assertEqual(self.calls()[-1]["model"], "gpt-6-astra")
 
+    def test_a_run_that_was_already_retried_cannot_be_retried_again(self) -> None:
+        # Forking the chain from an older run would restart the attempt count and dodge the cap.
+        first = self.run_mode("implement")
+        self.run_mode("implement", retry_of=first["runId"], reason="tests failed")
+        with self.assertRaisesRegex(worker.WorkerError, "already retried as"):
+            self.run_mode("implement", retry_of=first["runId"], reason="tests failed again")
+
     def test_a_run_is_retried_at_most_twice(self) -> None:
         first = self.run_mode("research")
         second = self.run_mode("research", retry_of=first["runId"], reason="wrong citations")
