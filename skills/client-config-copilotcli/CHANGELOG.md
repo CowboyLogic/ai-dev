@@ -7,7 +7,7 @@ Changes to the `client-config-copilotcli` skill, newest first.
 Basis: GitHub Copilot CLI **v1.0.105** (released 2026-10-28), the latest stable release on
 2026-11-01: the npm `latest` dist-tag points to it. v1.0.106-0 to v1.0.106-2 are prereleases and
 are not covered. v1.0.104 (2026-10-27) and v1.0.105 are the stable releases in the window; the
-v1.0.104-0 to v1.0.104-4 prereleases were checked only for items repeated in v1.0.104. Claims were
+v1.0.104-0 and v1.0.104-4 prerelease notes were read; v1.0.104-1 to v1.0.104-3 were not read. Claims were
 checked against docs.github.com pages (fetched through the article API on 2026-11-01) and the
 v1.0.104 and v1.0.105 release notes. Items found only in release notes are labeled as such.
 
