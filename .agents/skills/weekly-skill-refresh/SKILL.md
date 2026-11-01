@@ -27,9 +27,13 @@ Branch name: `refresh/<client>`. This run owns that branch and nothing else.
 Read `AGENTS.md` first. It governs git, documentation and PR rules. Never commit or push
 to `main` or `master`, never merge a PR, never bypass hooks, never `git add -A` or
 `git add .`, and never edit `site/`. Put scratch files in `.agent-output/`. If anything
-below conflicts with `AGENTS.md`, `AGENTS.md` wins; the PR-opening approval it requires is
-granted for this task by the routine that invoked it (state is set in the routine prompt;
-default is a ready-for-review PR).
+below conflicts with `AGENTS.md`, `AGENTS.md` wins, with one standing exception: the
+maintainer (Micheal) pre-approved opening **ready-for-review** (not draft) PRs for these
+scheduled refresh runs, so the "ask before opening a PR or marking ready" rule is
+satisfied for the PR this procedure opens (approval given 2026-11-01 in the project thread
+that created this procedure: "READY PR's"). It covers only the one PR per client per run
+that section 5 describes. It does not cover merging, issues beyond the tracking issue, or
+any other PR.
 
 ## 1. Prepare
 
