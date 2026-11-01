@@ -72,15 +72,29 @@ go through the `copilot-worker` skill. Load it before reading three or more file
 
 ## Models
 
-| Mode | Default model |
-| --- | --- |
-| `research` | `gpt-6-luna` |
-| `review` | `gpt-6.1-sol` |
-| `implement` | `gpt-6.1-sol` |
+Each run uses a profile, which fixes one model and one reasoning effort:
 
-The defaults are the `DEFAULT_MODELS` constant in
-[scripts/copilot_worker.py](scripts/copilot_worker.py). Change them there, or pass
-`--model` for one run.
+| Profile | Model | Effort |
+| --- | --- | --- |
+| `light` | `gpt-6-luna` | The model's default |
+| `standard` | `gpt-6.1-terra` | `high` |
+| `deep` | `gpt-6.1-terra` | `xhigh` |
+| `heavy` | `gpt-6.1-sol` | `high` |
+
+| Mode | Default profile |
+| --- | --- |
+| `research` | `light` |
+| `review` | `heavy` |
+| `implement` | `standard` |
+
+`review` defaults to a different model from `implement`, so worker-written code is not
+reviewed by the model that wrote it. A run off its mode's default needs a `--reason`,
+which `result.json` records, and a run that fails verification can be retried one
+profile up, at most twice. Effort is capped at `xhigh`.
+
+The profiles and defaults are the `PROFILES` and `DEFAULT_PROFILES` constants in
+[scripts/copilot_worker.py](scripts/copilot_worker.py). `check --live` confirms that the
+model catalog offers each profile's model and effort before it probes them.
 
 ## Safety
 

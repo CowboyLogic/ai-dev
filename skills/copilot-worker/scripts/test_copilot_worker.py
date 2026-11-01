@@ -72,6 +72,17 @@ if args == ["--check-pins"]:
         sys.exit(1)
     print("pins ok")
     sys.exit(0)
+if args[:1] == ["--list-models"]:
+    models = os.environ.get("FAKE_COPILOT_MODELS")
+    if models == "fail":
+        sys.stderr.write("not signed in\n")
+        sys.exit(1)
+    print(models or json.dumps([
+        {"id": "gpt-6-luna", "supportedReasoningEfforts": None},
+        {"id": "gpt-6.1-terra", "supportedReasoningEfforts": ["low", "medium", "high", "xhigh"]},
+        {"id": "gpt-6.1-sol", "supportedReasoningEfforts": ["low", "medium", "high", "xhigh", "max"]},
+    ]))
+    sys.exit(0)
 run_dir = args[0]
 config = json.load(open(os.path.join(run_dir, "engine.json")))
 log = os.environ.get("FAKE_COPILOT_ARGV")
@@ -185,24 +196,49 @@ class WorkerTestCase(unittest.TestCase):
 
 
 class PromptAndConfigTests(WorkerTestCase):
-    def test_default_models_match_the_design(self) -> None:
+    def test_profiles_match_the_design_in_cost_order(self) -> None:
         self.assertEqual(
-            worker.DEFAULT_MODELS,
-            {"research": "gpt-6-luna", "review": "gpt-6.1-sol", "implement": "gpt-6.1-sol"},
+            worker.PROFILES,
+            {
+                "light": {"model": "gpt-6-luna", "effort": None},
+                "standard": {"model": "gpt-6.1-terra", "effort": "high"},
+                "deep": {"model": "gpt-6.1-terra", "effort": "xhigh"},
+                "heavy": {"model": "gpt-6.1-sol", "effort": "high"},
+            },
         )
+        self.assertEqual(list(worker.PROFILES), ["light", "standard", "deep", "heavy"])
+
+    def test_default_profiles_match_the_design(self) -> None:
+        self.assertEqual(
+            worker.DEFAULT_PROFILES,
+            {"research": "light", "review": "heavy", "implement": "standard"},
+        )
+
+    def test_review_defaults_to_a_different_model_from_implement(self) -> None:
+        model = {mode: worker.PROFILES[worker.DEFAULT_PROFILES[mode]]["model"] for mode in worker.MODES}
+        self.assertNotEqual(model["review"], model["implement"])
+
+    def test_no_profile_uses_an_effort_above_the_cap(self) -> None:
+        self.assertNotIn("max", worker.EFFORTS)
+        for profile in worker.PROFILES.values():
+            self.assertIn(profile["effort"], (None, *worker.EFFORTS))
 
     def test_engine_config_carries_the_run_settings(self) -> None:
         result = worker.execute_run(mode="implement", task="Do it.", cwd=self.repo)
         config = json.loads((Path(result["runDir"]) / "engine.json").read_text())
         self.assertEqual(config["mode"], "implement")
-        self.assertEqual(config["model"], "gpt-6.1-sol")
+        self.assertEqual(config["model"], "gpt-6.1-terra")
         self.assertEqual(config["credits"], 60)
         self.assertEqual(config["timeout"], 1800)
-        self.assertIsNone(config["effort"])
+        self.assertEqual(config["effort"], "high")
         self.assertEqual(config["workspace"], result["workspace"])
 
-    def test_effort_reaches_the_engine_only_when_given(self) -> None:
-        worker.execute_run(mode="research", task="x", cwd=self.repo, effort="high")
+    def test_light_profile_leaves_the_effort_to_the_model(self) -> None:
+        worker.execute_run(mode="research", task="x", cwd=self.repo)
+        self.assertIsNone(self.calls()[-1]["effort"])
+
+    def test_effort_override_reaches_the_engine(self) -> None:
+        worker.execute_run(mode="research", task="x", cwd=self.repo, effort="high", reason="user asked")
         self.assertEqual(self.calls()[-1]["effort"], "high")
 
     def test_engine_uses_a_private_copilot_home_inside_the_state_directory(self) -> None:
@@ -319,19 +355,93 @@ class RunTests(WorkerTestCase):
         self.run_mode("implement")
         self.assertEqual(self.home.stat().st_mode & 0o077, 0)
 
-    def test_each_mode_uses_its_default_model_and_limits(self) -> None:
+    def test_each_mode_uses_its_default_profile_and_limits(self) -> None:
         for mode in worker.MODES:
             result = self.run_mode(mode)
             call = self.calls()[-1]
-            self.assertEqual(call["model"], worker.DEFAULT_MODELS[mode])
+            profile = worker.PROFILES[worker.DEFAULT_PROFILES[mode]]
+            self.assertEqual(call["model"], profile["model"])
+            self.assertEqual(call["effort"], profile["effort"])
+            self.assertEqual(result["profile"], worker.DEFAULT_PROFILES[mode])
+            self.assertEqual(result["defaultProfile"], worker.DEFAULT_PROFILES[mode])
+            self.assertEqual(result["attempt"], 1)
+            self.assertIsNone(result["retryOf"])
+            self.assertIsNone(result["reason"])
             self.assertEqual(result["maxAiCredits"], worker.DEFAULT_CREDITS[mode])
             self.assertEqual(result["timeoutSeconds"], worker.DEFAULT_TIMEOUTS[mode])
 
     def test_model_override_replaces_the_default(self) -> None:
-        result = self.run_mode("research", model="gpt-5-mini")
+        result = self.run_mode("research", model="gpt-5-mini", reason="user named it")
         call = self.calls()[-1]
         self.assertEqual(call["model"], "gpt-5-mini")
         self.assertEqual(result["model"], "gpt-5-mini")
+        self.assertEqual(result["reason"], "user named it")
+
+    def test_a_named_profile_sets_model_and_effort_and_records_the_reason(self) -> None:
+        result = self.run_mode("implement", profile="deep", reason="cross-module change")
+        call = self.calls()[-1]
+        self.assertEqual((call["model"], call["effort"]), ("gpt-6.1-terra", "xhigh"))
+        self.assertEqual(result["profile"], "deep")
+        self.assertEqual(result["defaultProfile"], "standard")
+        self.assertEqual(result["reason"], "cross-module change")
+        stored = json.loads((Path(result["runDir"]) / "result.json").read_text())
+        self.assertEqual(stored["reason"], "cross-module change")
+
+    def test_naming_the_default_profile_needs_no_reason(self) -> None:
+        result = self.run_mode("implement", profile="standard")
+        self.assertEqual(result["profile"], "standard")
+
+    def test_an_off_default_run_without_a_reason_is_rejected_before_it_starts(self) -> None:
+        for options in ({"profile": "heavy"}, {"model": "gpt-5-mini"}, {"effort": "low"},
+                        {"profile": "deep", "reason": "   "}):
+            with self.subTest(options=options), self.assertRaisesRegex(worker.WorkerError, "--reason"):
+                self.run_mode("implement", **options)
+        self.assertEqual(self.calls(), [])
+
+    def test_effort_max_is_rejected_even_with_a_reason(self) -> None:
+        with self.assertRaisesRegex(worker.WorkerError, "max is not allowed"):
+            self.run_mode("implement", effort="max", reason="hard task")
+        self.assertEqual(self.calls(), [])
+
+    def test_an_unknown_profile_is_rejected(self) -> None:
+        with self.assertRaisesRegex(worker.WorkerError, "unknown profile"):
+            self.run_mode("implement", profile="ultra", reason="x")
+
+    def test_a_retry_steps_up_one_profile_and_counts_the_attempt(self) -> None:
+        first = self.run_mode("implement")
+        second = self.run_mode("implement", retry_of=first["runId"], reason="tests failed")
+        self.assertEqual((second["profile"], second["attempt"], second["retryOf"]),
+                         ("deep", 2, first["runId"]))
+        third = self.run_mode("implement", retry_of=second["runId"], reason="still failing")
+        self.assertEqual((third["profile"], third["attempt"]), ("heavy", 3))
+        self.assertEqual(self.calls()[-1]["model"], "gpt-6.1-sol")
+
+    def test_a_run_is_retried_at_most_twice(self) -> None:
+        first = self.run_mode("research")
+        second = self.run_mode("research", retry_of=first["runId"], reason="wrong citations")
+        third = self.run_mode("research", retry_of=second["runId"], reason="wrong citations")
+        self.assertEqual(third["profile"], "deep")
+        with self.assertRaisesRegex(worker.WorkerError, "already retried 2 times"):
+            self.run_mode("research", retry_of=third["runId"], reason="wrong citations")
+
+    def test_a_run_on_the_top_profile_cannot_be_retried(self) -> None:
+        first = self.run_mode("review")
+        with self.assertRaisesRegex(worker.WorkerError, "top profile"):
+            self.run_mode("review", retry_of=first["runId"], reason="missed a bug")
+
+    def test_a_retry_needs_a_reason(self) -> None:
+        first = self.run_mode("implement")
+        with self.assertRaisesRegex(worker.WorkerError, "--reason"):
+            self.run_mode("implement", retry_of=first["runId"])
+
+    def test_a_retry_keeps_the_mode_and_picks_its_own_profile(self) -> None:
+        first = self.run_mode("research")
+        with self.assertRaisesRegex(worker.WorkerError, "not implement"):
+            self.run_mode("implement", retry_of=first["runId"], reason="x")
+        with self.assertRaisesRegex(worker.WorkerError, "do not pass --profile"):
+            self.run_mode("research", retry_of=first["runId"], profile="heavy", reason="x")
+        with self.assertRaisesRegex(worker.WorkerError, "no such run"):
+            self.run_mode("research", retry_of="20260101-000000-abcd", reason="x")
 
     def test_implement_runs_in_a_worktree_and_leaves_the_live_checkout_alone(self) -> None:
         head = self.git("rev-parse", "HEAD")
@@ -500,6 +610,28 @@ class RunTests(WorkerTestCase):
         self.assertEqual(process.returncode, 1)
         self.assertIn("status: failed", stdout)
 
+    def test_cli_run_takes_profile_and_reason(self) -> None:
+        process = self.cli("run", "--mode", "implement", "--task-file", self.task_file(),
+                           "--profile", "deep", "--reason", "touches three modules")
+        stdout, _ = process.communicate(timeout=30)
+        self.assertEqual(process.returncode, 0)
+        self.assertIn("profile: deep (attempt 1)", stdout)
+        self.assertIn("model: gpt-6.1-terra (effort xhigh)", stdout)
+
+    def test_cli_run_exits_two_for_effort_max_and_says_why(self) -> None:
+        process = self.cli("run", "--mode", "implement", "--task-file", self.task_file(),
+                           "--effort", "max", "--reason", "hard")
+        _, stderr = process.communicate(timeout=30)
+        self.assertEqual(process.returncode, 2)
+        self.assertIn("max is not allowed", stderr)
+
+    def test_cli_run_exits_two_for_an_off_default_run_without_a_reason(self) -> None:
+        process = self.cli("run", "--mode", "implement", "--task-file", self.task_file(),
+                           "--profile", "heavy")
+        _, stderr = process.communicate(timeout=30)
+        self.assertEqual(process.returncode, 2)
+        self.assertIn("--reason", stderr)
+
     def test_cli_run_exits_two_for_an_empty_task_file(self) -> None:
         process = self.cli("run", "--mode", "research", "--task-file", self.task_file(""))
         _, stderr = process.communicate(timeout=30)
@@ -660,19 +792,51 @@ class CleanAndCheckTests(WorkerTestCase):
         self.assertEqual(code, 1)
         self.assertIn("repository: NOT A GIT REPOSITORY", stdout)
 
-    def test_check_live_probes_each_distinct_default_model_once(self) -> None:
+    def test_check_live_checks_the_catalog_then_probes_each_profile_once(self) -> None:
         code, stdout, _ = self.main("check", "--live")
         self.assertEqual(code, 0)
-        models = [call["model"] for call in self.calls()]
-        self.assertEqual(sorted(models), ["gpt-6-luna", "gpt-6.1-sol"])
-        self.assertIn("model gpt-6-luna: ok", stdout)
-        self.assertIn("model gpt-6.1-sol: ok", stdout)
+        self.assertIn("profile deep (gpt-6.1-terra, effort xhigh): offered", stdout)
+        probes = [(call["model"], call["effort"]) for call in self.calls()]
+        self.assertEqual(probes, [
+            ("gpt-6-luna", None), ("gpt-6.1-terra", "high"),
+            ("gpt-6.1-terra", "xhigh"), ("gpt-6.1-sol", "high"),
+        ])
+        for name in worker.PROFILES:
+            self.assertIn(f"probe {name}: ok", stdout)
 
-    def test_check_live_fails_when_a_model_is_rejected(self) -> None:
+    def test_check_live_fails_without_probing_when_a_model_is_not_offered(self) -> None:
+        os.environ["FAKE_COPILOT_MODELS"] = json.dumps([
+            {"id": "gpt-6-luna"}, {"id": "gpt-6.1-sol", "supportedReasoningEfforts": ["high"]},
+        ])
+        code, stdout, _ = self.main("check", "--live")
+        self.assertEqual(code, 1)
+        self.assertIn("profile standard (gpt-6.1-terra, effort high): NOT OFFERED: no model gpt-6.1-terra", stdout)
+        self.assertIn("profile light (gpt-6-luna, effort model default): offered", stdout)
+        self.assertEqual(self.calls(), [])
+
+    def test_check_live_fails_when_a_profile_effort_is_not_supported(self) -> None:
+        os.environ["FAKE_COPILOT_MODELS"] = json.dumps([
+            {"id": "gpt-6-luna"},
+            {"id": "gpt-6.1-terra", "supportedReasoningEfforts": ["low", "medium", "high"]},
+            {"id": "gpt-6.1-sol", "supportedReasoningEfforts": ["high"]},
+        ])
+        code, stdout, _ = self.main("check", "--live")
+        self.assertEqual(code, 1)
+        self.assertIn("does not support effort xhigh (supports: low, medium, high)", stdout)
+        self.assertIn("profile standard (gpt-6.1-terra, effort high): offered", stdout)
+
+    def test_check_live_fails_when_the_models_cannot_be_listed(self) -> None:
+        os.environ["FAKE_COPILOT_MODELS"] = "fail"
+        code, stdout, _ = self.main("check", "--live")
+        self.assertEqual(code, 1)
+        self.assertIn("models: could not list them: not signed in", stdout)
+        self.assertEqual(self.calls(), [])
+
+    def test_check_live_fails_when_a_probe_is_rejected(self) -> None:
         self.behavior("fail")
         code, stdout, _ = self.main("check", "--live")
         self.assertEqual(code, 1)
-        self.assertIn("model gpt-6-luna: failed", stdout)
+        self.assertIn("probe light: failed", stdout)
 
 
 if __name__ == "__main__":

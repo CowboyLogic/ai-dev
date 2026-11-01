@@ -17,8 +17,9 @@ itself. The bulk work is billed to the Copilot subscription instead of Claude to
   to install beyond the skill and no client time limit on a run.
 - **Evidence for every run.** Each run leaves its task, the worker's final message,
   usage, and a result record for the parent agent to check.
-- **A model per task type.** Each mode has a default model, which can be overridden
-  for a single run.
+- **Run profiles.** Four profiles, from `light` to `heavy`, each fix a model and a
+  reasoning effort. Each mode has a default profile, a run off it records why, and a
+  run that fails verification can be retried one profile up.
 - **Built on the Copilot SDK.** It drives Copilot through the official SDK, which pins
   its own runtime, so command-line tool updates cannot break it.
 - **Pinned versions.** The SDK, its runtime, and every package it needs are pinned to

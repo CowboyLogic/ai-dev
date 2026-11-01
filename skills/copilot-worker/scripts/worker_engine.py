@@ -963,6 +963,28 @@ def versions() -> dict:
     return {"sdkVersion": version("github-copilot-sdk"), "runtimeVersion": CLI_VERSION}
 
 
+def model_entry(model: Any) -> dict:
+    """The fields of one SDK ModelInfo that the supervisor checks a profile against."""
+    return {
+        "id": model.id,
+        "supportedReasoningEfforts": getattr(model, "supported_reasoning_efforts", None),
+        "defaultReasoningEffort": getattr(model, "default_reasoning_effort", None),
+    }
+
+
+async def list_models(copilot_home: str) -> list[dict]:
+    """The models this login offers, from the runtime's catalog. Costs no credits."""
+    env = scrub_environment(dict(os.environ))
+    os.environ.clear()
+    os.environ.update(env)
+
+    from copilot import CopilotClient
+
+    config = {"workspace": os.getcwd(), "copilotHome": copilot_home}
+    async with CopilotClient(**client_options(config, env)) as client:
+        return [model_entry(model) for model in await client.list_models()]
+
+
 async def drive(run_dir: Path) -> None:
     # Scrub before the SDK loads: it reads COPILOT_* settings from this process too.
     env = scrub_environment(dict(os.environ))
@@ -1028,13 +1050,20 @@ def main(argv: list[str]) -> int:
         problem = pin_problem(versions(), load_pins())
         print(f"pin mismatch: {problem}" if problem else "pins ok")
         return 1 if problem else 0
-    if len(argv) != 1:
-        print("usage: worker_engine.py RUN_DIR | --version | --check-pins", file=sys.stderr)
+    listing = len(argv) == 2 and argv[0] == "--list-models"
+    if not listing and (len(argv) != 1 or argv[0].startswith("--")):
+        print(
+            "usage: worker_engine.py RUN_DIR | --version | --check-pins | --list-models COPILOT_HOME",
+            file=sys.stderr,
+        )
         return 2
     problem = pin_problem(versions(), load_pins())
     if problem:
         print(f"pin mismatch: {problem}. See references/upgrading.md.", file=sys.stderr)
         return 3
+    if listing:
+        print(json.dumps(asyncio.run(list_models(argv[1]))))
+        return 0
     asyncio.run(drive(Path(argv[0])))
     return 0
 

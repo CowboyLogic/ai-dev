@@ -5,11 +5,13 @@ from __future__ import annotations
 
 import contextlib
 import io
+import json
 import os
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import types
 import unittest
 import unittest.mock
 
@@ -76,6 +78,44 @@ class PinTests(unittest.TestCase):
         code, stdout, _, run = self.run_main(good, ["--check-pins"])
         self.assertEqual((code, stdout.strip()), (0, "pins ok"))
         run.assert_not_called()
+
+    def test_list_models_checks_the_pins_first(self) -> None:
+        info = {"sdkVersion": "9.9.9", "runtimeVersion": "1.0.105"}
+        code, _, stderr, run = self.run_main(info, ["--list-models", "/home/state/copilot-home"])
+        self.assertEqual(code, 3)
+        self.assertIn("pin mismatch", stderr)
+        run.assert_not_called()
+
+    def test_list_models_prints_the_catalog_as_json(self) -> None:
+        info = {"sdkVersion": "1.0.28", "runtimeVersion": "1.0.105"}
+        stdout = io.StringIO()
+        catalog = [{"id": "gpt-6.1-terra", "supportedReasoningEfforts": ["high", "xhigh"]}]
+        with unittest.mock.patch.object(engine, "versions", return_value=info), \
+                unittest.mock.patch.object(engine, "load_pins", return_value=self.PINS), \
+                unittest.mock.patch.object(engine, "list_models", new=unittest.mock.MagicMock()) as list_models, \
+                unittest.mock.patch.object(engine.asyncio, "run", return_value=catalog), \
+                contextlib.redirect_stdout(stdout):
+            code = engine.main(["--list-models", "/home/state/copilot-home"])
+        self.assertEqual(code, 0)
+        self.assertEqual(json.loads(stdout.getvalue()), catalog)
+        list_models.assert_called_once_with("/home/state/copilot-home")
+
+    def test_list_models_without_a_copilot_home_is_a_usage_error(self) -> None:
+        info = {"sdkVersion": "1.0.28", "runtimeVersion": "1.0.105"}
+        code, _, stderr, run = self.run_main(info, ["--list-models"])
+        self.assertEqual(code, 2)
+        self.assertIn("usage:", stderr)
+        run.assert_not_called()
+
+    def test_a_model_entry_keeps_the_fields_a_profile_is_checked_against(self) -> None:
+        model = types.SimpleNamespace(
+            id="gpt-6.1-terra", name="GPT-6.1 Terra",
+            supported_reasoning_efforts=["low", "high", "xhigh"], default_reasoning_effort="medium",
+        )
+        self.assertEqual(engine.model_entry(model), {
+            "id": "gpt-6.1-terra", "supportedReasoningEfforts": ["low", "high", "xhigh"],
+            "defaultReasoningEffort": "medium",
+        })
 
     def test_the_shipped_pins_file_loads(self) -> None:
         self.assertEqual(sorted(engine.load_pins()), ["runtime", "sdk"])
