@@ -53,7 +53,12 @@ It covers only that issue and that PR. It does not cover merging, any other issu
    markdownlint runs through `npx --yes markdownlint-cli2 <changed files>` (config in
    `.markdownlint.json`). If it cannot be installed, say so in the PR; do not claim it passed.
 3. Look for this client's unmerged work with GitHub MCP `list_pull_requests` (state `open`,
-   head `CowboyLogic:refresh/<client>`).
+   head `CowboyLogic:refresh/<client>`, no base filter). Reset or force-push only after a
+   successful and complete lookup: the call returned without error, you paged until no
+   further page remained, and it returned zero open PRs for this head. On any error,
+   truncated or ambiguous result, retry once, then stop and report; never treat a failed
+   lookup as "no open PR". If an open PR targets a base other than `main`, do not continue
+   or reset the branch: stop and report.
    - **Open PR exists:** continue it. `git fetch origin refresh/<client>` and
      `git checkout -B refresh/<client> origin/refresh/<client>`. Take the issue number from the
      `Closes #<n>` line in the PR body. Open no new issue or PR this run.
