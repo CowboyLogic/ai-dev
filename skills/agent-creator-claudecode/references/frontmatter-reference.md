@@ -238,7 +238,7 @@ the session effort while the agent is active, but not the `CLAUDE_CODE_EFFORT_LE
 environment variable. When Claude runs a non-fork subagent it can also pass an `effort`
 parameter for that one invocation (v2.1.292+): it overrides this field, persists when the
 subagent is resumed, and is itself overridden by `CLAUDE_CODE_EFFORT_LEVEL`. `/tasks` shows
-the effort set for a running subagent.
+the effort set for a running subagent. Changelog only (v2.1.316): `CLAUDE_CODE_SUBAGENT_EFFORT` sets the effort level subagents run at when nothing else names one, instead of inheriting the session's.
 
 ### `isolation`
 
@@ -264,7 +264,7 @@ user prompt. Ignored for plugin agents. Does nothing when the file is used as a 
 Lets this agent auto-compact earlier than the main conversation's window (requires v2.1.296
 or later; supported in frontmatter and `--agents` definitions). A token count from `100000`
 to `1000000`. If `CLAUDE_CODE_AUTO_COMPACT_WINDOW` is set to a positive integer, the agent
-uses that variable's window and the field has no effect.
+uses that variable's window and the field has no effect. Changelog only (v2.1.312): the field now lowers the window `CLAUDE_CODE_AUTO_COMPACT_WINDOW` sets, where it had no effect before; it still never raises that window.
 
 Write a plain integer such as `200000`: in frontmatter `200k` is read as 200, which is out of
 range. An out-of-range value is ignored (the agent still loads and compacts as if the field
