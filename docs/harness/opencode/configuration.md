@@ -254,7 +254,8 @@ OpenCode discovers Markdown agents from `~/.config/opencode/agents/` and from ev
 > [!CAUTION]
 > Agents are **not** loaded through `instructions`. Older versions of this guide
 > listed `"instructions": ["agent/*.md"]` as the discovery mechanism. That never
-> registered agents, and in V2 `instructions` entries are not loaded at all.
+> registered agents. In V2 `instructions` entries load as extra guidance after `AGENTS.md`
+> files (2.0.30 and later), not as agent definitions.
 
 ### Agent file format
 
@@ -455,7 +456,7 @@ tools for an agent with `{ "action": "github_*", "resource": "*", "effect": "den
 
 ## Instructions and AGENTS.md
 
-V2 loads project guidance from `AGENTS.md` files only:
+V2 loads project guidance from `AGENTS.md` files, then from the `instructions` array (2.0.30 and later). `AGENTS.md` discovery:
 
 - the global `~/.config/opencode/AGENTS.md`, then
 - every `AGENTS.md` from the current workspace up toward the home directory. For a
@@ -464,11 +465,15 @@ V2 loads project guidance from `AGENTS.md` files only:
 Nested `AGENTS.md` files below the workspace are loaded as the agent reads files in
 that area. V2 does not fall back to `CLAUDE.md`.
 
-> [!CAUTION]
-> **`instructions` is accepted but not loaded in V2.** A V1 config that loaded
-> guardrails or rules through `"instructions": ["guardrails.md"]` silently stops
-> applying them under V2. Move that guidance into an `AGENTS.md` that V2 discovers,
-> for example by linking the file to `~/.config/opencode/AGENTS.md`.
+The `instructions` array adds files, glob patterns, and HTTP(S) URLs after the
+discovered `AGENTS.md` files, in listed order. Relative entries are searched from the
+workspace up to the project root, `~/` entries resolve from the home directory, and
+URLs are fetched when config loads.
+
+> [!WARNING]
+> Before V2 2.0.30, `instructions` was accepted but not loaded, so guardrails listed
+> there silently stopped applying. On 2.0.30 or later they load; on older V2 builds,
+> move that guidance into an `AGENTS.md` that V2 discovers.
 
 ---
 
@@ -563,7 +568,7 @@ Run it again.
 | Delegation to `x` fails, but `x.agent` exists | File is named `x.agent.md`. Rename it to `x.md` |
 | Read-only agent edited a file or launched a subagent | No catch-all deny. Omitted actions are allowed |
 | Scoped edit grant denies everything | Catch-all `"*"` rule placed after the specific rule |
-| Rules in `guardrails.md` are ignored | Loaded through `instructions`, which V2 does not load. Use `AGENTS.md` |
+| Rules in `guardrails.md` are ignored | Loaded through `instructions` on a V2 build older than 2.0.30, which did not load it. Upgrade, or use `AGENTS.md` |
 | Editor flags `agents` or `permissions` | The published schema is V1-only. See the warning at the top |
 | Model request fails | Pinned model is retired or not enabled for your Copilot plan |
 
