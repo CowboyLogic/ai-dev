@@ -136,8 +136,8 @@ replace earlier ones, and permission rules append.
 
 > [!NOTE]
 > **Temperature is not active per agent in V2.** V1's `temperature`, `top_p`, and
-> provider options move under `request.body`, which V2 preserves but does not yet send
-> with model requests. Configure request settings on a provider, model, or model
+> provider options have no agent-level equivalent: an agent's `request.body` is kept but
+> not sent with model requests (V2 2.2.x docs). Configure request settings on a provider, model, or model
 > variant instead, and select the variant with `model: provider/model#variant`. The
 > samples in this repository no longer set a temperature.
 
@@ -327,7 +327,7 @@ so `git status *` matches `git status`.
 | `read`, `glob`, `grep` | Local discovery tools |
 | `webfetch`, `websearch` | Web tools |
 | `skill` | Skill loading; resource is the skill ID |
-| `external_directory` | Paths outside the project |
+| `external_directory` | Paths outside the project (allowed by default since the 2.2.x docs) |
 | `<server>_<tool>` | An MCP tool |
 
 ### The default is allow
@@ -338,12 +338,16 @@ it:
 ```json
 [
   { "action": "*", "resource": "*", "effect": "allow" },
-  { "action": "external_directory", "resource": "*", "effect": "ask" },
   { "action": "read", "resource": "*.env", "effect": "ask" },
   { "action": "read", "resource": "*.env.*", "effect": "ask" },
   { "action": "read", "resource": "*.env.example", "effect": "allow" }
 ]
 ```
+
+There is no `external_directory` rule in the base policy, so reads and edits outside
+the project proceed without a prompt (V1 asked, and the 2.0.29 docs listed an `ask`
+rule). To be asked before any access outside the project, append
+`{ "action": "external_directory", "resource": "*", "effect": "ask" }`.
 
 **An action you do not mention is allowed.** Denying only `edit` and `shell` does not make
 an agent read-only: `subagent`, `skill`, `question`, web, and MCP actions stay open. For a
@@ -513,7 +517,7 @@ file to native V2:
 | `disable` | `disabled` |
 | `maxSteps` | `steps` |
 | `model` + `variant` | `model: provider/model#variant` |
-| `temperature`, `top_p`, options | `request.body` (preserved, not yet sent) |
+| `temperature`, `top_p`, options | A model variant (agent `request.body` is kept but not sent) |
 | `tools` + `permission` maps | ordered `permissions` rules |
 | `bash`, `task`, `write`/`patch` actions | `shell`, `subagent`, `edit` |
 | `command`, `subtask` | `commands`, `subagent` |
