@@ -5,7 +5,7 @@ in `.codex/agents/` or `~/.codex/agents/`.
 
 - **Skill name:** `agent-creator-codex`
 - **Source:** [skills/agent-creator-codex](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-codex)
-- **Codex version:** verified against [Codex CLI 0.163.0](https://github.com/openai/codex/releases/tag/rust-v0.163.0) (released 2026-10-15)
+- **Codex version:** verified against [Codex CLI 0.166.0](https://github.com/openai/codex/releases/tag/rust-v0.166.0) (released 2026-10-29; last verified 2026-11-01)
 
 ---
 
