@@ -28,12 +28,15 @@ Read `AGENTS.md` first. It governs git, documentation and PR rules. Never commit
 to `main` or `master`, never merge a PR, never bypass hooks, never `git add -A` or
 `git add .`, and never edit `site/`. Put scratch files in `.agent-output/`. If anything
 below conflicts with `AGENTS.md`, `AGENTS.md` wins, with one standing exception: the
-maintainer (Micheal) pre-approved opening **ready-for-review** (not draft) PRs for these
-scheduled refresh runs, so the "ask before opening a PR or marking ready" rule is
-satisfied for the PR this procedure opens (approval given 2026-11-01 in the project thread
-that created this procedure: "READY PR's"). It covers only the one PR per client per run
-that section 5 describes. It does not cover merging, issues beyond the tracking issue, or
-any other PR.
+maintainer (Micheal) pre-approved, for these scheduled refresh runs, the two outward
+actions section 3 and 5 call for: posting the one tracking issue per client per run
+(`AGENTS.md` "Planned work" asks for a draft and approval; the issue content here is
+generated from `.github/ISSUE_TEMPLATE/weekly_maintenance.md` and contains nothing
+private), and opening one **ready-for-review** (not draft) PR per client per run. The
+approval is Micheal's instruction on 2026-11-01 in the project thread that created this
+procedure, which required the issue-first, PR-every-run flow, and his answer "READY PR's".
+It covers only that issue and that PR. It does not cover merging, any other issue
+(including deferrals under section 6, which are reported, not posted), or any other PR.
 
 ## 1. Prepare
 
