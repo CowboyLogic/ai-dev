@@ -433,6 +433,12 @@ class RunTests(WorkerTestCase):
         with self.assertRaisesRegex(worker.WorkerError, "already retried as"):
             self.run_mode("implement", retry_of=first["runId"], reason="tests failed again")
 
+    def test_concurrent_retries_of_one_run_cannot_both_claim_it(self) -> None:
+        first = self.run_mode("implement")
+        worker.claim_retry(first["runId"], "20260101-000000-abcd")
+        with self.assertRaisesRegex(worker.WorkerError, "already retried"):
+            worker.claim_retry(first["runId"], "20260101-000001-abcd")
+
     def test_a_run_is_retried_at_most_twice(self) -> None:
         first = self.run_mode("research")
         second = self.run_mode("research", retry_of=first["runId"], reason="wrong citations")
