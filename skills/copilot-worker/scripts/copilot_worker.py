@@ -63,6 +63,7 @@ DEFAULT_CREDITS = {"research": 30, "review": 30, "implement": 60}
 DEFAULT_TIMEOUTS = {"research": 600, "review": 600, "implement": 1800}
 # The reasoning efforts a run may use. The SDK also accepts "max"; the worker caps at xhigh.
 EFFORTS = ("low", "medium", "high", "xhigh")
+RETRY_CLAIM = "retried-by"
 RUN_ID_PATTERN = re.compile(r"^\d{8}-\d{6}-[0-9a-f]{4}$")
 # Keeps an attached review diff to a size the worker can read alongside the files.
 MAX_DIFF_BYTES = 100_000
@@ -413,6 +414,8 @@ def execute_run(
     private_state_home()
     run_dir = state_home() / "runs" / run_id
     run_dir.mkdir(parents=True)
+    if retry_of:
+        claim_retry(retry_of, run_id)
     workspace, branch, base = root, None, None
     if mode == "implement":
         base = git(["rev-parse", "HEAD"], root)
@@ -500,6 +503,16 @@ def execute_run(
     return result
 
 
+def claim_retry(retry_of: str, run_id: str) -> None:
+    """Claim a run for its one retry. Exclusive creation makes concurrent retries race safely."""
+    claim = state_home() / "runs" / retry_of / RETRY_CLAIM
+    try:
+        with claim.open("x", encoding="utf-8") as handle:
+            handle.write(run_id + "\n")
+    except FileExistsError:
+        raise WorkerError(f"run {retry_of} was already retried; retry that run instead") from None
+
+
 def resolve_profile(mode: str, profile: str | None, retry_of: str | None) -> tuple[str, int]:
     """Return the profile a run uses and its attempt number (1 for a first run)."""
     if profile is not None and profile not in PROFILES:
@@ -511,15 +524,12 @@ def resolve_profile(mode: str, profile: str | None, retry_of: str | None) -> tup
     previous = load_result(retry_of)
     # A retry extends the newest run in its chain. Retrying an older run would fork the chain
     # and restart the attempt count, which is how the retry cap could be bypassed.
-    for later in sorted((state_home() / "runs").glob("*/result.json")):
-        try:
-            child = json.loads(later.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            continue
-        if child.get("retryOf") == retry_of:
-            raise WorkerError(
-                f"run {retry_of} was already retried as {child.get('runId')}; retry that run instead"
-            )
+    claim = state_home() / "runs" / retry_of / RETRY_CLAIM
+    if claim.exists():
+        raise WorkerError(
+            f"run {retry_of} was already retried as {claim.read_text(encoding='utf-8').strip()}; "
+            "retry that run instead"
+        )
     if previous.get("mode") != mode:
         raise WorkerError(f"run {retry_of} was a {previous.get('mode')} run, not {mode}")
     attempt = int(previous.get("attempt") or 1) + 1
