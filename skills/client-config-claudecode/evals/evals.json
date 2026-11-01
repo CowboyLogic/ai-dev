@@ -112,6 +112,106 @@
           "description": "Any JSON shown uses permissions.defaultMode with valid syntax"
         }
       ]
+    },
+    {
+      "id": 5,
+      "name": "hook-fail-closed",
+      "prompt": "My PreToolUse hook in .claude/settings.json runs a policy script before every Bash command. I noticed that when the script path was mistyped, Bash commands still ran. Make the hook block the command when the script fails instead.",
+      "expected_output": "Sets onFailure: \"block\" on the command hook (v2.1.295+), explains that a hook that can't start, times out, or exits with a code other than 0 or 2 otherwise lets the action through, and notes exit 2 is the blocking exit code",
+      "assertions": [
+        {
+          "id": "on-failure-block",
+          "description": "Adds \"onFailure\": \"block\" to the command hook handler"
+        },
+        {
+          "id": "default-non-blocking",
+          "description": "Explains that without it a failed, missing, or timed-out hook is a non-blocking error and the action proceeds"
+        },
+        {
+          "id": "version-gate",
+          "description": "Notes that onFailure requires Claude Code v2.1.295 or later"
+        },
+        {
+          "id": "exit-2-blocks",
+          "description": "Notes that exit code 2 is the blocking exit code, so a script that exits 2 blocks the action without onFailure"
+        },
+        {
+          "id": "valid-hook-shape",
+          "description": "Hook JSON nests the handler inside a matcher group under hooks.PreToolUse with a valid type"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "stop-hook-loop-cap",
+      "prompt": "I have a Stop hook that blocks Claude from finishing until the test suite passes. It works, but after a while Claude just stops even though the tests are still failing. Why does that happen, and how do I let it keep trying longer?",
+      "expected_output": "Explains Claude Code's cap of 8 consecutive stop-hook continuations, that the count resets when Claude calls a tool, and that CLAUDE_CODE_STOP_HOOK_BLOCK_CAP raises it (0 disables it), set in the env block of settings.json",
+      "assertions": [
+        {
+          "id": "eight-cap",
+          "description": "States that after 8 consecutive continuations from stop hooks Claude Code overrides the next block and ends the turn"
+        },
+        {
+          "id": "counter-resets",
+          "description": "Notes that the count resets each time Claude calls a tool"
+        },
+        {
+          "id": "block-cap-variable",
+          "description": "Names CLAUDE_CODE_STOP_HOOK_BLOCK_CAP as the way to raise the cap, with 0 disabling it"
+        },
+        {
+          "id": "stop-hook-active",
+          "description": "Recommends the hook check stop_hook_active so it does not block on a condition that never resolves"
+        },
+        {
+          "id": "env-block",
+          "description": "If it shows configuration, sets the variable under the env key of settings.json with valid JSON"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "idle-compaction",
+      "prompt": "Claude Code keeps compacting my long session when I step away for a while and come back. I want to turn that off but keep normal auto-compact working. What do I set?",
+      "expected_output": "Sets idleCompaction to false in settings.json (any settings file, v2.1.290+), explains it compacts an idle 200K+ token conversation shortly before the one-hour prompt cache expires, and notes autoCompactEnabled is the separate key for normal auto-compact",
+      "assertions": [
+        {
+          "id": "idle-key",
+          "description": "Names the idleCompaction setting and sets it to false"
+        },
+        {
+          "id": "keeps-auto-compact",
+          "description": "Leaves autoCompactEnabled alone, or says it controls normal auto-compact and that turning it off also turns idle compaction off"
+        },
+        {
+          "id": "min-version",
+          "description": "Notes idleCompaction needs Claude Code v2.1.290 or later"
+        },
+        {
+          "id": "threshold",
+          "description": "Mentions the alternative of raising CLAUDE_CODE_IDLE_COMPACT_MIN_TOKENS (default 200000, floor 100000) instead of turning it off"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "mcp-server-name-with-double-underscore",
+      "prompt": "I have an MCP server configured as reports__v2. I added \"mcp__reports__v2\" to permissions.allow in settings.json but Claude still prompts for every one of its tools. What's wrong?",
+      "expected_output": "Explains that the bare mcp__reports__v2 rule is not read as a rule for the reports__v2 server: under the mcp__<server>__<tool> grammar it names server reports (and tool v2), so it does not match the reports__v2 server's tools, and gives mcp__reports__v2__* as the rule to write",
+      "assertions": [
+        {
+          "id": "misread-rule",
+          "description": "Explains that mcp__reports__v2 (and mcp__reports) is parsed against a server named reports (for mcp__reports__v2, with v2 as a tool name) and so does not allow the reports__v2 server's tools"
+        },
+        {
+          "id": "wildcard-form",
+          "description": "Gives mcp__reports__v2__* (the wildcard form with the whole server name) as the rule to write"
+        },
+        {
+          "id": "name-ends-underscore",
+          "description": "Notes the same wildcard form is needed for a server name that ends in an underscore"
+        }
+      ]
     }
   ]
 }

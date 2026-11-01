@@ -21,7 +21,7 @@ Empty files are skipped. Codex stops adding files once the size limit is reached
 
 > [!WARNING]
 > An explicit `trust_level = "untrusted"` for the project skips the whole project `AGENTS.md` chain;
-> only the global file loads. Verified on 0.158.0 in a real git repository with
+> only the global file loads. Verified on 0.158.0 and again on 0.163.0 in a real git repository with
 > `codex debug prompt-input`: unset and `"trusted"` loaded the project `AGENTS.md`, `"untrusted"`
 > (keyed by the repo root or by the working directory) did not. A project with no entry still loads
 > it. Trust keys must match a real project path; an empty `.git` directory is not a repository.
@@ -62,7 +62,7 @@ exists in that directory. Other agents' files such as `CLAUDE.md` are **not** re
 fallback.
 
 > [!NOTE]
-> The docs say the limit applies to the combined size. In a local test on 0.158.0, lowering
+> The docs say the limit applies to the combined size. In local tests on 0.158.0 and 0.163.0, lowering
 > `project_doc_max_bytes` truncated only the project portion (cut mid-text); the global file was
 > unaffected. Treat the cap as applying to project files, and raise it or split guidance into nested
 > directories when instructions are cut off. Do not rely on the global file being counted.
@@ -85,12 +85,13 @@ Prefer the local render. It needs no model call and shows exactly what the model
 codex debug prompt-input | grep -c 'MARKER-FROM-YOUR-FILE'
 ```
 
-In 0.158.0 the output is a JSON list of input items. The project instructions arrive in a `user`
+On 0.163.0 the output is a JSON list of input items. The project instructions arrive in a `user`
 item whose text begins `# AGENTS.md instructions for <cwd>` and wraps the content in
 `<INSTRUCTIONS>`: global guidance first, then a `--- project-doc ---` separator, then the project
 files in root-to-cwd order. Run it from the directory you want to test and search the text for a marker
 string from each file. `codex debug prompt-input` also
-accepts `-c key=value`, so it can test `project_doc_*` changes before committing them.
+accepts `-c key=value`, so it can test `project_doc_*` changes before committing them. It
+bootstraps `$CODEX_HOME` (system skills, `tmp/`), so use a throwaway home for a hermetic test.
 
 Other checks, less direct:
 
@@ -99,8 +100,10 @@ Other checks, less direct:
   and relies on the model's report; use the render above first.
 - Set `log_dir` (for example `codex -c log_dir=./.codex-log`) to enable the opt-in plaintext
   `codex-tui.log`, or inspect a `session-*.jsonl` file if session logging is on. Not verified locally.
-- `/status` in the TUI shows the workspace roots. The docs also cite `codex status`, but 0.158.0 has
-  no such subcommand; use the slash command.
+- `/status` in the TUI shows the active model, approval policy, writable roots, and token usage.
+  The docs also cite `codex status`, but 0.163.0 has no such subcommand; use the slash command.
+- `/init` writes an `AGENTS.md` scaffold in the current directory, and `/debug-config` prints config
+  layer and requirements diagnostics.
 
 ## Troubleshooting
 

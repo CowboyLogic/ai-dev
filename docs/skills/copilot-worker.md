@@ -24,7 +24,8 @@ itself. The bulk work is billed to the Copilot subscription instead of Claude to
 - **Built on the Copilot SDK.** It drives Copilot through the official SDK, which pins
   its own runtime, so command-line tool updates cannot break it.
 - **Pinned versions.** The SDK, its runtime, and every package it needs are pinned to
-  exact versions, and the worker refuses to start if the installed ones differ. Upgrading
+  exact versions (currently SDK **1.0.28**, runtime **1.0.105**), and the worker refuses
+  to start if the installed ones differ. Upgrading
   is a deliberate change with a documented procedure, linked from the skill's README.
 - **Every permission request checked.** File access is confined to the workspace, a
   deny list rejects pushes and the GitHub CLI in their common forms, and neither your
@@ -40,11 +41,10 @@ implementation, reconnaissance, or an independent review done on Copilot capacit
 > worktree isolates the worker's normal edits. It is not a sandbox: a shell command can
 > still reach files outside it, including your live checkout.
 
-It requires `uv`, a GitHub Copilot login, Git, and macOS or Linux. `uv` provides
-Python 3.11 or later and the SDK on first run.
-
-> [!WARNING]
-> Windows is not supported, including Git Bash. WSL has not been tested.
+It requires `uv`, a GitHub Copilot login, and Git, on macOS, Linux, or Windows. `uv`
+provides Python 3.11 or later and the SDK on first run. On Windows an implementation
+worker's shell is PowerShell, and the deny list checks PowerShell and `cmd.exe` commands
+as well as POSIX ones.
 
 ---
 

@@ -12,6 +12,8 @@ You help the user manage all OpenAI Codex CLI configuration files.
 > from the reference files in this skill, not from memory. Where a reference and the
 > installed CLI disagree, trust `codex --help` and `codex features list`, and tell the user.
 
+References were last verified against **Codex CLI 0.163.0** (released 2026-10-15).
+
 ## Config file map
 
 `CODEX_HOME` defaults to `~/.codex`. Setting the `CODEX_HOME` environment variable moves
@@ -53,6 +55,9 @@ Codex config is **TOML**, not JSON. JSON appears only in `hooks.json`, plugin fi
 | Feature flags (`[features]`) | `references/config-schema.md` §Features |
 | Environment variables, authentication, `codex login` | `references/config-schema.md` §Environment variables, §Auth |
 | Managed configuration, `requirements.toml` | `references/config-schema.md` §Managed configuration |
+| Browser Use, Computer Use, in-app browser, and desktop-app network requirements | `references/config-schema.md` §Browser Use and Computer Use requirements |
+| Memories (`[memories]`) | `references/config-schema.md` §Memories |
+| App (connector) defaults and per-app tool policy (`[apps]`) | `references/config-schema.md` §Apps |
 | Sandbox mode, approval policy, network access, permission profiles, rules files, auto-review | `references/permissions.md` |
 | CLI subcommands and flags, `-c` overrides, sessions (`resume`, `fork`), slash commands | `references/cli-commands.md` |
 | MCP servers | `references/mcp.md` |
@@ -66,7 +71,7 @@ Codex config is **TOML**, not JSON. JSON appears only in `hooks.json`, plugin fi
 
 ```bash
 # Override one setting for a single run (value is parsed as TOML)
-codex -c model="gpt-6-sol" -c model_reasoning_effort="high"
+codex -c model="gpt-6.1-sol" -c model_reasoning_effort="high"
 
 # What features exist and their state
 codex features list

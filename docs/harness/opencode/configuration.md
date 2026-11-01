@@ -19,8 +19,8 @@ One limitation affects editor validation:
 > [!WARNING]
 > There is no published V2 schema for `opencode.json` yet.
 > `https://opencode.ai/config.json` still describes V1 and rejects unknown keys, so an
-> editor using it may flag valid V2 fields such as `agents`, `permissions`, and
-> `mcp.servers`. Keep the `$schema` line for the fields it does cover, and treat
+> editor using it may flag valid V2 fields such as `agents`, `permissions`,
+> `policies`, and `mcp.servers`. Keep the `$schema` line for the fields it does cover, and treat
 > those particular warnings as expected.
 
 ## Where configuration lives
@@ -40,6 +40,11 @@ files inside `.opencode/` directories in the same order. Every `.opencode/` conf
 therefore overrides every direct config. Settings that do not conflict are kept.
 
 Both `.json` and `.jsonc` accept comments and trailing commas.
+
+Machine-wide managed settings live in the system directory: `/Library/Application Support/opencode`
+on macOS, `/etc/opencode` on Linux, and `%ProgramData%\opencode` on Windows. As of OpenCode V2
+2.0.29 its `opencode.json(c)` overrides every user and project file, and the directory also loads
+`agents/`, `commands/`, `skills/`, and `plugins/` for every user on the machine.
 
 ## Configuration approaches
 
@@ -189,7 +194,13 @@ above as frontmatter and the body as the template.
 - Top-level `permissions` apply to every agent. Each agent's own rules are appended after
   them, so agent rules can refine global ones.
 - `update` is `"disable"`, `"notify"` (default), or `"auto"`, and is honored only in the
-  global config. It replaces V1 `autoupdate`.
+  global config. It replaces V1 `autoupdate`. V1 1.19.0 no longer installs updates
+  automatically (`autoupdate: true` only notifies), so `"notify"`, not `"auto"`, is the
+  V2 setting that matches it.
+- `policies` is a separate top-level array of `allow`/`deny` statements (`provider.use`,
+  `tool.use`, `integration.use`). Policies never prompt and only tighten what permissions and
+  providers allow, and statements from broader configuration win over project ones. Releases
+  before 2.0.29 read it from `experimental.policies`, which still works.
 - `share` is accepted, but session sharing is not supported yet in V2.
 - `theme` and keybinds are not `opencode.json` fields in V2. They live in the terminal
   client config, `~/.config/opencode/cli.json`, which V2 migrates from `tui.json` on

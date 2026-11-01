@@ -107,6 +107,8 @@ mcp__claude_ai_<server>__<tool>    → claude.ai connector tools
 
 An `mcp__` rule with parentheses (parameter match) is skipped when loaded from a settings file — use `--disallowedTools` for that.
 
+An MCP allow rule reaches only the server it names (v2.1.299; the permissions docs now state it). For a server whose normalized name contains `__` or ends in `_`, write `mcp__<whole normalized name>__*`: for a server named `reports__v2` that is `mcp__reports__v2__*`, and the bare `mcp__reports__v2` or `mcp__reports` does not allow its tools. Changelog only (v2.1.299): deny and ask rules for `mcp__<server>` now also apply to such servers. For a server whose name contains `__`, the same wildcard form holds for an agent's `tools:` list (changelog only; see `agent-creator-claudecode`, which does not cover a trailing `_` there).
+
 ### Tool-name wildcards
 
 Deny/ask rules accept globs in the tool-name position: `"*"` (every tool), `"mcp__*"` (every MCP tool). Allow rules accept tool-name globs only after a literal `mcp__<server>__` prefix (e.g. `mcp__github__get_*`); `"*"`, `"B*"`, or `"mcp__*"` as an allow rule is skipped with a warning. Use canonical tool names (e.g. `TaskStop`, not the label "Stop Task").
@@ -169,12 +171,28 @@ One parameter per rule; `*` wildcard supported; omitted params never match. A to
 | `acceptEdits` | Auto-accepts file edits + common fs commands (`mkdir`, `touch`, `mv`, `cp`) in working/additional dirs |
 | `plan` | Reads and runs read-only commands; no source edits until you approve a plan |
 | `auto` | Auto-approves with background classifier safety checks |
-| `dontAsk` | Auto-denies anything that would prompt; reads and pre-approved tools still run. `AskUserQuestion` and `requiresUserInteraction` MCP tools are denied |
+| `dontAsk` | Auto-denies anything that would prompt; reads inside working dirs and pre-approved tools still run. `AskUserQuestion` and `requiresUserInteraction` MCP tools are denied, as are reads from network paths |
 | `bypassPermissions` | Skips prompts, including writes to protected paths like `.git` and `.claude` — DANGEROUS, isolated environments only |
 
 - `auto` and `bypassPermissions` do NOT take effect as `defaultMode` from project or local settings (v2.1.257+) — set them in `~/.claude/settings.json`.
 - `--permission-mode` / `--dangerously-skip-permissions` override `defaultMode` for one session.
+- **Network paths** (UNC `\\server\share\file` on Windows, `/net/...` automounts on macOS/Linux): from v2.1.292 a file-tool read of one keeps its prompt even with a matching allow rule, an `"allow"` from a `PreToolUse` hook, or auto mode (the classifier doesn't decide it); `dontAsk` denies it. `bypassPermissions` runs it without the prompt.
 - In cloud sessions only `acceptEdits`, `plan`, `default`, and `auto` are honored.
+
+**Which mode a session starts in** when `defaultMode` and `--permission-mode` are unset (first matching row wins):
+
+| Session | Starts in |
+| --- | --- |
+| Any settings file sets `disableAutoMode: "disable"` | `default` |
+| `claude -p` or the Agent SDK | `default` in sessions that fetch feature flags. Where flags aren't fetched (third-party provider, telemetry off): `auto` from v2.1.285, `default` before |
+| Org HIPAA configuration applied and the session is eligible | `default` from v2.1.285 (auto mode stays available to switch to) |
+| Terminal or VS Code extension | `auto` from v2.1.283; earlier: `auto` on Pro/Max/Team in sessions that fetch flags, `default` otherwise |
+
+Changelog only (v2.1.302): `claude -p` and Agent SDK sessions with no permission mode now start in `default` on third-party providers, with telemetry off, or on a fresh install, where the `-p` row above says `auto`; `--permission-mode auto` keeps `auto`. The permission-modes docs page still shows the earlier behavior.
+
+When `auto` is selected but unavailable to the session (a settings file turned it off, an unsupported model, or Anthropic disabled it server-side), the session starts in Manual. The first session after an install or upgrade can choose its mode before flags arrive and so can differ from this table.
+
+**Auto mode classifier model:** it runs on Claude Sonnet 5 by default, not on your `/model` choice, and a classifier model Anthropic configures server-side takes precedence. When the session model is Claude Sonnet 4.6, or `availableModels` excludes Sonnet 5, it runs on the session's model instead, or on an Opus model when the session runs on a Fable model. `CLAUDE_CODE_AUTO_MODE_MODEL` (v2.1.302, changelog only) picks the model for the client-side classifier; it does not change the model for server-side auto mode. From v2.1.302 (changelog only), a conversation too long for the server-side classifier's safety check is compacted instead of every checked tool call being denied.
 
 **Actions no mode auto-approves** (even `bypassPermissions`): explicit `ask` rules; org connector tools set to `ask`; `AskUserQuestion` and MCP tools marked `requiresUserInteraction`; `rm`/`rmdir` targeting a critical path (circuit breaker — no allow rule or hook `"allow"` approves it; `dontAsk` denies it, `auto` sends it to the classifier); cross-session messaging safeguards; reads outside working dirs while `blockReadsOutsideWorkingDirectories` is on.
 
@@ -273,7 +291,9 @@ Settings-file `additionalDirectories` grant file access only — no skills, agen
 
 ## Managed-only settings (ignored outside managed sources)
 
-`allowAllClaudeAiMcps`, `allowedChannelPlugins`, `allowManagedHooksOnly`, `allowManagedMcpServersOnly`, `allowManagedPermissionRulesOnly`, `blockedMarketplaces`, `channelsEnabled`, `disableCommandPluginSources`, `disableSideloadFlags`, `forceRemoteSettingsRefresh`, `managedMcpServers`, `managedSourcesBehavior`, `parentSettingsBehavior`, `pluginSuggestionMarketplaces`, `pluginTrustMessage`, `policyHelper`, `sandbox.filesystem.allowManagedReadPathsOnly`, `sandbox.network.allowManagedDomainsOnly`, `strictKnownMarketplaces`, `strictPluginOnlyCustomization`, `wslInheritsWindowsSettings`. Also managed-only: `forceLoginGatewayUrl`, `gatewayInternalNetworks`, `requiredMinimumVersion`/`requiredMaximumVersion`, browser/mobile-simulator controls, `sshHostAllowlist`, `disableDesktopLocalSessions`, `sandbox.bwrapPath`/`socatPath`, `modelPricing`, `claudeMd`.
+`allowAllClaudeAiMcps`, `allowClaudeInChromeWithManagedMcp`, `allowedChannelPlugins`, `allowedProviders`, `allowManagedHooksOnly`, `allowManagedMcpServersOnly`, `allowManagedPermissionRulesOnly`, `availableModelsMatch`, `blockedMarketplaces`, `channelsEnabled`, `deniedModels`, `disableCommandPluginSources`, `disableSideloadFlags`, `forceRemoteSettingsRefresh`, `managedMcpServers`, `managedSourcesBehavior`, `parentSettingsBehavior`, `pluginSuggestionMarketplaces`, `pluginTrustMessage`, `policyHelper`, `sandbox.filesystem.allowManagedReadPathsOnly`, `sandbox.network.allowManagedDomainsOnly`, `strictKnownMarketplaces`, `strictPluginOnlyCustomization`, `wslInheritsWindowsSettings`. Also managed-only: `gatewayInternalNetworks`, `requiredMinimumVersion`/`requiredMaximumVersion`, browser/mobile-simulator controls, `sshHostAllowlist`, `disableDesktopLocalSessions`, `sandbox.bwrapPath`/`socatPath`, `modelPricing`, `claudeMd`.
+
+`forceLoginGatewayUrl` is not managed-only: v2.1.295+ also reads it from user settings on a machine with no managed source (see `settings-schema.md`).
 
 `disableBypassPermissionsMode` works from any scope but is typically placed in managed settings.
 

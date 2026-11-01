@@ -6,6 +6,7 @@ obj/
 
 __pycache__/
 .pytest_cache/
+.venv/
 
 # mkdocs site output
 site/

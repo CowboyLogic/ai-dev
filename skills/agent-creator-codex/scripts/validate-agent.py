@@ -10,8 +10,8 @@ scanned set. Directories are scanned recursively, as Codex does. Warns on keys C
 but ignores in a role file. Uses only the standard library (Python 3.11+).
 Exit status is 1 when any error is found (or any warning with --strict).
 
-Field list and load rules verified September 2026 by running `codex exec` against test files
-on codex-cli 0.158.0, plus https://developers.openai.com/codex/subagents.
+Field list and load rules verified October 2026 with `codex doctor` against test files on
+codex-cli 0.163.0, plus https://developers.openai.com/codex/subagents.
 """
 
 from __future__ import annotations
@@ -28,10 +28,10 @@ except ImportError:  # pragma: no cover
     sys.exit("Python 3.11+ is required (tomllib)")
 
 REQUIRED = ("name", "description", "developer_instructions")
-# Keys Codex applies from a role file (codex-rs/core/src/agent/role.rs, rust-v0.158.0).
+# Keys Codex applies from a role file (codex-rs/core/src/agent/role.rs, rust-v0.163.0).
 APPLIED_KEYS = set(REQUIRED) | {
     "nickname_candidates", "model", "model_reasoning_effort", "model_reasoning_summary",
-    "model_verbosity", "personality", "service_tier", "features", "skills",
+    "model_verbosity", "personality", "features", "skills",
 }
 # Valid config.toml keys that parse in a role file but are dropped when the role is applied:
 # the child inherits the parent's sandbox, approvals, and MCP servers.
@@ -41,12 +41,16 @@ IGNORED_KEYS = {
     "mcp_servers": "the child uses the parent's MCP servers; configure them in the parent config",
     "web_search": "not applied to roles; set it on the parent",
     "model_provider": "not applied to roles",
+    "service_tier": "the child uses the root session's service tier; set it on the root session",
     "shell_environment_policy": "not applied to roles",
     "sandbox_workspace_write": "not applied to roles",
     "tools": None,  # handled below: a table is valid config, a list is a foreign field
 }
 KNOWN_KEYS = APPLIED_KEYS | set(IGNORED_KEYS)
-DISABLE_ONLY_FEATURES = {"shell_tool", "apps", "plugins", "memory_tool", "request_permissions_tool"}
+# `memory_tool` is the legacy key for the feature `codex features list` shows as `memories`.
+DISABLE_ONLY_FEATURES = {
+    "shell_tool", "apps", "plugins", "memories", "memory_tool", "request_permissions_tool",
+}
 SANDBOX_MODES = {"read-only", "workspace-write", "danger-full-access"}
 # Fields from other agent tools that Codex does not have.
 FOREIGN = {
@@ -142,7 +146,10 @@ def validate_file(path: Path, names: dict[str, Path], res: Result) -> None:
     features = data.get("features")
     if isinstance(features, dict):
         for fname, on in features.items():
-            if on is True or fname not in DISABLE_ONLY_FEATURES:
+            if fname in DISABLE_ONLY_FEATURES and not isinstance(on, bool):
+                res.error(path, f"features.{fname} must be a boolean, not {type(on).__name__}; "
+                                "Codex ignores the whole file with `expected a boolean`")
+            elif on is True or fname not in DISABLE_ONLY_FEATURES:
                 res.warn(path, f"features.{fname} = {str(on).lower()} has no effect in a role file; "
                                f"roles can only disable {sorted(DISABLE_ONLY_FEATURES)}")
 

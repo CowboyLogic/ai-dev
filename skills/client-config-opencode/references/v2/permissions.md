@@ -63,6 +63,11 @@ All three fields are required strings.
 
 Plugins may define more actions (actions are free-form strings).
 
+The tools page (unchanged through 2.0.29) lists Code Mode worktree utilities in the `opencode` namespace. `worktree_remove` uses
+`edit` with the worktree directory as the resource, so an `edit` rule that denies that directory blocks it
+(`force: true` can discard modified or untracked files). `worktree_create` and `worktree_list` request no built-in
+permission action. The namespace is part of Code Mode, which `execute` controls.
+
 The docs state `doom_loop` and `lsp` are not V2 Core actions. The V1 keys `list` and `todowrite` do not appear in
 the V2 action table. V1 names map as: `bash` → `shell`, `task` → `subagent`, `write`/`patch` → `edit`.
 
@@ -180,61 +185,101 @@ Replaces the default tree-sitter scanner (no fallback). An unparsable command re
 
 ## Policies
 
-Policies live under `experimental.policies`. They are binary (`allow`/`deny`), never prompt, and only ever
+Policies live under the top-level `policies` array. They are binary (`allow`/`deny`), never prompt, and only ever
 **tighten** what permissions and providers allow.
+
+> [!NOTE]
+> Releases before 2.0.29 documented policies under `experimental.policies`. That key still works and merges into
+> `policies` (order: V1 `enabled_providers` / `disabled_providers`, then `experimental.policies`, then `policies`;
+> later statements win ties). Write new config under `policies`.
 
 | Field | Values |
 |-------|--------|
-| `action` | `provider.use` \| `permission` |
+| `action` | `provider.use` \| `tool.use` \| `integration.use` |
 | `resource` | Wildcard pattern; meaning depends on the action |
 | `effect` | `allow` \| `deny` |
 
-Invalid statements are dropped with a server-log warning; the rest still apply. Last matching statement wins;
-no match = allowed.
+`permission` is **not** an action value (the 2.0.27 policies page listed it, but the config schema at 2.0.27 and
+2.0.29 only accepts the three above). Invalid statements are dropped with a server-log warning; the rest still
+apply, so check the log after editing a `deny`. Last matching statement wins; no match = allowed. `*` matches zero
+or more characters and `?` matches one; a trailing space-and-star, as in `shell:git push *`, also matches the
+value without arguments.
 
 ### `provider.use`
 
-Resource is the provider ID. A denied provider disappears from the catalog even with valid credentials. This
-replaces V1 `enabled_providers` / `disabled_providers`:
+Resource is the provider ID. A denied provider disappears from the catalog and model selection even with valid
+credentials. This replaces V1 `enabled_providers` / `disabled_providers`:
 
 ```jsonc
 {
-  "experimental": {
-    "policies": [
-      { "action": "provider.use", "resource": "*", "effect": "deny" },
-      { "action": "provider.use", "resource": "anthropic", "effect": "allow" },
-    ],
-  },
+  "policies": [
+    { "action": "provider.use", "resource": "*", "effect": "deny" },
+    { "action": "provider.use", "resource": "anthropic", "effect": "allow" },
+  ],
 }
 ```
 
-### `permission`
+### `tool.use`
 
-Resource is `<action>:<value>`. A `deny` hard-blocks the check **after** agent rules and saved approvals
-(fails with `Blocked by configuration policy`). An `allow` never grants access; it only lifts an earlier broader
-policy `deny`, after which the agent's own rules decide.
+Resource is `<action>:<value>`, matched against every resource the tool checks. A `deny` hard-blocks the check
+**after** agent rules and saved approvals (fails with `Blocked by configuration policy`), so it overrides an `ask`
+and an "Allow always" approval. An `allow` never grants access; it only lifts an earlier broader policy `deny`,
+after which the agent's own rules decide.
 
 ```jsonc
 {
-  "experimental": {
-    "policies": [
-      { "action": "permission", "resource": "shell:git push *", "effect": "deny" },
-      { "action": "permission", "resource": "edit:*.env", "effect": "deny" },
-      { "action": "permission", "resource": "read:*/.ssh/*", "effect": "deny" },
-      { "action": "permission", "resource": "github_delete_repository:*", "effect": "deny" },
-    ],
-  },
+  "policies": [
+    { "action": "tool.use", "resource": "shell:git push *", "effect": "deny" },
+    { "action": "tool.use", "resource": "edit:*.env", "effect": "deny" },
+    { "action": "tool.use", "resource": "read:*/.ssh/*", "effect": "deny" },
+    { "action": "tool.use", "resource": "github_delete_repository:*", "effect": "deny" },
+  ],
+}
+```
+
+| Pattern | Blocks |
+|---------|--------|
+| `shell:*` | Every shell command |
+| `external_directory:*` | Any access outside the Location or worktree |
+| `subagent:general` | Launching one subagent |
+| `github_delete_repository:*` | One MCP tool |
+| `*` | Everything not already denied |
+
+### `integration.use`
+
+Controls whether an MCP server, skill, or plugin is loaded at all. A denied MCP server or skill is removed; a
+denied plugin is not loaded, however it was configured.
+
+| Resource | Applies to |
+|----------|------------|
+| `mcp:<server>` | An MCP server by its configured name |
+| `skill:<id>` | A skill by its ID |
+| `plugin:<target>` | A plugin by unversioned package name or absolute path |
+
+```jsonc
+{
+  "policies": [
+    { "action": "integration.use", "resource": "mcp:*", "effect": "deny" },
+    { "action": "integration.use", "resource": "mcp:github", "effect": "allow" },
+  ],
 }
 ```
 
 ### Precedence (reversed vs normal settings)
 
+Ordinary settings let the nearest configuration win. Policies reverse that: statements from broader configuration
+are evaluated later, so they override narrower ones.
+
 | Authority | Source |
 |-----------|--------|
 | 1 (highest) | Connected OpenCode Console workspace |
-| 2 | Global `~/.config/opencode/opencode.json(c)` |
-| 3 | Direct `opencode.json(c)`; outer directories beat inner ones |
-| 4 (lowest) | `.opencode/opencode.json(c)`; outer directories beat inner ones |
+| 2 | macOS managed preferences (`/Library/Managed Preferences/ai.opencode.managed.plist`) |
+| 3 | System `opencode.json(c)` (`/Library/Application Support/opencode`, `/etc/opencode`, `%ProgramData%\opencode`) |
+| 4 | Global `~/.config/opencode/opencode.json(c)` |
+| 5 | Direct `opencode.json(c)`; outer directories beat inner ones |
+| 6 (lowest) | `.opencode/opencode.json(c)`; outer directories beat inner ones |
 
-A repository cannot re-enable a provider or command that the global config denies. The
-`opencode.config.policy` and `opencode.provider.opencode` plugins cannot be disabled via `plugins`.
+A repository cannot re-enable a provider that the global config denies. Within one file, statements keep their
+written order. A Console workspace's policies are appended after every authored statement; a denial from them
+reads `Blocked by <organization>'s policy`. The `opencode.config.policy` and `opencode.provider.opencode` plugins
+cannot be disabled via `plugins`.

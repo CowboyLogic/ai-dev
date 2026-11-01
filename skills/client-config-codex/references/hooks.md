@@ -1,7 +1,7 @@
 # Hooks Reference
 
 Hooks run scripts (or MCP tools) at lifecycle points in a Codex session. They are enabled by
-default. Verified against codex-cli 0.158.0.
+default. Verified against codex-cli 0.163.0.
 
 ## Where hooks are loaded from
 
@@ -39,13 +39,17 @@ Non-managed hooks are skipped until reviewed and trusted.
 - Installing or enabling a plugin does not trust its hooks. Review them the same way.
 - Editing a hook definition means re-trusting it. After any edit to `hooks.json`, open `/hooks`
   and confirm the hook shows as trusted.
-- `--dangerously-bypass-hook-trust` (top-level `codex` flag) runs enabled hooks without persisted
-  trust for that invocation. Use it only in automation that vets hook sources itself.
+- `--dangerously-bypass-hook-trust` (root `codex` flag, also accepted by `codex exec`, `resume`, and
+  `fork`) runs enabled hooks without persisted trust for that invocation. Use it only in automation
+  that vets hook sources itself.
 
 > [!NOTE]
-> The docs do not say where trust is persisted. On 0.158.0 it appears as `[hooks.state."<path>:<event>:<group>:<index>"]`
-> tables holding a `trusted_hash` in `~/.codex/config.toml`. Treat those tables as machine
-> state: do not hand-edit or copy them between machines. Re-trust through `/hooks`.
+> The docs do not say where trust is persisted. On 0.163.0 it appears as
+> `[hooks.state."<hooks-file-path>:<event_snake_case>:<group>:<index>"]` tables in
+> `~/.codex/config.toml` holding a `trusted_hash`, plus `enabled` once a hook is disabled or
+> re-enabled from `/hooks`. The event segment is snake_case (`pre_tool_use`) even though
+> `hooks.json` uses PascalCase. Treat those tables as machine state: do not hand-edit or copy them
+> between machines. Re-trust through `/hooks`.
 
 ## Feature flag
 
@@ -61,7 +65,8 @@ hooks = false   # turn all hooks off
   `--enable hooks` / `--disable hooks` override it for one run.
 - Admins can pin it in `requirements.toml` with `[features].hooks = true` (enforce) or `false`.
 
-`codex features list` also lists `plugin_hooks` as `removed`. Do not set it.
+`codex features list` also lists `plugin_hooks` as `removed`. Do not set it; 0.163.0 accepts it
+without error but it does nothing.
 
 ## File format (`hooks.json`)
 
@@ -183,7 +188,8 @@ Tool coverage for `PreToolUse` and `PostToolUse`: shell and unified exec (`Bash`
 tools (by function name, for example `update_plan`). Hosted tools such as `WebSearch` are **not**
 hooked.
 
-`write_stdin` polls do not re-run `PreToolUse`. Some specialized tool paths can opt out. Treat
+`write_stdin` polls do not re-run `PreToolUse`, but a later poll can deliver the original command's
+`PostToolUse` when that command finishes. Some specialized tool paths can opt out. Treat
 tool hooks as a guardrail, not a complete enforcement boundary.
 
 ## Input payload (stdin)
@@ -237,7 +243,7 @@ Per-event behavior:
 | `PostToolUse` | `decision: "block"` plus `reason` (or exit `2` with stderr) replaces the tool result with your feedback and continues. It cannot undo the tool. `continue: false` also replaces the result. `additionalContext` adds developer context |
 | `UserPromptSubmit` | `decision: "block"` plus `reason` (or exit `2`) rejects the prompt. `additionalContext` adds context |
 | `Stop`, `SubagentStop` | `decision: "block"` plus `reason` (or exit `2`) does **not** reject the turn. It continues, using `reason` as a new prompt. `continue: false` from any hook wins over continuation |
-| `SessionStart` | `additionalContext` adds developer context. After compaction, `continue: false` ends the turn without another model request |
+| `SessionStart` | `additionalContext` adds developer context. After compaction, `continue: false` ends the turn without another model request. Hooks matching `source: "compact"` also run before the next request after mid-turn auto-compaction |
 | `SubagentStart` | `additionalContext` goes to the subagent. `continue: false` does not stop it |
 | `PreCompact`, `PostCompact` | `continue: false` stops before or after compacting |
 | `SessionEnd`, `Interrupt` | Advisory only. Optional `systemMessage` |
@@ -250,6 +256,8 @@ Unsupported today. Codex marks the hook run failed, reports it, and **continues 
 on `PreToolUse`, `permissionDecision: "ask"`, legacy `decision: "approve"`, `continue: false`,
 `stopReason`, `suppressOutput`. Do not return `updatedInput`, `updatedPermissions`, or `interrupt`
 from `PermissionRequest`. `updatedMCPToolOutput` and `suppressOutput` fail on `PostToolUse`.
+`PermissionRequest` also does not support `continue`, `stopReason`, or `suppressOutput`; both
+`PreToolUse` and `PermissionRequest` support `systemMessage`.
 
 ### Exit codes
 
@@ -265,8 +273,10 @@ exit is reported as a hook failure.
 
 Model-visible hook output is capped near 2,500 tokens per message. Oversized text is saved under
 `<temp_dir>/hook_outputs/<session_id>/` and the model sees a head-and-tail preview. Set
-`additionalContextLimit` on a handler to change the threshold (`0` disables it; avoid). Never put
-secrets in hook output, since it can land on disk.
+`additionalContextLimit` on a handler to change the threshold (`0` disables it; avoid). Events that
+cannot produce additional context ignore the setting and report a configuration warning; tool
+feedback and continuation prompts keep the default limit. Never put secrets in hook output, since it
+can land on disk.
 
 ## Plugin-bundled and managed hooks
 
@@ -312,7 +322,9 @@ The `reason` becomes a new user-style prompt. Always check `stop_hook_active`. P
 
 ## Testing and debugging
 
-There is no `codex debug` hooks subcommand. Test scripts directly:
+There is no `codex debug` hooks subcommand, and `codex debug prompt-input` renders prompt input
+only: it does not surface hook discovery or trust errors (an invalid matcher exited 0 with no
+warning on 0.163.0). Test scripts directly:
 
 ```bash
 echo '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"rm -rf /"},"cwd":"/tmp"}' \

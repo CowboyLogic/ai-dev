@@ -42,6 +42,8 @@ hooks:
 ---
 ```
 
+A `UserPromptSubmit` hook in a skill's own frontmatter first runs on the prompt *after* the one that invokes the skill (changelog only, v2.1.299).
+
 ---
 
 ## Hook events (lifecycle order)
@@ -68,8 +70,8 @@ hooks:
 | `TaskCompleted` | Task marked complete | none | Yes |
 | `Stop` | Claude finishes responding | none | Yes |
 | `StopFailure` | Turn ends due to API error | `rate_limit`, `overloaded`, `authentication_failed`, `oauth_org_not_allowed`, `account_on_hold`, `billing_error`, `invalid_request`, `model_not_found`, `server_error`, `max_output_tokens`, `cloud_credential_error` (v2.1.267+), `unknown` | No |
-| `PreCompact` | Before context compaction | `manual`, `auto` | Yes |
-| `PostCompact` | After compaction | `manual`, `auto` | No |
+| `PreCompact` | Before context compaction | `manual` (`/compact`), `auto` (reaching the auto-compact window, and idle compaction) | Yes |
+| `PostCompact` | After compaction | `manual` (`/compact`), `auto` (reaching the auto-compact window, and idle compaction) | No |
 | `PreModelSwitch` | Before a user/client-requested model switch (`/model`, picker, `/config`, fast mode, SDK `set_model`); not for automatic fallback (v2.1.251+) | Canonical target model name (`claude-opus-5`, `.*opus.*`) | Yes |
 | `PostModelSwitch` | After the session's model changes, including automatic changes | Canonical target model name | No |
 | `ConfigChange` | Config file changed during session | `user_settings`, `project_settings`, `local_settings`, `policy_settings`, `skills` | Yes (except `policy_settings`) |
@@ -81,6 +83,8 @@ hooks:
 | `SessionEnd` | Session terminates | `clear`, `resume`, `logout`, `prompt_input_exit`, `other` (`bypass_permissions_disabled` removed in v2.1.234) | No |
 | `Elicitation` | MCP server requests user input (form or URL dialog) | MCP server name | Yes |
 | `ElicitationResult` | After user responds to an elicitation | MCP server name | Yes (can override response) |
+
+`Notification` `permission_prompt` fires once you haven't typed for about six seconds. In sessions that send permission requests to the Agent SDK's `canUseTool` callback (Claude Desktop and the VS Code extension host Claude Code this way) it fires about six seconds after the request whether or not you type, does not fire if a `PermissionRequest` hook or you answer sooner, and `CLAUDE_CODE_DISABLE_PERMISSION_PROMPT_NOTIFY_HOOKS=1` turns it off there. Before v2.1.233 it did not fire in those sessions.
 
 ---
 
@@ -102,7 +106,7 @@ Hyphenated exact names (e.g. `code-reviewer`) require v2.1.195+ — earlier vers
 
 ## Hook handler types
 
-**Common fields** (all handler types): `type` (required), `if`, `timeout` (seconds; defaults 600 for `command`/`http`/`mcp_tool`, 30 for `prompt`, 60 for `agent`; lowered to 30 on `UserPromptSubmit`/`PreModelSwitch`/`PostModelSwitch` and 10 on `MessageDisplay`; `SessionEnd` hooks share a 1.5 s budget), `statusMessage` (custom spinner text), `once` (remove after first successful run — honored only in skill frontmatter).
+**Common fields** (all handler types): `type` (required), `if`, `timeout` (seconds; defaults 600 for `command`/`http`/`mcp_tool`, 30 for `prompt`, 60 for `agent`; lowered to 30 on `UserPromptSubmit`/`PreModelSwitch`/`PostModelSwitch` and 10 on `MessageDisplay`; `SessionEnd` hooks share a 1.5 s budget, see [SessionEnd time budget](#sessionend-time-budget)), `statusMessage` (custom spinner text), `once` (remove after first successful run — honored only in skill frontmatter).
 
 The `if` field provides a second-level filter **without spawning the process unless it matches**:
 
@@ -126,6 +130,7 @@ The `if` field holds exactly one permission rule (no `&&`/`||`/lists) and is onl
   "async": false,
   "asyncRewake": false,
   "shell": "bash",
+  "onFailure": "continue",
   "timeout": 600
 }
 ```
@@ -134,6 +139,7 @@ The `if` field holds exactly one permission rule (no `&&`/`||`/lists) and is onl
 - `asyncRewake: true` — run in background, wake Claude on exit code 2
 - `shell` — `"bash"` (default; `"powershell"` on Windows without Git Bash) or `"powershell"`; ignored when `args` is set
 - `args` — **exec form**: when present, `command` is spawned directly as an executable with `args` as argv (no shell, no quoting issues). Omit `args` for shell form (pipes, `&&`, globs)
+- `onFailure` — `"continue"` (default) or `"block"`; see [Block the action when a hook fails](#block-the-action-when-a-hook-fails) (v2.1.295+; `command` and `http` only)
 
 ```json
 { "type": "command", "command": "node", "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/format.js", "--fix"] }
@@ -144,8 +150,11 @@ The `if` field holds exactly one permission rule (no `&&`/`||`/lists) and is onl
 - `$CLAUDE_PROJECT_DIR` — project root
 - `${CLAUDE_PLUGIN_ROOT}` — plugin install dir
 - `${CLAUDE_PLUGIN_DATA}` — plugin data dir
-- `$CLAUDE_ENV_FILE` — only for `SessionStart`, `Setup`, `CwdChanged`, `FileChanged`; append `export` lines to persist env vars into later Bash commands
+- `$CLAUDE_ENV_FILE` — only for `SessionStart`, `Setup`, `CwdChanged`, `FileChanged`; append `export` lines to persist env vars into later Bash commands. PowerShell commands receive the variables too from v2.1.296, but PowerShell never runs the file: Claude Code copies the assignments across only when every line is a blank line, a `#` comment, or a plain `export NAME=value` / `declare -x NAME=value` / `NAME=value` with a simple quoted-or-unquoted value
 - `$CLAUDE_CODE_REMOTE` — `"true"` in remote web environments
+- `$CLAUDE_EFFORT` — the effort level in effect (same value as the `effort.level` input field)
+
+A hook process inherits Claude Code's environment, minus the `OTEL_*` exporter variables, and minus the credentials `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1` strips when it is set.
 
 ### `http`
 
@@ -155,9 +164,12 @@ The `if` field holds exactly one permission rule (no `&&`/`||`/lists) and is onl
   "url": "http://localhost:8080/hooks/pre-tool-use",
   "headers": { "Authorization": "Bearer $MY_TOKEN" },
   "allowedEnvVars": ["MY_TOKEN"],
+  "onFailure": "block",
   "timeout": 30
 }
 ```
+
+`onFailure` is optional (`"continue"` by default); an HTTP failure is a connection error, a non-2xx status, or a 2xx body that is neither empty nor a JSON object.
 
 ### `mcp_tool` (call a tool on a connected MCP server)
 
@@ -186,7 +198,7 @@ The `if` field holds exactly one permission rule (no `&&`/`||`/lists) and is onl
 }
 ```
 
-Optional `model` (defaults to a fast model). `$ARGUMENTS` is replaced by the hook input JSON; escape a literal `$` as `\$`. Model must return `{ "ok": true }` to allow or `{ "ok": false, "reason": "..." }` to block, optionally with `"impossible": true` (on `Stop`/`SubagentStop` this lets the turn end instead of feeding the reason back). On `PreToolUse`, `ok: false` denies and ends the turn unless the handler sets `continueOnBlock: true`.
+Optional `model` (defaults to the model Claude Code uses for background functionality). `$ARGUMENTS` is replaced by the hook input JSON; escape a literal `$` as `\$`. Model must return `{ "ok": true }` to allow or `{ "ok": false, "reason": "..." }` to block, optionally with `"impossible": true` (on `Stop`/`SubagentStop` this lets the turn end instead of feeding the reason back). On `PreToolUse`, `ok: false` denies and ends the turn unless the handler sets `continueOnBlock: true`.
 
 ### `agent` (spawns a subagent verifier — experimental)
 
@@ -199,6 +211,30 @@ Optional `model` (defaults to a fast model). `$ARGUMENTS` is replaced by the hoo
 ```
 
 Same response schema as `prompt`. Agent can use Read, Grep, Glob to inspect the codebase.
+
+Changelog only: from v2.1.300 an agent hook honors its `model` (an alias such as `haiku` resolves, a subagent's own model no longer overrides it, and an unavailable model falls back to the caller's model instead of allowing the action). From v2.1.302 at most 12 `prompt` or `agent` hooks of one event run at a time; the rest wait their turn.
+
+---
+
+## Hook input (stdin JSON)
+
+Command hooks receive one JSON object on stdin; `http` hooks receive the same object as the POST body. Every event gets these common fields, plus the event-specific fields documented per event upstream (`tool_name`, `tool_input`, `tool_use_id` on tool events, `reason` on `SessionEnd`, `last_assistant_message` on `Stop`, and so on):
+
+| Field | Meaning |
+| ----- | ------- |
+| `session_id` | Current session identifier |
+| `prompt_id` | UUID of the user prompt being processed; matches the `prompt.id` attribute on OpenTelemetry events. Absent until the first user input |
+| `transcript_path` | Path to the conversation JSON. Written asynchronously, so it can lag the current turn; on `Stop`/`SubagentStop` read `last_assistant_message` instead |
+| `cwd` | Working directory when the hook is invoked |
+| `scratchpad_dir` | The session's scratchpad directory (v2.1.257+); absent when the session has none |
+| `permission_mode` | `default`, `plan`, `acceptEdits`, `auto`, `dontAsk`, or `bypassPermissions`. Manual mode arrives as `default`, never `manual`. Not every event receives it |
+| `effort` | Object with `level` (`low`/`medium`/`high`/`xhigh`/`max`); present on events within a tool-use context when the model supports effort |
+| `hook_event_name` | Name of the event that fired |
+| `agent_id`, `agent_type` | Which subagent, teammate, or `--agent` session the hook fired in. `agent_id` appears for subagents and in-process teammates; `agent_type` is also set for `--agent` sessions |
+
+Only `SessionStart` hooks can receive a `model` field, and not always. `PreModelSwitch`/`PostModelSwitch` receive `from_model` and `to_model`. There is no `$CLAUDE_MODEL` environment variable.
+
+Command hooks on macOS and Linux run in their own session with no controlling terminal, so they can't open `/dev/tty`; return `systemMessage` or `terminalSequence` JSON instead.
 
 ---
 
@@ -215,6 +251,37 @@ Same response schema as `prompt`. Agent can use Read, Grep, Glob to inspect the 
 
 Stdout is parsed as JSON on every exit code when it starts with `{` and ends with `}`. For most events plain stdout only goes to the debug log; for `UserPromptSubmit`, `UserPromptExpansion`, `SessionStart`, and `PostModelSwitch` plain stdout is added as context for Claude.
 
+### Block the action when a hook fails
+
+Requires v2.1.295+. By default a hook that can't start, times out, or exits with a code other than 0 or 2 is a **non-blocking** error — the action goes ahead, so a policy hook with a mistyped path lets everything through. Set `"onFailure": "block"` on a `command` or `http` hook to make a failure do what exit code 2 does on that event (on `PermissionRequest` it denies the request).
+
+```json
+{
+  "type": "command",
+  "command": "node",
+  "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/check-command.js"],
+  "onFailure": "block"
+}
+```
+
+A failure is: the hook can't start; exit code other than 0 or 2 (even if it printed JSON that allows the action — exit 0 to return a JSON decision); an HTTP connection failure or non-2xx status; a timeout; or JSON output that can't be parsed or fails schema validation. Plain-text stdout from a command hook is not a failure.
+
+`onFailure` has no effect on `Stop`, `SubagentStop`, `TaskCompleted`, and `TeammateIdle` hooks (exit 2 there sends Claude back to work, and Claude can't repair a hook that won't run) or on background command hooks (`async`/`asyncRewake`). A timed-out `command`, `http`, or `mcp_tool` hook on `PreToolUse` does **not** block the call. Set `onFailure: "block"` on a `command` or `http` hook to make a timeout block; `mcp_tool` hooks don't accept `onFailure`, so a timed-out one always lets the call continue.
+
+**Changelog only (v2.1.299), three fail-closed changes:**
+
+- On Windows, a `PreToolUse` or `PermissionRequest` hook that sets no `shell` used to fail open when Git for Windows isn't installed; a guard that fails now blocks the call.
+- Plan mode no longer runs a write (an MCP tool's, a file's, a shell command's) that a `PreToolUse` hook allowed.
+- `UserPromptSubmit` hooks now run before a skill or custom slash command expands, so a hook that blocks the prompt also stops the command's embedded shell commands.
+
+### Stop hooks that keep blocking
+
+`Stop` and `SubagentStop` hooks receive `stop_hook_active: true` when Claude is already continuing because of a stop hook; check it, or the hook can block on a condition that never resolves. Claude Code also caps this loop: after stop hooks continue the turn 8 times in a row it overrides the next block and ends the turn. The count resets each time Claude calls a tool. `CLAUDE_CODE_STOP_HOOK_BLOCK_CAP` changes the cap (default 8; `0` disables it).
+
+### SessionEnd time budget
+
+`SessionEnd` hooks get a 1.5 s default timeout on exit, `/clear`, and interactive `/resume`. Two ways to raise it: set `timeout` on the hook (the overall budget rises to the highest per-hook `timeout` in your settings files, up to 60 s; plugin-provided hooks don't raise it, and a hook without its own `timeout` keeps the default), or set `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS`, which also becomes the timeout of each hook with no `timeout` of its own. Before v2.1.268 the variable raised only the overall budget.
+
 ---
 
 ## JSON output from hooks
@@ -230,9 +297,11 @@ Return JSON on stdout (exit 0) for structured control. Key fields:
 | `systemMessage` | Warning string shown to the user |
 | `terminalSequence` | Terminal escape sequence Claude Code emits on your behalf (desktop notif, title, bell). Only OSC `0`/`1`/`2`/`9`/`99`/`777` and bare BEL allowed — anything else is silently ignored. Use instead of writing to `/dev/tty` (unavailable to hooks) |
 
-All hook output strings (`additionalContext`, `systemMessage`, `initialUserMessage`, plain stdout) are capped at 10,000 chars; overflow is saved to a file and Claude gets the path plus a 2,000-char preview.
+All hook output strings (`additionalContext`, `systemMessage`, `initialUserMessage`, plain stdout) are capped at 10,000 chars; overflow is saved to a file and Claude gets the path plus a 2,000-char preview. A literal `<system-reminder>` or `</system-reminder>` tag in `additionalContext` has its `<` replaced with `&lt;`.
 
-**Other event-specific outputs** (`hookSpecificOutput`): `PostToolUse` → `updatedToolOutput` (replaces what Claude sees; the tool already ran); `SessionStart` → `additionalContext`, `initialUserMessage`, `watchPaths`, `sessionTitle`, `reloadSkills`; `SubagentStart`/`PostModelSwitch` → `additionalContext`; `MessageDisplay` → `displayContent` (display-only); `PreModelSwitch` → `permissionDecision` (`allow`/`deny`/`ask`); `PermissionRequest` `allow` → optional `updatedPermissions`.
+An **async** hook's JSON response must be alone on stdout or on one line of its own; multi-line (pretty-printed) JSON alone on stdout needs v2.1.295+ (earlier versions ignore it). Fields with the wrong type are dropped, and `--debug` names each one.
+
+**Other event-specific outputs** (`hookSpecificOutput`): `PostToolUse` → `updatedToolOutput` (replaces what Claude sees; the tool already ran; `updatedMCPToolOutput` does the same for MCP tools only — prefer `updatedToolOutput`); `SessionStart` → `additionalContext`, `initialUserMessage`, `watchPaths`, `sessionTitle`, `reloadSkills`; `SubagentStart`/`PostModelSwitch` → `additionalContext`; `MessageDisplay` → `displayContent` (display-only); `PreModelSwitch` → `permissionDecision` (`allow`/`deny`/`ask`); `PermissionRequest` `allow` → optional `updatedPermissions`.
 
 ### PreToolUse decisions (use `hookSpecificOutput`)
 
@@ -252,6 +321,8 @@ All hook output strings (`additionalContext`, `systemMessage`, `initialUserMessa
 
 `"defer"` — only honored in non-interactive mode (`-p`); ignored with a warning in interactive sessions or when Claude makes several tool calls in one turn. Exits with `stop_reason: "tool_deferred"` and the pending call in `deferred_tool_use` (id/name/input); an external process resumes with `claude -p --resume <session-id>` and the same tool call fires `PreToolUse` again so the hook can return `"allow"` with the answer in `updatedInput`. Typical use: `AskUserQuestion` answered by a host UI with no terminal.
 
+`updatedInput` replaces the whole input object, so include the unchanged fields too. Changelog only (v2.1.300): the value from a `PreToolUse` or `PermissionRequest` hook is validated like Claude's own input: unknown keys are dropped, and input the tool rejects denies the call.
+
 **Legacy note**: top-level `decision`/`reason` (`"approve"`/`"block"`) are deprecated for `PreToolUse` specifically — use `hookSpecificOutput.permissionDecision`. Other events (`PostToolUse`, `Stop`, etc.) still use top-level `decision`/`reason`.
 
 ### PermissionRequest (use `hookSpecificOutput.decision`)
@@ -260,7 +331,7 @@ All hook output strings (`additionalContext`, `systemMessage`, `initialUserMessa
 { "hookSpecificOutput": { "hookEventName": "PermissionRequest", "decision": { "behavior": "allow", "updatedInput": { "command": "npm run lint" } } } }
 ```
 
-`decision.behavior`: `"allow"` | `"deny"`. No prompt reaches the user; runs even for background subagents in headless mode (denies by default if no hook decides). For `allow`, `updatedPermissions` can also add rules or change the session mode. Not run for a sandboxed command's network request.
+`decision.behavior`: `"allow"` | `"deny"`. No prompt reaches the user; runs even for background subagents in headless mode (denies by default if no hook decides). For `allow`, `updatedPermissions` can also add rules or change the session mode. Not run for a sandboxed command's network request. Changelog only (v2.1.300): in Cowork cloud sessions a `setMode` update in a hook's `allow` is ignored; the rest of the approval still applies.
 
 ### PermissionDenied retry
 
@@ -268,7 +339,7 @@ All hook output strings (`additionalContext`, `systemMessage`, `initialUserMessa
 { "hookSpecificOutput": { "hookEventName": "PermissionDenied", "retry": true } }
 ```
 
-### Elicitation (accept/decline without showing dialog)
+### Elicitation (answer without showing the dialog)
 
 ```json
 {
@@ -280,12 +351,16 @@ All hook output strings (`additionalContext`, `systemMessage`, `initialUserMessa
 }
 ```
 
+`action` is `"accept"` (with form values in `content`, keyed by the request's `requested_schema` property names), `"decline"`, or `"cancel"`; the server receives it and no dialog appears. No output and exit 0 leaves the request to the user. Exit code 2, or a top-level `"decision": "block"`, also declines (the block overrides an `action` in the same output; `decision: "block"` was ignored from v2.1.105 until the fix in v2.1.284). `reason`, `systemMessage`, and `continue` are discarded. When several hooks match, a decline overrides an accept or cancel.
+
 ### WorktreeCreate (hook must print the worktree path to stdout)
 
 ```bash
 # Command hook: print the created directory path on stdout
 echo "$HOME/.claude/worktrees/$NAME"
 ```
+
+Changelog only (v2.1.300): plugin `WorktreeCreate` and `WorktreeRemove` hooks now also run when Claude Code starts with `--worktree` (not yet with `--tmux`).
 
 ---
 
@@ -419,3 +494,7 @@ Also turns off a custom `statusLine`, `subagentStatusLine`, and `fileSuggestion`
 ## View configured hooks
 
 Type `/hooks` inside Claude Code for a read-only browser of all configured hooks, labeled by type and source (`User Settings`, `Project Settings`, `Local Settings`, `Plugin Hooks`, `Session Hooks`). Direct edits to settings files are normally picked up by the file watcher.
+
+## Debug a slow hook
+
+Run with `--debug` (or `CLAUDE_CODE_DEBUG_LOG_LEVEL=verbose` for matcher counts) and search the log for `Hooks:` lines. From v2.1.296 each command hook on a tool event, `UserPromptSubmit`, `SessionStart`, `Stop`, and several other events logs one when it finishes, e.g. `Hooks: PostToolUse:Write [.claude/hooks/log-write.sh] finished with status 0 (31ms)`. A run can also end as `timed out after <N>ms`, `cancelled`, `moved to the background`, or `failed to start`. On some events (`Notification`, `SessionEnd`, `PreCompact`) the line is `completed with status` without a duration.

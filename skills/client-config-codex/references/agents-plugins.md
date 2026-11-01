@@ -1,7 +1,7 @@
 # Agents and Plugins Reference
 
 Plugins package reusable capabilities. Subagents delegate work to parallel agents. Verified
-against codex-cli 0.158.0.
+against codex-cli 0.163.0.
 
 ## Plugins
 
@@ -21,7 +21,7 @@ new session before expecting them.
 
 ```bash
 codex plugin list [--marketplace NAME] [--available] [--json]
-codex plugin add PLUGIN@MARKETPLACE            # or: codex plugin add PLUGIN --marketplace NAME
+codex plugin add PLUGIN@MARKETPLACE            # or: codex plugin add PLUGIN -m NAME
 codex plugin remove PLUGIN@MARKETPLACE         # uninstalls and removes the local cache
 codex plugin marketplace list [--json]
 codex plugin marketplace add SOURCE [--ref REF] [--sparse PATH]... [--json]
@@ -33,8 +33,12 @@ codex plugin marketplace remove NAME [--json]
   URL. `--sparse` (repeatable) does a sparse checkout for Git sources.
 - `plugin list --json` prints `installed` and `available` arrays; `--available` adds uninstalled
   marketplace plugins to the JSON. Entries carry `pluginId`, `name`, `marketplaceName`, `version`,
-  `installed`, `enabled`, `source`, `installPolicy`, and `authPolicy`.
-- `plugin add --json` prints `installedPath` among its fields.
+  `installed`, `enabled`, `source`, `marketplaceSource` (`sourceType`, `source`), `installPolicy`,
+  and `authPolicy`. `marketplace list --json` returns `{"marketplaces": [...]}` with `name`, `root`,
+  and `marketplaceSource` per entry.
+- `plugin add --json` prints `pluginId`, `name`, `marketplaceName`, `version`, `installedPath`, and
+  `authPolicy`; `plugin remove --json` prints `pluginId`, `name`, and `marketplaceName` (field names
+  from the upstream command reference; not run here, because both commands install or uninstall).
 - There is **no** `plugin enable` or `plugin disable` subcommand. Toggle in the CLI with
   `/plugins` (select an installed plugin and press Space), or set `enabled` in `config.toml`.
 - `/plugins` in a session opens the plugin browser, grouped by marketplace tabs.
@@ -70,11 +74,24 @@ approval_mode = "approve"
 - `plugins.<plugin>.enabled` reads the effective merged config. Trusted-project settings can
   override user, cloud-managed, and system defaults. It does not override workspace-managed
   states. A marketplace refresh can install or refresh configured plugins even when disabled.
+- `[plugins._default] enabled = <bool>` sets a default for installed plugins (new in 0.163.0;
+  undocumented upstream, from the 0.163.0 config source and schema). Without it, a plugin keeps
+  the enablement of its source. With it, a plugin whose own `enabled` is unset takes the default,
+  and an explicit `plugins."<plugin>@<marketplace>".enabled` overrides it. The default cannot
+  enable a plugin that its source disabled.
 - Plugin-bundled MCP servers launch from the plugin. User config controls only on/off and tool
   policy, not the transport command.
 - Admins can pin `[features].plugins` and `[features].remote_plugin` in `requirements.toml`, and
   set `features.plugin_sharing = false` to block workspace sharing. Under
-  `allow_managed_hooks_only = true`, plugin hooks are skipped.
+  `allow_managed_hooks_only = true`, plugin hooks are skipped. `[features].plugins = false` disables
+  plugins, including for API-key sign-in.
+- `requirements.toml` can also restrict marketplace sources and plugin MCP servers (documented in the
+  config reference, not exercised here):
+  `[marketplaces] restrict_to_allowed_sources = true` with
+  `[marketplaces.allowed_sources.<name>]` entries whose `source` is `git` (`url`, optional `ref`),
+  `host_pattern` (`host_pattern`), or `local` (`path`); and
+  `[plugins.<plugin>.mcp_servers.<server>]` with an `identity` (`command` or `url`), where
+  plugin-bundled servers without a matching entry are disabled.
 
 ### Manifest and marketplace files
 
@@ -87,19 +104,22 @@ approval_mode = "approve"
 > [!NOTE]
 > The fetched docs do not document the manifest or catalog schemas. They defer to
 > <https://developers.openai.com/plugins/build/plugins> (local scaffolding, marketplace setup,
-> manifests, packaging), which is not part of this reference. Fields seen in the plugins that ship
-> with 0.158.0: `plugin.json` has `name`, `version`, `description`, `author`, `homepage`,
-> `repository`, `license`, `keywords`, `skills` (for example `"./skills/"`), `hooks`, and
-> `interface`. `marketplace.json` has `name`, `interface.displayName`, and a `plugins` array whose
-> entries have `name`, `source` (`{"source": "local", "path": "./plugins/x"}`), `policy`
-> (`installation`, `authentication`), and `category`. Treat these as observations, not a contract.
+> manifests, packaging), which is not part of this reference. Fields seen in 26 plugin manifests
+> installed on a 0.163.0 machine: `plugin.json` has `name`, `version`, `description`, `author`, `homepage`,
+> `repository`, `license`, `keywords`, `skills` (for example `"./skills/"`), `hooks`, `mcpServers`
+> (for example `"./.mcp.json"`), `apps` (for example `"./.app.json"`), `interface`, and, in some
+> installed manifests, `bundledContentVariant` (purpose undocumented).
+> `marketplace.json` has `name`, `interface.displayName`, and a `plugins` array whose entries have
+> `name`, `source` (`{"source": "local", "path": "./plugins/x"}`), `policy` (`installation`, for
+> example `AVAILABLE`; `authentication`, for example `ON_INSTALL`), and `category`. Treat these as
+> observations, not a contract.
 > Fetch the developer guide before authoring one.
 
 ### Where plugins live
 
 - `codex plugin list` shows each plugin's `SOURCE` path, and `plugin add --json` returns
   `installedPath`. Use those, not assumptions.
-- On 0.158.0, installed copies sit under
+- On 0.163.0, installed copies sit under
   `~/.codex/plugins/cache/<marketplace>/<plugin>/<version>/` (observed, not documented).
   Marketplace roots for bundled and curated catalogs sit under `~/.codex/.tmp/` and
   `~/.cache/codex-runtimes/`. Do not hand-edit any of these. Remove with `codex plugin remove`.
@@ -133,9 +153,10 @@ runs cost noticeably more tokens than a single-agent run.
   `--yolo`). In interactive CLI sessions, approval requests from inactive threads still surface,
   labeled with the source thread. Press `o` to open it. In non-interactive runs an action that
   needs new approval fails.
-- `/agent` (alias `/subagents`) switches between active agent threads.
+- `/subagents` switches between active agent threads; `/agents` opens the agent command center.
 - If no subagent model or `model_reasoning_effort` is configured, the subagent inherits the
-  parent's model and effort.
+  parent's model and effort. If an explicit spawn request or an `[agents]` default selects a model
+  without an effort, the subagent uses that model's default reasoning effort.
 
 ### Built-in agents
 
@@ -160,7 +181,25 @@ A custom agent with the same `name` overrides a built-in.
 Explicit spawn values override the `default_*` keys. Any other key directly under `[agents]` is
 read as a role table (`[agents.<name>]` with `description`, `config_file`,
 `nickname_candidates`), so a misspelled scalar such as `max_thread = 3` fails config loading.
-`multi_agent` is a stable feature flag, on by default (`codex features list`).
+`multi_agent` is a stable feature flag, on by default (`codex features list`). `multi_agent_v2` is a
+separate stable flag that is off by default. From the 0.163.0 config source (not documented
+upstream): an enabled `features.multi_agent_v2` takes precedence over `agents.enabled`, and
+`agents.max_depth` is ignored by V2.
+
+`features.multi_agent_v2` also accepts a table. The table form turns V2 on only through its own
+`enabled = true`: from the 0.163.0 source, `enabled` is the only field that sets the flag, so a
+table without it leaves V2 at its default of off, however many other options it sets. Other keys
+in the 0.163.0 config schema that have a description there: `max_concurrent_threads_per_session`,
+`wait_agent_enabled` (expose the V2 `wait_agent` tool), `disable_direct_message` (disable the
+model's direct-message tools; spawning and automatic child results remain),
+`expose_spawn_agent_model_overrides` (expose `model` and `reasoning_effort` on the V2 spawn tool),
+`subagent_developer_instructions` (override inherited developer instructions for subagents
+that have no role-specific instructions), `preserve_fork_prefix` (new in 0.163.0: keep the
+parent's model-visible history on full forks and append the child instructions; default `false`,
+and legacy compaction without a reusable context baseline still rebuilds), and
+`disable_native_tools` (new in 0.163.0: hide the native multi-agent tools while keeping the V2
+runtime for host-provided tools). `usage_hint_enabled` is a deprecated compatibility field whose
+value is ignored.
 
 ### Custom agent files
 

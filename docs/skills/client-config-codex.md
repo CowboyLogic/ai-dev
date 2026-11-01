@@ -6,6 +6,7 @@ MCP servers, hooks, skills, plugins, model providers, and `AGENTS.md` instructio
 
 - **Skill name:** `client-config-codex`
 - **Source:** [skills/client-config-codex](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-codex)
+- **Codex version:** verified against [Codex CLI 0.163.0](https://github.com/openai/codex/releases/tag/rust-v0.163.0) (released 2026-10-15)
 
 ---
 
@@ -20,12 +21,14 @@ reference material for the config area involved and loads only that material.
 
 - `config.toml` layers and precedence, profiles, and project trust
 - Model, reasoning effort, and custom model providers
+- Memories and app (connector) settings
 - Sandbox mode, approval policy, permission profiles, and `.rules` files
 - MCP servers, hooks, skills, and plugins and marketplaces
 - The `[agents]` table and where custom agents live (writing agent files is covered by
   [Codex Agent Creator](agent-creator-codex.md))
 - `AGENTS.md` and `AGENTS.override.md` discovery
-- Authentication, environment variables, and admin-enforced `requirements.toml`
+- Authentication, environment variables, and admin-enforced `requirements.toml`, including the
+  Browser Use, Computer Use, and desktop-app network requirements
 - CLI subcommands, `-c` overrides, and sessions
 
 The skill also bundles a script that shows the current configuration with secrets redacted,

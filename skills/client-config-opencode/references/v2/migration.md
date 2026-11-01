@@ -17,6 +17,10 @@ fields in memory without rewriting the file**. Converting to native V2 is option
 > [!CAUTION]
 > V1 and V2 share config locations and both use the `opencode` command. Do not point V1 at a file you have
 > converted to native V2-only shapes. Keep a copy of the V1 setup until V2 is verified.
+>
+> The V1 1.19.0 CLI docs list `opencode upgrade --major`, described as "Upgrade to OpenCode 2 and remove
+> OpenCode 1". That flag is not in the V1 1.18.29 docs or in the 2.0.27 `opencode upgrade --help`, and the V2 CLI
+> command source at 2.0.29 defines no `major` option. Back up the V1 config and any V1 plugins before running it.
 
 ## Mixing rules
 
@@ -44,13 +48,19 @@ fields in memory without rewriting the file**. Converting to native V2 is option
 | `skills: { paths, urls }` | `skills: [ ...paths, ...urls ]` |
 | `autoupdate: false` / `"notify"` / `true` | `update: "disable"` / `"notify"` / `"auto"` |
 | `small_model` | `agents.title.model` |
-| `enabled_providers` / `disabled_providers` | `experimental.policies` with `provider.use` |
+| `enabled_providers` / `disabled_providers` | `policies` with `provider.use` (`experimental.policies` is the pre-2.0.29 location and still works) |
+| Provider `options.setCacheKey` | Provider `compatibility.supportsPromptCacheKey` |
 | `subagent_depth` | `experimental.subagent_depth` |
 | `logLevel` | `OPENCODE_LOG_LEVEL` env var |
 | `server` | `opencode service set ...` / `serve` flags |
 
 Unchanged: `shell`, `model`, `default_agent`, `watcher`, `formatter`, `instructions`, `enterprise`, `tool_output`.
 (`instructions` is accepted but not loaded in V2 — move content into `AGENTS.md`.) `lsp` is preserved but inert.
+
+> [!NOTE]
+> The migration guide maps `autoupdate: true` to `update: "auto"`, which installs updates automatically in V2. V1
+> 1.19.0 no longer installs updates automatically for `true` (it only notifies; install with `/update`), so the
+> mapped value is more aggressive than the V1 behavior it replaces. Use `"notify"` to keep the 1.19.0 behavior.
 
 ## Permissions
 
@@ -111,6 +121,9 @@ effect: "deny" }`.
 
 `preserve_recent_tokens` → `keep.tokens`; `reserved` → `buffer`; `auto` unchanged; `tail_turns` and `prune` are
 ignored with a warning.
+
+V2 `buffer` defaults to 10% of the model's limit (see [config-schema.md](config-schema.md#compaction)), so a V1
+`reserved` value is only carried over when it was set explicitly.
 
 ## Providers and models
 

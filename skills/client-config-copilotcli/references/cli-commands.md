@@ -11,6 +11,9 @@ session for the full slash-command list.
 | `copilot` | Interactive UI |
 | `copilot login [--host H] [--web-flow\|--device-code\|--with-token]` | Authenticate |
 | `copilot init` | Generate or improve `.github/copilot-instructions.md` |
+| `copilot config [KEY] [VALUE]` | Read or change settings outside a session (see below) |
+| `copilot sandbox ca status\|create\|trust [CA.PEM]\|rotate\|remove` | Manage the sandbox proxy certificate authority without a session (see `permissions.md`) |
+| `copilot workflow run WORKFLOW-NAME [--args JSON\|@PATH] [--result-file PATH] [-s] [--output-format text\|json]` | Run a dynamic workflow registered by an extension, without a chat prompt; can't be combined with `-p`, `-i`, `--agent`, `--fleet`, `--autopilot`, `--resume`, or `--continue` |
 | `copilot mcp list\|get\|add\|enable\|disable\|remove` | Manage MCP servers (see `mcp.md`) |
 | `copilot skill list\|add\|remove\|enable\|disable` | Manage skills (see `skills.md`) |
 | `copilot plugin ...` | Manage plugins and marketplaces (`copilot plugins` is a legacy alias; see `agents-plugins.md`) |
@@ -22,6 +25,50 @@ session for the full slash-command list.
 | `copilot app` | Open the GitHub Copilot app in the current directory |
 
 Custom agents and session-scoped hooks have no terminal subcommand — they need a live session.
+
+### `copilot config`
+
+Non-interactive counterpart to `/settings`. Keys use dot notation.
+
+```bash
+copilot config theme                       # print a setting
+copilot config footer.showQuota off        # set a nested value
+copilot config allowedUrls github.com      # append to a list (only if absent)
+copilot config --rm allowedUrls github.com # remove one list item (--rm KEY removes the key)
+copilot config --repo --list --json        # list repo-overridable settings as JSON
+```
+
+| Option | Purpose |
+|--------|---------|
+| `--list` | List `key=value` lines (conflicts with `KEY`/`VALUE`/`--rm`) |
+| `--json` | JSON output for `--list` |
+| `--rm` | Remove the key or one list item; requires `KEY` |
+| `--global` (default) / `--repo` / `--local` | User `settings.json`, `.github/copilot/settings.json`, or `.github/copilot/settings.local.json`; `--repo` and `--local` accept only repo-overridable settings |
+
+Booleans take `on`/`off` or `true`/`false`. An unset key exits `1`; secret values are redacted. Put
+`--` before a value that starts with a dash. Run `copilot help config` for the available settings.
+
+---
+
+## Supported models
+
+`--model=MODEL` or `COPILOT_MODEL` selects the model; `auto` lets Copilot choose. The command
+reference lists these IDs:
+
+| Model | Best for |
+|-------|----------|
+| `claude-sonnet-5.5` | General-purpose coding (default) |
+| `gpt-5.4` | Complex reasoning tasks |
+| `gpt-6.1-sol`, `gpt-6-astra`, `gpt-6-luna` | Recommended, opt-in (not the automatic default) |
+| `gpt-5.6-luna` | Default model of the built-in `task` agent; listed on the supported-models page |
+| `claude-opus-5.5` | Recommended, high-capability complex tasks |
+| `claude-haiku-5.5`, `claude-haiku-4.5` | Fast, lightweight operations |
+| `gpt-5.3-codex` | Code-focused tasks |
+| `gemini-3.7-flash`, `gemini-3.8-flash` | Fast Google Gemini responses |
+
+The roster and retirement dates change often; the
+[supported models](https://docs.github.com/en/copilot/reference/ai-models/supported-models) page is
+the authority.
 
 ---
 
@@ -38,6 +85,7 @@ Custom agents and session-scoped hooks have no terminal subcommand — they need
 | `--continue` | Resume most recent session in cwd (else globally) |
 | `--session-id ID` | Exact session/task ID; creates a new session only for a valid UUID |
 | `--connect[=SESSION-ID]` | Connect to a remote session |
+| `--sync-session[=on\|off]` | Turn read-only session-history syncing on or off for this run. Without a value it turns syncing on. It does not enable remote control; use `/remote on` for that |
 | `-C DIRECTORY` | Change directory first |
 | `-w`, `--worktree[=NAME]` | Start in a Git worktree under `<repo>.worktrees/` |
 | `--mode=interactive\|plan\|autopilot` | Initial mode; `--plan --mode autopilot` = plan-then-autopilot |
@@ -50,14 +98,14 @@ Custom agents and session-scoped hooks have no terminal subcommand — they need
 | `--effort=LEVEL`, `--reasoning-effort=LEVEL` | `low`, `medium`, `high`, `xhigh`, `max` |
 | `--context default\|long_context` | Context tier |
 | `--max-ai-credits=CREDITS` | Soft per-response AI credit cap |
-| `--acp` | Run as Agent Client Protocol server |
+| `--acp` | Run as Agent Client Protocol server. Sessions honor saved sandbox settings and `--sandbox`/`--no-sandbox`, including on resume; a managed policy that enforces sandboxing overrides `--no-sandbox` |
 
 ### Permissions and tools
 
 `--allow-all`, `--yolo`, `--allow-all-tools`, `--allow-all-paths`, `--allow-all-urls`,
 `--allow-tool`, `--deny-tool`, `--allow-url`, `--deny-url`, `--available-tools`,
 `--excluded-tools`, `--disallow-temp-dir`, `--add-dir`, `--no-ask-user`, `--sandbox`,
-`--no-sandbox`, `--secret-env-vars=VAR` — see `permissions.md`.
+`--no-sandbox`, `--secret-env-vars=VAR`, `--trust-folder` — see `permissions.md`.
 
 ### MCP, plugins, instructions
 
@@ -68,17 +116,30 @@ Custom agents and session-scoped hooks have no terminal subcommand — they need
 | `--disable-mcp-server=NAME` / `--enable-mcp-server=NAME` | Per-session toggle |
 | `--add-github-mcp-tool=TOOL` / `--add-github-mcp-toolset=TOOLSET` / `--enable-all-github-mcp-tools` | Widen GitHub MCP tool set |
 | `--allow-all-mcp-server-instructions` | Put all MCP server instructions in the system prompt |
+| `--mcp-github-auth` | Scope GitHub account auth to approved MCP server origins (v1.0.90 release notes; not in the docs reference — run `copilot --help` for exact semantics) |
 | `--plugin-dir=DIRECTORY` | Load a plugin from a local directory |
+| `--extension-sdk-path=DIRECTORY` | Override the bundled `@github/copilot-sdk` injected into extension subprocesses (invalid paths fall back to the bundled SDK) |
 | `--no-custom-instructions` | Skip `AGENTS.md` and related instruction files |
 | `--enable-memory` | Enable memory in prompt mode |
+| `--disable-client-telemetry` | Turn off first-party client-side telemetry, unrestricted and restricted, for this invocation only; not saved. It does not affect server-side collection, OpenTelemetry exports you or your enterprise configure, or telemetry an SDK application explicitly forwards from the CLI |
 
 ### Output and UI
 
-`--output-format=text|json` (JSONL), `-s`/`--silent`, `--stream=on|off`, `--share=PATH`,
+`--output-format=text|json` (JSONL; v1.0.97 release notes: secrets are redacted in JSON output
+while valid variable references are preserved), `-s`/`--silent`, `--stream=on|off`, `--share=PATH`,
 `--share-gist`, `--attachment PATH`, `--log-dir`, `--log-level`, `--banner`/`--no-banner`,
 `--no-color`, `--plain-diff`, `--screen-reader`, `--mouse[=on|off]`/`--no-mouse`,
-`--experimental`/`--no-experimental`, `--no-auto-update`, `--bash-env`/`--no-bash-env`,
-`--remote`/`--no-remote`, `--remote-export`/`--no-remote-export`.
+`--experimental`/`--no-experimental`, `--no-auto-update`, `--bash-env`/`--no-bash-env`.
+
+### Removed and renamed remote options
+
+Per the command reference, `--no-remote` is removed, `--remote-export` is renamed
+`--sync-session=on`, and `--no-remote-export` is renamed `--sync-session=off`. `--remote` is not
+supported for interactive startup or with `-p`; use `/remote on` in a session (`/remote off` ends
+the connection). It remains supported only for legacy SDK server startup with `--server` or
+`--headless`. The release notes for v1.0.103 say the legacy `--remote`/`--no-remote` startup flags
+were retired in favor of clearer hosting and connection flags; they don't name the new flags, so
+run `copilot --help` for them.
 
 ### Deprecated options
 
@@ -106,7 +167,10 @@ copilot --continue                  # most recent session in this directory
 | `/clear`, `/new`, `/reset` | Start a new conversation |
 | `/undo`, `/rewind` | Roll back to an earlier turn (optionally restore files) |
 | `/restart` | Restart the CLI, restoring live sessions |
-| `/share [link\|off\|file\|html\|gist\|research]`, `/export` | Share/export the session |
+| `/share [link\|off\|file\|html\|gist\|research]`, `/export` | Share/export the session. With no subcommand it opens a sharing menu and shares nothing; `link` shares and prints a GitHub link, `off` (or `link off`) stops link sharing |
+
+`/session cleanup` shows a storage summary of your other local sessions grouped by age and suggests
+deletion commands. It deletes nothing; preview with `/session prune --older-than DAYS --dry-run`.
 
 Session history lives in `~/.copilot/session-state/`.
 
@@ -119,7 +183,7 @@ Session history lives in `~/.copilot/session-state/`.
 | Command | Purpose |
 |---------|---------|
 | `/settings [--repo\|--local] [show KEY\|KEY\|KEY VALUE]`, `/config` | Settings editor or inline set |
-| `/model [--session\|--global\|--repo\|--local] [MODEL]`, `/models` | Choose model, effort, context |
+| `/model [--session\|--global\|--repo\|--local] [MODEL\|auto TIER]`, `/models` | Choose model, effort, context, or an Auto tier. Model IDs are case-insensitive; the canonical ID is saved |
 | `/theme [default\|github\|dim\|high-contrast\|colorblind]` | Color theme |
 | `/statusline`, `/footer` | Status-line items |
 | `/experimental [on\|off\|show]` | Experimental features |
@@ -134,12 +198,12 @@ Session history lives in `~/.copilot/session-state/`.
 |---------|---------|
 | `/mcp [config\|list\|show\|add\|edit\|delete\|disable\|enable\|auth\|reload\|search] [NAME]` | MCP servers |
 | `/skills [list\|info\|add\|remove\|reload]` | Skills |
-| `/plugin [install\|update\|uninstall\|list\|marketplace ...]` | Plugins |
-| `/agent` | Pick or create a custom agent |
+| `/plugin [install\|update\|uninstall\|list\|marketplace ...]` | Plugins. `list` shows team-assigned plugins that are default-enabled as enabled, unless you disable them or managed settings override the default; plugins enforced through managed `enabledPlugins` can't be disabled locally |
+| `/agent` | Pick a custom agent; press `N` in the list to create one |
 | `/subagents`, `/agents` | Per-agent subagent models |
 | `/instructions` | View and toggle instruction files |
 | `/lsp [show\|test\|reload\|logs\|help] [NAME]` | Language servers |
-| `/extensions`, `/extension` | Extensions (experimental) |
+| `/extensions`, `/extension` | Extensions (experimental). `/extensions mode` sets **Load & Augment** (default; extensions run and the agent can manage them), **Load Only** (run, no agent management tools), or **Disabled** (none run; persists for future sessions). `/extensions manage` inspects them |
 | `/env` | Show loaded instructions, MCP, skills, agents, hooks, plugins, LSPs, extensions |
 | `/init` | Create/update `copilot-instructions.md` (`/init suppress` hides the startup hint) |
 
@@ -150,7 +214,8 @@ and `/instructions`.
 
 `/permissions [default|assisted|allow-all|show|reset]`, `/allow-all`, `/yolo`,
 `/reset-allowed-tools`, `/add-dir PATH`, `/list-dirs`, `/cwd`, `/cd [PATH]`,
-`/sandbox [config|status|policy|enable|disable]` (experimental).
+`/sandbox [config|status|policy [COMMAND]|enable|disable]`, `/sandbox enable session`,
+`/sandbox disable session`, `/sandbox ca [create|trust|rotate|remove]` (see `permissions.md`).
 
 ### Work
 
@@ -168,14 +233,31 @@ and `/instructions`.
 | `/worktree [branch\|task]`, `/worktree new`, `/move` | Git worktrees |
 | `/every`, `/after` | Scheduled prompts (experimental) |
 | `/tasks` | Background subagents and shells |
-| `/ask QUESTION`, `/btw` | Side question outside history |
+| `/ask [QUESTION]`, `/btw [QUESTION]` | Side question outside history; the answer renders as Markdown. In the answer dialog, `Ctrl+E` expands it and `Ctrl+Y` copies the full answer. With no question, reopens the last side-question answer in the session |
 | `/compact [FOCUS]` / `/context` | Compress / inspect context |
 | `/chronicle <standup\|tips\|improve\|reindex\|skills ...>` | Session-history insights |
-| `/usage` | Usage and AI credits |
+| `/usage` | Usage and AI credits (v1.0.97 release notes: shows billed AI Credits for token-billed sessions, including after resume) |
 | `/diagnose [PROMPT]` | Analyze the session log |
+| `/collect-debug-logs [file\|gist\|share] [PATH]` | Collect debug logs into a local archive (`file`, at `PATH` when given), a secret GitHub gist (`gist`), or a local archive that is then uploaded to GitHub (`share`) |
+| `/refine TEXT` | Rewrite a rough prompt into a clear one for review (no argument: clean up the input box) |
+| `/workflows` | Observe workflow runs, phases, agents, and progress (needs a token-based-billing plan) |
 
 ### Account and app
 
-`/login`, `/logout`, `/user [show|list|switch]`, `/remote [on|off]`, `/ide`, `/app`,
-`/feedback` (`/bug`), `/changelog`, `/update` (`/upgrade`), `/version`, `/voice`, `/copy`,
-`/search`, `/exit` (`/quit`).
+`/login`, `/logout`, `/user [show|list|switch]` (`/user list` shows the authentication source of
+each signed-in account, per the v1.0.96 release notes), `/remote [on|off]`, `/ide`, `/app`,
+`/feedback` (`/bug`), `/changelog [summarize] [VERSION|last N|since VERSION]` (`/release-notes`),
+`/update` (`/upgrade`), `/version`, `/voice`, `/copy`, `/search` (`/find`),
+`/downgrade VERSION` (team accounts), `/collect-debug-logs` (see Debug logs below),
+`/clikit [COMPONENT]` (preview CLI business components), `/tuikit [colors|icons|select|tabbar]` (preview TUIkit design-system components),
+`/exit` (`/quit`).
+
+### Debug logs
+
+`/collect-debug-logs` and the feedback-with-logs route offered from `/feedback` first save a local
+archive. `share` and the feedback route then ask for fresh consent, defaulting to **No**, before
+uploading to GitHub. Per the docs, uploading is currently available only to GitHub staff and
+internal users; everyone else uses the `file` and `gist` routes and the existing public feedback
+route.
+
+OpenTelemetry export is documented in `config-schema.md` §OpenTelemetry monitoring.

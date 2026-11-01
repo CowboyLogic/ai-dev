@@ -18,7 +18,15 @@ opencode auth login anthropic --method key
 opencode auth list
 opencode auth switch anthropic work      # switch active saved account
 opencode auth logout anthropic work
+(umask 077; rm -f creds.json; opencode auth export > creds.json)   # stored credentials, INCLUDING SECRETS
+opencode auth import creds.json          # import a file produced by `auth export` (reads stdin when omitted)
 ```
+
+`auth export` takes an optional integration ID or name (all integrations when omitted). `auth import` needs a file
+argument or piped stdin (`opencode auth export | opencode auth import`). Both appear in `opencode auth --help` on
+2.0.27 but not in the V2 docs. Treat the exported file as a secret and delete it after use. Create it owner-only
+(the `umask 077` above): a plain `>` uses the caller's umask, often `022`, which makes the file world-readable. The
+`rm -f` matters on a rerun, because redirecting onto an existing file keeps that file's mode.
 
 Saved keys and OAuth tokens live in the server's SQLite database (usually `~/.local/share/opencode/opencode.db`;
 `opencode debug paths db` prints it). V2 imports the legacy `auth.json` once and never writes back to it. Never
@@ -61,6 +69,7 @@ The `providers` map (plural) is keyed by the provider ID used in model reference
 | `env` | Ordered env var names that can supply the credential |
 | `package` | Runtime provider package |
 | `canonical` | Built-in provider ID whose catalog defaults this provider inherits |
+| `compatibility` | Request/response compatibility defaults inherited by every model of the provider; a model's `compatibility` overrides individual fields (see [Compatibility](#compatibility)) |
 | `settings` | Typed OpenCode controls and JSON options passed to the package (e.g. `baseURL`, `apiKey`); package-specific |
 | `headers` | String HTTP headers on every request |
 | `body` | JSON merged into every request body |
@@ -130,7 +139,7 @@ AI SDK package, the migration guide shows the `aisdk:` prefix (`"package": "aisd
 | `package` | Per-model runtime override |
 | `settings` / `headers` / `body` | Per-model request options |
 | `capabilities` | `tools`, `input`, `output` media types |
-| `compatibility` | e.g. `reasoningField` (`reasoning`, `reasoning_content`, `reasoning_text`, or custom) |
+| `compatibility` | Per-model overrides of the provider's `compatibility` (see [Compatibility](#compatibility)) |
 | `variants` | **Array** of `{ id, settings?, headers?, body? }` |
 | `cost` | Input/output and optional `cache.read`/`cache.write` per million tokens |
 | `limit` | `context`, `input`, `output` |
@@ -139,6 +148,74 @@ AI SDK package, the migration guide shows the `aisdk:` prefix (`"package": "aisd
 Unknown models default to tools on, text+image in, text out, 200,000 context, 32,000 output — set real values.
 Options apply provider → model → variant; `settings` and `body` deep-merge, arrays/scalars replace, headers match
 case-insensitively.
+
+## Timeouts
+
+Requests wait up to five minutes for response headers and up to fifteen minutes between streamed chunks. The 2.0.28
+release notes raised the default streamed-chunk timeout from 5 to 15 minutes and the 2.0.29 source sets it to
+`900_000` ms, but the 2.0.29 providers docs page still says five, so set `chunkTimeout` explicitly if you depend on a
+value. Set these on the provider's `settings` (provider-wide; not per model or variant), in milliseconds, or `false`
+to disable a limit:
+
+```jsonc
+{ "providers": { "anthropic": { "settings": { "headerTimeout": 600000, "chunkTimeout": false } } } }
+```
+
+| Setting | Default | What it limits |
+|---------|---------|----------------|
+| `headerTimeout` | 5 minutes | Wait for response headers |
+| `chunkTimeout` | 15 minutes since 2.0.28 (30 minutes on a WebSocket transport, where it bounds the gap between frames) | Gap between streamed chunks |
+| `timeout` | none | The whole request, from send until the response completes |
+
+A request that exceeds a limit fails with a transport error; OpenCode retries a timed-out request up to three times.
+
+## Compatibility
+
+`compatibility` adjusts how OpenCode talks to an OpenAI-compatible or otherwise non-standard endpoint. Set it on a
+provider to apply to all its models, or on a model to override single fields. Fields (from the 2.0.29 config schema):
+
+| Field | Values | Purpose |
+|-------|--------|---------|
+| `reasoningField` | `reasoning`, `reasoning_content`, `reasoning_text`, or a custom string | Field that carries reasoning text |
+| `requireReasoning` | boolean | Require every assistant message to include its reasoning field, even when empty |
+| `maxTokensField` | `max_completion_tokens` \| `max_tokens` | Request field that carries the output limit; detected from the provider and `baseURL` when unset (OpenAI-compatible chat protocol) |
+| `requireFinishReason` | boolean | OpenAI-compatible chat: a stream that ends without `finish_reason` is an error (default `true`); set `false` for endpoints that omit it |
+| `requireAssistantAfterTool` | boolean | OpenAI-compatible chat: append a `Done.` assistant message when the last message is a tool result (default on only for Mistral) |
+| `supportsPromptCacheKey` | boolean | Send a prompt cache key (V1 `options.setCacheKey` migrates here) |
+| `cacheFormat` | `anthropic` \| `alibaba` | Prompt-cache marker syntax the endpoint accepts |
+| `supportsThinkingBlockBinding`, `supportsEffortUpdates` | boolean | **Model-only**; override model-ID detection |
+
+`cacheFormat` is for Claude models behind an OpenAI-compatible proxy such as LiteLLM, where OpenCode cannot tell that
+Anthropic-style `cache_control` breakpoints are needed. It marks the last tool definition, the system prompt, and the
+latest message with `cache_control: { "type": "ephemeral" }` (the endpoint's default five-minute lifetime).
+`alibaba` uses the same markers but skips tool definitions. Routes known to need breakpoints, such as Anthropic, get
+them automatically.
+
+```jsonc
+{
+  "providers": {
+    "litellm": {
+      "package": "@opencode/ai/providers/openai-compatible",
+      "settings": { "baseURL": "https://litellm.example.com/v1" },
+      "models": {
+        "claude-sonnet-5": { "compatibility": { "cacheFormat": "anthropic" } },
+      },
+    },
+  },
+}
+```
+
+## Request encoding
+
+`settings.encoding` compresses HTTP request bodies with `"zstd"` or `"gzip"`, or sends plain JSON with `"none"`. Set it
+on a provider, model, or variant; the most specific value wins. Only enable an encoding the endpoint decodes: most
+providers and gateways reject compressed bodies. OpenAI defaults to `"zstd"` when signed in with ChatGPT and no custom
+`baseURL` is configured; API keys send plain JSON. WebSocket messages are unaffected (2.0.28 release notes and the
+2.0.29 providers page).
+
+```jsonc
+{ "providers": { "openai": { "settings": { "encoding": "none" } } } }
+```
 
 ## Model references
 
@@ -176,7 +253,11 @@ VPC endpoint: `settings.baseURL`. Bedrock API keys use `AWS_BEARER_TOKEN_BEDROCK
 { "providers": { "google-vertex": { "settings": { "project": "my-project", "location": "us-central1" } } } }
 ```
 
-Auth via ADC (`gcloud auth application-default login` or `GOOGLE_APPLICATION_CREDENTIALS`). Project env fallback:
+Auth via ADC (`gcloud auth application-default login` or `GOOGLE_APPLICATION_CREDENTIALS`). Since 2.0.26 `/connect` →
+Vertex also offers **Google Cloud credentials (gcloud auth or environment)**, which uses ADC and lets you pick or
+enter the project and location (2.0.26 release notes; the V2 providers page does not mention it). ADC also works when
+`CLOUDSDK_CONFIG` points to a custom gcloud configuration directory (fixed in 2.0.27, per its release notes). Project env
+fallback:
 `GOOGLE_VERTEX_PROJECT`, `GOOGLE_CLOUD_PROJECT`, `GCP_PROJECT`, `GCLOUD_PROJECT`. Location fallback:
 `GOOGLE_VERTEX_LOCATION`, `GOOGLE_CLOUD_LOCATION`, `VERTEX_LOCATION`, default `us-central1`. One `google-vertex` ID
 covers Gemini, Anthropic, and OpenAI-compatible Vertex models; `google-vertex-anthropic` is rejected in V2.
@@ -184,11 +265,27 @@ covers Gemini, Anthropic, and OpenAI-compatible Vertex models; `google-vertex-an
 ### Azure
 
 ```jsonc
-{ "providers": { "azure": { "settings": { "resourceName": "my-models" }, "models": { "gpt-5-mini": { "modelID": "gpt-production" } } } } }
+{ "providers": { "azure": { "settings": { "resourceName": "my-models" } } } }
 ```
 
 Or `AZURE_RESOURCE_NAME` (legacy `AZURE_COGNITIVE_SERVICES_RESOURCE_NAME`). Entra ID via `az login`, then choose
-Microsoft Entra ID in `/connect`. The V1 ID `azure-cognitive-services` is rejected — use `azure`.
+Microsoft Entra ID (Azure CLI) in `/connect`; it uses the account selected in the Azure CLI, so select a tenant and
+subscription explicitly (`az login --tenant`, `az account set --subscription`) for another one. A resource name
+entered when connecting is saved with the connection and takes precedence over configuration; connect again to
+change it. The V1 ID `azure-cognitive-services` is rejected — use `azure`.
+
+**Deployments.** Azure serves a model only through a deployment, so OpenCode lists your resource's deployments in
+the background (after startup, connecting, and switching accounts) and shows those instead of the whole catalog.
+The whole catalog stays available until the list loads or if it fails. Deployment names become lowercase model IDs
+(`azure/gpt-production`); a deployment named after its model (`gpt-5-mini`) keeps the catalog ID. Restart OpenCode
+or connect again to pick up a new deployment. A custom `settings.baseURL` keeps the catalog.
+
+Configure a deployment explicitly when its model is not in the catalog (a fine-tuned model), or to map a model ID to
+a deployment yourself; explicitly configured models are always kept:
+
+```jsonc
+{ "providers": { "azure": { "models": { "gpt-5-mini": { "modelID": "gpt-production" } } } } }
+```
 
 ### GitHub Copilot
 

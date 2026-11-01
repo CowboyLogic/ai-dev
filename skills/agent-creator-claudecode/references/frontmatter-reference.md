@@ -3,8 +3,12 @@
 Reference for the YAML frontmatter fields of Claude Code agent files. Load this file when
 writing, reviewing, or debugging agent frontmatter.
 
-**Source (last verified September 2026; the docs reference versions up to v2.1.281):**
+**Source (last verified 2026-10-18 against Claude Code 2.1.302; the docs page references
+versions up to v2.1.296):**
 <https://code.claude.com/docs/en/sub-agents#supported-frontmatter-fields>
+
+Every field in this file is in the docs table. Where a note below is labeled "changelog only",
+the Claude Code changelog is its only source.
 
 Field names are camelCase and case-sensitive. **Unrecognized fields are ignored without an
 error**, so a misspelling looks exactly like a working file.
@@ -41,6 +45,7 @@ color: blue
 initialPrompt: "Start by reading TODO.md"   # main-session use only
 experimental:                        # v2.1.248+
   cacheTtl: 5m
+autoCompactWindow: 200000            # v2.1.296+; 100000 to 1000000
 ---
 ```
 
@@ -52,8 +57,9 @@ experimental:                        # v2.1.248+
 
 | Rule | Detail |
 |---|---|
-| Format | Unique identifier such as `code-reviewer` or `reviewer-v2` |
+| Format | Unique identifier of at most 256 characters, such as `code-reviewer` or `reviewer-v2` |
 | Must not start with `-` | The file is skipped and an error goes to the debug log |
+| At most 256 characters | A longer name is skipped with an error in the debug log (v2.1.292+) |
 | Must not contain `:` | Reserved for plugin-scoped names (`my-plugin:reviewer`). Skipped since v2.1.218; earlier versions accepted it |
 | Filename | Does not have to match `name` |
 | Hooks | `SubagentStart`/`SubagentStop` matchers and the `agent_type` input use this value |
@@ -81,6 +87,8 @@ delegation. Combined `name` + `description` text across all non-built-in agents 
 | MCP server | `tools: mcp__github__*` |
 
 - If entries are given but **none** resolve, launch is refused ("zero tools" error).
+- A server whose normalized name contains `__` is listed as `mcp__<whole name>__*` (v2.1.299,
+  changelog only).
 - Do not list `Skill` to preload skills; use the `skills` field.
 - Legacy `Task(...)` still works as an alias for `Agent(...)` (renamed in v2.1.63).
 
@@ -105,6 +113,13 @@ Resolution order: (1) per-invocation `model` parameter, (2) frontmatter `model`,
 (3) `CLAUDE_CODE_SUBAGENT_MODEL`, (4) main conversation's model. With
 `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` (v2.1.257+) frontmatter and per-invocation values are
 ignored for every subagent, including built-in Explore and Plan.
+
+A per-invocation `model` also applies when the subagent is resumed or sent a follow-up
+(v2.1.211+). While `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` is on, Claude cannot pass a `model`,
+and forks and `model: inherit` skills that run in a subagent still use the main
+conversation's model. `CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL` (v2.1.296; changelog only, not
+yet on the docs pages) runs every workflow agent on one model while other subagents keep
+theirs.
 
 Before v2.1.251, `CLAUDE_CODE_SUBAGENT_MODEL` came first in the order. Values are checked
 against the organization's `availableModels` allowlist and substituted with a warning if
@@ -134,7 +149,8 @@ Claude can resume it to continue.
 
 ### `skills`
 
-List of skill names. The **full** skill content is injected at startup. The agent can still
+List of skill names. The **full** skill content is injected at startup, for the first 32
+distinct names in the list (each once; v2.1.295+). The agent can still
 invoke unlisted skills through the Skill tool unless `Skill` is omitted from `tools` or
 listed in `disallowedTools`. Skills with `disable-model-invocation: true` cannot be
 preloaded. A missing or policy-disabled skill is skipped with a debug-log warning.
@@ -186,6 +202,29 @@ prompt to consult and update memory.
 `true` keeps the agent in the background even if Claude asks for the foreground. Background
 agents get a reduced built-in tool set and route permission prompts to the main session.
 
+Which mode a given run gets is the first of these that applies (sub-agents docs, "Run
+subagents in foreground or background"):
+
+1. Spawned by an in-process agent-team teammate: foreground. A teammate spawning an agent
+   whose definition sets `background: true` is refused with an error.
+2. `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`: foreground, in every kind of session.
+3. Fork mode on (the default in an interactive session): background, and Claude cannot ask
+   for the foreground.
+4. Fork mode off (`-p`, the Agent SDK unless turned on): background by default, foreground
+   when Claude needs the result before continuing. `background: true` keeps the agent in the
+   background even then.
+
+Changelog only (v2.1.302): fork mode is now also on by default in `claude -p`, the Agent SDK,
+the desktop app and VS Code, so case 3 applies there; `CLAUDE_CODE_FORK_SUBAGENT=0` turns it
+off, and `claude mcp serve` never offers forks. The desktop app and VS Code always run the
+main conversation's subagents in the background, as the terminal does. The exception to
+case 3 is a subagent's own Agent calls in `-p`, the Agent SDK, the desktop app and VS Code,
+which run in the foreground by default. The sub-agents docs page still says fork mode is off for `-p` and the SDK (checked
+2026-10-18), so case 4 as written above is the pre-2.1.302 behavior there.
+
+A skill with `context: fork` follows the skills docs instead. Background agents get a smaller
+built-in tool set than foreground ones, except forks and resumed foreground agents.
+
 ### `omitClaudeMd`
 
 `true` launches without user, project, and local CLAUDE.md. Managed policy CLAUDE.md files
@@ -195,7 +234,11 @@ Requires v2.1.271+. Use for agents that take everything from the delegation prom
 ### `effort`
 
 `low`, `medium`, `high`, `xhigh`, `max`; which are available depends on the model. Overrides
-the session effort while the agent is active.
+the session effort while the agent is active, but not the `CLAUDE_CODE_EFFORT_LEVEL`
+environment variable. When Claude runs a non-fork subagent it can also pass an `effort`
+parameter for that one invocation (v2.1.292+): it overrides this field, persists when the
+subagent is resumed, and is itself overridden by `CLAUDE_CODE_EFFORT_LEVEL`. `/tasks` shows
+the effort set for a running subagent.
 
 ### `isolation`
 
@@ -215,6 +258,18 @@ accepted in `--agents` JSON (ignored).
 Submitted as the first user turn when the file runs as the main session agent (`--agent` or
 the `agent` setting); commands and skills in it are processed and it is prepended to any
 user prompt. Ignored for plugin agents. Does nothing when the file is used as a subagent.
+
+### `autoCompactWindow`
+
+Lets this agent auto-compact earlier than the main conversation's window (requires v2.1.296
+or later; supported in frontmatter and `--agents` definitions). A token count from `100000`
+to `1000000`. If `CLAUDE_CODE_AUTO_COMPACT_WINDOW` is set to a positive integer, the agent
+uses that variable's window and the field has no effect.
+
+Write a plain integer such as `200000`: in frontmatter `200k` is read as 200, which is out of
+range. An out-of-range value is ignored (the agent still loads and compacts as if the field
+were absent); search `claude --debug` output for `invalid autoCompactWindow` to confirm.
+Source: <https://code.claude.com/docs/en/sub-agents#subagent-auto-compact-window>
 
 ### `experimental`
 
@@ -243,7 +298,7 @@ under `experimental`, not a top-level key. Not accepted in `--agents` JSON.
 Session-only agents, not saved to disk. Each top-level key is the name; the value takes
 `prompt` plus these fields: `description`, `tools`, `disallowedTools`, `model`,
 `permissionMode`, `mcpServers`, `hooks`, `maxTurns`, `skills`, `initialPrompt`, `memory`,
-`effort`, `background`, `omitClaudeMd`, `isolation`.
+`effort`, `background`, `omitClaudeMd`, `isolation`, and (v2.1.296+) `autoCompactWindow`.
 
 ```bash
 claude --agents '{

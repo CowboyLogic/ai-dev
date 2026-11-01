@@ -9,10 +9,11 @@ license: MIT
 Custom agents for GitHub Copilot are defined in `.agent.md` Markdown files called **agent profiles**. They encode a role, behavioral instructions, tool access, and optionally a model, without requiring extension development. The same profile can be used by Copilot cloud agent on GitHub.com, GitHub Copilot CLI, VS Code, JetBrains IDEs, Eclipse, and Xcode, but some properties only work on some surfaces.
 
 > [!IMPORTANT]
-> Always verify against the official docs before relying on a property. The canonical references are:
+> This skill was last verified in October 2026 against GitHub Copilot CLI v1.0.103. Always verify against the official docs before relying on a property. The canonical references are:
 >
 > - [Custom agents configuration (GitHub)](https://docs.github.com/en/copilot/reference/custom-agents-configuration)
 > - [Custom agents in VS Code](https://code.visualstudio.com/docs/agent-customization/custom-agents)
+> - [Custom agent file reference (VS Code)](https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference)
 > - [Copilot CLI custom agents reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference#custom-agents-reference)
 
 ---
@@ -67,14 +68,16 @@ You are a documentation specialist focused on README files. ...
 | Repository (Claude format) | `.claude/agents/<name>.md` | VS Code, Copilot CLI |
 | User | `~/.copilot/agents/` | VS Code, Copilot CLI |
 | User (Claude format) | `~/.claude/agents/` | VS Code |
-| Organization | `agents/<name>.md` in the org's `.github` or `.github-private` repo | GitHub.com, IDEs (VS Code needs `github.copilot.chat.organizationCustomAgents.enabled`) |
+| Organization | `agents/<name>.md` in the org's `.github` or `.github-private` repo | GitHub.com, IDEs (VS Code discovers them by default; `github.copilot.chat.organizationCustomAgents.enabled` set to `false` turns that off) |
 | Enterprise | `agents/<name>.md` in the `.github-private` repo of an org designated in enterprise settings | GitHub.com, IDEs |
 | Plugin | `<plugin>/agents/` | Copilot CLI |
 
+VS Code's file-locations table lists `.agent.md` or `.md` files for `.github/agents` and `~/.copilot/agents`; prefer `.agent.md`. The **Local** harness stores user-level agents in VS Code profile storage instead, separate from `~/.copilot/agents` and `~/.claude/agents`; move them to the folder the selected harness reads to reuse them.
+
 The filename (minus `.md` / `.agent.md`) is the agent's ID and is used for deduplication. On name conflicts the lowest (most specific) level wins: repository over organization, organization over enterprise.
 
-> [!WARNING]
-> The Copilot CLI docs disagree on user vs. project precedence: the how-to says the home-directory agent wins, the command reference says project-level agents win. Avoid duplicate names across scopes.
+> [!NOTE]
+> In Copilot CLI, a user-level agent (`~/.copilot/agents/`) overrides a project agent with the same ID. The full priority order is in `references/frontmatter-reference.md`.
 
 ---
 
@@ -90,7 +93,7 @@ tools: ["read", "my-server/*"]     # alias + all tools from an MCP server
 Portable aliases: `execute`, `read`, `edit`, `search`, `agent`, `web`, `todo`. Unrecognized tool names are ignored, so one profile can list surface-specific tools. Apply least privilege: start read-only and add write/execute tools only when required.
 
 > [!TIP]
-> For the alias table, VS Code tool sets and tool names, MCP namespacing, and CLI behavior, load `references/tools-reference.md`.
+> For the alias table, VS Code tool names and the deprecated tool-set files, MCP namespacing, and CLI behavior, load `references/tools-reference.md`.
 
 ---
 
@@ -100,6 +103,7 @@ Portable aliases: `execute`, `read`, `edit`, `search`, `agent`, `web`, `todo`. U
 model: Claude Sonnet 5                     # VS Code / IDEs: display name
 model: ["Claude Opus 5", "GPT-5.5"]        # VS Code: prioritized fallback list
 model: gpt-5.6-luna                       # Copilot CLI: model ID
+reasoning-effort: high                     # VS Code, Copilot harness: low | medium | high | xhigh | max
 ```
 
 Model names differ by surface (display names in VS Code, lowercase IDs in the CLI) and the model roster changes often. Check the [supported models](https://docs.github.com/en/copilot/reference/ai-models/supported-models) page, including its retirement table, before pinning a model.
@@ -108,7 +112,7 @@ Model names differ by surface (display names in VS Code, lowercase IDs in the CL
 
 ## Handoffs (VS Code / IDEs)
 
-Ignored on GitHub.com's cloud agent. After a response, handoff buttons let the user switch to another agent with a pre-filled prompt.
+Ignored on GitHub.com's cloud agent. In VS Code they apply to the **Local** harness only. After a response, handoff buttons let the user switch to another agent with a pre-filled prompt.
 
 ```yaml
 handoffs:
@@ -173,9 +177,9 @@ Key principles: state scope explicitly, use imperative language, define handoff 
 
 **VS Code:**
 
-1. Open the Agent Customizations editor: Chat view → **Configure Chat** (gear icon) → **Agents** (or the **Customizations** panel in the Agents window)
-2. Select **New Agent (Workspace)** or **New Agent (User)**, or run **Chat: New Custom Agent** from the Command Palette
-3. To generate one with AI, describe the agent on the editor's **Overview** page. With the **Local** harness you can also type `/create-agent` or choose **Generate Agent**
+1. Select the agent harness you intend to use with the **Session Target** control, then open the Agent Customizations editor: **Open Customizations** in the Chat view title bar (or the **Customizations** panel in the Agents window), then **Agents**
+2. Select **New Agent** (plus icon) next to the **Workspace** or **User** group, or run **Chat: New Custom Agent** from the Command Palette
+3. To generate one with AI, describe the agent in the editor's **Overview** section, or, in a **Local** harness session, type `/create-agent <description>` in chat
 
 **GitHub.com (cloud agent):**
 
@@ -186,7 +190,7 @@ Key principles: state scope explicitly, use imperative language, define handoff 
 
 **Copilot CLI:**
 
-1. In interactive mode, enter `/agent` → **Create new agent**
+1. In interactive mode, enter `/agent`, then press `N` to create a new agent
 2. Choose **Project** (`.github/agents/`) or **User** (`~/.copilot/agents/`)
 3. Let Copilot generate the profile or fill it in manually, choose tools, then restart the CLI
 
@@ -231,7 +235,7 @@ Follow the template above. Be specific about scope and handoff conditions.
 | File | When to Load |
 |---|---|
 | `references/frontmatter-reference.md` | Full property tables, surface compatibility, model naming, handoffs, hooks, MCP config, CLI-only fields, Claude format |
-| `references/tools-reference.md` | Tool aliases, VS Code tool sets, MCP namespacing, out-of-the-box MCP servers |
+| `references/tools-reference.md` | Tool aliases, VS Code tool names, deprecated tool sets, MCP namespacing, out-of-the-box MCP servers |
 | `references/prompt-writing-guide.md` | Detailed prompt principles, anti-patterns, output format guidance |
 | `references/workspace-agent-example.agent.md` | VS Code workspace agent with handoffs and model fallback |
 | `references/user-profile-agent-example.agent.md` | Minimal personal agent |
@@ -243,12 +247,13 @@ Follow the template above. Be specific about scope and handoff conditions.
 
 | Resource | URL |
 |---|---|
-| About custom agents | <https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-custom-agents> |
+| About custom agents | <https://docs.github.com/en/copilot/concepts/customizations/custom-agents> |
 | Create custom agents (cloud agent) | <https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/create-custom-agents> |
 | Configuration reference | <https://docs.github.com/en/copilot/reference/custom-agents-configuration> |
 | Custom agents for Copilot CLI | <https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/create-custom-agents-for-cli> |
 | Copilot CLI custom agents reference | <https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference#custom-agents-reference> |
 | Custom agents in VS Code | <https://code.visualstudio.com/docs/agent-customization/custom-agents> |
+| Custom agent file reference (VS Code) | <https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference> |
 | Subagents in VS Code | <https://code.visualstudio.com/docs/agents/run/subagents> |
 | Supported AI models | <https://docs.github.com/en/copilot/reference/ai-models/supported-models> |
 | Awesome Copilot agents | <https://github.com/github/awesome-copilot/tree/main/agents> |

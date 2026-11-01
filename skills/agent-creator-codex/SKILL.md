@@ -20,6 +20,14 @@ string inside the TOML.
 > Codex only delegates when asked. It never spawns a subagent on its own initiative unless
 > the prompt, an applicable `AGENTS.md`, or a skill requests delegation. An agent file that
 > loads correctly can still sit unused. See [Invocation](#invocation).
+>
+> The official subagents page says the same: `sandbox_mode`, `approval_policy`,
+> `model_provider`, and `mcp_servers` in a custom agent file "don't override the parent
+> configuration". The Codex source and its tests at `rust-v0.163.0` agree: a role "must not
+> control" them. See [What a Role File Can Set](#what-a-role-file-can-set).
+
+Verified against **Codex CLI 0.163.0** (released 2026-10-15, the latest stable release when
+this skill was last reviewed).
 
 Official docs: <https://developers.openai.com/codex/subagents> (redirects to
 `learn.chatgpt.com/docs/agent-configuration/subagents`). Config keys:
@@ -92,20 +100,25 @@ Rules that avoid load failures:
 
 ## What a Role File Can Set
 
-Verified in the Codex source at tag `rust-v0.158.0` (`codex-rs/core/src/agent/role.rs`,
-described there as "bounded agent-role overrides"):
+Verified in the Codex source at tag `rust-v0.163.0` (`codex-rs/core/src/agent/role.rs`,
+described there as "bounded agent-role overrides"), and by the upstream test
+`codex-rs/core/src/agent/role_tests.rs`, which asserts the role layer holds none of
+`openai_base_url`, `chatgpt_base_url`, `model_provider`, `approval_policy`, `sandbox_mode`,
+`notify`, `apps`, or `mcp_servers`:
 
 | Key | Effect on the spawned agent |
 |---|---|
 | `developer_instructions` | Replaces the role's instructions |
 | `model`, `model_reasoning_effort` | Applied, and locked: the spawn UI tells the model these "cannot be changed" |
-| `model_reasoning_summary`, `model_verbosity`, `personality`, `service_tier` | Applied |
-| `features.<name> = false` | Disables only `shell_tool`, `apps`, `plugins`, `memory_tool`, `request_permissions_tool` |
+| `model_reasoning_summary`, `model_verbosity`, `personality` | Applied |
+| `features.<name> = false` | Disables only `shell_tool`, `apps`, `plugins`, `memories` (legacy key `memory_tool`), `request_permissions_tool` |
 | `skills.config` entries with `enabled = false`, `skills.bundled.enabled = false`, `skills.include_instructions = false` | Disables inherited skills. Cannot enable anything |
 
 Every other key, including `sandbox_mode`, `approval_policy`, `mcp_servers`, `web_search`,
-and `features.<name> = true`, is dropped. The file still loads, so nothing warns you.
-Configure sandbox, approvals, and MCP servers on the **parent** session or its config.
+`features.<name> = true`, and `service_tier`, is dropped. The spawn code applies the root session's
+service tier after the role, so a role-file `service_tier` never survives (the official page
+says the same: "The service tier also follows the root session's preference"). The file still
+loads, so nothing warns you. Configure sandbox, approvals, and MCP servers on the **parent** session or its config.
 
 ---
 
@@ -137,12 +150,16 @@ model_reasoning_effort = "high"   # low | medium | high | xhigh | max | ultra (m
 Precedence: the role file's `model` and `model_reasoning_effort` are applied **after** the
 spawn-time and `[agents]` values, so they win over an explicit spawn value and over
 `agents.default_subagent_model` / `agents.default_subagent_reasoning_effort`. Those defaults
-only apply to roles that do not set the field. If an agent runs on an unexpected model, the
-usual causes are a different role being spawned, the role file failing to load (check the
-startup warnings), or the model or effort being rejected by the account.
+only apply to roles that do not set the field. A role file that sets only `model` keeps the
+effort already resolved (spawn value, then `[agents]` default, then the parent's, or the
+chosen model's default effort when a spawn value or `[agents]` default selected the model
+without one), so set `model_reasoning_effort` too when that model does not support the
+inherited level. If an agent runs on an unexpected model, the usual causes are a different
+role being spawned, the role file failing to load (check the startup warnings), or the model
+or effort being rejected by the account.
 
 Valid model names and effort levels depend on the account and Codex build. Run
-`codex debug models` to list the catalog.
+`codex debug models` to list the catalog and each model's supported effort levels.
 
 ---
 
@@ -173,7 +190,10 @@ Codex delegates when one of these is true:
 
 - **Explicit request.** Ask for it: "Spawn one `pr_explorer` per module and summarize."
 - **Instruction-based.** An applicable `AGENTS.md` or skill tells Codex to delegate.
-- **ChatGPT Ultra** can proactively delegate suitable independent work.
+
+In ChatGPT Work (the hosted web surface), Ultra intelligence level can also delegate
+proactively. The subagents page says local Codex releases spawn agents only after a direct
+request or applicable project or skill instructions.
 
 To make an agent get used, name it in the request or in `AGENTS.md`, and write a
 `description` that names the trigger. Good: "Read-only reviewer. Use after any change under
@@ -189,15 +209,18 @@ default_subagent_model = "gpt-6-luna"
 default_subagent_reasoning_effort = "medium"
 ```
 
-`agents.max_threads` is the legacy alias for `max_concurrent_threads_per_session`.
+`agents.max_threads` is the legacy alias for `max_concurrent_threads_per_session`; the public
+config reference lists it. `agents.interrupt_message` (default `true`) controls whether a
+model-visible message is recorded when an agent turn is interrupted.
 `agents.max_depth` limits nesting for V1 agent threads and is ignored by V2.
-`agents.job_max_runtime_seconds` is a removed setting kept as a no-op. Neither is in the
-public config reference; both are accepted without error in 0.158.0.
+`agents.job_max_runtime_seconds` is a removed setting kept as a no-op. Neither of those two
+is in the public config reference; both are accepted without error in 0.163.0.
 
 > [!WARNING]
 > Under `[agents]`, any key Codex does not know is parsed as a role table. A typo such as
-> `max_thread = 3` is a **fatal** startup error (`Error loading config.toml: invalid type:
-> integer, expected struct AgentRoleToml`), unlike a bad agent file, which is only skipped.
+> `max_thread = 3` is a **fatal** startup error (`failed to load bootstrap configuration`,
+> caused by ``invalid type: integer `3`, expected struct AgentRoleToml in `agents` ``),
+> unlike a bad agent file, which is only skipped.
 
 ---
 
@@ -247,8 +270,9 @@ and match the filename.
 
 ### Step 4: Test
 
-1. Start a new session so the file is picked up. Load warnings print at session start; a
-   non-interactive `codex exec "hi"` shows them without spending a real task.
+1. Start a new session so the file is picked up. Load warnings print at session start.
+   `codex doctor` lists them under `startup warning` without starting a session or calling a
+   model (it also exits nonzero when no credentials are found, which is unrelated).
 2. Ask for the agent by name: "Use `pr_explorer` to trace how login is handled."
 3. Confirm the model and effort it actually got, using the session's agent view.
 4. Give it a task it should refuse and confirm both the parent's sandbox and the role's
@@ -260,23 +284,24 @@ and match the filename.
 
 Codex does **not** stop on a bad agent file. It prints
 `warning: Ignoring malformed agent role definition: <reason>` and carries on without that
-agent, so the agent is simply missing. Verified against codex-cli 0.158.0:
+agent, so the agent is simply missing. Verified against codex-cli 0.163.0 with `codex doctor`:
 
 | Defect | Codex message (abridged) |
 |---|---|
-| TOML syntax error | `failed to parse agent role file ...: TOML parse error at line N` |
-| Unknown or camelCase key | `failed to deserialize agent role file ...: unknown field 'key'` |
+| TOML syntax error | `failed to parse agent role file at <path>: TOML parse error at line N, column M` |
+| Unknown or camelCase key | ``failed to deserialize agent role file at <path>: unknown field `maxTurns` `` |
 | `tools = [...]` list | `data did not match any variant of untagged enum WebSearchToolConfigInput` (`tools` is a table in Codex) |
-| Bad `sandbox_mode` | `unknown variant 'root', expected one of 'read-only', 'workspace-write', 'danger-full-access'` |
-| Missing `name` | `must define a non-empty 'name'` |
-| Missing `description` | `agent role 'x' must define a description` |
-| Missing or blank `developer_instructions` | `must define 'developer_instructions'` / `cannot be blank` |
-| Same `name` twice in one directory | `duplicate agent role name 'x' discovered in <dir>` |
-| `[agents.x].config_file` missing | `agents.x.config_file must point to an existing file at <path>` |
+| Bad `sandbox_mode` | ``unknown variant `root`, expected one of `read-only`, `workspace-write`, `danger-full-access` `` |
+| Missing `name` | ``agent role file at <path> must define a non-empty `name` `` |
+| Missing `description` | ``agent role `x` must define a description`` |
+| Missing `developer_instructions` | ``agent role file at <path> must define `developer_instructions` `` |
+| Blank `developer_instructions` | ``agent role file at <path>.developer_instructions cannot be blank`` |
+| Same `name` twice in one directory | ``duplicate agent role name `x` discovered in <dir>`` |
+| `[agents.x].config_file` missing | ``agents.x.config_file must point to an existing file at <path>: No such file or directory`` |
 
 Not checked at load: an unrecognized `model_reasoning_effort` value, and a `name` that differs
 from the filename. A project-scope file in an **untrusted** project is skipped without any
-warning. Run the validator, then confirm with `codex exec "hi"`.
+warning. Run the validator, then confirm with `codex doctor`.
 
 ---
 

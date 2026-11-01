@@ -2,10 +2,11 @@
 
 Create custom agent profiles (`.agent.md` files) for GitHub Copilot across VS Code, the
 Copilot CLI, and the Copilot cloud agent on GitHub.com. Covers the frontmatter schema with
-per-surface compatibility, tool aliases and VS Code tool sets, model selection, handoffs,
+per-surface compatibility, tool aliases and VS Code tool names, model selection, handoffs,
 subagents, hooks, and MCP servers.
 
 - **Skill name:** `agent-creator-copilot`
+- **Associated Copilot CLI version:** v1.0.103
 - **Source:** [skills/agent-creator-copilot](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-copilot)
 
 ---
@@ -25,6 +26,7 @@ testing a profile, and loads detailed reference material only when the task need
 - Model selection
 - Handoffs, subagents, `user-invocable`, and `disable-model-invocation`
 - Fields that only some surfaces support
+- Which locations and files VS Code's Copilot harness reads, compared with the Local agent
 - MCP server configuration and secrets for the cloud agent
 - Writing effective prompts and descriptions
 

@@ -35,6 +35,8 @@ Native OpenCode V2 shape for `opencode.json(c)`. Sources: <https://opencode.ai/v
 
 | Scope | Path |
 |-------|------|
+| System (managed, machine-wide) | macOS `/Library/Application Support/opencode`, Linux `/etc/opencode`, Windows `%ProgramData%\opencode` (`opencode.json(c)` plus `agents/`, `commands/`, `skills/`, `plugins/`) |
+| macOS managed preferences (MDM) | `/Library/Managed Preferences/<user>/ai.opencode.managed.plist`, then `/Library/Managed Preferences/ai.opencode.managed.plist` (domain `ai.opencode.managed`; the user-specific profile replaces the machine-wide one) |
 | Global | `~/.config/opencode/opencode.json` or `opencode.jsonc` |
 | Project (direct) | `<dir>/opencode.json(c)` |
 | Project (`.opencode`) | `<dir>/.opencode/opencode.json(c)` |
@@ -47,12 +49,19 @@ OpenCode searches from the current directory **up to the filesystem root**. It m
 files in the same order. Every discovered `.opencode` config therefore overrides every direct config.
 Use one form throughout a directory tree unless you need that behavior.
 
+The system directory and macOS managed preferences have the **highest** precedence, so users and projects cannot
+override the settings they set (managed preferences override the system directory). Overriding a setting cannot stop
+a user from adding providers, MCP servers, agents, or plugins; enforce those restrictions with
+[`policies`](permissions.md#policies). This is the 2.0.29 docs behavior: the 2.0.28 release notes say the system
+directory loaded at the *lowest* precedence, and the 2.0.29 notes give centrally managed configuration precedence
+over local and user configuration. Behavior on 2.0.28 or earlier differs.
+
 Settings merge; non-conflicting keys are preserved. Exceptions to "closest wins":
 
 - `permissions` arrays **append** (lower-priority files first, agent rules last) — see [permissions.md](permissions.md).
 - `plugins` arrays apply from lowest to highest precedence rather than replacing each other.
 - `skills` arrays from every discovered config are combined.
-- `experimental.policies` reverse precedence: broader config (global, Console) wins over project config.
+- `policies` reverse precedence: broader config (Console, managed, system, global) wins over project config.
 - An MCP server with the same name in a higher-precedence file **replaces** the whole server object.
 - `update` is read from the global config only; project-level values are ignored.
 
@@ -81,13 +90,14 @@ Settings merge; non-conflicting keys are preserved. Exceptions to "closest wins"
 | `formatter` | boolean or object | Disabled unless set | [Formatters](#formatters) |
 | `media` | object | `media.image` resize limits | [Media](#media-image-limits) |
 | `tool_output` | object | `max_lines`, `max_bytes` retained from a tool result (docs example: `2000`, `51200`) | — |
-| `websearch` | object or `false` | `{ "provider": "exa" \| "firecrawl" \| "parallel" \| "tavily" \| "random" }` | [Web search](#web-search) |
+| `websearch` | object or `false` | `{ "provider": "exa" \| "firecrawl" \| "parallel" \| "tavily" \| "tinyfish" \| "random" }` | [Web search](#web-search) |
 | `compaction` | object | `auto`, `keep.tokens`, `buffer` | [Compaction](#compaction) |
 | `warming` | boolean or object | Disabled by default | [Warming](#warming) |
 | `references` | object | Named local dirs or Git repos | [References](#references) |
 | `worktree` | object | `{ "directory": "../worktrees" }` | [Worktrees](#worktrees) |
 | `instructions` | array | **Accepted but not loaded** in V2 — use `AGENTS.md` | [Instructions](#instructions) |
-| `experimental` | object | `policies`, `subagent_depth`, `portable_shell_scanner` | [permissions.md](permissions.md) |
+| `policies` | array | Ordered `{ action, resource, effect }` statements; actions `provider.use`, `tool.use`, `integration.use` (2.0.29+; `experimental.policies` still works) | [permissions.md](permissions.md#policies) |
+| `experimental` | object | `subagent_depth`, `portable_shell_scanner` (and the legacy `policies` location) | [permissions.md](permissions.md) |
 
 Fields that keep the V1 shape and need no migration: `shell`, `model`, `default_agent`, `watcher`, `formatter`,
 `instructions`, `enterprise`, `tool_output`.
@@ -124,7 +134,7 @@ V2 accepts these V1 values, ignores them, and logs a warning:
 | Model `release_date`, `attachment`, `reasoning`, `temperature`, `experimental`, non-`deprecated` `status`, boolean `interleaved` | `capabilities`, `compatibility`, `disabled` |
 
 V1 fields that V2 **normalizes silently** (still work, but have native V2 equivalents):
-`enabled_providers` / `disabled_providers` (become `provider.use` policies), `autoupdate` (becomes `update`),
+`enabled_providers` / `disabled_providers` (become `provider.use` policies), `experimental.policies` (merges into `policies`), `autoupdate` (becomes `update`),
 `small_model` (becomes `agents.title.model`), `autoshare` (becomes `share`). See [migration.md](migration.md).
 
 ---
@@ -184,8 +194,10 @@ Template syntax:
   and project `.opencode/skills`, `.claude/skills`, `.agents/skills` from cwd up to the project root.
 - A source holds root-level `*.md` files or `SKILL.md` at any depth. The **path** determines the skill ID
   (`git-release/SKILL.md` → `git-release`); frontmatter `name` is a display label only.
-- Frontmatter: `name`, `description` (required for the model to see it), `slash` (`false` hides from command
-  catalogs), `metadata.opencode/slash`, `metadata.opencode/autoinvoke` (`false` hides from the model's list).
+- Frontmatter: `name`, `description` (required for the model to see it), `metadata.opencode/autoinvoke` (`false`
+  hides the skill from the model's list), and `disable-model-invocation` (`true` has the same effect; if both are
+  set, `opencode/autoinvoke` wins). The skill stays registered and can still be loaded explicitly by ID, or in a
+  prompt as `@skill-id`. The `slash` and `metadata.opencode/slash` fields are no longer in the 2.0.29 docs.
 - Precedence (low → high): built-ins, `.claude/skills`, `.agents/skills`, `~/.config/opencode/skills`, project
   `.opencode/skills`, explicit `skills` entries.
 - Gate loading with the `skill` permission action (resource = skill ID).
@@ -194,7 +206,10 @@ Template syntax:
 
 ## Formatters
 
-Disabled by default. `true` (or `{}`) enables every built-in whose requirements are met; `false` disables all.
+Disabled unless a config file sets `formatter`. `true` enables every built-in whose requirements are met and resets
+inherited formatter settings to the built-ins. An object also enables the built-ins; an empty object `{}`
+**preserves** inherited formatter settings rather than resetting them. `false` disables all, including formatting
+that a lower-priority config file enabled.
 
 ```jsonc
 {
@@ -224,18 +239,24 @@ Built-ins: `gofmt`, `mix`, `oxfmt`, `prettier`, `biome`, `zig`, `clang-format`, 
 ## Compaction
 
 ```jsonc
-{ "compaction": { "auto": true, "keep": { "tokens": 15000 }, "buffer": 20000 } }
+{ "compaction": { "auto": true, "keep": { "tokens": 15000 } } }
 ```
 
 | Field | Default | Behavior |
 |-------|---------|----------|
-| `auto` | `true` | Preflight auto-compaction plus one overflow-recovery retry; does not affect manual compaction |
-| `keep.tokens` | `15000` | Recent context retained beside the summary |
-| `buffer` | `20000` | Safety margin below the input limit; larger starts compaction earlier |
+| `auto` | `true` | Compact automatically near the context limit, and recover once when a provider rejects a request as too long; manual compaction always works |
+| `keep.tokens` | `15000` | Approximate recent conversation kept beside the summary |
+| `buffer` | 10% of the limit | Tokens kept free below the model's limit; larger starts compaction earlier |
+
+`keep.tokens` and `buffer` accept non-negative integers. The 2.0.16 docs gave `buffer` a fixed default of `20000`;
+the 2.0.29 docs say 10% of the limit, so set it explicitly if you depend on a specific value.
 
 Native provider compaction is opt-in per provider or model:
-`providers.<id>.settings.compaction.type` = `"native"` or `"summary"` (model setting overrides provider).
-There is no separate compaction model.
+`providers.<id>.settings.compaction.type` = `"native"` or `"summary"` (model setting overrides provider). Native
+compaction supports OpenAI Responses models, and its encrypted checkpoint only works with the same provider, model,
+and endpoint. Compaction uses the session's model; there is no separate compaction model.
+
+Request compaction on demand with `opencode api post /api/session/<session-id>/compact --data '{}'`.
 
 ---
 
@@ -254,11 +275,12 @@ the model); 20 MiB per item.
 ## Web search
 
 ```jsonc
-{ "websearch": { "provider": "tavily" } }   // "exa" | "firecrawl" | "parallel" | "tavily" | "random"
+{ "websearch": { "provider": "tavily" } }   // "exa" | "firecrawl" | "parallel" | "tavily" | "tinyfish" | "random"
 { "websearch": false }                      // remove the tool
 ```
 
-Credentials: `/connect` or `EXA_API_KEY`, `FIRECRAWL_API_KEY`, `PARALLEL_API_KEY`, `TAVILY_API_KEY`.
+Credentials: `/connect` or `EXA_API_KEY`, `FIRECRAWL_API_KEY`, `PARALLEL_API_KEY`, `TAVILY_API_KEY`, and
+`TINYFISH_API_KEY` (optional for TinyFish).
 `random` rotates to another provider on HTTP 429.
 
 ---
@@ -335,6 +357,18 @@ opencode service unset env ANTHROPIC_API_KEY
 opencode --standalone                                   # private server that uses the current shell env
 ```
 
+To make private servers the default instead of starting the shared one, run `opencode service set disabled true`
+(this stops the running service; undo with `opencode service unset disabled`). `--server` still reaches an explicit
+server, `opencode service start` still starts the shared service, and `opencode pair` needs the shared service, so
+it is unavailable while it is disabled.
+
+Remote access: `opencode pair --remote` pairs through an OpenTunnel address and turns remote access on if it is off.
+That exposes the server to the internet, so the first time it asks you to accept; without an interactive terminal it
+fails unless you also pass `--yes`. Once accepted, later runs skip the prompt, even after
+`opencode service set remote false`. The remote URL is a random subdomain that persists across restarts; turning
+remote access off and on again issues a new one (2.0.26 release notes). Both flags are in the V2 CLI docs (unchanged through 2.0.29)
+and were in the 2.0.27 `opencode pair --help`.
+
 | Variable | Purpose |
 |----------|---------|
 | `OPENCODE_LOG_LEVEL` | Log level (replaces V1 `logLevel`) |
@@ -345,16 +379,18 @@ opencode --standalone                                   # private server that us
 | `NODE_EXTRA_CA_CERTS` | Extra CA bundle (PEM) |
 
 > [!NOTE]
-> The V2 docs do not mention `OPENCODE_CONFIG`, `OPENCODE_CONFIG_CONTENT`, `OPENCODE_CONFIG_DIR`, remote
-> `.well-known/opencode` config, or file/MDM managed settings. Treat those as V1-documented only; verify with
-> `opencode debug config` before relying on them in V2.
+> The V2 docs do not mention `OPENCODE_CONFIG`, `OPENCODE_CONFIG_CONTENT`, `OPENCODE_CONFIG_DIR`, or remote
+> `.well-known/opencode` config. Treat those as V1-documented only; verify with `opencode debug config` before
+> relying on them in V2. System-directory and macOS managed-preference settings are documented in V2 from 2.0.29
+> (see [Locations and precedence](#locations-and-precedence)).
 
 Useful diagnostics: `opencode debug config` (list configuration sources), `opencode debug paths`,
 `opencode reload` (reload configuration without restarting the server), `opencode service status`.
 
 Variable substitution: V2 docs use `{env:NAME}` throughout. `{file:path}` is not shown in V2 docs,
-but works: on OpenCode 2.0.16 an agent's `"system": "{file:./prompts/plan.txt}"` resolved to the
-file's contents, relative to the config file. Treat it as undocumented behavior.
+but works: on OpenCode 2.0.27 (the substitution source is unchanged through 2.0.29; not re-run on the 2.0.29 binary) an agent's `"system": "{file:./prompts/plan.txt}"` resolved to the
+file's contents, relative to the config file, as shown by `opencode debug config` run two directories below the
+config file. Treat it as undocumented behavior.
 
 ---
 
@@ -398,8 +434,6 @@ file's contents, relative to the config file. Treat it as undocumented behavior.
   "skills": ["./team-skills"],
   "plugins": ["opencode-example-plugin"],
 
-  "experimental": {
-    "policies": [{ "action": "provider.use", "resource": "openai", "effect": "deny" }],
-  },
+  "policies": [{ "action": "provider.use", "resource": "openai", "effect": "deny" }],
 }
 ```

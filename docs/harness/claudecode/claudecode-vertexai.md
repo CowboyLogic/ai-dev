@@ -8,6 +8,8 @@ audit through Google Cloud.
 > Google now calls this service **Google Cloud's Agent Platform**, formerly Vertex AI. Claude Code's
 > login prompt still labels it **Google Vertex AI**, and its environment variables keep the `VERTEX`
 > name.
+>
+> Verified against Claude Code 2.1.302 on 2026-10-18.
 
 This page covers the minimum setup. Anthropic maintains the full procedure, including IAM, region
 rules, model pinning, and troubleshooting, in
@@ -56,7 +58,9 @@ as `us-east5`. Not every model is available on every endpoint type, so check Mod
 Without pinning, the model aliases `opus` and `sonnet` resolve to whatever default your Claude Code
 version ships, which may not be enabled in your project. When you roll Claude Code out to more than one
 person, pin each alias with `ANTHROPIC_DEFAULT_OPUS_MODEL`, `ANTHROPIC_DEFAULT_SONNET_MODEL`, and
-`ANTHROPIC_DEFAULT_HAIKU_MODEL`. Model IDs change with each release, so take them from the
+`ANTHROPIC_DEFAULT_HAIKU_MODEL`. An unpinned default that your project cannot use is not fatal:
+Claude Code falls back for the current session and shows a notice, but the fallback is not saved, so
+pinning is what controls when your users move to a new model. Model IDs change with each release, so take them from the
 [models overview](https://platform.claude.com/docs/en/about-claude/models/overview) rather than from a
 copy here.
 

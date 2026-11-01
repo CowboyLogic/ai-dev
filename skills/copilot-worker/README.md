@@ -28,17 +28,18 @@ to the Copilot subscription instead of Claude tokens.
 - A GitHub Copilot login on the machine. Signing in once with the Copilot CLI
   (`copilot login`) is enough; the worker reuses that login.
 - Git
-- macOS or Linux
+- macOS, Linux, or Windows (x64 or ARM64). Inside WSL it runs as it does on Linux.
 
-> [!WARNING]
-> Windows is not supported, including Git Bash. The supervisor uses POSIX process groups
-> and signals that do not exist in Windows Python, and `implement` mode's shell policy
-> assumes a POSIX shell. WSL has not been tested.
+On Windows the worker runs inside a job object, so ending a run ends every process it
+started. An `implement` worker's shell is PowerShell (`pwsh` when it is installed,
+otherwise Windows PowerShell), and the deny list reads PowerShell and `cmd.exe` syntax
+as well as POSIX shell syntax.
 
 The first run downloads the Copilot runtime the SDK pins, into the SDK's cache.
 
 The SDK, the runtime it carries, and every package it needs are pinned to exact
-versions (`scripts/pins.json` and the header of `scripts/copilot_worker.py`). The worker
+versions (`scripts/pins.json` and the header of `scripts/copilot_worker.py`). The current
+SDK/runtime pair is **1.0.28 / 1.0.105**. The worker
 refuses to start when the installed versions differ, and `check` reports it. Upgrading is a
 deliberate change; [references/upgrading.md](references/upgrading.md) has the procedure.
 
@@ -87,7 +88,7 @@ The defaults are the `DEFAULT_MODELS` constant in
 
 > [!WARNING]
 > An implementation worker has full shell access apart from a short deny list
-> (`git push`, `git remote`, `git worktree`, `gh`, `sudo`), and its file tools are
+> (`git push`, `git remote`, `git worktree`, `gh`, `sudo`, `runas`), and its file tools are
 > confined to its workspace. The deny list catches common forms of those commands, not
 > code passed to an interpreter. The worktree isolates the
 > worker's normal edits. It is not a sandbox: a shell command can still reach files

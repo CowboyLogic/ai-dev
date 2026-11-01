@@ -79,8 +79,8 @@ the shared cross-tool subset (such as `companyAnnouncements`, `disableAllHooks`,
   `Ctrl+E` in the `/settings` editor to open the file.
 - Invalid values or unknown top-level keys are ignored and listed in the **Problems** tab of
   `/settings`. `$schema` is tolerated.
-- User settings previously lived in `config.json`; they are migrated to `settings.json`
-  automatically on startup.
+- User settings used to live in `config.json`. Settings left there are **ignored** — `config.json`
+  now holds only internal state such as installed plugins and trusted folders.
 - If `settings.json` is a symlink (dotfiles), `/settings` writes follow the symlink.
 - A few settings (for example, `experimental` and proxy settings) need a restart.
 
@@ -103,17 +103,18 @@ the shared cross-tool subset (such as `companyAnnouncements`, `disableAllHooks`,
 |-----|---------------|---------|---------|
 | `allowedUrls` | `string[]` | `[]` | URLs/domains allowed without prompting; supports `*.github.com` |
 | `askUser` | boolean | `true` | Allow clarifying questions (`--no-ask-user` disables) |
+| `assistedApprovalInstructions` | not documented | not documented | **v1.0.101 release notes only:** guides Assisted Permissions confirmation decisions. The settings reference doesn't list it, so its value type is unverified |
+| `autoTier` | `"efficiency"` \| `"balance"` \| `"intelligence"` | unset | Default Auto routing tier when `model` is `auto` (see `/model auto TIER`); `"fast"` is no longer selectable and falls back to `"balance"` |
 | `autoUpdate` | boolean | `true` | Auto-download CLI updates and update first-party plugins |
 | `autoUpdatesChannel` | `"stable"` \| `"prerelease"` | `"stable"` | Update channel |
 | `banner` | `"always"` \| `"once"` \| `"never"` | `"once"` | Startup banner frequency |
 | `bashEnv` | boolean | `false` | `BASH_ENV` support |
 | `beep` / `beepOnSchedule` | boolean | `true` | Audible beep on attention / scheduled run finished |
-| `builtInAgents.rubberDuck` | boolean | `true` | Enable rubber-duck subagent |
-| `builtInAgents.rubberDuckAutoInvoke` | boolean | `false` | Extra proactive rubber-duck nudges |
 | `colorMode` | theme values | `"github"` | **Deprecated** alias for `theme` |
 | `commandHistoryMaxSize` | number (1–1000) | `50` | Retained prompt history |
 | `compactPaste` | boolean | `true` | Collapse pastes over 10 lines |
 | `companyAnnouncements` | `string[]` | `[]` | Random startup messages |
+| `connectors` | boolean | `true` | Enable Copilot Connectors when available |
 | `continueOnAutoMode` | boolean | `false` | Switch to auto mode on eligible rate limits (not global limits or BYOK) |
 | `copyOnSelect` | boolean | `true` macOS, else `false` | Copy mouse selection to clipboard |
 | `customAgents.defaultLocalOnly` | boolean | `false` | Only local custom agents (no org/enterprise agents) |
@@ -131,7 +132,9 @@ the shared cross-tool subset (such as `companyAnnouncements`, `disableAllHooks`,
 | `footer` | object | — | Status-line items: `showModelEffort`, `showDirectory`, `showBranch`, `showContextWindow`, `showQuota`, `showAgent`, `showAiUsed`, `showCodeChanges`, `showUsername`, `showSandbox`, `showYolo`, `showCustom` (managed by `/statusline`) |
 | `hooks` | object | — | Inline hooks keyed by event (same schema as hook files) |
 | `ide.autoConnect` / `ide.openDiffOnEdit` | boolean | `true` | IDE auto-connect / show edit diffs in IDE |
+| `ignoredSkillsLocations` | `string[]` | `[]` | Skill directories (and descendants) excluded from discovery; `~`-relative paths supported |
 | `includeCoAuthoredBy` | boolean | `true` | `Co-authored-by` trailer on agent commits |
+| `inlineImages` | boolean | `true` | Render images inline with the Kitty graphics protocol (Ghostty, kitty, or WezTerm); otherwise image attachments show a text placeholder. v1.0.97 release notes: renders by default on supported terminals without experimental mode; turn off with `/settings inlineImages false` |
 | `keepAlive` | `"on"` \| `"off"` \| `"busy"` | `"off"` | Prevent system sleep |
 | `logLevel` | `"none"` \| `"error"` \| `"warning"` \| `"info"` \| `"debug"` \| `"all"` \| `"default"` | `"default"` | Log verbosity |
 | `mergeStrategy` | `"rebase"` \| `"merge"` | — | Strategy for `/pr fix conflicts` |
@@ -141,14 +144,15 @@ the shared cross-tool subset (such as `companyAnnouncements`, `disableAllHooks`,
 | `pinnedPrompts` | boolean | `true` | Pin current prompt while scrolling |
 | `powershellFlags` | `string[]` | `["-NoProfile", "-NoLogo"]` | Windows only |
 | `proxyUrl` / `proxyKerberosServicePrincipal` | string | unset | HTTP(S) proxy; `HTTP_PROXY`/`HTTPS_PROXY` override |
-| `remote` | `"on"` \| `"off"` | `"on"` | Session sync and remote control |
-| `remoteExport` | boolean | `true` | Export sessions remotely when sync is available |
+| `remoteSessions` | boolean | `false` | Enable remote control by default for interactive sessions when it is available; `/remote on`/`/remote off` change it per session. Separate from `remoteExport`. The settings reference no longer lists the old `remote` (`"on"`/`"off"`) key |
+| `remoteExport` | boolean | `true` | Sync session history to your account when sync is available. `remoteSessions: true` also enables export. Syncing alone does not enable remote control; `--sync-session=on\|off` overrides it for one run |
 | `renderHexColors` / `renderMarkdown` | boolean | `true` | Terminal rendering |
 | `respectGitignore` | boolean | `true` | Hide gitignored files from `@` picker |
-| `sandbox.*` | object | — | Local sandbox settings (see `permissions.md`) |
+| `sandbox.*` | object | — | Local sandbox: `enabled`, `allowBypass`, `auth.git`, `auth.gh`, `credentials.envVars`, `userPolicy.*` (see `permissions.md`) |
 | `screenReader` | boolean | `false` | Screen reader optimizations |
 | `scrollbar` | boolean | `true` | Scrollbar in scrollable views |
 | `shellShortcut` | boolean | `true` | Lone `$` + `Enter` opens a shell (user/managed scope only) |
+| `showReasoning` | boolean | unset | Show model reasoning in the timeline; set with `/config` or `/settings`, or toggle with `Ctrl+T`. Saved across sessions |
 | `showTimestamps` / `showTipsOnStartup` | boolean | `true` | UI toggles |
 | `sidebar` | boolean | `true` | Current-session sidebar |
 | `skillDirectories` | `string[]` | `[]` | Extra skill search directories |
@@ -158,16 +162,19 @@ the shared cross-tool subset (such as `companyAnnouncements`, `disableAllHooks`,
 | `stream` | boolean | `true` | Streaming responses |
 | `streamerMode` | boolean | `false` | Hide model names, quota, timestamps for screen sharing |
 | `subagents.agents` | object | `{}` | Per-agent `model`, `modelPolicy`, `effortLevel`, `contextTier` (see `agents-plugins.md`) |
-| `subagents.disabledSubagents` | `string[]` | `[]` | Agents that can't be dispatched (not `rubber-duck`) |
+| `subagents.agents["rubber-duck"].autoInvoke` | boolean | `false` | Let Copilot consult the rubber-duck agent proactively (toggle in `/subagents` → **Proactive invocation**) |
+| `subagents.disabledSubagents` | `string[]` | `[]` | Names of subagents that are turned off (manage with `/subagents`) |
 | `subagents.maxConcurrency` / `subagents.maxDepth` | number | plan-based / `6` | Usage-based billing only; capped at `32` / `256` |
 | `tabs.enabled` / `tabs.hide` / `tabs.sort` | boolean / `string[]` | `true` / `[]` / `[]` | Home tab bar (`copilot`, `agents`, `issues`, `pull-requests`, `gists`) |
 | `taskbarPresence` | boolean | `true` | Windows taskbar presence |
+| `terminalNotifications` | boolean | `false` | Prefer terminal-owned OSC 777 notifications (Ghostty, WezTerm) when desktop notifications are enabled |
 | `terminalProgress` | boolean | `true` | OSC 9;4 progress indicators |
 | `theme` | `"default"` \| `"github"` \| `"dim"` \| `"high-contrast"` \| `"colorblind"` | `"github"` | Color palette |
 | `toolSearch` | boolean | model-dependent | `false` opts out of deferred tool loading |
 | `transcriptView` | `"default"` \| `"concise"` | `"default"` | Timeline grouping |
 | `updateTerminalTitle` | boolean | `true` | Show intent in terminal title |
 | `worktreeBaseRef` | `"head"` \| `"defaultBranch"` | `"head"` | Base for `/worktree` and `--worktree` |
+| `worktreePathTemplate` | string | unset | Where worktrees are created, e.g. `~/src/worktrees/{repo}/{branch}`; placeholders `{repoPath}`, `{repo}`, `{branch}`, `{branchSlug}`. Default layout is `<repo>.worktrees/` |
 
 `trustedFolders` is **not** a `settings.json` key — it lives in `config.json`.
 
@@ -208,7 +215,8 @@ Plain text, one rule per line, resolved from the repository root:
 
 ```text
 # .github/allowed_models.txt
-fallback: gpt-5.4
+fallback: gpt-6-astra
+gpt-6-astra
 gpt-5.4
 claude-sonnet-*
 ```
@@ -224,7 +232,9 @@ claude-sonnet-*
 
 **Location**: `~/.copilot/config.json` (or `$COPILOT_HOME/config.json`). Automatically managed
 application state (auth data, installed plugin metadata, `loggedInUsers`, `installedPlugins`,
-`firstLaunchAt`, `staff`). Put user preferences in `settings.json`, not here.
+`firstLaunchAt`, `staff`). Put user preferences in `settings.json`, not here. (v1.0.97 release
+notes: one invalid entry in `config.json` no longer resets the saved settings, such as dismissed
+prompts, trusted folders, and sign-ins, on every launch.)
 
 ### trustedFolders (array)
 
@@ -262,11 +272,63 @@ Long-running sessions re-apply managed settings hourly.
 On POSIX, file-based managed settings are rejected if they are symlinks, not owned by root, or
 world-writable.
 
-Supported keys: `allowedMcpServers`, `deniedMcpServers`, `enabledPlugins`,
+Supported keys: `allowedMcpServers`, `autoTier`, `deniedMcpServers`, `enabledPlugins`,
 `extraKnownMarketplaces`, `forceLoginOrgs`, `forceRemoteSettingsRefresh`, `model`, `permissions`
-(including `disableBypassPermissionsMode` and `deny`/`ask`/`allow` rules), `policyHelper`,
-`remoteControl`, `sandbox`, `shellShortcut`, `strictKnownMarketplaces`, `telemetry`. See
-`permissions.md` for managed permission rules and `mcp.md` for the MCP allow/deny list.
+(including `disableBypassPermissionsMode`, `deny`/`ask`/`allow` rules, and `limitTo`),
+`policyHelper`, `remoteControl`, `requireBase64ImageAttachments`, `sandbox`, `shellShortcut`,
+`strictKnownMarketplaces`, `telemetry`. See `permissions.md` for managed permission rules and `mcp.md` for the MCP
+allow/deny list.
+
+- `model` is a top-level key; the legacy nested `permissions.model` still works as a fallback.
+- `autoTier` as a bare string locks the tier; `{"overridable": "TIER"}` sets an organization
+  default users and repositories may still override.
+- `policyHelper` registrations are validated, but the docs say the runtime doesn't yet invoke the
+  helper.
+- `sandbox` sets a policy floor users can't relax. Supported fields: `enabled`,
+  `failIfUnavailable`, `allowBypass`, `addCurrentWorkingDirectory`, `sandboxMcpServers`,
+  `sandboxLspServers`, `auth.git`, `auth.gh`, `allowDevToolAccess`, `learningMode`, and the
+  `userPolicy.*` filesystem and network rules. The managed value wins in the safer direction;
+  sandboxing, `failIfUnavailable`, and sandboxed MCP/LSP servers can't be turned off. `learningMode`
+  is Windows-only and honored only from native MDM (a `managed-settings.json` value is ignored).
+  The managed `sandbox` key blocks connections from clients older than the minimum version that
+  supports local sandbox: Copilot CLI 1.0.93, VS Code 1.141.0, GitHub Copilot app 1.1.26
+  (enterprise managed settings reference).
+- `forceRemoteSettingsRefresh: true` requires a fresh server-managed settings download at startup
+  (Copilot CLI, VS Code, and the GitHub Copilot app). In the CLI and the app it skips the one-hour
+  cache and doesn't fall back to an older cached policy: if the fetch fails, affected operations
+  stay restricted until current policy is confirmed. In VS Code, Copilot features are blocked until
+  the refresh succeeds. The MDM value takes precedence over a cached server value. To apply from a
+  device's first startup, deliver it through MDM or file-based settings; policy helper scripts
+  can't set it. In the Windows registry or macOS managed preferences, store it as a string
+  `true`/`false`, not a DWORD or native Boolean.
+- `requireBase64ImageAttachments: true` requires base64-encoded image attachments instead of
+  attachment URLs; `false` or unset keeps the existing behavior.
+- `telemetry` pushes baseline OpenTelemetry export settings: `enabled`, `endpoint`, `protocol`,
+  `headers`, `headersProvider` (a command that supplies fresh OTLP headers, or `false`; see
+  [Dynamic authentication headers](#dynamic-authentication-headers)), `resourceAttributes`,
+  `serviceName`, and the capture controls below (see
+  [OpenTelemetry monitoring](#opentelemetry-monitoring)). `capture` is an object of independent
+  switches, each defaulting to `false`: `identity` (account name as `user.name`, OS account as
+  `process.user.name`, machine as `host.name`), `prompts` (prompt text and model input,
+  including attachments, compaction summaries, skill content, and workspace context), `responses`
+  (assistant text and reasoning), `toolArguments` (raw arguments, commands, denied resources,
+  tool descriptions and schemas, and raw MCP server, plugin, hook, and tool identifiers),
+  `toolOutput` (tool, hook, MCP server, and subagent results and error details), and
+  `policyDetail` (unbounded policy details such as raw sandbox path arrays; bounded posture and
+  counts stay available). `captureContent` is the legacy shorthand that toggles
+  all five content classes together and does not affect `identity`; an explicitly set `capture`
+  field wins over it for that class.
+  `lockCaptureContent: true` stops local settings from enabling a legacy content class unless the
+  managed object configures that class or `captureContent`, and it does not govern `identity`.
+  Setting only `capture.identity` attributes traces to a user and machine without collecting
+  content. Fine-grained controls apply in Copilot CLI, the GitHub Copilot app, and VS Code sessions
+  using Agent Host; VS Code's local agent harness honors only `capture.identity` and
+  `captureContent`.
+- `remoteControl.mode` is `"enabled"`, `"disabled"`, or `"requireSSO"`; `requireSSO` needs
+  `remoteControl.githubDotComOrganizations`, and the client must be SSO-authorized for at least one
+  listed organization.
+- Most managed keys lock the whole row. `enabledPlugins` and `extraKnownMarketplaces` are the
+  exception: the managed layer merges those maps field by field with the user's entries.
 
 ---
 
@@ -306,6 +368,7 @@ Supported keys: `allowedMcpServers`, `deniedMcpServers`, `enabledPlugins`,
 | `PLAIN_DIFF` | `true` disables rich diffs |
 | `USE_BUILTIN_RIPGREP` | `false` uses system ripgrep |
 | `USE_TGREP` | `true`/`false` forces tgrep / ripgrep |
+| `TGREP_FILE_COUNT_THRESHOLD` | Minimum file count for automatic tgrep search (default `10000` on Windows, `50000` elsewhere) |
 
 > [!NOTE]
 > The upstream docs disagree on subagent defaults: the environment-variable table lists
@@ -313,6 +376,84 @@ Supported keys: `allowedMcpServers`, `deniedMcpServers`, `enabledPlugins`,
 > while the subagent-limits table and `subagents.*` settings list depth default `6` (cap `256`)
 > and plan-based concurrency (cap `32`). Treat the settings values as authoritative for
 > `settings.json`.
+
+---
+
+## OpenTelemetry monitoring
+
+Copilot CLI can export OpenTelemetry traces and metrics that follow the OTel GenAI semantic
+conventions. Export is off by default and turns on when `COPILOT_OTEL_ENABLED=true`,
+`OTEL_EXPORTER_OTLP_ENDPOINT` is set, or `COPILOT_OTEL_FILE_EXPORTER_PATH` is set. Enterprise
+administrators can push a baseline through the managed `telemetry` key.
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `COPILOT_OTEL_ENABLED` | `false` | Explicitly enable export (not needed when an endpoint is set) |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | — | OTLP endpoint URL; setting it enables export |
+| `COPILOT_OTEL_EXPORTER_TYPE` | `otlp-http` | `otlp-http` or `file`; `file` is chosen automatically when `COPILOT_OTEL_FILE_EXPORTER_PATH` is set |
+| `COPILOT_OTEL_FILE_EXPORTER_PATH` | — | Write all signals to this file as JSON lines; setting it enables export |
+| `OTEL_EXPORTER_OTLP_PROTOCOL` | `http/json` | `http/json` or `http/protobuf` (`otlp-http` only); `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL` / `OTEL_EXPORTER_OTLP_METRICS_PROTOCOL` override it per signal |
+| `OTEL_EXPORTER_OTLP_HEADERS` | — | Auth headers for the exporter |
+| `OTEL_SERVICE_NAME` | `github-copilot` | `service.name` resource attribute |
+| `OTEL_RESOURCE_ATTRIBUTES` | — | Extra resource attributes, comma-separated `key=value` (percent-encode special characters) |
+| `COPILOT_OTEL_SOURCE_NAME` | `github.copilot` | Instrumentation scope name for the tracer and meter |
+| `OTEL_LOG_LEVEL` | — | Diagnostic level: `NONE`, `ERROR`, `WARN`, `INFO`, `DEBUG`, `VERBOSE`, `ALL` |
+| `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` | `false` | Capture full prompts, responses, tool schemas, and tool arguments and results |
+
+### Dynamic authentication headers
+
+Set `telemetry.headersProvider` in user settings or in a managed telemetry policy to run a command
+that supplies fresh OTLP headers. Repository settings never apply it; `false` disables it.
+
+```json
+{
+  "telemetry": {
+    "headersProvider": {
+      "path": "node",
+      "args": ["bin/otel-headers.js"],
+      "refreshIntervalMs": 1740000
+    }
+  }
+}
+```
+
+- `path` is an executable name, absolute path, or home-relative path, not a shell command;
+  workspace-relative paths are rejected. `args` are passed literally, so name an interpreter for
+  scripts. `refreshIntervalMs` defaults to 29 minutes.
+- The command runs from your home directory with a 30-second deadline and must print a JSON object
+  of string header values to stdout; an empty object clears dynamic headers.
+- It runs only for active HTTP OTLP exporters. Use HTTPS: an HTTP endpoint produces a warning and
+  OTLP redirects are rejected.
+- Precedence, highest first: managed helper output, managed static headers, user helper output,
+  then `OTEL_EXPORTER_OTLP_HEADERS`. A managed `false` disables helpers.
+- If a refresh fails, exports that need dynamic headers are blocked until the next refresh.
+
+### Signals
+
+- **Traces:** an `invoke_agent` root span per agent invocation, with `chat` (one per LLM request)
+  and `execute_tool` child spans. Subagent invocations also use `invoke_agent` spans.
+- **Metrics:** `gen_ai.client.operation.duration`, `gen_ai.client.token.usage`,
+  `gen_ai.client.operation.time_to_first_chunk`, `gen_ai.client.operation.time_per_output_chunk`,
+  `gen_ai.invoke_agent.duration`, `gen_ai.invoke_agent.inference_calls`,
+  `gen_ai.invoke_agent.tool_calls`, `gen_ai.invoke_workflow.duration`, plus
+  `github.copilot.tool.call.count`, `github.copilot.tool.call.duration`,
+  `github.copilot.agent.turn.count`, `github.copilot.mcp.server.connection.count`,
+  `github.copilot.code.lines_added`, and `github.copilot.code.lines_removed`.
+- **Span events** on `chat` / `invoke_agent` spans: `github.copilot.hook.start`,
+  `github.copilot.hook.end`, `github.copilot.hook.error`, `github.copilot.session.truncation`,
+  `github.copilot.session.compaction_start`, `github.copilot.session.compaction_complete`,
+  `github.copilot.skill.invoked`, `github.copilot.session.shutdown`, `github.copilot.session.abort`,
+  and `exception`.
+
+> [!WARNING]
+> By default only metadata (model names, token counts, durations) is captured. Content capture can
+> include code, file contents, and prompts; enable it only in trusted environments.
+
+To measure AI-unit consumption, read `github.copilot.nano_aiu` from the root `invoke_agent` span
+only: it is also stamped on child `chat` spans, so summing across spans double-counts.
+`github.copilot.cost` is a per-request model multiplier used for billing, not a monetary value. The
+full catalog is in the
+[command reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference#opentelemetry-monitoring).
 
 ---
 
@@ -428,7 +569,7 @@ export COPILOT_MODEL=YOUR-DEPLOYMENT-NAME
 export COPILOT_PROVIDER_TYPE=anthropic
 export COPILOT_PROVIDER_BASE_URL=https://api.anthropic.com
 export COPILOT_PROVIDER_API_KEY=YOUR-ANTHROPIC-API-KEY
-export COPILOT_MODEL=claude-opus-4-5
+export COPILOT_MODEL=YOUR-MODEL-NAME
 ```
 
 ---
@@ -437,10 +578,15 @@ export COPILOT_MODEL=claude-opus-4-5
 
 - Select with `/model` (alias `/models`), `--model=MODEL`, `COPILOT_MODEL`, or the `model` setting.
   `auto` lets Copilot choose.
+  Model IDs are case-insensitive and the canonical ID is saved (`/model` and `/config model`).
 - `/model` scope flags: `--session`/`-s` (default, current session only), `--global` (saved default),
   `--repo`/`--local` (pins in repository settings).
 - Reasoning effort: `--effort`/`--reasoning-effort` (`low`, `medium`, `high`, `xhigh`, `max`;
   `max` is Anthropic-only) or the `effortLevel` setting.
 - Context tier: `--context default|long_context`. Latest models offer a 1M-token extended context
   and configurable reasoning; both consume more AI credits, so default to regular settings.
-- The docs' supported-model table (subject to change) lists `claude-sonnet-4.6` as the default.
+- Auto routing tier: `autoTier` setting or `/model auto TIER` (`efficiency`, `balance`,
+  `intelligence`).
+- The supported-model roster changes often and retired models stop resolving; check the
+  [supported models](https://docs.github.com/en/copilot/reference/ai-models/supported-models)
+  page (including its retirement table) before pinning a model ID.

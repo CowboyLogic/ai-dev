@@ -87,6 +87,9 @@ Authorization = "EXAMPLE_AUTH_HEADER"
 | `enabled` | `false` disables a server without deleting it |
 | `required` | `true` fails startup if this enabled server cannot initialize |
 | `startup_timeout_sec` | Seconds to wait for startup (default `10`) |
+| `startup_timeout_ms` | Integer milliseconds form of the same setting, present in the 0.163.0 config schema; when both are set, `startup_timeout_sec` wins and `startup_timeout_ms` is ignored (0.163.0 loader), so editing only the millisecond value has no effect while the seconds key remains; set only one |
+| `startup_readiness` | `connection` (use the live connection to decide readiness) or `catalog` (allow a valid cached tool catalog while the live connection starts; tool execution still needs the live connection). With `required = true`, a valid cached catalog satisfies startup even if the live connection fails; the failure then surfaces when a tool is invoked, so `catalog` removes the live-connectivity guarantee of `required`. From the 0.163.0 config schema, not in the official docs page |
+| `tool_input_schema_max_bytes` | UTF-8 byte threshold for compacting each ordinary tool input schema; default 5,000. Larger limits keep more parameter descriptions |
 | `tool_timeout_sec` | Seconds to wait for a tool run (default `60`) |
 | `enabled_tools` | Tool allow list |
 | `disabled_tools` | Tool deny list, applied after `enabled_tools` |
@@ -149,8 +152,15 @@ codex mcp add example --url https://mcp.example.com --oauth-client-id my-client
 | `--no-browser` | Print the authorization URL and accept the callback URL without opening a browser |
 | `--oauth-client-registration auto\|cimd\|dcr` | Registration strategy for this login only |
 
-In the TUI, `/mcp` lists active servers and tools; `/mcp verbose` adds server diagnostics. Any other
-argument prints usage.
+In the TUI, `/mcp` lists active servers and tools; `/mcp verbose` adds server diagnostics, and
+`/mcp login NAME` starts the OAuth login for a server without leaving the session (added in 0.161.0
+per the release notes; the upstream docs still say any other argument prints usage).
+
+Codex reads the `instructions` field a server returns at initialization and uses it as the
+model-visible description of the server's tool namespace (connector servers use the connector
+description instead). The upstream docs advise keeping the first 512 characters self-contained; that
+is guidance, not a limit. In the 0.163.0 source the description is cut at 512 KiB (524,288 bytes)
+for ordinary MCP servers and at 1,000 bytes for MCP servers loaded through the agent-plugin path.
 
 ## OAuth
 
@@ -196,7 +206,9 @@ Callback rules that matter when editing:
   portless URL or set the same port in both places. A proxied callback may use a different external
   port. Local callback URLs bind locally; non-local ones bind to `0.0.0.0`.
 - A mismatched `iss`, or a missing `iss` when issuer support is advertised, rejects the response with no
-  code exchange and no callback fallback.
+  code exchange and no callback fallback. A malformed callback URL, or issuer support advertised
+  without a metadata `issuer`, is also a hard failure.
+- Custom callback hosts, paths, or query parameters require DCR or a configured OAuth client ID.
 
 ## Plugin-provided servers
 

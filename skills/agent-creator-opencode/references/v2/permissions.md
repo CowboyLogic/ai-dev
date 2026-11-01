@@ -3,7 +3,7 @@
 The native V2 `permissions` array: rule shape, matching, actions, defaults, and
 policies.
 
-**Sources (checked 2026-09-24):** <https://opencode.ai/v2/docs/permissions/> ·
+**Sources (checked 2026-10-14):** <https://opencode.ai/v2/docs/permissions/> ·
 <https://opencode.ai/v2/docs/tools/> · <https://opencode.ai/v2/docs/policies/> ·
 <https://opencode.ai/v2/docs/skills/>
 
@@ -106,6 +106,11 @@ string.
   pages checked. Do not emit rules for them in native V2.
 - The tools page says a `browser` deny rule with resource `*` removes the browser
   Code Mode catalog; it is not in the permissions page's action table.
+- The tools page (unchanged through 2.0.29) lists Code Mode worktree utilities. `worktree_remove`
+  uses `edit` with the worktree directory as the resource, so an `edit` rule that
+  denies that directory blocks it for the agent (`force: true` can discard
+  modified or untracked files). `worktree_create` and `worktree_list` request no
+  built-in permission action.
 - `skill` effects: `allow` advertises and loads; `ask` advertises and asks before
   loading; `deny` hides the skill from the model and rejects loading.
 - `subagent` approvals save the agent ID; shell approvals save command prefixes.
@@ -199,29 +204,35 @@ the current session.)
 
 ## Policies (hard deny)
 
-Policies live under `experimental.policies`. They run after permission rules and
-saved approvals, never prompt, and can only turn `allow` or `ask` into `deny`.
+Policies live under the top-level `policies` array (2.0.29 and later; earlier
+releases read `experimental.policies`, which still works and merges into
+`policies`). They run after permission rules and saved approvals, never prompt,
+and can only turn `allow` or `ask` into `deny`.
 
 ```json
 {
-  "experimental": {
-    "policies": [
-      { "action": "permission", "resource": "shell:git push *", "effect": "deny" },
-      { "action": "permission", "resource": "edit:*.env", "effect": "deny" }
-    ]
-  }
+  "policies": [
+    { "action": "tool.use", "resource": "shell:git push *", "effect": "deny" },
+    { "action": "tool.use", "resource": "edit:*.env", "effect": "deny" }
+  ]
 }
 ```
 
-- `permission` resource format: `<action>:<value>`, for example
+- `action` is `provider.use`, `tool.use`, or `integration.use`. `permission` is
+  not a valid action (the config schema at 2.0.27 and 2.0.29 accepts only those
+  three); an invalid statement is dropped with a server-log warning.
+- `tool.use` resource format: `<action>:<value>`, for example
   `subagent:general` or `github_delete_repository:*`.
 - `provider.use` resource: a provider ID. It replaces V1 `enabled_providers` and
   `disabled_providers`.
+- `integration.use` resource: `mcp:<server>`, `skill:<id>`, or `plugin:<target>`.
+  A denied MCP server or skill is removed and a denied plugin is not loaded.
 - If nothing matches, the action is allowed. Last match wins.
 - A policy `allow` never grants access; it only lifts an earlier broader policy
   `deny`, after which the agent's own rules decide.
 - Precedence is reversed from normal config: the connected OpenCode Console
-  workspace wins, then global config, then direct `opencode.json(c)` (outer beats
+  workspace wins, then macOS managed preferences, then the system `opencode.json(c)`
+  directory, then global config, then direct `opencode.json(c)` (outer beats
   inner), then `.opencode/opencode.json(c)`. A repository cannot re-enable what
   global config denies.
 

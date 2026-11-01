@@ -33,8 +33,8 @@ You help the user manage all GitHub Copilot CLI configuration files.
 | Model allowlist | `.github/allowed_models.txt` | Project |
 
 **Config directory override**: set `COPILOT_HOME` to replace `~/.copilot` entirely
-(`--config-dir` is deprecated). User preferences belong in `settings.json`, not `config.json` —
-the CLI migrates old `config.json` settings automatically.
+(`--config-dir` is deprecated). User preferences belong in `settings.json`; user-setting keys left
+in `config.json` are ignored, and `config.json` keeps only internal state such as trusted folders.
 
 ## Workflow
 
@@ -50,12 +50,13 @@ the CLI migrates old `config.json` settings automatically.
 | `settings.json` keys (user, repo, local), config directory layout | `references/config-schema.md` |
 | Trusted folders, `config.json` | `references/config-schema.md` §config.json |
 | Environment variables | `references/config-schema.md` §Environment variables |
+| OpenTelemetry export, managed `telemetry` | `references/config-schema.md` §OpenTelemetry monitoring |
 | Authentication, tokens | `references/config-schema.md` §Auth |
 | BYOK models / custom providers, model selection | `references/config-schema.md` §BYOK, §Model usage |
-| Tool/path/URL permissions, `permissions-config.json`, sandbox | `references/permissions.md` |
-| CLI flags, slash commands, sessions (`--name`, `--resume`) | `references/cli-commands.md` |
+| Tool/path/URL permissions, `permissions-config.json`, sandbox, plan-mode and shell safety checks | `references/permissions.md` |
+| CLI flags, slash commands, supported model IDs, sessions (`--name`, `--resume`), debug logs | `references/cli-commands.md` |
 | MCP servers, LSP servers | `references/mcp.md` |
-| Hooks | `references/hooks.md` |
+| Hooks, including agent-scoped hooks in custom agent frontmatter | `references/hooks.md` |
 | Skills | `references/skills.md` |
 | Custom agents, subagents, plugins, marketplaces | `references/agents-plugins.md` |
 | Custom instructions | `references/instructions.md` |
@@ -68,6 +69,11 @@ the CLI migrates old `config.json` settings automatically.
 # Change a setting (inside a session)
 /settings                     # editor; /settings KEY VALUE sets inline
 /settings show model
+
+# Read or change a setting from the terminal (user file by default; --repo / --local available)
+copilot config theme
+copilot config footer.showQuota off
+copilot config --list
 
 # Check auth
 /user show                    # inside a session; copilot login to sign in
@@ -85,6 +91,9 @@ copilot skill list            # terminal; /skills list inside a session
 copilot --allow-tool='shell(git:*)' --deny-tool='shell(git push)'
 /allow-all                    # alias for /permissions allow-all
 
+# Sandbox shell commands (macOS, Linux, Windows)
+copilot --sandbox             # this session only; /sandbox enable saves the setting
+
 # Offline mode (BYOK only, no GitHub contact)
 export COPILOT_OFFLINE=true
 
@@ -96,9 +105,13 @@ copilot --resume=my-feature-work
 # Prevent system sleep during long sessions
 /keep-alive on                # on | off | busy | DURATION
 
-# Remote control
+# Remote control (--no-remote is removed and --remote no longer works for interactive or -p startup; it remains only for legacy --server/--headless; remoteSessions: true makes it the default)
 /remote on
 /remote off
+
+# Session-history syncing and client telemetry, one run only
+copilot --sync-session=off
+copilot --disable-client-telemetry
 
 # What's loaded right now (instructions, MCP, skills, agents, hooks, plugins)
 /env

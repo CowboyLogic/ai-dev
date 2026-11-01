@@ -27,9 +27,16 @@ permanent trust. Trust also gates project MCP servers, hooks, skills, plugins, a
 model/effort overrides. Scoping is heuristic — avoid launching from `$HOME` or directories with
 untrusted executables.
 
+`--trust-folder` trusts the working directory's hooks, workspace MCP servers, and repository plugin
+settings for one new non-interactive session (`-p` or piped standard input). The trust is not
+saved to `trustedFolders`, does not extend to parent or sibling directories, and is not a tool,
+path, or URL permission grant; managed policy still applies. It can't be combined with
+`--resume`, `--continue`, or `--session-id`. Use it only for configuration you have reviewed.
+
 `--add-dir=PATH` / `/add-dir PATH` grants file access to another directory **and** loads its
-`.github/skills` and `.github/agents` as trusted configuration. `/list-dirs` shows granted
-directories.
+`.github/skills` and `.github/agents` as trusted configuration. With local sandboxing on,
+`/add-dir PATH` also grants the sandbox access to that directory for the current session.
+`/list-dirs` shows granted directories.
 
 ---
 
@@ -147,6 +154,9 @@ Full dialog options:
 Approving a tool "for the rest of the session" allows it in any form (approving `rm ./file` allows
 `rm -rf ./*`).
 
+Per the v1.0.90 release notes, path access prompts can also grant a session-scoped read-only
+directory approval (not covered in the docs reference).
+
 ### Permission modes and resets
 
 | Command | Effect |
@@ -204,35 +214,138 @@ to the main repo root; submodules use their own directory) or the normalized cwd
 
 ---
 
-## Sandboxing (public preview)
+## Built-in safety checks
 
-Restricts filesystem and network access even under `--allow-all`.
+These apply independently of the permission flags above.
+
+- **Command safety analysis.** Shell commands are analyzed before execution for patterns such as
+  file deletion (`rm -rf`), system modification (`sudo`, `chmod 777`), network exfiltration (`curl`
+  with sensitive paths), credential access (reading `.env` or SSH keys), and inline assignment of
+  dangerous environment variables (`PATH=...`, `LD_PRELOAD=...`). High-risk commands show extra
+  warnings and need explicit confirmation.
+- **Environment variable denylist.** Inline assignment of variables that can run arbitrary code is
+  blocked even in otherwise read-only commands: `LD_*` and `DYLD_*`; `GIT_CONFIG`,
+  `GIT_CONFIG_GLOBAL`, `GIT_CONFIG_SYSTEM`, and the `GIT_CONFIG_COUNT` / `GIT_CONFIG_KEY_*` /
+  `GIT_CONFIG_VALUE_*` family; `GIT_EXTERNAL_DIFF`, `GIT_PROXY_COMMAND`; `PATH`, `BASH_ENV`, `ENV`;
+  and `PAGER`, `GIT_PAGER`, `GIT_EDITOR`, `VISUAL`, `EDITOR`, `GIT_SSH`, `GIT_SSH_COMMAND`,
+  `GIT_ASKPASS`, `BROWSER`, `GH_BROWSER`.
+- **`web_fetch` SSRF protection.** Only `http://` and `https://` URLs are allowed. Loopback
+  addresses, RFC 1918 private ranges, and cloud metadata endpoints (such as `169.254.169.254`) are
+  blocked by IP-literal check and DNS pre-resolution. Redirects are followed up to 10 hops within a
+  60-second budget, each hop re-validated; a redirect to a different origin needs permission. Set
+  `COPILOT_WEB_FETCH_ALLOW_LOCALHOST=1` to let `web_fetch` reach `localhost` during development.
+  With sandboxing on, requests are also checked against the sandbox network policy, so
+  `sandbox.userPolicy.network.allowLocalNetwork` (default `false`) must be enabled too. Per the
+  sandbox docs it lets `web_fetch` reach localhost but does not lift the restrictions on other
+  private-network addresses.
+- **Plan mode** (`/plan`) blocks edits, patches, and file-changing shell commands in the project
+  workspace, including from delegated helper sessions, while still allowing Copilot to write its
+  own plan workspace. The docs call it a safety net, not a guarantee: shell commands whose effect
+  can't be determined in advance and calls to connected external/MCP tools are intentionally let
+  through.
+- **v1.0.96 release notes only** (not yet in the documentation): the timeline shows whether you,
+  Assisted Permissions, policy, or the unattended fallback made each permission decision, and
+  `/allow-all` stays available during startup while enterprise policy is still resolving.
+
+---
+
+## Sandboxing
+
+Restricts filesystem, network, and credential access for shell commands (and, by default, MCP and
+LSP servers) even under `--allow-all`. The v1.0.93 release notes state that command sandboxing is
+available to all users via `/sandbox` and `--sandbox`.
 
 | Mechanism | How |
 |-----------|-----|
-| Local sandbox | `/sandbox enable`, the `/sandbox` dialog, `sandbox.enabled: true`, or `--sandbox` (session only). `--no-sandbox` disables for the session. The `/sandbox` command and flags are experimental-mode features |
-| Cloud sandbox | `copilot --cloud` — the whole session runs in a cloud-hosted environment |
+| Local sandbox | `/sandbox enable`, the `/sandbox` dialog, `sandbox.enabled: true`, or `--sandbox` (this session only; useful with `-p`). `--no-sandbox` disables it for this session only and is ignored when managed policy enforces sandboxing |
+| Cloud sandbox | `copilot --cloud --experimental` — an interactive session in a GitHub-hosted, isolated environment. Documented as public preview and experimental; org/enterprise access is off by default |
 
-`/sandbox` subcommands: `config`, `status`, `policy` (effective policy with grant sources),
-`enable`, `disable`. Run `copilot help sandbox` for the full reference. Backends: Seatbelt (macOS),
-Bubblewrap (Linux), ProcessContainer (Windows).
+Backends (via Microsoft eXecution Container): Seatbelt (macOS), Bubblewrap (Linux), ProcessContainer
+(Windows). Linux needs Bubblewrap 0.5.0+ and `slirp4netns` on `PATH`; macOS 15 or later is the
+tested baseline; Windows needs Windows 11 25H2 with KB5124010 or later, or 26H1 with KB5124006 or
+later, with the BaseContainer tier of ProcessContainer. On an unsupported
+host a saved preference is turned off for the session with a notice, and `/sandbox enable` is
+refused.
+
+`/sandbox` subcommands: `config` (or bare `/sandbox`, opens the General / Credentials / Filesystem /
+Network dialog), `status`, `policy [COMMAND]` (effective policy with grant sources; a command shows
+its dev-tool access without running it), `enable`, `disable`, `enable session`, `disable session`,
+and `ca [create|trust|rotate|remove]`
+for the proxy certificate authority. The dialog's **General** tab has separate options for enabling
+sandboxing for the current session and for setting the default for new sessions; changing either
+leaves the other unchanged. `/sandbox enable session` and `/sandbox disable session` change
+sandboxing for the current session without changing the saved default. Outside a session: `copilot sandbox ca
+status|create|trust|rotate|remove`. Run `copilot help sandbox` for the full reference.
+
+### Defaults and bypass
+
+- Read/write to the working directory; in a Git repo also read/write to `.git` and read access to
+  the rest of the repository. "Allow dev tool access" (default on) adds read access to toolchain
+  directories and some shared caches.
+- **Tool directory grants:** for each sandboxed command the CLI grants **read-only** access to
+  every absolute, existing directory on `PATH` and in named toolchain variables (single directories
+  such as `JAVA_HOME`, `GOROOT`, `DOTNET_ROOT`, `PYENV_ROOT`, `VIRTUAL_ENV`, `CONDA_PREFIX`,
+  `RUSTUP_HOME`, `VCPKG_ROOT`, and path lists such as `GOPATH`, `NODE_PATH`, `PYTHONPATH`,
+  `PSModulePath`). Relative paths, missing paths, filesystem roots, and system-critical locations
+  (for example `/bin`, `/usr/bin`, `/proc`, `/sys`, `/dev`) are excluded. A symlink's target is not
+  added automatically — grant the real target if access through a link is blocked. Run
+  `/sandbox policy` (optionally with a command) to see the resolved grants by source.
+- **Allow sandbox bypass** (default on): when a command is blocked, the CLI prompts to re-run it
+  outside the sandbox. Approval covers that attempt; the prompt can also disable sandboxing for the
+  rest of the session. A bypass removes only Copilot's sandbox limits, not your OS permissions.
+  Detached (backgrounded) commands can't be sandboxed and prompt before they start.
+- Sandbox settings are user-level or enterprise-managed. Repository settings files can't set them.
+- Per the v1.0.92 release notes, sandboxed shells withhold an ambient `GITHUB_TOKEN` unless it is
+  explicitly configured.
 
 ### User sandbox settings (`settings.json`)
 
 | Key | Default | Purpose |
 |-----|---------|---------|
-| `sandbox.enabled` | `false` | Sandbox shell, MCP/LSP servers, file and web tools |
+| `sandbox.enabled` | `false` | Sandbox shell, MCP/LSP servers, and built-in file and web tools |
 | `sandbox.allowBypass` | `true` | Allow prompting to re-run a blocked command outside the sandbox |
-| `sandbox.auth.git` / `sandbox.auth.gh` | `true` | Inject Git / `gh` credentials (renamed from `sandbox.gitAuth` / `sandbox.ghAuth`; old keys are ignored) |
-| `sandbox.userPolicy.network.allowLocalNetwork` | `true` | Reach local network addresses |
-| `sandbox.userPolicy.network.allowedHosts` | `[]` | Non-empty list blocks non-matching hosts; `*.example.com` or `*` |
-| `sandbox.userPolicy.network.blockedHosts` | `[]` | Always beats `allowedHosts`; denies subdomains too |
-| `sandbox.userPolicy.network.proxy` | unset | `url`, optional `username`/`password` (password kept in keychain); not supported on Windows |
-| `sandbox.userPolicy.deniedPaths` | `[]` | Denied paths (rejected on Windows backend) |
-| `sandbox.userPolicy.seatbelt.keychainAccess` | `false` | macOS keychain access |
+| `sandbox.auth.git` / `sandbox.auth.gh` | `true` | Provide Git / `gh` credentials inside the sandbox (renamed from `sandbox.gitAuth` / `sandbox.ghAuth`; old keys are ignored) |
+| `sandbox.credentials.envVars` | unset | Mask environment variables: `{ "NAME": { "injectHosts": ["api.example.com"] } }`. Processes get placeholders; the local proxy supplies the real value only in HTTPS headers to those hosts. Needs sandboxing on; the variable must be non-empty in the launching environment and must not be listed in `--secret-env-vars` |
+| `sandbox.userPolicy.network.allowLocalNetwork` | `false` | Local network access; effect varies by OS. Windows proxying and host rules require `true` |
+| `sandbox.userPolicy.network.allowedHosts` | `[]` | Hostnames, IPs, `*.example.com` (subdomains only), or `*`; no CIDR, URLs, or ports. A non-empty list blocks unmatched hosts (localhost and loopback are added automatically when outbound and local network are both on) |
+| `sandbox.userPolicy.network.blockedHosts` | `[]` | Always beats `allowedHosts`; denying a domain denies its subdomains |
+| `sandbox.userPolicy.network.proxy` | unset | `url` (no embedded credentials), optional `username`/`password`. Literal passwords use the OS credential store when available (local file fallback); a whole-field `${VAR}`/`$VAR` env reference is allowed. Host rules and the proxy are inactive when outbound access is off |
+| `sandbox.userPolicy.filesystem.deniedPaths` | `[]` | Denied paths. If the host can't enforce them (older Windows), the command fails rather than running with weaker protection |
+| `sandbox.userPolicy.seatbelt.keychainAccess` | `false` | macOS only; `settings.json` only (not in `/sandbox` or `/settings`) |
 
-Managed policy can force sandboxing on as a floor; `sandbox.failIfUnavailable` (admin-only) blocks
-the session if the sandbox can't be established.
+With no proxy set in sandbox settings, the local proxy takes its upstream proxy from the first
+non-empty of `HTTPS_PROXY`, `HTTP_PROXY`, `ALL_PROXY` on the host (only `http://` and `https://`
+proxies, not `socks5`). A host `NO_PROXY` match bypasses only that inherited upstream proxy; the
+local proxy still applies your host rules. A proxy set in sandbox settings ignores `NO_PROXY`.
+
+**Unresolved: local-network default.** The v1.0.99 release notes say the sandbox now allows local
+network access by default. The settings reference still lists `allowLocalNetwork` as `false`
+(table above), and no document says which is current. Run `/sandbox policy` to read the effective
+policy instead of assuming either.
+
+The `/sandbox` settings dialog suggests environment variables that may hold secrets and lets you
+add masking hosts before saving. Masking applies to commands, local MCP servers, and language
+servers inside the sandbox; Git and `gh` authentication are masked automatically while
+`sandbox.auth.git`/`sandbox.auth.gh` are on.
+
+Managed policy can force sandboxing on as a floor that users can only tighten. With the managed
+`sandbox.failIfUnavailable: true` (plus `sandbox.enabled: true`) the CLI blocks model and tool
+execution when the sandbox can't be established. If a managed floor permits bypass, `/sandbox
+disable` turns sandboxing off for the current session only.
+
+### Bypass and Windows details
+
+- **Bypass prompt.** A synchronous command blocked by the sandbox's filesystem or network policy
+  prompts to re-run outside the sandbox with no model round-trip. The prompt also offers to disable
+  sandboxing for the rest of the session; that does not change the saved `sandbox` setting, and
+  `/new` sandboxes commands again. A blocked `EPERM`/`EACCES` result naming a sandbox-blocked path
+  offers the same re-run.
+- **Windows denial capture.** On supported Windows hosts a blocked interactive command escalates in
+  one prompt: first a re-run that records instead of blocking file and process access (network
+  policy still applies), then a full bypass only if it is still blocked.
+- **`web_fetch`.** With sandboxing on, a URL blocked by the sandbox network policy fails fast
+  without a permission prompt; if the proxy simply can't reach the URL and bypass is allowed, the
+  tool prompts to retry outside the sandbox.
 
 ---
 
@@ -244,10 +357,15 @@ the session if the sandbox can't be established.
   `--allow-all`, `--yolo`, and `/permissions allow-all` (`/allow-all`, `/yolo`).
 - `"allow-auto-only"` — blocks full allow-all but permits assisted approval.
 - Unrecognized values fail closed to `"disable"`.
+- The v1.0.94 release notes add that managed policy can disable Assisted Permissions and keep
+  sessions in Manual Approval mode, and that a policy warning is shown when startup bypass flags
+  are suppressed by managed settings.
 
 ## Managed permission rules (administrators)
 
-MDM/server managed `permissions` may contain `deny`, `ask`, and `allow` arrays:
+MDM/server managed `permissions` may contain `deny`, `ask`, and `allow` arrays. (v1.0.97 release
+notes: in `/config`, managed permission rules are read-only and hidden unless your organization
+set them.)
 
 ```json
 {
@@ -262,3 +380,23 @@ MDM/server managed `permissions` may contain `deny`, `ask`, and `allow` arrays:
 Rule families: `Bash(...)`/`Shell(...)`, `PowerShell(...)`, `Read(...)`, `Edit(...)`/`Write(...)`
 (also cover shell redirections and `sed -i`), `Domain(...)`. Deny beats ask beats allow; when any
 list is set, unmatched operations default to ask.
+
+### Domain boundary (`limitTo`)
+
+A managed `permissions.limitTo` array of `Domain(...)` entries is a closed-world allowlist for
+agent network requests:
+
+```json
+{ "permissions": { "limitTo": ["github.com", "*.github.com"] } }
+```
+
+- The docs say only `Domain(...)` entries are supported, but their own example (shown above) lists
+  bare hosts, and `deny`/`ask`/`allow` rules use `Domain(...)`. The accepted entry form isn't
+  verified here; test a policy before deploying it, because an invalid entry is enforced as an
+  empty list and denies every domain request.
+- Requests to domains outside the list are denied without prompting; user rules, saved approvals,
+  and allow-all modes can't widen it. URLs found in shell commands count as `Domain` requests.
+- It doesn't restrict `shell`, `read`, or `write` by itself. `deny` still wins; `ask`/`allow` only
+  refine requests already inside the boundary.
+- An empty list denies every domain request; an invalid list or entry is enforced as empty. Across
+  managed sources it is an intersection.

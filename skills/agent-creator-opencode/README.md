@@ -4,6 +4,18 @@ Skill for creating and configuring custom AI agents for the [OpenCode CLI](https
 Native OpenCode V2 is the default output; V1 is still supported when the user is
 on V1 or their existing files are V1-shaped.
 
+> [!NOTE]
+> **OpenCode version:** verified against OpenCode V2
+> [2.0.29](https://github.com/anomalyco/opencode/tree/v2.0.29) (tagged 2026-10-14) and V1
+> [1.19.0](https://github.com/anomalyco/opencode/releases/tag/v1.19.0) (released 2026-10-11),
+> checked 2026-10-14. Against the previous baseline (V2 2.0.27) the V2 agents and migration docs are
+> unchanged; the permissions page moved policies from `experimental.policies` to top-level `policies`,
+> noted in `references/v2/permissions.md`. No V1 release has shipped since 1.19.0. The Copilot model
+> table in `references/models.md` was re-checked against GitHub's model data and the models.dev catalog
+> on the same date and gained Gemini 4 Argon. The 2.0.29 binary was not run for this check, so V2
+> notes that were verified on the 2.0.27 binary keep that basis. Re-verify when either line ships a
+> new release.
+
 ## When to Load This Skill
 
 Load this skill when:
@@ -26,7 +38,7 @@ Load this skill when:
 | V1 to V2 agent migration | Agents and permissions only |
 | Multi-agent orchestration | Full |
 | Model selection, variants, cost gating | Full |
-| Config-level policies (`experimental.policies`) | Summary |
+| Config-level policies (`policies`) | Summary |
 | OpenCode skills, commands, plugins, MCP servers, providers | Out of scope |
 
 ## Key Files

@@ -60,6 +60,7 @@ Array settings such as `permissions.allow` merge across files; scalars take the 
 { "permissions": { "defaultMode": "acceptEdits" } }
 // valid: "default" (alias "manual") | "acceptEdits" | "plan" | "auto" | "dontAsk" | "bypassPermissions"
 // "auto" and "bypassPermissions" only take effect from user/managed/--settings, not project/local
+// Unset: terminal and VS Code sessions start in "auto" from v2.1.283 (details: references/permissions.md)
 
 // Response language
 { "language": "spanish" }
@@ -77,6 +78,10 @@ Array settings such as `permissions.allow` merge across files; scalars take the 
 
 // Disable all hooks (emergency)
 { "disableAllHooks": true }
+
+// Make a policy hook fail closed: a hook that can't start, times out, or exits with a
+// code other than 0 or 2 blocks the action (v2.1.295+; command and http hooks only)
+{ "type": "command", "command": "node", "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/check.js"], "onFailure": "block" }
 ```
 
 ## Scripts
@@ -84,7 +89,7 @@ Array settings such as `permissions.allow` merge across files; scalars take the 
 For complex operations, use the helper scripts in `scripts/`:
 
 - `scripts/show-settings.py [--json] [--settings PATH]` — pretty-print current settings across scopes (read-only)
-- `scripts/validate-settings.py [path]` — validate JSON structure, flag bad values, unknown/deprecated keys, and user-or-managed keys placed in project files (read-only)
+- `scripts/validate-settings.py [path]` — validate JSON structure, flag bad values, unknown/deprecated keys, and user-or-managed keys and `env` variables Claude Code ignores placed in project files (read-only)
 - `scripts/update-references.py` — fetch latest upstream docs (used during self-update)
 
 Run with: `python scripts/<script>.py` from the skill directory, or with absolute paths.
@@ -105,7 +110,9 @@ When the user asks you to **update**, **refresh**, or **sync** this skill with t
 
 6. **Clean up** — delete the `_fetched/` directory.
 
-7. **Report** — tell the user what changed (new keys added, deprecated fields, etc.).
+7. **Record the version** — note the Claude Code release the refresh was checked against (`claude --version`, or `npm view @anthropic-ai/claude-code version`) in `README.md` and `CHANGELOG.md`, and label any claim that only a changelog entry supports, not the docs.
+
+8. **Report** — tell the user what changed (new keys added, deprecated fields, etc.).
 
 ### Source URLs (for manual lookup)
 

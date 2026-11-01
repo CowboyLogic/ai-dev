@@ -96,6 +96,11 @@ export default Plugin.define({
 - The API reference documents context domains for agents, providers, models, commands, integrations, MCP,
   plugins, references, generate, permissions, sessions, skills, storage, tools, VCS, worktrees, web search, and
   events, plus hooks on sessions, permissions, shell, and tools. See the build docs for exact method names.
+- `ctx.credential.activate({ credentialID })` makes a saved credential the active one for its integration (in the
+  2.0.29 build docs; `credential.activate` reached Effect and Promise server plugins in 2.0.28).
+- `ctx.permission.assert` (2.0.29 release notes; not in the build docs) lets an Effect or Promise plugin check the
+  configured permission rules and use the native approval prompt. A block or a correction fails the tool call with an
+  error carrying the rule's message or the user's feedback.
 
 ## V1 hook → V2 API
 
@@ -125,10 +130,14 @@ These are migration destinations, not exact renames. The V1 context maps as: `di
 ## Supporting V1 and V2 from one package
 
 Default-export an object that spreads `Plugin.define({...})` (V2 reads `id` + `setup`) and adds a V1 `server()`
-function (V1 calls it and uses the returned hooks). The docs say this object form works in V1 `1.18.29`; older V1
-releases may expect function exports.
+function (V1 calls it and uses the returned hooks). The migration guide says V1 object entrypoints are supported in
+OpenCode `1.18.29` and newer; for older V1 releases use separate function exports.
 
 ## Publishing
 
 `package.json` with `"type": "module"`, an `exports["."]` entrypoint, and a dependency on a compatible
 `@opencode/plugin` version. An optional `./rpc` export publishes a shared RPC contract.
+
+An Effect plugin declares `effect` as a `peerDependency`: the 2.0.29 docs use `"effect": "^4.0.0"` (the 2.0.26 docs
+had `">=4.0.0-rc.112"`), and OpenCode redirects `effect` imports to the host's copy. Effect 4 import paths moved from
+`effect/unstable/http` to `effect/http` in the 2.0.29 docs examples.

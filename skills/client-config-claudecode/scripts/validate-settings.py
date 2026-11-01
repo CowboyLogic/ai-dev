@@ -17,7 +17,7 @@ import json
 import os
 import re
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 # ---------------------------------------------------------------------------
 # Enumerations
@@ -46,6 +46,7 @@ ENUMS = {
     "workflowSizeGuideline": {"unrestricted", "small", "medium", "large"},
     "crossSessionInbound": {"accept", "hold", "refuse"},
     "forceLoginMethod": {"claudeai", "console", "gateway"},
+    "availableModelsMatch": {"prefix", "exact"},
     "managedSourcesBehavior": {"first-wins", "merge"},
     "parentSettingsBehavior": {"first-wins", "merge"},
     "disableAutoMode": {"disable"},
@@ -56,6 +57,8 @@ VALID_TIME_FORMAT_PRESETS = {"auto", "12-hour", "24-hour", "24-hour-utc"}
 VALID_SKILL_OVERRIDES = {"on", "name-only", "user-invocable-only", "off"}
 VALID_HANDLER_TYPES = {"command", "http", "mcp_tool", "prompt", "agent"}
 VALID_STRICT_PLUGIN_KINDS = {"skills", "agents", "hooks", "mcp"}
+VALID_PROVIDERS = {"anthropic", "bedrock", "vertex", "foundry", "anthropicAws", "mantle",
+                   "customEndpoint", "gateway"}
 
 HOOK_EVENTS = {
     "SessionStart", "Setup", "InstructionsLoaded", "UserPromptSubmit", "UserPromptExpansion",
@@ -70,6 +73,8 @@ NO_MATCHER_EVENTS = {
     "UserPromptSubmit", "PostToolBatch", "Stop", "TeammateIdle", "TaskCreated", "TaskCompleted",
     "WorktreeCreate", "WorktreeRemove", "MessageDisplay", "CwdChanged",
 }
+# onFailure: "block" has no effect on these events (exit 2 there re-engages Claude instead)
+ONFAILURE_NO_EFFECT_EVENTS = {"Stop", "SubagentStop", "TaskCompleted", "TeammateIdle"}
 TOOL_EVENTS = {"PreToolUse", "PostToolUse", "PostToolUseFailure", "PermissionRequest", "PermissionDenied"}
 
 # ---------------------------------------------------------------------------
@@ -90,9 +95,9 @@ ANY_FILE_KEYS = {
     "enabledPlugins", "enforceAvailableModels", "env", "extraKnownMarketplaces", "fallbackModel",
     "fastMode", "fastModePerSessionOptIn", "feedbackSurveyRate", "fileCheckpointingEnabled",
     "fileSuggestion", "forceLoginMethod", "forceLoginOrgUUID", "gcpAuthRefresh", "hooks",
-    "httpHookAllowedEnvVars", "includeGitInstructions", "inputNeededNotifEnabled",
-    "isolatePeerMachines", "language", "maxEffortLevel", "minimumVersion", "model",
-    "modelOverrides", "modelSettings", "otelHeadersHelper", "outputStyle", "permissions",
+    "httpHookAllowedEnvVars", "idleCompaction", "includeGitInstructions", "inputNeededNotifEnabled",
+    "isolatePeerMachines", "language", "maxEffortLevel", "maxProseWidth", "minimumVersion",
+    "model", "modelOverrides", "modelSettings", "otelHeadersHelper", "outputStyle", "permissions",
     "plansDirectory", "prUrlTemplate", "preferredNotifChannel", "prefersReducedMotion",
     "promptCacheTtl", "promptSuggestionEnabled", "remote", "remoteControlAtStartup",
     "respectGitignore", "respondToBashCommands", "sandbox", "showClearContextOnPlanAccept",
@@ -106,10 +111,11 @@ ANY_FILE_KEYS = {
 }
 # Read only from user settings, --settings, and managed settings
 USER_OR_MANAGED_KEYS = {
-    "askUserQuestionTimeout", "autoContinueAtUsageLimit", "autoMode", "bashEditDiffEnabled",
-    "desktopSessionCleanupPeriodDays", "dialogExpiry", "feedbackDrafts", "footerLinksRegexes",
-    "modelPicker", "pluginConfigs", "processWrapper", "skipAutoPermissionPrompt", "spellcheck",
-    "sshConfigs", "vimInsertModeRemaps",
+    "appendPlugins", "askUserQuestionTimeout", "autoContinueAtUsageLimit", "autoMode",
+    "bashEditDiffEnabled", "desktopSessionCleanupPeriodDays", "dialogExpiry", "feedbackDrafts",
+    "footerLinksRegexes", "forceLoginGatewayUrl", "modelPicker", "pluginConfigs",
+    "prependPlugins", "processWrapper", "skipAutoPermissionPrompt", "spellcheck", "sshConfigs",
+    "vimInsertModeRemaps",
 }
 # Read from user, local, managed (and --settings) — not from shared project settings
 USER_LOCAL_OR_MANAGED_KEYS = {
@@ -117,15 +123,16 @@ USER_LOCAL_OR_MANAGED_KEYS = {
     "useAutoModeDuringPlan",
 }
 MANAGED_ONLY_KEYS = {
-    "allowAllClaudeAiMcps", "allowManagedHooksOnly", "allowManagedMcpServersOnly",
-    "allowManagedPermissionRulesOnly", "allowedChannelPlugins", "blockedMarketplaces",
-    "browserExternalPageTools", "channelsEnabled", "claudeMd", "disableBrowserExternalNavigation",
+    "allowAllClaudeAiMcps", "allowClaudeInChromeWithManagedMcp", "allowManagedHooksOnly",
+    "allowManagedMcpServersOnly", "allowManagedPermissionRulesOnly", "allowedChannelPlugins",
+    "allowedProviders", "availableModelsMatch", "blockedMarketplaces", "browserExternalPageTools",
+    "channelsEnabled", "claudeMd", "deniedModels", "disableBrowserExternalNavigation",
     "disableCommandPluginSources", "disableDesktopLocalSessions", "disableMobileSimulatorTools",
-    "disableSideloadFlags", "forceLoginGatewayUrl", "forceRemoteSettingsRefresh",
-    "gatewayInternalNetworks", "managedMcpServers", "managedSourcesBehavior", "modelPricing",
-    "parentSettingsBehavior", "pluginSuggestionMarketplaces", "pluginTrustMessage", "policyHelper",
-    "requiredMaximumVersion", "requiredMinimumVersion", "sshHostAllowlist",
-    "strictKnownMarketplaces", "strictPluginOnlyCustomization", "wslInheritsWindowsSettings",
+    "disableSideloadFlags", "forceRemoteSettingsRefresh", "gatewayInternalNetworks",
+    "managedMcpServers", "managedSourcesBehavior", "modelPricing", "parentSettingsBehavior",
+    "pluginSuggestionMarketplaces", "pluginTrustMessage", "policyHelper", "requiredMaximumVersion",
+    "requiredMinimumVersion", "sshHostAllowlist", "strictKnownMarketplaces",
+    "strictPluginOnlyCustomization", "wslInheritsWindowsSettings",
 }
 MANAGED_ONLY_SANDBOX_PATHS = {
     ("filesystem", "allowManagedReadPathsOnly"), ("network", "allowManagedDomainsOnly"),
@@ -147,7 +154,9 @@ REMOVED_KEYS = {
     "taskOutputMaxChars": "removed in v2.1.277 with the TaskOutput tool; has no effect",
 }
 GLOBAL_CONFIG_ONLY_KEYS = {
-    "autoConnectIde", "autoInstallIdeExtension", "copyOnSelect", "diffTool", "externalEditorContext",
+    "autoConnectIde", "autoInstallIdeExtension", "claudeInChromeDefaultEnabled", "copyFullResponse",
+    "copyOnSelect", "defaultToAgentsView", "diffTool", "externalEditorContext",
+    "leftArrowOpensAgents", "prStatusFooterEnabled",
 }
 REMOVED_GLOBAL_CONFIG_KEYS = {
     "permissionExplainerEnabled": "removed in v2.1.257",
@@ -186,6 +195,54 @@ def user_settings_path() -> Path:
     """$CLAUDE_CONFIG_DIR/settings.json when CLAUDE_CONFIG_DIR is set, else ~/.claude/settings.json."""
     home = os.environ.get("CLAUDE_CONFIG_DIR")
     return (Path(home).expanduser() if home else Path.home() / ".claude") / "settings.json"
+
+
+# `env` variables Claude Code drops (settings reference, "Variables Claude Code ignores in `env`")
+ENV_IGNORED_EVERYWHERE = {
+    "CLAUDE_CODE_REMOTE", "CLAUDE_CODE_ACCOUNT_UUID", "CLAUDE_CODE_MESSAGING_SOCKET",
+    "CLAUDE_CODE_MESSAGING_TOKEN", "CLAUDE_CODE_PROJECT_DIR_NAME", "CLAUDE_CODE_RESTRICTED",
+    "CLAUDE_CODE_DISABLE_POWERSHELL_CMD_RM_DENY", "CLAUDE_CODE_DISABLE_DANGEROUS_RM_TIMEOUT",
+    "CLAUDE_CODE_DISABLE_SUBSTITUTION_RM_PROMPT", "CLAUDE_CODE_DISABLE_INLINE_SHELL_RM_PROMPT",
+    "CLAUDE_CODE_DISABLE_ADMIN_ENV_UNION",
+}
+ENV_IGNORED_IN_PROJECT_LOCAL = {
+    "CLAUDE_CONFIG_DIR", "CLAUDE_CODE_TMPDIR", "HOME", "TMPDIR", "TMP", "TEMP",
+    "OTEL_LOG_RAW_API_BODIES", "OTEL_LOG_MANAGED_SETTINGS", "ENABLE_BETA_TRACING_DETAILED", "BETA_TRACING_ENDPOINT",
+    "CLAUDE_CODE_ENABLE_TELEMETRY", "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA",
+    "ENABLE_ENHANCED_TELEMETRY_BETA", "OTEL_LOGS_EXPORTER", "OTEL_METRICS_EXPORTER",
+    "OTEL_TRACES_EXPORTER", "OTEL_LOG_USER_PROMPTS", "OTEL_LOG_ASSISTANT_RESPONSES",
+    "OTEL_LOG_TOOL_CONTENT", "OTEL_LOG_TOOL_DETAILS", "OTEL_EXPORTER_PROMETHEUS_HOST",
+    "OTEL_EXPORTER_PROMETHEUS_PORT", "CLAUDE_CODE_PROCESS_WRAPPER", "CLAUDE_CODE_SYNC_SKILLS",
+    "CLAUDE_CODE_SYNC_PLUGINS", "CLAUDE_CODE_PLUGIN_CACHE_DIR", "CLAUDE_CODE_PLUGIN_SEED_DIR",
+    "CLAUDE_CODE_USER_DIALOG_TIMEOUT_MS", "CLAUDE_AFK_TIMEOUT_MS", "CLAUDE_AFK_COUNTDOWN_MS",
+    "CLAUDE_CODE_DISABLE_ATTACHMENTS", "CLAUDE_CODE_DISABLE_FILE_MENTIONS",
+}
+ENV_IGNORED_PREFIXES = ("XDG_",)
+# Windows environment names are case-insensitive, so these match upper-cased.
+ENV_IGNORED_WINDOWS_NAMES = {"SYSTEMROOT", "COMSPEC", "PROGRAMDATA", "LOCALAPPDATA", "PATHEXT", "PSMODULEPATH",
+                              "PROGRAMW6432"}
+ENV_IGNORED_WINDOWS_PREFIXES = ("PROGRAMFILES",)
+ENV_OTLP_SUFFIXES = ("_ENDPOINT", "_HEADERS", "_PROTOCOL", "_CERTIFICATE", "_CLIENT_KEY", "_INSECURE")
+# A value that turns telemetry off still applies from project and local settings.
+# Exporter selectors turn off with `none`; content switches turn off with a falsy value.
+ENV_EXPORTER_SELECTORS = {"OTEL_LOGS_EXPORTER", "OTEL_METRICS_EXPORTER", "OTEL_TRACES_EXPORTER"}
+ENV_CONTENT_SWITCHES = {"OTEL_LOG_USER_PROMPTS", "OTEL_LOG_TOOL_CONTENT", "OTEL_LOG_TOOL_DETAILS"}
+ENV_SELECTOR_OFF_VALUES = {"none"}
+ENV_SWITCH_OFF_VALUES = {"", "0", "false", "no", "off"}
+
+
+def env_ignored_in_project_local(name: str, value) -> bool:
+    normalized = str(value).strip().lower()
+    if name in ENV_EXPORTER_SELECTORS and normalized in ENV_SELECTOR_OFF_VALUES:
+        return False
+    if name in ENV_CONTENT_SWITCHES and normalized in ENV_SWITCH_OFF_VALUES:
+        return False
+    upper = name.upper()
+    if upper in ENV_IGNORED_WINDOWS_NAMES or upper.startswith(ENV_IGNORED_WINDOWS_PREFIXES):
+        return True
+    if name in ENV_IGNORED_IN_PROJECT_LOCAL or name.startswith(ENV_IGNORED_PREFIXES):
+        return True
+    return name.startswith("OTEL_EXPORTER_OTLP_") and name.endswith(ENV_OTLP_SUFFIXES)
 
 
 def infer_scope(path: Path) -> str:
@@ -250,7 +307,7 @@ def validate_permissions(perms, path, scope):
                     validate_permission_rule(rule, f"{path}.{key}", key)
     if "defaultMode" in perms:
         mode = perms["defaultMode"]
-        if mode not in VALID_DEFAULT_MODES:
+        if not isinstance(mode, str) or mode not in VALID_DEFAULT_MODES:
             err(f"{path}.defaultMode: invalid value '{mode}'. Valid: {sorted(VALID_DEFAULT_MODES)}")
         elif mode in PROJECT_IGNORED_DEFAULT_MODES and scope in {"project", "local"}:
             warn(f"{path}.defaultMode: '{mode}' doesn't take effect from {scope} settings; set it in ~/.claude/settings.json")
@@ -274,8 +331,10 @@ def validate_hook_handler(handler, path, event):
     if not htype:
         err(f"{path}: missing required 'type' field")
         return
-    if htype not in VALID_HANDLER_TYPES:
+    if not isinstance(htype, str) or htype not in VALID_HANDLER_TYPES:
         err(f"{path}.type: invalid value '{htype}'. Valid: {' | '.join(sorted(VALID_HANDLER_TYPES))}")
+        if not isinstance(htype, str):
+            return
     if htype == "command" and "command" not in handler:
         err(f"{path}: command type requires 'command' field")
     if htype == "command" and "args" in handler and not isinstance(handler["args"], list):
@@ -296,6 +355,15 @@ def validate_hook_handler(handler, path, event):
         warn(f"{path}.if: 'if' is only evaluated on tool events; this handler will never run on {event}")
     if "timeout" in handler and not isinstance(handler["timeout"], (int, float)):
         err(f"{path}.timeout: must be a number of seconds")
+    if "onFailure" in handler:
+        if handler["onFailure"] not in ("continue", "block"):
+            err(f"{path}.onFailure: must be \"continue\" or \"block\"")
+        elif htype not in {"command", "http"}:
+            warn(f"{path}.onFailure: only command and http hooks accept it (v2.1.295+); ignored on {htype}")
+        elif handler["onFailure"] == "block" and event in ONFAILURE_NO_EFFECT_EVENTS:
+            warn(f"{path}.onFailure: has no effect on {event} hooks")
+        elif handler["onFailure"] == "block" and htype == "command" and (handler.get("async") or handler.get("asyncRewake")):
+            warn(f"{path}.onFailure: has no effect on background (async/asyncRewake) command hooks")
     if handler.get("once") is not None:
         warn(f"{path}.once: only honored in skill frontmatter; ignored in settings files")
     if "suppressOutput" in handler:
@@ -400,7 +468,7 @@ def validate(data, scope):
             warn(f"'{key}' is managed-only; ignored in {scope} settings")
     if scope in {"project", "local"}:
         for key in sorted(USER_OR_MANAGED_KEYS & set(data)):
-            warn(f"'{key}' is read only from user/managed/--settings; ignored in {scope} settings")
+            warn(f"'{key}' is read only from user or managed settings; ignored in {scope} settings")
     if scope == "project":
         for key in sorted(USER_LOCAL_OR_MANAGED_KEYS & set(data)):
             warn(f"'{key}' is ignored in shared project settings (.claude/settings.json)")
@@ -413,8 +481,29 @@ def validate(data, scope):
         validate_sandbox(data["sandbox"], scope)
 
     for key, valid in ENUMS.items():
-        if key in data and data[key] not in valid:
+        if key in data and (not isinstance(data[key], str) or data[key] not in valid):
             err(f"{key}: invalid value {data[key]!r}. Valid: {sorted(valid)}")
+
+    if "maxProseWidth" in data:
+        mpw = data["maxProseWidth"]
+        whole = isinstance(mpw, int) or (isinstance(mpw, float) and mpw.is_integer())
+        if isinstance(mpw, bool) or not whole or mpw < 40:
+            warn(f"maxProseWidth: {mpw!r} is ignored; must be a whole number of at least 40")
+
+    if "allowedProviders" in data:
+        ap = data["allowedProviders"]
+        if not isinstance(ap, list):
+            err("allowedProviders: must be an array of provider names")
+        else:
+            bad = [p for p in ap if not isinstance(p, str) or p not in VALID_PROVIDERS]
+            for p in bad:
+                warn(f"allowedProviders: unrecognized provider {p!r} is dropped. "
+                     f"Valid: {sorted(VALID_PROVIDERS)}")
+            if ap and len(bad) == len(ap):
+                err("allowedProviders: every entry is unrecognized, so Claude Code refuses every "
+                    "provider and does not start on the machine")
+            elif not ap:
+                warn("allowedProviders: an empty list refuses every provider")
 
     if "theme" in data:
         t = data["theme"]
@@ -435,9 +524,11 @@ def validate(data, scope):
                 if not isinstance(entry, dict):
                     err(f"modelSettings.{model}: must be an object")
                     continue
-                if "effortLevel" in entry and entry["effortLevel"] not in VALID_EFFORT_LEVELS:
+                if "effortLevel" in entry and (not isinstance(entry["effortLevel"], str)
+                                               or entry["effortLevel"] not in VALID_EFFORT_LEVELS):
                     err(f"modelSettings.{model}.effortLevel: invalid value {entry['effortLevel']!r}")
-                if "maxEffortLevel" in entry and entry["maxEffortLevel"] not in VALID_MAX_EFFORT_LEVELS:
+                if "maxEffortLevel" in entry and (not isinstance(entry["maxEffortLevel"], str)
+                                                  or entry["maxEffortLevel"] not in VALID_MAX_EFFORT_LEVELS):
                     err(f"modelSettings.{model}.maxEffortLevel: invalid value {entry['maxEffortLevel']!r}")
 
     if "autoMode" in data:
@@ -480,12 +571,13 @@ def validate(data, scope):
 
     if "skillOverrides" in data and isinstance(data["skillOverrides"], dict):
         for name, val in data["skillOverrides"].items():
-            if val not in VALID_SKILL_OVERRIDES:
+            if not isinstance(val, str) or val not in VALID_SKILL_OVERRIDES:
                 err(f"skillOverrides.{name}: invalid value {val!r}. Valid: {sorted(VALID_SKILL_OVERRIDES)}")
 
     if "strictPluginOnlyCustomization" in data:
         v = data["strictPluginOnlyCustomization"]
-        if not (v is True or (isinstance(v, list) and set(v) <= VALID_STRICT_PLUGIN_KINDS)):
+        if not (v is True or (isinstance(v, list) and all(isinstance(k, str) for k in v)
+                              and set(v) <= VALID_STRICT_PLUGIN_KINDS)):
             err(f"strictPluginOnlyCustomization: must be true or a subset of {sorted(VALID_STRICT_PLUGIN_KINDS)}")
 
     if "worktree" in data and isinstance(data["worktree"], dict):
@@ -494,6 +586,13 @@ def validate(data, scope):
             err("worktree.baseRef: must be \"fresh\" or \"head\"")
         if wt.get("bgIsolation") not in (None, "worktree", "none"):
             err("worktree.bgIsolation: must be \"worktree\" or \"none\"")
+        if "location" in wt:
+            loc = wt["location"]
+            # Evaluated on the SSH host, which Claude Desktop requires to run Linux or macOS.
+            if not isinstance(loc, str) or not (loc.startswith("~/") or PurePosixPath(loc).is_absolute()):
+                err("worktree.location: must be a POSIX absolute path or start with \"~/\"")
+            if scope in {"project", "local", "managed"}:
+                warn(f"'worktree.location' is read only from user settings; ignored in {scope} settings")
 
     for key in ("statusLine", "subagentStatusLine", "fileSuggestion"):
         if key in data:
@@ -533,9 +632,14 @@ def validate(data, scope):
         if not isinstance(v, (int, float)) or isinstance(v, bool) or not (0 < v <= 1):
             err(f"skillListingBudgetFraction: must be > 0 and <= 1, got {v!r}")
 
+    for key in ("availableModels", "deniedModels"):
+        if key in data and (not isinstance(data[key], list)
+                            or not all(isinstance(m, str) for m in data[key])):
+            err(f"{key}: must be an array of model aliases or IDs")
+
     if "fallbackModel" in data:
         v = data["fallbackModel"]
-        if not isinstance(v, list):
+        if not isinstance(v, list) or not all(isinstance(m, str) for m in v):
             err("fallbackModel: must be an array of model aliases or IDs")
         elif len(set(v)) > 3:
             warn("fallbackModel: only the first three distinct allowed models are used")
@@ -547,6 +651,10 @@ def validate(data, scope):
             for k, v in data["env"].items():
                 if not isinstance(v, str):
                     err(f"env.{k}: value must be a string, got {type(v).__name__}")
+                if k in ENV_IGNORED_EVERYWHERE:
+                    warn(f"env.{k}: ignored from every settings file; Claude Code reads it from the launch environment only")
+                elif scope in {"project", "local"} and env_ignored_in_project_local(k, v):
+                    warn(f"env.{k}: ignored in {scope} settings; set it in your shell, user settings, or managed settings")
 
     if "mcpServers" in data:
         warn("mcpServers: MCP servers belong in ~/.claude.json or .mcp.json, not settings.json")

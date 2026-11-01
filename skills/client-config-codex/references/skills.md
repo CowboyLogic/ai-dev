@@ -66,11 +66,14 @@ root**.
 - Plugins can also carry skills. See [agents-plugins.md](agents-plugins.md).
 
 > [!NOTE]
-> The docs do not list `$CODEX_HOME/skills` (`~/.codex/skills`) as a scan location. On 0.158.0 it
-> exists and holds the bundled system skills under `.system/` (`imagegen`, `openai-docs`,
-> `plugin-creator`, `review-agent`, `skill-creator`, `skill-installer`), and the bundled
-> `$skill-installer` installs into `$CODEX_HOME/skills`. Put your own skills in `~/.agents/skills`
-> or a repo's `.agents/skills`, which the docs do document.
+> The docs do not list `$CODEX_HOME/skills` (`~/.codex/skills`) as a scan location. On 0.163.0 it
+> is scanned as a user-scope root, alongside `~/.agents/skills`, `$CODEX_HOME/skills/.system`, and
+> the repo and working-directory `.agents/skills` (a skill placed there appeared in the model-visible
+> list under `codex debug prompt-input`). It holds the bundled system skills under `.system/`
+> (`imagegen`, `openai-docs`, `review-agent`, `skill-creator`, `skill-installer`; the bundled
+> `plugin-creator` was removed in 0.159.0), and the bundled `$skill-installer` installs into
+> `$CODEX_HOME/skills`. Put your own skills in `~/.agents/skills` or a repo's `.agents/skills`, which
+> the docs do document.
 
 ## Invoking skills
 
@@ -79,7 +82,9 @@ root**.
   follows it.
 - **Implicit:** Codex chooses a skill when the task matches its `description`.
 - To stop implicit use of one skill, set `allow_implicit_invocation: false` in its
-  `agents/openai.yaml`. Explicit `$skill` still works.
+  `agents/openai.yaml`. Explicit `$skill` still works. On 0.163.0 such a skill is left out of the
+  model-visible skill list (the bundled `review-agent` is an example), so it is used only when invoked
+  explicitly.
 
 ## Optional metadata: `agents/openai.yaml`
 
@@ -119,7 +124,8 @@ enabled = false
 > [!NOTE]
 > The docs disagree on `path`: the skills guide and sample config use the `SKILL.md` file path, the
 > config reference says "path to a skill folder containing `SKILL.md`". Use the `SKILL.md` path as
-> shown. It could not be verified locally (no `[[skills.config]]` entry exists on this machine).
+> shown. Verified on 0.163.0 with `codex debug prompt-input`: a `SKILL.md` path with
+> `enabled = false` removes the skill from the model-visible list, and a folder path has no effect.
 
 Custom agent files can also carry `skills.config` disables. See
 [agents-plugins.md](agents-plugins.md).
@@ -135,4 +141,6 @@ Custom agent files can also carry `skills.config` disables. See
   skill plus a connector, package a plugin instead. Direct skill folders are for local authoring
   and repo-scoped workflows.
 - **Check:** confirm the skill appears in `/skills`, and test prompts against the `description`
-  to confirm the right trigger behavior.
+  to confirm the right trigger behavior. `codex debug prompt-input`, run from the directory you care
+  about, prints the skill list the model actually receives and makes no model call; use a throwaway
+  `CODEX_HOME` for a hermetic check, because the command writes to `$CODEX_HOME`.

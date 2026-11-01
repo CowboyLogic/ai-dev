@@ -85,6 +85,18 @@ into a fresh session instead of re-reading a long transcript.
 
 ---
 
+### Skill Router
+
+Keep hundreds of skills installed without loading every description into every session.
+The skills live in a library directory that no harness scans, and the router searches it
+and returns the directory of the skill that fits the task. When it has none, it searches
+GitHub and offers what it finds. It also installs skills into the library after you approve
+their source, and updates and removes them.
+
+[Skill Overview](skill-router.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/skill-router)
+
+---
+
 ## Development Skills
 
 ### Docker Image Management
@@ -120,7 +132,7 @@ options, integration with VS Code and CI, and automated fix workflows.
 
 Create custom `.agent.md` files for GitHub Copilot across VS Code, the Copilot CLI, and the
 GitHub.com cloud agent. Covers frontmatter schema and per-surface compatibility, tool aliases
-and VS Code tool sets, current model selection, handoffs, hooks, and MCP servers. Includes
+and VS Code tool names, current model selection, handoffs, hooks, and MCP servers. Includes
 working examples for workspace agents, user-profile agents, and cloud agents with MCP.
 
 [Skill Overview](agent-creator-copilot.md) · [View on GitHub](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-copilot)

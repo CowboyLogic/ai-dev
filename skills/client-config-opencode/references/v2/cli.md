@@ -52,6 +52,7 @@ Sources: <https://opencode.ai/v2/docs/cli/config/>, <https://opencode.ai/v2/docs
 | `session.scrollbar` | boolean | |
 | `session.thinking` | `show` \| `hide` | Model reasoning visibility |
 | `session.grouping` | `auto` \| `none` | |
+| `session.verbosity` | `low` \| `medium` \| `high` | Transcript detail: `low` summarizes each run of tools and thoughts, `high` opens exploration and instruction groups. Not in the V2 settings page; it is in the published schema |
 | `session.image_preview` | boolean | |
 | `session.tps` | boolean | Output tokens/sec in footers |
 | `session.markdown` | `source` \| `rendered` | |
@@ -61,7 +62,7 @@ Sources: <https://opencode.ai/v2/docs/cli/config/>, <https://opencode.ai/v2/docs
 | `tabs.scope` | `cwd` \| `global` | |
 | `tabs.layout` | `horizontal` \| `vertical` | |
 | `tabs.indicators` | `status` \| `numbers` | |
-| `diffs.source` | `branch` \| `committed` \| `working` | Initial `/diff` scope |
+| `diffs.source` | `branch` \| `committed` \| `working` \| `turn` | Initial `/diff` scope; `turn` is the session's last turn and falls back to `branch` outside a session |
 | `diffs.wrap` | `word` \| `none` | |
 | `diffs.tree` / `diffs.single` | boolean | File tree / single-patch view |
 | `diffs.view` | `auto` \| `split` \| `unified` | |
@@ -70,6 +71,7 @@ Sources: <https://opencode.ai/v2/docs/cli/config/>, <https://opencode.ai/v2/docs
 | `attention.volume` | `0`–`1` | |
 | `attention.sound_pack` | string | e.g. `opencode.default` |
 | `attention.sounds` | object | Overrides for `default`, `question`, `permission`, `error`, `done`, `subagent_done` |
+| `highlights` | boolean | Show the release highlights once after an update (default on); `false` stops the home-screen dialog. `/highlights` reopens them. Top-level key, not under `attention` (2.0.28) |
 | `terminal.title` | boolean | Update window title |
 | `terminal.copy` | `manual` \| `select` | Default `manual` on Windows, `select` elsewhere |
 | `mini.*` | see docs | `thinking`, `tools`, `shell_output`, `turn_summary`, `footer`, `splash` (`show`/`hide`), `work_spinner`, `mono`, `replay`, `replay_limit` (default `200`) |
@@ -82,6 +84,9 @@ Sources: <https://opencode.ai/v2/docs/cli/config/>, <https://opencode.ai/v2/docs
 
 > [!NOTE]
 > V2 `attention` has no `enabled` flag (V1 `tui.json` did). Set `notifications` and `sound` directly.
+
+Transcript hyperlinks use OSC 8 and work in more terminals since 2.0.26. When automatic detection does not enable
+them, start OpenCode with `FORCE_HYPERLINK=1` (from the 2.0.26 release notes, not the V2 docs).
 
 ## V1 `tui.json` → V2 `cli.json` key map
 
@@ -130,7 +135,6 @@ Common IDs and defaults:
 | `app.exit` | `ctrl+c,ctrl+d,<leader>q` |
 | `command.palette.show` | `ctrl+p` |
 | `opencode.settings` | `none` |
-| `permission.mode` | `none` (toggle auto-approve) |
 | `session.new` | `<leader>n` |
 | `session.list` | `<leader>l` |
 | `session.rename` | `ctrl+r` |
@@ -142,11 +146,25 @@ Common IDs and defaults:
 | `agent.list` | `<leader>a` |
 | `agent.cycle` / `agent.cycle.reverse` | `shift+tab` / `none` |
 | `messages.copy` | `<leader>y` |
+| `prompt.queue` | `<leader>return` |
+| `queued_prompt.undo` | `ctrl+u` |
+| `input.newline` | `shift+return,ctrl+return,alt+return,ctrl+j` |
+| `theme.switch` | `none` |
+| `terminal.toggle` | `<leader>t` |
 | `app.clear` (mini only) | `ctrl+l` |
+
+While OpenCode is working, **Enter** steers the active session and `prompt.queue` (**Ctrl+X** then **Enter** by
+default) queues the prompt.
 
 For the full list (diff viewer, input editing, composer, dialogs, which-key), see
 <https://opencode.ai/v2/docs/cli/keybinds/>. Retired diff IDs (`diff.toggle`, `diff.expand`, `diff.expand_all`,
 `diff.collapse`, `diff.switch_focus`) are accepted but register nothing.
+
+> [!NOTE]
+> The `permission.mode` keybind (auto-approve toggle) and the plugin install IDs `plugins.install` and
+> `dialog.plugins.install` are absent from the 2.0.29 docs and published `cli.json` schema. To auto-approve, set
+> `session.permissions: "autoaccept"` or start with `--auto`, which auto-approves permissions that are not
+> explicitly denied.
 
 ## Themes
 

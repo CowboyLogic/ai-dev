@@ -105,6 +105,10 @@ Before opening a PR:
 
 ## Review and Merge
 
+Agent reviewers use the repository's [repository-review maintenance skill](https://github.com/CowboyLogic/ai-dev/blob/main/.agents/skills/repository-review/SKILL.md).
+It lives under `.agents/skills/` and is loaded through the repository instruction
+entrypoints; it is separate from the installable skills in the public catalog.
+
 PRs are reviewed for accuracy, formatting, and completeness. At least one maintainer approval is required. Expect a response within a week — if you haven't heard back, feel free to ping on the issue.
 
 ## Questions and Feedback

@@ -2,6 +2,17 @@
 
 A skill for creating custom agents for GitHub Copilot: Copilot cloud agent on GitHub.com, GitHub Copilot CLI, VS Code, and other supported IDEs.
 
+## Associated Copilot CLI version
+
+| | |
+|---|---|
+| GitHub Copilot CLI | **v1.0.103** (released 2026-10-22, the latest stable release as of 2026-10-25) |
+| References last verified | 2026-10-25 |
+| Sources | docs.github.com Copilot custom-agent and CLI documentation, the supported-models page, and VS Code documentation at code.visualstudio.com as published through 2026-10-21 (see the reference files for URLs) |
+
+The model roster and retirement dates change often; check the supported-models page before
+pinning a model.
+
 ## Overview
 
 Custom agents are specialized Copilot configurations defined in `.agent.md` Markdown files called **agent profiles**. They encode a domain role, behavioral instructions, tool access, and optionally a model into a reusable, shareable file, without requiring any extension development.
@@ -10,9 +21,9 @@ This skill covers:
 
 - Agent profile format and supported frontmatter properties, with a per-surface compatibility table
 - Where to store agent files (repository, user, organization, enterprise, CLI plugins)
-- Tools configuration: cross-platform aliases, VS Code tool sets, MCP namespacing
+- Tools configuration: cross-platform aliases, VS Code tool names (user-defined tool sets are deprecated), MCP namespacing
 - Model selection and current model names, including retired models to avoid
-- Handoffs, subagents, and agent-scoped hooks in VS Code
+- Handoffs and subagents in VS Code, and agent-scoped hooks in VS Code (Local harness) and Copilot CLI
 - CLI-only fields (`models`, `modelPolicy`, `reasoningEffort`, `include-custom-instructions`)
 - MCP server configuration and secrets for the cloud agent
 - Writing effective agent prompts and descriptions
@@ -20,12 +31,12 @@ This skill covers:
 
 ## Quick Start
 
-1. In VS Code, open the Chat view → **Configure Chat** (gear icon) → **Agents**, then select **New Agent (Workspace)**
+1. In VS Code, select **Open Customizations** in the Chat view title bar → **Agents**, then select **New Agent** (plus icon) next to the **Workspace** group
 2. Enter a filename. A `.agent.md` file is created in `.github/agents/`
 3. Add a `description` and write the prompt body
 4. Select your agent in the agents dropdown and test it
 
-Alternatives: run `/agent` → **Create new agent** in Copilot CLI, or use **Create an agent** at [github.com/copilot/agents](https://github.com/copilot/agents).
+Alternatives: run `/agent` and press **N** in Copilot CLI, or use **Create an agent** at [github.com/copilot/agents](https://github.com/copilot/agents).
 
 ## Key Concepts
 
@@ -60,10 +71,12 @@ Alternatives: run `/agent` → **Create new agent** in Copilot CLI, or use **Cre
 
 | Resource | URL |
 |---|---|
-| About custom agents | <https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-custom-agents> |
+| About custom agents | <https://docs.github.com/en/copilot/concepts/customizations/custom-agents> |
 | Create custom agents (cloud agent) | <https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/create-custom-agents> |
 | Configuration reference | <https://docs.github.com/en/copilot/reference/custom-agents-configuration> |
 | Custom agents for Copilot CLI | <https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/create-custom-agents-for-cli> |
 | Custom agents in VS Code | <https://code.visualstudio.com/docs/agent-customization/custom-agents> |
+| Custom agent file reference (VS Code) | <https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference> |
+| Migrate Copilot customizations in VS Code | <https://code.visualstudio.com/docs/agent-customization/migrate-customizations> |
 | Supported AI models | <https://docs.github.com/en/copilot/reference/ai-models/supported-models> |
 | Awesome Copilot agents | <https://github.com/github/awesome-copilot/tree/main/agents> |

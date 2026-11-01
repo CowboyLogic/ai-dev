@@ -63,6 +63,30 @@ Forks skip both filters and get the parent's exact tool pool.
 
 ---
 
+## Forks
+
+A fork is a subagent that inherits the whole conversation so far: its system prompt, tools,
+model, and message history come from the main session, not from an agent file. Its tool
+calls stay out of your conversation and only the final result comes back. It shares the
+parent's prompt cache, so it costs less than a fresh subagent for a task that needs the
+same context.
+
+| Need | How |
+|---|---|
+| Start one yourself | `/subtask <task>` (v2.1.212+; `/fork` on v2.1.161 through v2.1.211, and `/fork` also starts one when agent view is turned off) |
+| Fork mode default | On in interactive sessions (v2.1.232+); off with `-p` and in the Agent SDK per the docs page. Changelog only (v2.1.302): also on by default in `-p`, the Agent SDK, the desktop app and VS Code, and `claude mcp serve` never offers forks |
+| Force fork mode | `CLAUDE_CODE_FORK_SUBAGENT=1` on, `0` off, in every kind of session except `claude mcp serve`, which never offers forks (changelog only, v2.1.302) |
+| Keep fork mode but stop Claude spawning forks | Deny the `fork` type: `Agent(fork)` in `permissions.deny` |
+| Isolate a fork's edits | Claude passes `isolation: "worktree"` on the Agent call |
+
+With fork mode on, Claude Code runs every subagent Claude spawns in the background, forks
+and non-fork alike, and removes the Agent tool's `run_in_background` parameter (apart from the
+cases that stay in the foreground; changelog only, v2.1.302: a subagent's own Agent calls in
+`-p`, the Agent SDK, the desktop app and VS Code run in the foreground by default). A fork cannot
+spawn further forks. Source: <https://code.claude.com/docs/en/sub-agents#fork-the-current-conversation>.
+
+---
+
 ## Allowlist vs Denylist
 
 ```yaml
@@ -87,6 +111,10 @@ want "everything except writes" and expect MCP tools to come along.
 
 An allowlist that names an MCP server with no connected server resolves to nothing for that
 entry, which can trigger the zero-tools refusal if nothing else in the list resolves.
+
+Changelog only (v2.1.299): a `tools` entry now takes only the named MCP server's tools. For a
+server whose normalized name contains `__`, list it as `mcp__<whole name>__*`; the shorter
+`mcp__a` form no longer reaches a server named `a__b`.
 
 ## Specifiers Remove the Whole Tool
 
@@ -146,7 +174,7 @@ For a plugin agent that needs a rule its frontmatter cannot carry, either copy t
 
 | Agent | Purpose | Default model |
 |---|---|---|
-| `Explore` | Read-only codebase search; skips CLAUDE.md and git status | Inherits, capped at Opus on the Claude API |
+| `Explore` | Read-only codebase search; skips CLAUDE.md and git status | The main conversation's model; when that is Fable, Opus on a subscription, Console account, or `ANTHROPIC_BASE_URL` gateway, and unchanged on Bedrock, Vertex, Foundry, Claude Platform on AWS, or a Claude apps gateway |
 | `Plan` | Read-only research during plan mode | Inherits |
 | `general-purpose` | Multi-step tasks needing exploration and action | Follows the model order |
 | `claude` | Catch-all with every tool | Follows the model order |
@@ -154,5 +182,6 @@ For a plugin agent that needs a rule its frontmatter cannot carry, either copy t
 
 Defining your own agent named `Explore` (for example with `model: haiku`) replaces the
 built-in and keeps exploration cheap. Environment switches:
-`CLAUDE_CODE_DISABLE_EXPLORE_PLAN_AGENTS=1`, `CLAUDE_CODE_AGENT_SDK_DISABLE_BUILTIN_AGENTS=1`
-(non-interactive and SDK).
+`CLAUDE_CODE_DISABLE_EXPLORE_PLAN_AGENTS=1` (removes only Explore and Plan; v2.1.198+) and
+`CLAUDE_AGENT_SDK_DISABLE_BUILTIN_AGENTS=1` (removes every built-in type; non-interactive
+mode and the Agent SDK only).
