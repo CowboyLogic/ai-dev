@@ -61,7 +61,7 @@ gh api graphql -f threadId='PRRT_xxxxxxxx' -f query='
 
 ## Repository layout
 
-- `.agents/skills/`: local maintenance skills, not published artifacts.
+- `.agents/skills/` and `.claude/skills/`: local maintenance skills, not published artifacts. `.claude/skills/` holds Claude Code-specific ones, such as `weekly-skill-refresh`, the cloud routine procedure for the weekly client skill refreshes.
 - `.github/`: workflows, issue and PR templates; `agents/` here is gitignored runtime scratch space.
 - `agents/`: installable domain specialists and independent `matrix-topology/` and `lane-topology/` systems. Matrix uses OpenCode canonical definitions with Claude and Copilot mirrors; Lane uses OpenCode canonical definitions with a Copilot mirror.
 - `harness/`: unpublished client configurations and symlink targets, including `opencode/`, `opencode-lane/` and `opencode-samples/`.
@@ -75,7 +75,7 @@ When adding, removing, renaming or updating anything in `agents/`, `skills/` or 
 
 Topology inventories, rosters and Copilot install blocks, and the specialist roster in `docs/agents/index.md`, are generated from agent frontmatter. A role is the first sentence of `description`. After changing a roster, model, description, client mirror or harness mapping, run `python scripts/validate_artifact_sync.py --write`. Never hand-edit between `artifact-sync` markers. The script writes nothing unless all sources and marker pairs validate; CI runs it without `--write` to check generated content, skill coverage, mirrors and harness mappings. After changing the script, run `python -m unittest discover -s scripts`.
 
-Published skills live in `skills/<name>/` with a required YAML-frontmatter `SKILL.md` and optional `README.md`, `references/`, `scripts/` and `assets/`. Maintenance skills in `.agents/skills/` are not published and do not belong in catalogs or navigation; reference them from agent entrypoints when required.
+Published skills live in `skills/<name>/` with a required YAML-frontmatter `SKILL.md` and optional `README.md`, `references/`, `scripts/` and `assets/`. Maintenance skills in `.agents/skills/` and `.claude/skills/` are not published and do not belong in catalogs or navigation; reference them from agent entrypoints when required.
 
 Each `docs/skills/<name>.md` is a lightweight overview: what the skill does, covers and applies to, install and verify commands, and a link to its repository folder. It must not embed instructions, reference contents, examples or script usage. `docs/skills/index.md` is the catalog; `skills/<name>/` is authoritative.
 
