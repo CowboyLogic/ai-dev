@@ -44,7 +44,7 @@ much as finding it. Do those yourself.
 | Mode | Default profile | Where it runs | What the worker can do |
 | --- | --- | --- | --- |
 | `research` | `light` | The live checkout | Read files |
-| `review` | `heavy` | The live checkout | Read files; the working diff is attached |
+| `review` | `deep` | The live checkout | Read files; the working diff is attached |
 | `implement` | `standard` | A new Git worktree | Read, write, and run shell commands |
 
 ## Profiles
@@ -54,10 +54,10 @@ first:
 
 | Profile | Model | Effort |
 | --- | --- | --- |
-| `light` | `gpt-6-luna` | The model's default |
-| `standard` | `gpt-6.1-terra` | `high` |
-| `deep` | `gpt-6.1-terra` | `xhigh` |
-| `heavy` | `gpt-6.1-sol` | `high` |
+| `light` | `gpt-6-luna` | `medium` |
+| `standard` | `gpt-6.1-terra` | `medium` |
+| `deep` | `gpt-6.1-sol` | `medium` |
+| `heavy` | `gpt-6-astra` | `medium` |
 
 Use the mode's default profile unless one of these applies:
 
@@ -157,7 +157,8 @@ reason names what failed verification. Sharpen the task file with what you learn
 before the retry; the previous run's work does not carry over, so `WORKER clean` it.
 
 A run is retried at most twice, and never above `heavy`. When the script refuses a
-retry, do the work yourself. A `review` run starts at `heavy`, so it has no retry.
+retry, do the work yourself. A `review` run starts at `deep`, so it can be retried
+once, on `heavy`.
 
 ## Verify research and review results
 

@@ -76,15 +76,15 @@ Each run uses a profile, which fixes one model and one reasoning effort:
 
 | Profile | Model | Effort |
 | --- | --- | --- |
-| `light` | `gpt-6-luna` | The model's default |
-| `standard` | `gpt-6.1-terra` | `high` |
-| `deep` | `gpt-6.1-terra` | `xhigh` |
-| `heavy` | `gpt-6.1-sol` | `high` |
+| `light` | `gpt-6-luna` | `medium` |
+| `standard` | `gpt-6.1-terra` | `medium` |
+| `deep` | `gpt-6.1-sol` | `medium` |
+| `heavy` | `gpt-6-astra` | `medium` |
 
 | Mode | Default profile |
 | --- | --- |
 | `research` | `light` |
-| `review` | `heavy` |
+| `review` | `deep` |
 | `implement` | `standard` |
 
 `review` defaults to a different model from `implement`, so worker-written code is not
