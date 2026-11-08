@@ -1,6 +1,6 @@
 # V2 MCP Servers Reference
 
-Source: <https://opencode.ai/v2/docs/mcp-servers/> (2.2.5).
+Source: <https://opencode.ai/v2/docs/mcp-servers/> (2.2.6).
 
 ## Structure
 
@@ -46,6 +46,7 @@ field in an override, or use a different name.
 | `codemode` | No | `false` exposes tools directly instead of through Code Mode (default `true`) |
 | `timeout` | No | Per-server `{startup, catalog, execution}` overrides |
 | `protocol` | No | `legacy` (default), `auto`, or `2026-07-28` |
+| `pool` | No | `true` shares one connection across directories with identical settings (default `false`; 2.2.6). See [Shared connections](#shared-connections) |
 
 ## Remote (Streamable HTTP)
 
@@ -68,6 +69,7 @@ field in an override, or use a different name.
 | `codemode` | No | `false` to skip Code Mode |
 | `timeout` | No | Per-server timeout overrides |
 | `protocol` | No | `legacy` \| `auto` \| `2026-07-28` |
+| `pool` | No | `true` shares one connection across directories with identical settings (default `false`; 2.2.6) |
 
 ## OAuth
 
@@ -120,6 +122,21 @@ CIMD allows loopback redirects without a port (`http://127.0.0.1/callback`, `htt
 `callback_port` works with CIMD; a custom `redirect_uri` does not, and OpenCode falls back to DCR. If the server
 supports neither CIMD nor DCR, configure a pre-registered client.
 
+## Shared connections
+
+Since 2.2.6, one OpenCode server with many directories open can share an MCP connection instead of opening one per
+directory. Set `pool: true` on the server (docs and schema):
+
+- Only connections that negotiate the `2026-07-28` protocol revision are shared. With `pool` set, an unset `protocol`
+  means `auto`; a server that answers with an older revision, or one set to `legacy`, keeps one connection per directory.
+- Directories share a connection only when everything that changes it matches: URL, headers, OAuth settings and signed-in
+  account for a remote server; command, working directory and environment for a local one; timeouts and `protocol`.
+  The server's name need not match, but sign-ins are stored per name, so an OAuth server is shared only under the same name.
+- A local server is shared only between directories on this machine, not ones in a workspace. Sharing it across projects
+  needs a fixed `cwd` such as `"~"`; without one each project gets its own and OpenCode logs a warning.
+- A shared connection has no roots. When a tool asks for input, the request appears in the directory that called it.
+- The connection closes as soon as the last directory using it closes or disconnects the server.
+
 ## Timeouts
 
 Positive integer milliseconds. Defaults under `mcp.timeout` apply to servers defined in configuration files; a
@@ -169,6 +186,10 @@ Command text fills a prompt's arguments in order; separate them with spaces and 
   `codemode: false` to list them directly. Denying `execute` removes Code Mode and the tools reached only through it.
 
 ## CLI and TUI
+
+When OpenCode runs over SSH, in a container, or on a remote server, the browser cannot reach it after sign-in. Since 2.2.6
+you can copy the failed page's URL (`http://127.0.0.1:<port>/callback?code=...&state=...`) and paste it into the sign-in
+prompt in `/mcps`, `opencode mcp auth`, or the desktop and web app's sign-in dialog (docs; not run).
 
 ```bash
 opencode mcp add context7 --url https://mcp.context7.com/mcp                  # writes project config

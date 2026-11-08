@@ -2,7 +2,7 @@
 
 Sources: <https://opencode.ai/v2/docs/plugins/>, <https://opencode.ai/v2/docs/build/plugins/>,
 <https://opencode.ai/v2/docs/build/plugins/server/>, <https://opencode.ai/v2/docs/build/plugins/gui/>,
-<https://opencode.ai/v2/docs/build/plugins/migrate-v1/>, <https://opencode.ai/v2/docs/cli/plugins/>. Verified against 2.2.5;
+<https://opencode.ai/v2/docs/build/plugins/migrate-v1/>, <https://opencode.ai/v2/docs/cli/plugins/>. Verified against 2.2.6;
 the build-docs index was split into `server` and `gui` pages in 2.2.x.
 
 > [!WARNING]
@@ -76,7 +76,8 @@ Experimental, since 2.2.0. A package that exports `./gui-experimental` adds pane
 Desktop. The app loads plugins from the server it runs, so configure the plugin in the global `opencode.json(c)` to
 use it in every window. **Settings > Extensions > Plugins** lists them when the app's own server is selected; a
 plugin's switch turns off only its desktop UI, and **Reload** loads it again after a failure. To turn off the whole
-plugin, add `-<id>` to `plugins`. Build details are on the `build/plugins/gui` page, which this skill does not
+plugin, add `-<id>` to `plugins`. In 2.2.6 GUI plugins can also add color themes, render or add actions to code blocks, and use native settings and menu
+components (release notes and the changed `build/plugins/gui` page; not exercised). Build details are on the `build/plugins/gui` page, which this skill does not
 reproduce.
 
 ## Minimal V2 plugin

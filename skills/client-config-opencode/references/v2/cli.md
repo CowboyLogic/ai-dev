@@ -50,6 +50,7 @@ Sources: <https://opencode.ai/v2/docs/cli/config/>, <https://opencode.ai/v2/docs
 | `prompt.image_preview` | boolean | Image previews above the prompt |
 | `session.sidebar` | `auto` \| `hide` | |
 | `session.scrollbar` | boolean | |
+| `session.submit_scroll` | `bottom` \| `keep` | After sending a prompt, jump to the latest message (`bottom`) or keep your reading position (`keep`). Added in 2.2.6 (docs, published `cli.json` schema, release notes) |
 | `session.thinking` | `show` \| `hide` | Model reasoning visibility |
 | `session.grouping` | `auto` \| `none` | |
 | `session.verbosity` | `low` \| `medium` \| `high` | Transcript detail: `low` summarizes each run of tools and thoughts, `high` opens exploration and instruction groups. Not in the V2 settings page; it is in the published schema |
@@ -159,7 +160,7 @@ default) queues the prompt.
 For the full list (diff viewer, input editing, composer, dialogs, which-key), see
 <https://opencode.ai/v2/docs/cli/keybinds/>. Retired diff IDs (`diff.toggle`, `diff.expand`, `diff.expand_all`,
 `diff.collapse`, `diff.switch_focus`) are accepted but register nothing. Added after 2.0.29: `diff.toggle_fullscreen`
-(default `f`, docked `/diff` viewer, 2.0.30) and `location.reload` (default `none`, reloads configuration).
+(default `f`, docked `/diff` viewer, 2.0.30) and `location.reload` (default `none`, reloads configuration). The 2.2.6 docs add `dialog.integration.copy` (default `tab`, copies the authorization link).
 
 > [!NOTE]
 > The `permission.mode` keybind (auto-approve toggle) and the plugin install IDs `plugins.install` and

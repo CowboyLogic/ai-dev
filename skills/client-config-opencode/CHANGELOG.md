@@ -2,6 +2,33 @@
 
 Changes to the `client-config-opencode` skill, newest first.
 
+## 2026-11-08 — v2.5 (verified against V2 2.2.6 and V1 1.19.5)
+
+Baselines: V2 2.2.5 → 2.2.6 (tag `v2.2.6`, 2026-11-06); V1 1.19.5 is the newest V1 tag and is unchanged. Sources are the
+tag-to-tag diff `v2.2.5...v2.2.6` of the V2 docs source (now `services/site/src/docs/content`; it moved from
+`services/www` in this release, with 14 content pages changed besides the Console, SDK, and GUI-plugin build pages), the
+V2 config schema source at `v2.2.6`, and the V2 `CHANGELOG.md` entry for 2.2.6. The 2.2.6 binary was **not** run, so
+binary-dependent claims keep their earlier basis.
+
+- `references/v2/mcp.md`: new `pool` option and a Shared connections section (docs and schema); pasting the browser
+  redirect URL into the sign-in prompt when OpenCode runs on another machine (docs; release notes say the same).
+- `references/v2/permissions.md`: new `websearch.use` policy action with provider-ID resources (docs, schema, release
+  notes). The tools page dropped its sentence that the `opencode` Code Mode namespace utilities request no built-in
+  permission action, so the worktree-permission note now says it rests on the 2.2.5 page and is unverified for 2.2.6.
+- `references/v2/config-schema.md`: warming `interval: "auto"` (90% of `cache.ttl`), the `interval` shorter than
+  `duration` rule, and the provider and model `warming` setting (schema and release notes only); experimental flags now
+  come from one registry with `all_flags`, `OPENCODE_FLAGS=all`, and the new `codemode_vm` and `part_rows` keys;
+  background compaction details (starts 60k tokens before the threshold, waits for an unfinished summary, falls back past
+  about 40% of the threshold); `websearch.use` in the `policies` row.
+- `references/v2/cli.md`: `session.submit_scroll` (`bottom` or `keep`, also present in the published `cli.json`) and
+  the `dialog.integration.copy` keybind (docs).
+- `references/v2/plugins.md`: GUI plugins can add themes, code block rendering and actions, and native settings and menu
+  components (release notes and the changed GUI build page; not exercised); verification basis 2.2.6.
+- `sources.json`: schema source pins moved to `v2.2.6`, `config/flag.ts` added, `covers` text updated.
+- Not changed: Desktop, site, Console, and SDK changes; `opencode run --archived` and `--worktree` (CLI flags, not
+  configuration surface); other `run` and ACP fixes; Azure Messages support for Foundry Claude models (release notes
+  only, no configuration surface to verify); V1 references (no newer V1 tag).
+
 ## 2026-11-01 — v2.4 (verified against V2 2.2.5 and V1 1.19.5)
 
 Baselines: V2 2.0.29 → 2.2.5 (2.0.30, 2.0.31, 2.0.32, 2.1.0 to 2.1.4, 2.2.0 to 2.2.5; tags through `v2.2.5`, 2026-10-30);
