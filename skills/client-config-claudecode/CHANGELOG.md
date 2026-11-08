@@ -14,7 +14,9 @@ the changelog supports are labeled "changelog only".
   gateway or with telemetry or feature flags off (changelog only, v2.1.319): calls the server-side
   check cannot review are asked about or denied, and `CLAUDE_CODE_AUTO_MODE_SERVER=0` (documented
   in the env-vars page) keeps the built-in classifier. Notes the fix for Bash `deny` and `ask`
-  rules missing quoted-word commands (changelog only, v2.1.319).
+  rules missing quoted-word commands, the explanation auto mode now gives when very large
+  permission rules or `autoMode` settings make it refuse, and the `claude -p` exit 1 on such
+  refusals (all changelog only, v2.1.319). Adds `denyInsteadOfPrompting` to the example block.
 - `scripts/validate-settings.py` and `scripts/show-settings.py`: recognize
   `permissions.denyInsteadOfPrompting` (Boolean).
 - `references/mcp.md`: adds MCP tasks and `CLAUDE_CODE_DISABLE_MCP_TASK_BACKGROUND` (MCP docs
