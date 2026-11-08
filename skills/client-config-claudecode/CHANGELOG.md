@@ -2,6 +2,33 @@
 
 Changes to the `client-config-claudecode` skill, newest first.
 
+## 2026-11-08 — v2.6 (verified against Claude Code 2.1.319)
+
+Basis: Claude Code 2.1.319 (published to npm 2026-11-06; `latest` and `next`, `stable` is 2.1.311),
+the 2.1.317–2.1.319 changelog (read from the repository `CHANGELOG.md`), and the
+`code.claude.com/docs` pages fetched 2026-11-08. The Claude Code binary was not run. Claims only
+the changelog supports are labeled "changelog only".
+
+- `references/permissions.md`: adds `permissions.denyInsteadOfPrompting` (changelog only, v2.1.319;
+  absent from the settings reference and permissions docs). Documents auto mode behind an LLM
+  gateway or with telemetry or feature flags off (changelog only, v2.1.319): calls the server-side
+  check cannot review are asked about or denied, and `CLAUDE_CODE_AUTO_MODE_SERVER=0` (documented
+  in the env-vars page) keeps the built-in classifier. Notes the fix for Bash `deny` and `ask`
+  rules missing quoted-word commands (changelog only, v2.1.319).
+- `scripts/validate-settings.py` and `scripts/show-settings.py`: recognize
+  `permissions.denyInsteadOfPrompting` (Boolean).
+- `references/mcp.md`: adds MCP tasks and `CLAUDE_CODE_DISABLE_MCP_TASK_BACKGROUND` (MCP docs
+  page), the stdio version-probe handling (v2.1.318) and the empty `AWS_BEARER_TOKEN_BEDROCK`
+  handling (v2.1.317), both changelog only, and the v2.1.318 change that makes `deniedMcpServers`
+  `serverUrl` entries also block Anthropic-provided servers and cloud connectors (changelog only).
+- Checked and unchanged: `references/hooks.md` (no hook event or handler change in the window; the
+  v2.1.317 `onFailure: "block"` option is for Agent SDK hook callbacks, not settings hooks) and
+  `references/settings-schema.md`.
+- Not covered: environment variables that only the env-vars page documents, for example
+  `CLAUDE_CODE_DISABLE_FEATURE_FLAGS` (v2.1.319) and `CLAUDE_CODE_DISABLE_NESTED_SESSION_ID`
+  (v2.1.317): that page is not in `sources.json`.
+- Evals: no new cases.
+
 ## 2026-11-01 — v2.5 (verified against Claude Code 2.1.316)
 
 Basis: Claude Code 2.1.316 (released 2026-10-31; npm `latest` and `next`, `stable` is 2.1.309),
