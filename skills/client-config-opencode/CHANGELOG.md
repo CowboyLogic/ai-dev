@@ -16,8 +16,9 @@ binary-dependent claims keep their earlier basis.
   notes). The tools page dropped its sentence that the `opencode` Code Mode namespace utilities request no built-in
   permission action, so the worktree-permission note now says it rests on the 2.2.5 page and is unverified for 2.2.6.
 - `references/v2/config-schema.md`: warming `interval: "auto"` (90% of `cache.ttl`), the `interval` shorter than
-  `duration` rule, and the provider and model `warming` setting (schema and release notes only); experimental flags now
-  come from one registry with `all_flags`, `OPENCODE_FLAGS=all`, and the new `codemode_vm` and `part_rows` keys;
+  `duration` rule, and the provider and model `settings.cache.warming` override (schema and release notes only); the five registry feature flags
+  now resolve through `OPENCODE_FLAGS`, `experimental.<key>`, and `all_flags` (with the new `all_flags` key), and the new
+  `codemode_vm` and `part_rows` keys are separate fields;
   background compaction details (starts 60k tokens before the threshold, waits for an unfinished summary, falls back past
   about 40% of the threshold); `websearch.use` in the `policies` row.
 - `references/v2/cli.md`: `session.submit_scroll` (`bottom` or `keep`, also present in the published `cli.json`) and

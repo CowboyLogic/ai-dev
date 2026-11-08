@@ -325,8 +325,10 @@ warmed every 4.5 minutes); models without a `cache.ttl` are not warmed. Raise `d
 }
 ```
 
-The 2.2.6 config schema also defines a `warming` setting (boolean, or `{ interval, duration }`) on a provider or model
-that overrides the top-level `warming` (schema source and release notes only; the docs page shows the top-level form).
+The 2.2.6 config schema also lets a provider or model override the top-level `warming` at
+`providers.<id>.settings.cache.warming` or `providers.<id>.models.<model>.settings.cache.warming` (boolean, or
+`{ interval, duration }`). It is a `cache` setting, not a `warming` field on the provider or model; a key written elsewhere
+is ignored. Schema source and release notes only; the docs page shows the top-level form.
 
 ---
 
@@ -448,20 +450,25 @@ V2 docs showed only `{env:}`; `{file:}` was verified working on the 2.0.27 binar
 ## Experimental
 
 All keys live under `experimental` and may change or disappear in any release. Verified against the 2.2.6 docs and
-config schema (`packages/schema/src/config/experimental.ts` and `flag.ts`). In 2.2.6 the feature-flag keys (`todo`,
-`background_compaction`, `media_blob`, `schedules`, `artifacts`, `codemode_vm`) come from one registry: each is on in local and
-dev builds and off in releases, `experimental.<key>` and `OPENCODE_FLAGS` override that, and `OPENCODE_FLAGS=all` or
-`experimental.all_flags: true` turns every flag on (explicit per-flag settings still win; `false` is not a kill switch).
-The registry is read from the schema source and release notes; the `OPENCODE_FLAGS` behavior was not run.
+config schema (`packages/schema/src/config/experimental.ts` and `flag.ts`). In 2.2.6 five keys (`todo`,
+`background_compaction`, `media_blob`, `schedules`, `artifacts`) come from one feature-flag registry (`flag.ts`): each is on
+in local and dev builds and off in releases. The flag resolver (`packages/core/src/flag.ts`) checks, in order,
+`OPENCODE_FLAGS` (`-key`, then `all`), then `experimental.<key>`, then `experimental.all_flags: true`, then the build
+default. So an explicit `experimental.<key>` setting beats `experimental.all_flags`, but `OPENCODE_FLAGS=all` beats config:
+to opt one flag out of an environment-wide `all`, use `OPENCODE_FLAGS=all,-background_compaction`. `all_flags: false` falls
+through and is not a kill switch. `codemode_vm` and `part_rows` are separate `experimental.ts` fields, not registry
+flags, so `all_flags` and `OPENCODE_FLAGS=all` do not enable them in the schema source; the 2.2.6 release notes nonetheless
+describe `OPENCODE_FLAGS=codemode_vm`, and that conflict is unresolved. Read from the schema and core source and release
+notes; the flag behavior was not run.
 
 | Key | Type / default | Effect |
 |-----|----------------|--------|
 | `todo` | boolean, `false` | Gives agents the `todowrite` tool (2.1.0; todos are off by default in V2) |
 | `subagent_depth` | integer, `1` | How deeply subagents can start their own subagents |
 | `background_compaction` | boolean, `false` | Writes the compaction summary in the background; unused summaries still cost tokens. Per the 2.2.6 docs it starts 60k tokens before the threshold (on small windows, at most halfway between the first response after the last compaction and the threshold), the session waits if the summary is not finished when compaction is due, and compaction summarizes as usual if the conversation since the held summary grew past about 40% of the threshold or the model, instructions, or start of the conversation changed |
-| `codemode_vm` | boolean, `false` | Runs the Code Mode `execute` tool on the experimental bytecode VM instead of the legacy interpreter (2.2.6; also `OPENCODE_FLAGS=codemode_vm`) |
+| `codemode_vm` | boolean, `false` | Runs the Code Mode `execute` tool on the experimental bytecode VM instead of the legacy interpreter (2.2.6; not a registry flag in the schema source, but the release notes mention `OPENCODE_FLAGS=codemode_vm`) |
 | `part_rows` | boolean, `false` | Writes each assistant part as its own `session_part` row instead of rewriting the whole message on every event (2.2.6, schema description only) |
-| `all_flags` | boolean | Turns every feature flag on regardless of build channel, like `OPENCODE_FLAGS=all` (2.2.6) |
+| `all_flags` | boolean | Turns the five registry flags on regardless of build channel, like `OPENCODE_FLAGS=all` but below explicit `experimental.<key>` settings (2.2.6) |
 | `image_generate` | boolean or `{ model }` | Default model for `experimental_image_generate` as `providerID/modelID[#variant]`; the tool appears while a connected provider has an image model, and since 2.2.2 needs no other setup |
 | `location_idle_timeout` | duration string or `false`, `"60 minutes"` | How long a project location can be idle before its services unload; running sessions and background jobs keep it loaded; project config can override global |
 | `schedules` | boolean, `false` | Opt-in scheduled prompts (`/schedule`, agent tools); `timezone` sets the zone. Release-notes only |
