@@ -169,7 +169,7 @@ KNOWN_TOP_LEVEL_KEYS = (
 )
 KNOWN_PERMISSION_KEYS = {
     "allow", "deny", "ask", "defaultMode", "additionalDirectories",
-    "blockReadsOutsideWorkingDirectories", "blockWritesOutsideWorkingDirectories", "disableBypassPermissionsMode", "disableAutoMode",
+    "blockReadsOutsideWorkingDirectories", "blockWritesOutsideWorkingDirectories", "denyInsteadOfPrompting", "disableBypassPermissionsMode", "disableAutoMode",
 }
 
 PERMISSION_RULE_TOOLS = {
@@ -313,7 +313,7 @@ def validate_permissions(perms, path, scope):
             warn(f"{path}.defaultMode: '{mode}' doesn't take effect from {scope} settings; set it in ~/.claude/settings.json")
     if "additionalDirectories" in perms and not isinstance(perms["additionalDirectories"], list):
         err(f"{path}.additionalDirectories: must be an array")
-    for bkey in ("blockReadsOutsideWorkingDirectories", "blockWritesOutsideWorkingDirectories"):
+    for bkey in ("blockReadsOutsideWorkingDirectories", "blockWritesOutsideWorkingDirectories", "denyInsteadOfPrompting"):
         if bkey in perms and not isinstance(perms[bkey], bool):
             err(f"{path}.{bkey}: must be a Boolean")
     for key in ["disableBypassPermissionsMode", "disableAutoMode"]:

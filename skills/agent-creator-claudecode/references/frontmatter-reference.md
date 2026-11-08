@@ -238,7 +238,7 @@ the session effort while the agent is active, but not the `CLAUDE_CODE_EFFORT_LE
 environment variable. When Claude runs a non-fork subagent it can also pass an `effort`
 parameter for that one invocation (v2.1.292+): it overrides this field, persists when the
 subagent is resumed, and is itself overridden by `CLAUDE_CODE_EFFORT_LEVEL`. `/tasks` shows
-the effort set for a running subagent. Changelog only (v2.1.316): `CLAUDE_CODE_SUBAGENT_EFFORT` sets the effort level subagents run at when nothing else names one, instead of inheriting the session's.
+the effort set for a running subagent. A subagent with no `effort` of its own that runs on a different model than the main conversation does not inherit the session's level (sub-agents and model-config docs); changelog only (v2.1.317): it uses that model's saved effort level or its default. Changelog only (v2.1.316): `CLAUDE_CODE_SUBAGENT_EFFORT` sets the effort level subagents run at when nothing else names one, instead of inheriting the session's.
 
 ### `isolation`
 
