@@ -30,6 +30,7 @@ A **bare tool name** in `deny` (e.g. `Bash`, or the equivalent `Bash(*)`) remove
 | --- | --- |
 | `permissions.blockReadsOutsideWorkingDirectories` | Read/Grep/Glob/LSP refuse paths outside the working directories in every mode, incl. `bypassPermissions`; recognized Bash file readers (`cat` etc.) prompt. `true` from any source applies (v2.1.257+) |
 | `permissions.blockWritesOutsideWorkingDirectories` | Changelog only (v2.1.314): Write, Edit and NotebookEdit refuse paths outside the working directories in every permission mode |
+| `permissions.denyInsteadOfPrompting` | Changelog only (v2.1.319): a tool call that would wait on a permission prompt is denied and the turn continues, in terminal sessions, subagents and teammates; not in the settings reference or permissions docs as of 2026-11-08 |
 | `permissions.disableBypassPermissionsMode` | `"disable"` — rejects `--dangerously-skip-permissions` and ignores subagent `permissionMode: bypassPermissions` |
 | `permissions.disableAutoMode` | `"disable"` — same as top-level `disableAutoMode` |
 | `skipDangerousModePermissionPrompt` | *(User, local, or managed; top-level key)* Skip the bypass-mode confirmation dialog; Claude Code writes `true` when you accept it once |
@@ -195,6 +196,10 @@ Changelog only (v2.1.302): `claude -p` and Agent SDK sessions with no permission
 When `auto` is selected but unavailable to the session (a settings file turned it off, an unsupported model, or Anthropic disabled it server-side), the session starts in Manual. The first session after an install or upgrade can choose its mode before flags arrive and so can differ from this table.
 
 **Auto mode classifier model:** it runs on Claude Sonnet 5 by default, not on your `/model` choice, and a classifier model Anthropic configures server-side takes precedence. When the session model is Claude Sonnet 4.6, or `availableModels` excludes Sonnet 5, it runs on the session's model instead, or on an Opus model when the session runs on a Fable model. `CLAUDE_CODE_AUTO_MODE_MODEL` (v2.1.302, changelog only) picks the model for the client-side classifier; it does not change the model for server-side auto mode. From v2.1.302 (changelog only), a conversation too long for the server-side classifier's safety check is compacted instead of every checked tool call being denied.
+
+**Auto mode behind an LLM gateway or with telemetry/feature flags off** (changelog only, v2.1.319): calls the server-side check cannot review are asked about or denied, with no fallback to the built-in classifier; set `CLAUDE_CODE_AUTO_MODE_SERVER=0` to keep using Claude Code's own classifier (Bedrock, Vertex and Foundry are unchanged). `CLAUDE_CODE_AUTO_MODE_SERVER=1` turns the server-side check on behind a gateway even with `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS` set; if managed settings set the latter, they must set the `1` too. The variable itself is documented in the env-vars and permission-modes pages; the v2.1.319 behavior is not. In `claude -p`, auto-mode refusals for lack of a safety check now exit 1 (v2.1.319, changelog only).
+
+**Bash deny/ask matching** (changelog only, v2.1.319): fixes a case where `deny` and `ask` rules missed commands written with quoted words.
 
 **Actions no mode auto-approves** (even `bypassPermissions`): explicit `ask` rules; org connector tools set to `ask`; `AskUserQuestion` and MCP tools marked `requiresUserInteraction`; `rm`/`rmdir` targeting a critical path (circuit breaker — no allow rule or hook `"allow"` approves it; `dontAsk` denies it, `auto` sends it to the classifier); cross-session messaging safeguards; reads outside working dirs while `blockReadsOutsideWorkingDirectories` is on.
 
