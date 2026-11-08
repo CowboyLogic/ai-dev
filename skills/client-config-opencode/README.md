@@ -5,9 +5,9 @@ Evaluation results for the `client-config-opencode` skill. The skill itself is
 
 > [!NOTE]
 > **OpenCode version:** references verified against OpenCode V2
-> [2.2.5](https://github.com/anomalyco/opencode/tree/v2.2.5) (tagged 2026-10-30) and V1
+> [2.2.6](https://github.com/anomalyco/opencode/tree/v2.2.6) (tagged 2026-11-06) and V1
 > [1.19.5](https://github.com/anomalyco/opencode/tree/v1.19.5) (tagged 2026-10-28),
-> checked 2026-11-01. Neither binary was run for this check: claims that depend on a binary
+> checked 2026-11-08. Neither binary was run for this check: claims that depend on a binary
 > (`--help` output, `{file:...}` substitution) keep their 2.0.27 basis, and everything else comes
 > from the tagged docs and source and the published `cli.json` schema. V1 changes since 1.19.0 rest on the tag
 > diff and commit log because the V1 release notes were not reachable. V2 ships as git tags and

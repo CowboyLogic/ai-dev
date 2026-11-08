@@ -98,7 +98,7 @@ Settings merge; non-conflicting keys are preserved. Exceptions to "closest wins"
 | `references` | object | Named local dirs or Git repos | [References](#references) |
 | `worktree` | object | `{ "directory": "../worktrees" }` | [Worktrees](#worktrees) |
 | `instructions` | array | Files, globs, and HTTP(S) URLs loaded after `AGENTS.md` (2.0.30+) | [Instructions](#instructions) |
-| `policies` | array | Ordered `{ action, resource, effect }` statements; actions `provider.use`, `tool.use`, `integration.connect`, `integration.use`, `mcp.use`, `skill.use`, `plugin.use` (2.2.3+ for the last four; `experimental.policies` is deprecated but still merges in) | [permissions.md](permissions.md#policies) |
+| `policies` | array | Ordered `{ action, resource, effect }` statements; actions `provider.use`, `tool.use`, `integration.connect`, `integration.use`, `mcp.use`, `skill.use`, `plugin.use`, `websearch.use` (2.2.3+ for the four before `websearch.use`, 2.2.6+ for `websearch.use`; `experimental.policies` is deprecated but still merges in) | [permissions.md](permissions.md#policies) |
 | `experimental` | object | See [Experimental](#experimental) | [Experimental](#experimental) |
 
 Fields that keep the V1 shape and need no migration: `shell`, `model`, `default_agent`, `watcher`, `formatter`,
@@ -266,7 +266,8 @@ Summaries cover the entire current conversation and keep the most recent `keep.t
 full conversation lets the summary request reuse the normal request's prompt cache where the provider supports it
 (2.1.0 notes, 2.2.5 docs). Set `agents.compaction.model` to write summaries with a different model than the session's.
 `experimental.background_compaction: true` (2.1.4) prepares a summary in the background as a session nears its
-threshold; summaries that are never used still cost tokens.
+threshold; summaries that are never used still cost tokens. The 2.2.6 docs start it 60k tokens before the threshold and
+let the session wait for an unfinished summary (details in [Experimental](#experimental)).
 
 Native provider compaction is opt-in per provider or model:
 `providers.<id>.settings.compaction.type` = `"native"` or `"summary"` (model setting overrides provider). Native
@@ -311,7 +312,21 @@ Keeps provider prompt caches warm with periodic transient requests. Off by defau
 { "warming": { "prompt": "Do not perform any work. Reply with exactly: OK", "interval": "5 minutes", "duration": "1 hour" } }
 ```
 
-`interval` and `duration` are duration strings that must resolve to finite values greater than zero.
+`interval` and `duration` are duration strings that must resolve to finite values greater than zero, and `interval` must
+be shorter than `duration` or OpenCode skips warming and logs a warning (2.2.6 docs).
+
+Since 2.2.6 `interval` also accepts `"auto"`, which warms at 90% of the model's `cache.ttl` setting (a `"5m"` cache is
+warmed every 4.5 minutes); models without a `cache.ttl` are not warmed. Raise `duration` for long TTLs such as `"1h"`:
+
+```jsonc
+{
+  "warming": { "interval": "auto", "duration": "2 hours" },
+  "providers": { "anthropic": { "settings": { "cache": { "ttl": "1h" } } } }
+}
+```
+
+The 2.2.6 config schema also defines a `warming` setting (boolean, or `{ interval, duration }`) on a provider or model
+that overrides the top-level `warming` (schema source and release notes only; the docs page shows the top-level form).
 
 ---
 
@@ -432,14 +447,21 @@ V2 docs showed only `{env:}`; `{file:}` was verified working on the 2.0.27 binar
 
 ## Experimental
 
-All keys live under `experimental` and may change or disappear in any release. Verified against the 2.2.5 docs and
-config schema (`packages/schema/src/config/experimental.ts`).
+All keys live under `experimental` and may change or disappear in any release. Verified against the 2.2.6 docs and
+config schema (`packages/schema/src/config/experimental.ts` and `flag.ts`). In 2.2.6 the feature-flag keys (`todo`,
+`background_compaction`, `media_blob`, `schedules`, `artifacts`, `codemode_vm`) come from one registry: each is on in local and
+dev builds and off in releases, `experimental.<key>` and `OPENCODE_FLAGS` override that, and `OPENCODE_FLAGS=all` or
+`experimental.all_flags: true` turns every flag on (explicit per-flag settings still win; `false` is not a kill switch).
+The registry is read from the schema source and release notes; the `OPENCODE_FLAGS` behavior was not run.
 
 | Key | Type / default | Effect |
 |-----|----------------|--------|
 | `todo` | boolean, `false` | Gives agents the `todowrite` tool (2.1.0; todos are off by default in V2) |
 | `subagent_depth` | integer, `1` | How deeply subagents can start their own subagents |
-| `background_compaction` | boolean, `false` | Writes the compaction summary in the background; unused summaries still cost tokens |
+| `background_compaction` | boolean, `false` | Writes the compaction summary in the background; unused summaries still cost tokens. Per the 2.2.6 docs it starts 60k tokens before the threshold (on small windows, at most halfway between the first response after the last compaction and the threshold), the session waits if the summary is not finished when compaction is due, and compaction summarizes as usual if the conversation since the held summary grew past about 40% of the threshold or the model, instructions, or start of the conversation changed |
+| `codemode_vm` | boolean, `false` | Runs the Code Mode `execute` tool on the experimental bytecode VM instead of the legacy interpreter (2.2.6; also `OPENCODE_FLAGS=codemode_vm`) |
+| `part_rows` | boolean, `false` | Writes each assistant part as its own `session_part` row instead of rewriting the whole message on every event (2.2.6, schema description only) |
+| `all_flags` | boolean | Turns every feature flag on regardless of build channel, like `OPENCODE_FLAGS=all` (2.2.6) |
 | `image_generate` | boolean or `{ model }` | Default model for `experimental_image_generate` as `providerID/modelID[#variant]`; the tool appears while a connected provider has an image model, and since 2.2.2 needs no other setup |
 | `location_idle_timeout` | duration string or `false`, `"60 minutes"` | How long a project location can be idle before its services unload; running sessions and background jobs keep it loaded; project config can override global |
 | `schedules` | boolean, `false` | Opt-in scheduled prompts (`/schedule`, agent tools); `timezone` sets the zone. Release-notes only |

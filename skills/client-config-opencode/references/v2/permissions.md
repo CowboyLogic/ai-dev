@@ -66,10 +66,10 @@ All three fields are required strings.
 
 Plugins may define more actions (actions are free-form strings).
 
-The tools page (unchanged on this point through 2.2.5) lists Code Mode worktree utilities in the `opencode` namespace. `worktree_remove` uses
+The tools page (as of 2.2.5; 2.2.6 dropped the sentence that the utilities request no built-in permission action) lists Code Mode worktree utilities in the `opencode` namespace. `worktree_remove` uses
 `edit` with the worktree directory as the resource, so an `edit` rule that denies that directory blocks it
 (`force: true` can discard modified or untracked files). `worktree_create` and `worktree_list` request no built-in
-permission action. The namespace is part of Code Mode, which `execute` controls.
+permission action per the 2.2.5 tools page; the 2.2.6 page no longer says so, so treat that as unverified. The namespace is part of Code Mode, which `execute` controls.
 
 The docs state `doom_loop` and `lsp` are not V2 Core actions. The V1 keys `list` and `todowrite` do not appear in
 the V2 action table. V1 names map as: `bash` → `shell`, `task` → `subagent`, `write`/`patch` → `edit`.
@@ -208,7 +208,7 @@ Policies live under the top-level `policies` array. They are binary (`allow`/`de
 
 | Field | Values |
 |-------|--------|
-| `action` | `provider.use` \| `tool.use` \| `integration.connect` \| `integration.use` \| `mcp.use` \| `skill.use` \| `plugin.use` (`integration.connect`, `mcp.use`, `skill.use`, `plugin.use`, and the new meaning of `integration.use` need 2.2.3+; older clients ignore them) |
+| `action` | `provider.use` \| `tool.use` \| `integration.connect` \| `integration.use` \| `mcp.use` \| `skill.use` \| `plugin.use` \| `websearch.use` (2.2.6; older clients ignore it) (`integration.connect`, `mcp.use`, `skill.use`, `plugin.use`, and the new meaning of `integration.use` need 2.2.3+; older clients ignore them) |
 | `resource` | Wildcard pattern; meaning depends on the action |
 | `effect` | `allow` \| `deny` |
 
@@ -284,6 +284,23 @@ An MDM policy that requires one Console workspace and nothing else:
 ```
 
 Only managed policies can withhold the MCP servers and config an integration delivers.
+
+### `websearch.use`
+
+Added in 2.2.6 (docs and release notes; clients older than 2.2.6 ignore it). Controls which web search providers the
+`websearch` tool can use. The resource is the provider ID: `opencode` for OpenCode Web Search from the Console, a
+built-in provider such as `exa`, `firecrawl`, `parallel`, `tavily`, or `tinyfish`, or the ID of a provider a plugin adds.
+Denied providers are removed even when they work without an API key (Exa, TinyFish); when every provider is denied,
+the `websearch` tool is no longer offered.
+
+```jsonc
+{
+  "policies": [
+    { "action": "websearch.use", "resource": "*", "effect": "deny" },
+    { "action": "websearch.use", "resource": "opencode", "effect": "allow" }
+  ]
+}
+```
 
 ### `mcp.use`, `skill.use`, `plugin.use`
 
