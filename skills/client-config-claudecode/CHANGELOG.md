@@ -18,7 +18,8 @@ the changelog supports are labeled "changelog only".
 - `scripts/validate-settings.py` and `scripts/show-settings.py`: recognize
   `permissions.denyInsteadOfPrompting` (Boolean).
 - `references/mcp.md`: adds MCP tasks and `CLAUDE_CODE_DISABLE_MCP_TASK_BACKGROUND` (MCP docs
-  page), the stdio version-probe handling (v2.1.318) and the empty `AWS_BEARER_TOKEN_BEDROCK`
+  page; the docs page still requires feature-flag fetching, which the v2.1.319 changelog drops and
+  replaces with `CLAUDE_CODE_DISABLE_MCP_TASKS=1`, recorded as changelog only), the stdio version-probe handling (v2.1.318) and the empty `AWS_BEARER_TOKEN_BEDROCK`
   handling (v2.1.317), both changelog only, and the v2.1.318 change that makes `deniedMcpServers`
   `serverUrl` entries also block Anthropic-provided servers and cloud connectors (changelog only).
 - Checked and unchanged: `references/hooks.md` (no hook event or handler change in the window; the
