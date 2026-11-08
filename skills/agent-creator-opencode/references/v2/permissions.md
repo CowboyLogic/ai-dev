@@ -3,7 +3,7 @@
 The native V2 `permissions` array: rule shape, matching, actions, defaults, and
 policies.
 
-**Sources (checked 2026-11-01, V2 2.2.5):** <https://opencode.ai/v2/docs/permissions/> ·
+**Sources (checked 2026-11-08, V2 2.2.6):** <https://opencode.ai/v2/docs/permissions/> ·
 <https://opencode.ai/v2/docs/tools/> · <https://opencode.ai/v2/docs/policies/> ·
 <https://opencode.ai/v2/docs/skills/>
 
@@ -106,11 +106,11 @@ string.
   pages checked. Do not emit rules for them in native V2.
 - The tools page says a `browser` deny rule with resource `*` removes the browser
   Code Mode catalog; it is not in the permissions page's action table.
-- The tools page (unchanged on this point through 2.2.5) lists Code Mode worktree utilities. `worktree_remove`
+- The tools page (as of 2.2.5; 2.2.6 removed the sentence that these utilities request no built-in permission action) lists Code Mode worktree utilities. `worktree_remove`
   uses `edit` with the worktree directory as the resource, so an `edit` rule that
   denies that directory blocks it for the agent (`force: true` can discard
-  modified or untracked files). `worktree_create` and `worktree_list` request no
-  built-in permission action.
+  modified or untracked files). `worktree_create` and `worktree_list` requested no
+  built-in permission action per the 2.2.5 tools page; the 2.2.6 page no longer says so, so treat that as unverified.
 - `skill` effects: `allow` advertises and loads; `ask` advertises and asks before
   loading; `deny` hides the skill from the model and rejects loading.
 - `subagent` approvals save the agent ID; shell approvals save command prefixes.
@@ -223,7 +223,7 @@ and can only turn `allow` or `ask` into `deny`.
 ```
 
 - `action` is `provider.use`, `tool.use`, `integration.connect`, `integration.use`,
-  `mcp.use`, `skill.use`, or `plugin.use` (`integration.connect`, `mcp.use`, `skill.use`, `plugin.use`, and the new
+  `mcp.use`, `skill.use`, `plugin.use`, or `websearch.use` (2.2.6; older clients ignore it) (`integration.connect`, `mcp.use`, `skill.use`, `plugin.use`, and the new
   meaning of `integration.use` need 2.2.3 or newer, and older clients ignore them; before 2.2.3, `integration.use` covered MCP servers, skills, and plugins
   through `mcp:`/`skill:`/`plugin:` prefixes, and a bare `integration.use` deny
   now blocks providers instead). `permission` is not a valid action; an invalid
@@ -237,6 +237,8 @@ and can only turn `allow` or `ask` into `deny`.
   `<integration>#<account>` or the bare integration ID (for example `opencode`,
   `anthropic`). The old `mcp:<server>`, `skill:<id>`, `plugin:<target>` forms on
   `integration.use` are pre-2.2.3 syntax, converted on load.
+- `websearch.use` resource: a web search provider ID such as `opencode`, `exa`, or `tavily`; denied providers are removed
+  and the `websearch` tool disappears when none remain.
 - `mcp.use` resource: server name; `skill.use`: skill ID; `plugin.use`: package
   name or absolute path. A denied MCP server or skill is removed and a denied
   plugin is not loaded.

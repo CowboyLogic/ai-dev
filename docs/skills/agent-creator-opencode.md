@@ -7,7 +7,7 @@ permission model, V1 → V2 migration, model and variant selection, and subagent
 
 - **Skill name:** `agent-creator-opencode`
 - **Source:** [skills/agent-creator-opencode](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-opencode)
-- **OpenCode version:** verified against OpenCode V2 [2.2.5](https://github.com/anomalyco/opencode/tree/v2.2.5) (tagged 2026-10-30) and V1 [1.19.5](https://github.com/anomalyco/opencode/tree/v1.19.5) (tagged 2026-10-28)
+- **OpenCode version:** verified against OpenCode V2 [2.2.6](https://github.com/anomalyco/opencode/tree/v2.2.6) (tagged 2026-11-06) and V1 [1.19.5](https://github.com/anomalyco/opencode/tree/v1.19.5) (tagged 2026-10-28)
 
 ---
 

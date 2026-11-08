@@ -3,7 +3,7 @@
 Model ID format, variants, and common provider values for OpenCode agents. Applies
 to both V1 and V2; syntax differences are called out.
 
-**Sources (checked 2026-11-01):**
+**Sources (checked 2026-11-08):**
 
 - <https://docs.github.com/en/copilot/reference/ai-models/supported-models>
 - <https://docs.github.com/en/copilot/reference/ai-models/model-comparison>
@@ -77,7 +77,7 @@ OpenCode IDs use the `github-copilot/` provider prefix.
 
 > [!NOTE]
 > The table lists models on GitHub's supported-models page whose IDs also appear
-> under `github-copilot` in the models.dev catalog (2026-11-01). Model
+> under `github-copilot` in the models.dev catalog (2026-11-08). Model
 > availability changes often. Re-check with `/models` or `opencode models`
 > before hard-coding a model on an agent.
 
@@ -109,7 +109,7 @@ OpenCode IDs use the `github-copilot/` provider prefix.
 
 ### Retired — avoid for new agents
 
-| Model ID | Status on GitHub (2026-11-01) | Suggested replacement |
+| Model ID | Status on GitHub (2026-11-08) | Suggested replacement |
 |---|---|---|
 | `github-copilot/gpt-5-mini` | Retired 2026-10-19 | `gpt-6-luna` |
 | `github-copilot/gpt-5.4-mini` | Retired 2026-10-19 | `gpt-6-luna` |
@@ -124,7 +124,7 @@ OpenCode IDs use the `github-copilot/` provider prefix.
 | `claude-opus-4.5`, `claude-opus-4.6`, `claude-sonnet-4.5`, `gemini-3.1-pro-preview` | Retired 2026-09-01 | `claude-opus-5.5`, `claude-sonnet-5.5`, `gemini-3.8-flash` |
 | `gpt-4.1`, `gpt-5.2`, `gpt-5.2-codex`, `claude-sonnet-4`, `gemini-2.5-pro`, Raptor mini | Retired | See GitHub's retirement table |
 
-The models.dev catalog can lag GitHub: on 2026-11-01 it still listed `claude-opus-4.7`, `gemini-3.5-flash`,
+The models.dev catalog can lag GitHub: on 2026-11-08 it still listed `claude-opus-4.7`, `gemini-3.5-flash`,
 `gemini-3.6-flash`, `gemini-3.7-flash`, `kimi-k2.7-code`, and `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.5`, and `gpt-5-mini` (all
 flagged deprecated there) under `github-copilot` after GitHub retired them. Check GitHub's retirement table, not the catalog, before choosing a model that looks old.
 

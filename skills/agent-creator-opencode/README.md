@@ -6,15 +6,16 @@ on V1 or their existing files are V1-shaped.
 
 > [!NOTE]
 > **OpenCode version:** verified against OpenCode V2
-> [2.2.5](https://github.com/anomalyco/opencode/tree/v2.2.5) (tagged 2026-10-30) and V1
+> [2.2.6](https://github.com/anomalyco/opencode/tree/v2.2.6) (tagged 2026-11-06) and V1
 > [1.19.5](https://github.com/anomalyco/opencode/tree/v1.19.5) (tagged 2026-10-28),
-> checked 2026-11-01. Against the previous baseline (V2 2.0.29) the V2 agents, permissions, and migration
+> checked 2026-11-08. The agents, permissions, and migration docs are unchanged between 2.2.5 and 2.2.6 except for the
+> new `websearch.use` policy action and a removed sentence on the tools page (see `references/v2/permissions.md`). Against the baseline of the earlier 2.0.29 refresh the V2 agents, permissions, and migration
 > docs changed: `external_directory` is now allowed by default, agent files are read as one format, agent
 > `request.body` is documented as not sent (sampling goes on a model variant), and the policy actions were
 > split into `mcp.use`, `skill.use`, `plugin.use`, `integration.connect`, and `integration.use`. V1 changes since 1.19.0
 > have no agent-authoring surface (V1 release notes were not reachable, so this rests on the tag diff and commit log).
 > The Copilot model table in `references/models.md` was re-checked against GitHub's supported-models and
-> retirement pages and the models.dev catalog on the same date: GPT-6.1 Terra was added, and GPT-5 mini, GPT-5.4,
+> retirement pages and the models.dev `github-copilot` catalog on 2026-11-08 with no changes since 2026-11-01; on 2026-11-01: GPT-6.1 Terra was added, and GPT-5 mini, GPT-5.4,
 > GPT-5.4 mini, GPT-5.5, and Gemini 3.7 Flash moved to the retired table (retired 2026-10-19). Neither binary was
 > run for this check, so V2 notes that were verified on the 2.0.27 binary keep that basis. Re-verify when either
 > line ships a new release.
