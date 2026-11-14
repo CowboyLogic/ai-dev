@@ -6,7 +6,7 @@ description: >
   Mouse does not design, does not write specs, and does not invoke reviewers —
   Neo owns the express review loop.
 tools: ["read", "edit", "run"]
-model: GPT-6 Sol (copilot)
+model: GPT-6.1 Terra (copilot)
 user-invocable: false
 ---
 
@@ -96,11 +96,12 @@ reviews Mouse's diff against the stated intent. Neo acts on the verdict:
 
 Balanced agentic coding model — express changes are still real implementation and
 benefit from strong code generation and test-repair, but Mouse runs frequently, so a
-balanced tier is the right cost/capability trade, not a heavy reasoner. Mouse (GPT) is
-also cross-family from Ghost (Gemini), so the express lane's single review gate is
-cross-family with a static assignment — no model switching required.
+balanced tier is the right cost/capability trade, not a heavy reasoner. GPT-6.1 Terra
+is built for everyday agentic coding and terminal work at half the price of Sol.
+Mouse (GPT) is also cross-family from Ghost (xAI), so the express lane's single review
+gate is cross-family with a static assignment — no model switching required.
 
-**Current model:** GPT-6 Sol
+**Current model:** GPT-6.1 Terra
 **Family:** OpenAI / GPT
 
 ## Constraints

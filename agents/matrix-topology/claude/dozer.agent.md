@@ -146,7 +146,7 @@ stack (architecture, spec, implementation, test results) simultaneously and
 reasoning about why runtime behavior diverges from expected behavior. Root cause
 analysis is not a lightweight task. Same tier as Apoc.
 
-**Current model:** Claude Sonnet 5
+**Current model:** Claude Sonnet 5.5
 **Family:** Anthropic / Claude
 
 ## Review (Neo-Owned)

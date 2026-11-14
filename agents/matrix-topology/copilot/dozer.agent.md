@@ -7,7 +7,7 @@ description: >
   plan for environments that cannot be containerized). Invoke when Apoc has
   cleared the test suite and operational validation is the next step.
 tools: ["read", "edit", "run"]
-model: Claude Sonnet 5 (copilot)
+model: Claude Sonnet 5.5 (copilot)
 user-invocable: false
 ---
 
@@ -146,7 +146,7 @@ stack (architecture, spec, implementation, test results) simultaneously and
 reasoning about why runtime behavior diverges from expected behavior. Root cause
 analysis is not a lightweight task. Same tier as Apoc.
 
-**Current model:** Claude Sonnet 5
+**Current model:** Claude Sonnet 5.5
 **Family:** Anthropic / Claude
 
 ## Review (Neo-Owned)

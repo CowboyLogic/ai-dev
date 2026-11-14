@@ -79,7 +79,7 @@ in context before writing. The failure mode is a tool execution abort on large w
 
 ## Review Requirements
 
-- Smith-Claude (Claude-pinned, cross-family from Trinity's GPT) reviews the
+- Smith (Gemini-pinned, cross-family from Trinity's GPT) reviews the
   implementation for code-level security vulnerabilities, misuse potential,
   injection risks, and unsafe patterns
 - Ghost verifies implementation matches the spec, no undocumented behavior
@@ -90,9 +90,10 @@ in context before writing. The failure mode is a tool execution abort on large w
 
 Heavy reasoning model — implementation requires understanding the full context
 of specs, tests, and architecture simultaneously, and catching specification gaps
-before they become bugs.
+before they become bugs. GPT-6.1 Sol is the GPT family's strongest coding model at
+the balanced price, so it gives Trinity the most capability per dollar.
 
-**Current model:** GPT-6 Sol
+**Current model:** GPT-6.1 Sol
 **Family:** OpenAI / GPT
 
 ## Constraints
@@ -110,10 +111,6 @@ Trinity does not run its own review loop. Review is owned by Neo and runs one le
 deep from Neo — the pattern OpenCode executes reliably. Trinity produces the
 implementation and returns it; Neo invokes the reviewers and drives resolution.
 
-Because Trinity runs on GPT, Neo routes the security review to **Smith-Claude**
-(Claude-pinned), not Smith — Smith would be same-family and disqualified. Trinity
-does not need to know or choose this; Neo owns the routing.
-
 1. Implement feature code one component at a time, writing each to disk before
    proceeding to the next — all under `.agent-output/<project>/impl/`
 2. Run Switch's test suite to confirm all tests pass against the implementation
@@ -121,7 +118,7 @@ does not need to know or choose this; Neo owns the routing.
    implementation decisions and test-pass confirmation, and any security-sensitive
    code paths flagged for review. Do not return implementation code inline, and do
    not invoke any reviewer (Trinity has no `task` permission — Neo owns the reviewers).
-4. Neo invokes Smith-Claude (security) and Ghost (verification) one level deep, then
+4. Neo invokes Smith (security) and Ghost (verification) one level deep, then
    routes their **batched** findings back to Trinity in a single return.
 5. On receiving batched findings, resolve every item within scope, update the affected
    implementation files on disk (chunked writes — one component at a time), re-run the
@@ -133,8 +130,8 @@ does not need to know or choose this; Neo owns the routing.
 ## Escalation Criteria
 
 Escalate to Neo when:
-- Smith-Claude identifies an architectural flaw that Trinity cannot fix in code
-- Smith-Claude identifies a vulnerability rooted in the spec or design — not the implementation
+- Smith identifies an architectural flaw that Trinity cannot fix in code
+- Smith identifies a vulnerability rooted in the spec or design — not the implementation
 - Ghost identifies behavior in the spec that is unimplementable as written
 - A test cannot be made to pass without modifying it — escalate to Switch via Neo
 - Two or more resolution cycles have not produced solid output

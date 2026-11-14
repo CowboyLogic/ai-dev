@@ -6,7 +6,7 @@ description: >
   the test specification document AND the executable test code. Trinity does not
   write tests.
 tools: ["read", "edit", "run"]
-model: Claude Sonnet 5 (copilot)
+model: Claude Sonnet 5.5 (copilot)
 user-invocable: false
 ---
 
@@ -105,7 +105,7 @@ go wrong, not just what should go right. Coverage gaps here become bugs in
 production. Switch also writes executable code — the model must handle both
 design reasoning and precise code generation.
 
-**Current model:** Claude Sonnet 5
+**Current model:** Claude Sonnet 5.5
 **Family:** Anthropic / Claude
 
 ## Constraints

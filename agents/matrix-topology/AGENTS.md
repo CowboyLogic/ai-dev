@@ -40,7 +40,7 @@ folders is a bug — not a variant.
 
 ---
 
-## The 14 Agents
+## The 13 Agents
 
 | Agent | Role | Model Family |
 |---|---|---|
@@ -53,14 +53,13 @@ folders is a bug — not a variant.
 | `trinity` | Implementation | OpenAI / GPT |
 | `apoc` | Test execution | Anthropic / Claude |
 | `dozer` | Operational diagnostics | Anthropic / Claude |
-| `tank` | Research | OpenAI / GPT |
+| `tank` | Research | Anthropic / Claude |
 | `niobe` | Documentation | Anthropic / Claude |
-| `smith` | Security review (cross-cutting) | OpenAI / GPT |
-| `smith-claude` | Security review of GPT-family artifacts | Anthropic / Claude |
-| `ghost` | Verification review (cross-cutting) | Google / Gemini |
+| `smith` | Security review (cross-cutting) | Google / Gemini |
+| `ghost` | Verification review (cross-cutting) | xAI / Grok |
 
 > [!IMPORTANT]
-> **The roster is closed.** These fourteen are the only legal dispatch targets.
+> **The roster is closed.** These thirteen are the only legal dispatch targets.
 > `general`, `explore`, and every other built-in or all-purpose subagent are banned
 > unconditionally in Neo's agent file. A `general` dispatch means the roster left the
 > request with no legal move — that is a **roster gap, not a config failure**. Fix it
@@ -161,7 +160,7 @@ model: sonnet                    # sonnet | opus | haiku | inherit | full model 
 Claude Code tool names: `Read`, `Edit`, `Bash`, `Grep`, `Glob`, `Task`, `WebFetch`
 
 Model aliases resolve to whichever Claude model is currently in that tier. Use `inherit`
-for agents whose designated model family (GPT, Gemini) cannot be served by Claude Code —
+for agents whose designated model family (GPT, Gemini, xAI) cannot be served by Claude Code —
 they will run on the main conversation's model instead.
 
 #### Claude Code model assignments
@@ -170,18 +169,17 @@ they will run on the main conversation's model instead.
 |---|---|---|
 | `neo` | `sonnet` | Primary conductor — heavy reasoning, frequent invocation |
 | `mouse` | `inherit` | Designated GPT — cannot be honored; falls back to session model |
-| `the-architect` | `opus` | Highest-stakes decisions; runs infrequently — cost justified |
+| `the-architect` | `opus` | Highest-stakes decisions; runs infrequently. Designated Fable 5.2 in OpenCode and Copilot; `opus` keeps Claude Code sessions off the Fable cost tier unless a full model ID is set deliberately |
 | `oracle` | `opus` | Design work at the front of the lifecycle — errors here propagate |
 | `morpheus` | `sonnet` | Precision spec writing requires solid reasoning |
 | `switch` | `sonnet` | Test design + executable code generation |
 | `trinity` | `inherit` | Designated GPT — cannot be honored; falls back to session model |
 | `apoc` | `sonnet` | Methodical but needs solid reasoning for root cause analysis |
 | `dozer` | `sonnet` | Full-stack diagnostic reasoning |
-| `tank` | `haiku` | Designated GPT — **deliberate exception** to `inherit`: Tank runs at high frequency, so it stays on the cheapest Claude tier rather than inheriting a pricier session model |
+| `tank` | `haiku` | High-frequency research on the cheapest Claude tier |
 | `niobe` | `sonnet` | Documentation requires accurate comprehension of full context |
-| `smith` | `inherit` | Designated GPT — cannot be honored; falls back to session model |
-| `smith-claude` | `sonnet` | Claude by design — the pin is honored |
-| `ghost` | `inherit` | Designated Gemini — cannot be honored; falls back to session model |
+| `smith` | `inherit` | Designated Gemini — cannot be honored; falls back to session model |
+| `ghost` | `inherit` | Designated xAI — cannot be honored; falls back to session model |
 
 ### GitHub Copilot (`copilot/`)
 
@@ -221,25 +219,26 @@ a new pin is introduced — do not leave retired IDs in the table.
 
 | OpenCode model ID | Claude Code `model` | Copilot display name |
 |---|---|---|
+| `github-copilot/claude-fable-5.2` | `opus` *(Fable kept off by default)* | `Claude Fable 5.2 (copilot)` |
 | `github-copilot/claude-opus-5.5` | `opus` | `Claude Opus 5.5 (copilot)` |
-| `github-copilot/claude-sonnet-5` | `sonnet` | `Claude Sonnet 5 (copilot)` |
-| `github-copilot/gpt-6-sol` | `inherit` *(GPT — not available)* | `GPT-6 Sol (copilot)` |
-| `github-copilot/gpt-6-luna` | `inherit` *(GPT — not available)*; `haiku` for `tank` | `GPT-6 Luna (copilot)` |
-| `github-copilot/gemini-3.8-flash` | `inherit` *(Gemini — not available)* | `Gemini 3.8 Flash (copilot)` |
+| `github-copilot/claude-sonnet-5.5` | `sonnet` | `Claude Sonnet 5.5 (copilot)` |
+| `github-copilot/claude-haiku-5.5` | `haiku` | `Claude Haiku 5.5 (copilot)` |
+| `github-copilot/gpt-6.1-sol` | `inherit` *(GPT — not available)* | `GPT-6.1 Sol (copilot)` |
+| `github-copilot/gpt-6.1-terra` | `inherit` *(GPT — not available)* | `GPT-6.1 Terra (copilot)` |
+| `github-copilot/gemini-4-carbon` | `inherit` *(Gemini — not available)* | `Gemini 4 Carbon (copilot)` |
+| `github-copilot/grok-4.7` | `inherit` *(xAI — not available)* | `Grok 4.7 (copilot)` |
+
+> [!WARNING]
+> Claude Fable 5.2 is off by default in Copilot Business and Enterprise: an org admin
+> must enable its policy, and it requires data retention. Where it is not enabled,
+> pin `the-architect` to `claude-opus-5.5` / `Claude Opus 5.5 (copilot)` instead —
+> same family, so review routing is unchanged.
 
 > [!NOTE]
-> Claude Code only serves Claude models. Agents designated for GPT or Gemini families
-> (`mouse`, `trinity`, `smith`, `ghost`) use `model: inherit` — they run on whatever
-> model the main session is using. The cross-family separation those agents depend on
-> is not enforceable in Claude Code. `tank` (GPT-designated) is the one exception: it
-> uses `haiku`, because inheriting a heavier session model would multiply the cost of
-> the most frequently dispatched agent.
->
-> Tank's GPT pin is **temporary economics**, not a design decision: GPT-6 Luna is
-> currently far cheaper than any Claude tier. Expect Tank to return to Claude when
-> Anthropic ships Sonnet 5.5 / Haiku 5.5 at comparable pricing. When it does, update the
-> `model` in all three formats, the *Model Selection Rationale* body, Ghost's family
-> table, and the Claude-family note in `CONDUCTOR.md`, and drop this exception.
+> Claude Code only serves Claude models. Agents designated for GPT, Gemini, or xAI
+> families (`mouse`, `trinity`, `smith`, `ghost`) use `model: inherit` — they run on
+> whatever model the main session is using. The cross-family separation those agents
+> depend on is not enforceable in Claude Code.
 
 The Copilot column carries a separate caveat.
 
@@ -330,14 +329,14 @@ which Neo states verbatim in its session-start summary. This is body content, no
 frontmatter, because **an agent cannot see its own frontmatter** — frontmatter is
 harness config, the body is the prompt. It lives in Neo alone: Neo is the only agent
 the human talks to, and Neo's file is re-sent every turn, so paying those tokens in
-all fourteen would buy nothing.
+all thirteen would buy nothing.
 
 **Bump the date whenever any agent body changes.** Use a date, not semver — semver
 invites a judgment call about whether a change is "major," and the answer here is
 always "re-copy the files."
 
 **2. `MANIFEST.sha256` + `verify-deployment.sh`.** Neo's line only proves *Neo* is
-current; Tank could still be stale. The manifest covers all 42 agent files across the
+current; Tank could still be stale. The manifest covers all 39 agent files across the
 three formats and costs zero tokens, since it never enters a prompt.
 
 ```bash

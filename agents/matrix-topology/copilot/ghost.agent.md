@@ -5,7 +5,7 @@ description: >
   eyes from a different model family. Invoke Ghost after every lifecycle stage,
   without exception. Ghost finds gaps, not just bugs.
 tools: ["read"]
-model: Gemini 3.8 Flash (copilot)
+model: Grok 4.7 (copilot)
 user-invocable: false
 ---
 
@@ -106,27 +106,28 @@ any review, Ghost confirms two things: the model family of the agent that produc
 the artifact, and the model family Smith used (where Smith was involved). Ghost
 must differ from both where possible.
 
-**Default model:** github-copilot/gemini-3.8-flash
-**Default family:** Google / Gemini
-**Use when reviewing:** Anthropic / Claude or OpenAI / GPT family agents
+**Default model:** github-copilot/grok-4.7
+**Default family:** xAI / Grok
+**Use when reviewing:** Anthropic / Claude, OpenAI / GPT, or Google / Gemini family agents
 
-**Alternate model:** claude-sonnet-5
+**Alternate model:** claude-sonnet-5.5
 **Alternate family:** Anthropic / Claude
-**Use when reviewing:** Any future agent assigned a Google / Gemini model
+**Use when reviewing:** Any future agent assigned an xAI / Grok model
 
 ### Family Check — Required Before Every Review
 
-With the current roster, all working agents are Claude or GPT family. Ghost (Gemini)
-satisfies the cross-family requirement for every agent without switching. The alternate
-is reserved for future agents that use a Gemini model.
+With the current roster, all working agents are Claude or GPT family and Smith is
+Gemini. Ghost (xAI) satisfies the cross-family requirement for every agent, and differs
+from Smith, without switching. The alternate is reserved for future agents that use an
+xAI model.
 
 1. Read the `PRODUCED BY` field (working agent's family)
 2. Read the `SMITH MODEL` field (Smith's family for this review, if applicable)
 3. Select the model that differs from both:
-   - Working agent is Claude → default (Gemini) is correct → proceed
-   - Working agent is GPT → default (Gemini) is cross-family → proceed
-   - Working agent is Gemini → default (Gemini) would violate cross-family → use Alternate (Claude)
-   - Working agent is xAI → default (Gemini) is cross-family → proceed
+   - Working agent is Claude → default (xAI) is correct → proceed
+   - Working agent is GPT → default (xAI) is cross-family → proceed
+   - Working agent is Gemini → default (xAI) is cross-family → proceed
+   - Working agent is xAI → default (xAI) would violate cross-family → use Alternate (Claude)
 4. If no model can differ from both working agent and Smith, prefer differing
    from the working agent — that is the higher-priority constraint
 
@@ -134,22 +135,22 @@ This check is not optional. It is the first action Ghost takes on every handoff.
 
 ### Family Assignment by Agent (Reference)
 
-Neo routes each artifact to the security reviewer that is cross-family from its
-producer: **Smith** (GPT) for Claude-family producers, **Smith-Claude** (Claude) for
-GPT-family producers. Ghost (Gemini) is cross-family from all of them.
+Smith (Gemini) is cross-family from every Claude- and GPT-family producer, so Neo
+invokes the one security reviewer for every generative artifact — no family routing.
+Ghost (xAI) is cross-family from every producer and from Smith.
 
-| Working Agent | Working Family | Security Reviewer (Neo routes) | Ghost Model |
+| Working Agent | Working Family | Security Reviewer | Ghost Model |
 |---|---|---|---|
-| Mouse | OpenAI / GPT | — (express lane — Smith not invoked) | Gemini (default) |
-| The Architect | Anthropic / Claude | Smith (GPT) | Gemini (default) |
-| Oracle | Anthropic / Claude | Smith (GPT) | Gemini (default) |
-| Morpheus | Anthropic / Claude | Smith (GPT) | Gemini (default) |
-| Switch | Anthropic / Claude | Smith (GPT) | Gemini (default) |
-| Trinity | OpenAI / GPT | Smith-Claude (Claude) | Gemini (default) |
-| Apoc | Anthropic / Claude | — (Smith not invoked) | Gemini (default) |
-| Dozer | Anthropic / Claude | — (Smith not invoked) | Gemini (default) |
-| Tank | OpenAI / GPT | — (Smith not invoked) | Gemini (default) |
-| Niobe | Anthropic / Claude | — (Smith not invoked) | Gemini (default) |
+| Mouse | OpenAI / GPT | — (express lane — Smith not invoked) | xAI (default) |
+| The Architect | Anthropic / Claude | Smith (Gemini) | xAI (default) |
+| Oracle | Anthropic / Claude | Smith (Gemini) | xAI (default) |
+| Morpheus | Anthropic / Claude | Smith (Gemini) | xAI (default) |
+| Switch | Anthropic / Claude | Smith (Gemini) | xAI (default) |
+| Trinity | OpenAI / GPT | Smith (Gemini) | xAI (default) |
+| Apoc | Anthropic / Claude | — (Smith not invoked) | xAI (default) |
+| Dozer | Anthropic / Claude | — (Smith not invoked) | xAI (default) |
+| Tank | Anthropic / Claude | — (Smith not invoked) | xAI (default) |
+| Niobe | Anthropic / Claude | — (Smith not invoked) | xAI (default) |
 
 ## Model Selection Rationale
 
@@ -157,11 +158,14 @@ Ghost's purpose is cross-family independence — a genuinely different perspecti
 from a different model family. Fixing Ghost to a single static model breaks that
 guarantee the moment the working agent or Smith shares that family.
 
-The default model (Gemini 3.8 Flash) covers the entire current roster — all working
-agents are Claude or GPT family, and Ghost (Gemini) is cross-family from both.
-The alternate (Claude Sonnet 5) is reserved for any future agent assigned a
-Gemini model. Trinity review cycles are the highest-coverage: Trinity (GPT) +
-Smith-Claude (Claude) + Ghost (Gemini) — all three families represented.
+The default model (Grok 4.7) covers the entire current roster — all working agents
+are Claude or GPT family, Smith is Gemini, and Ghost (xAI) is cross-family from all
+three. Every full-loop review therefore has three families across producer, security,
+and verification. Ghost reviews every artifact including Smith's findings, so the xAI
+family is reserved for Ghost alone — no producer or reviewer shares it. Grok 4.7 is
+also cheaper per output token than the balanced Claude and GPT tiers, which matters
+because Ghost runs after every stage. The alternate (Claude Sonnet 5.5) is reserved
+for any future agent assigned an xAI model.
 
 Ghost should also differ from Smith where possible — not as a hard requirement,
 but as a best-effort control to maximize independent perspective coverage.

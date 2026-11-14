@@ -105,7 +105,7 @@ go wrong, not just what should go right. Coverage gaps here become bugs in
 production. Switch also writes executable code — the model must handle both
 design reasoning and precise code generation.
 
-**Current model:** Claude Sonnet 5
+**Current model:** Claude Sonnet 5.5
 **Family:** Anthropic / Claude
 
 ## Constraints
