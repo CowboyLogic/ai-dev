@@ -42,8 +42,7 @@ agents/matrix-topology/
     dozer.md
     tank.md
     niobe.md
-    smith.md                      ← Security — GPT (reviews Claude-family artifacts)
-    smith-claude.md               ← Security — Claude (reviews GPT-family artifacts)
+    smith.md                      ← Security — Gemini (reviews every producer)
     ghost.md
   copilot/                        ← GitHub Copilot variants (parallel set)
 
@@ -89,13 +88,12 @@ roster table below and, if it participates in a stage, the lifecycle.
 | Dozer | Dozer | Diagnostics — operational validation at runtime | Thinking | Conditional |
 | Tank | Tank | Researcher — information retrieval | Thinking | No |
 | Niobe | Niobe | Document Writer — documentation artifacts | Thinking | No |
-| Smith | Agent Smith | Security — adversarial review (GPT; reviews Claude-family artifacts) | Cross-cutting | No |
-| Smith-Claude | Agent Smith | Security — adversarial review (Claude; reviews GPT-family artifacts) | Cross-cutting | No |
+| Smith | Agent Smith | Security — adversarial review (Gemini; cross-family from every producer) | Cross-cutting | No |
 | Ghost | Ghost | Review — verification, second set of eyes | Cross-cutting | No |
 
 ### The roster is closed
 
-These fourteen are the **only** legal dispatch targets. `general`, `explore`, and every
+These thirteen are the **only** legal dispatch targets. `general`, `explore`, and every
 other built-in or all-purpose subagent are banned unconditionally — not "unless the
 roster fails to load." A rule phrased as a diagnostic for a broken config does not fire
 when the config is healthy and the roster merely looks inconvenient.
@@ -166,7 +164,7 @@ Neo is the primary interactive agent. All sessions begin with Neo. Neo:
 - Is the only agent that interacts directly with the human
 
 Neo **owns** the review loop. Working agents produce an artifact and return it;
-Neo invokes the security reviewer (Smith or Smith-Claude) and Ghost directly, one
+Neo invokes Smith and Ghost directly, one
 level deep, and drives resolution before advancing. This is the same flat ownership
 model the express lane uses — adopted across the full loop because nested subagent
 delegation (a working agent invoking a reviewer) does not run reliably in OpenCode.
@@ -289,21 +287,21 @@ Oracle
   └── Produces: UX concept, user journey, edge cases
   └── Writes artifact to: .agent-output/<project>/design/ux-concept.md
   └── Returns ARTIFACT READY to Neo: artifact path + 3–5 bullet summary + Smith flags
-  └── NEO owns review: Smith (GPT) → Ghost → batched findings → Oracle revises → re-verify
+  └── NEO owns review: Smith (Gemini) → Ghost → batched findings → Oracle revises → re-verify
   └── Neo advances: to The Architect
         ↓
 The Architect
   └── Produces: architecture decisions, structure, extension points
   └── Writes artifact to: .agent-output/<project>/architecture/arch.md
   └── Returns ARTIFACT READY to Neo: artifact path + 3–5 bullet summary + Smith flags
-  └── NEO owns review: Smith (GPT) → Ghost → batched findings → Architect revises → re-verify
+  └── NEO owns review: Smith (Gemini) → Ghost → batched findings → Architect revises → re-verify
   └── Neo advances: to Morpheus
         ↓
 Morpheus
   └── Produces: specifications — numbered, testable, RFC 2119 language
   └── Writes artifact to: .agent-output/<project>/spec/spec.md
   └── Returns ARTIFACT READY to Neo: artifact path + 3–5 bullet summary + Smith flags
-  └── NEO owns review: Smith (GPT) → Ghost → batched findings → Morpheus revises → re-verify
+  └── NEO owns review: Smith (Gemini) → Ghost → batched findings → Morpheus revises → re-verify
   └── Neo advances: to Switch
         ↓
 Switch
@@ -312,7 +310,7 @@ Switch
   └── Writes output incrementally by section/component — no monolithic writes
   └── Writes artifacts to: .agent-output/<project>/tests/
   └── Returns ARTIFACT READY to Neo: artifact paths + 3–5 bullet summary + Smith flags
-  └── NEO owns review: Smith (GPT) → Ghost → batched findings → Switch revises → re-verify
+  └── NEO owns review: Smith (Gemini) → Ghost → batched findings → Switch revises → re-verify
   └── Neo advances: to Trinity (container)
         ↓
 Trinity [container]
@@ -322,7 +320,7 @@ Trinity [container]
   └── Does not modify Switch's tests — fixes the implementation instead
   └── Writes artifacts to: .agent-output/<project>/impl/
   └── Returns ARTIFACT READY to Neo: artifact paths + 3–5 bullet summary + Smith flags
-  └── NEO owns review: Smith-Claude (Claude — Trinity is GPT) → Ghost → batched findings → Trinity revises → re-verify
+  └── NEO owns review: Smith (Gemini) → Ghost → batched findings → Trinity revises → re-verify
   └── Neo advances: to Apoc (container)
         ↓
 Apoc [container]
@@ -378,7 +376,7 @@ Mouse  (express builder — not containerized; works the live tree)
   └── Implements the change directly; gets it green (build/tests/typecheck)
   └── Returns the diff summary to Neo — the diff is the artifact, no .agent-output
         ↓
-Neo → Ghost  (cross-family: Gemini vs Mouse's GPT)
+Neo → Ghost  (cross-family: xAI vs Mouse's GPT)
   └── Reviews the diff against stated intent
   └── On a security-ADJACENT surface, Neo adds a SECURITY FOCUS directive
         ↓
@@ -416,9 +414,8 @@ invoking a reviewer) does not run reliably in OpenCode.
 ```
 Working Agent produces artifact → writes to .agent-output/<project>/<stage>/
         ↓  returns ARTIFACT READY (path + summary + Smith flags) to Neo
-Neo invokes the security reviewer (where applicable), one level deep:
-   • Smith (GPT)         for a Claude-family artifact
-   • Smith-Claude (Claude) for a GPT-family artifact (Trinity)
+Neo invokes Smith (where applicable), one level deep —
+   Smith (Gemini) is cross-family from every producer, so there is no routing
         ↓  reviewer returns findings
 Neo invokes Ghost (with original intent + the security findings), one level deep
         ↓  Ghost returns findings (including assessment of the security review) + GHOST VERDICT
@@ -519,23 +516,20 @@ on issues that genuinely need human authority.
 
 ## Cross-Cutting Agents
 
-### Smith / Smith-Claude — Security
+### Smith — Security
 
 Smith is adversarial by design. He approaches every artifact as an attacker —
 finding what should not be there, what was missed, what can be exploited.
 
-**Neo** invokes the security reviewer directly, one level deep, after the working
-agent returns its artifact. The security review is split across two statically-pinned
-agents so the reviewer is always cross-family from the producer — a running agent
-cannot change its own model, and Neo cannot override a subagent's model at invocation:
+**Neo** invokes Smith directly, one level deep, after the working agent returns its
+artifact. A running agent cannot change its own model, and Neo cannot override a
+subagent's model at invocation, so cross-family review is guaranteed by the static
+assignment: Smith is pinned to Gemini, and every producer is Claude or GPT family.
+Smith therefore reviews every generative artifact — Oracle, The Architect, Morpheus,
+Switch, and Trinity — with no family routing.
 
-- **Smith** (GPT) reviews **Claude-family** artifacts (Oracle, The Architect,
-  Morpheus, Switch)
-- **Smith-Claude** (Claude) reviews **GPT-family** artifacts — in the full loop,
-  Trinity's implementation
-
-Neo routes by the `PRODUCED BY` family. The reviewer confirms the family on receipt
-and refuses a same-family artifact (notifying Neo) as a backstop.
+Smith confirms the `PRODUCED BY` family on receipt and refuses a same-family (Gemini)
+artifact, notifying Neo, as a backstop against a future roster change.
 
 **The security reviewer receives in every handoff (from Neo):**
 - The original problem statement (context anchor)
@@ -621,20 +615,18 @@ session memory, which does not persist across sessions or survive compaction.
 ## Claude Family Concentration — Known Tradeoff
 
 Neo shares model family (Anthropic / Claude) with Oracle, The Architect, Morpheus,
-Switch, Apoc, Dozer, and Niobe. This means the Conductor and the majority of
+Switch, Apoc, Dozer, Tank, and Niobe. This means the Conductor and the majority of
 working agents share model family tendencies. (Oracle and Tank were previously
-Gemini; they moved off Gemini so Ghost (Gemini) can satisfy the cross-family review
-requirement across the whole roster without a second Ghost variant. Tank has since
-moved from Claude Haiku to GPT-6 Luna for cost.) Mouse, Trinity, and Tank run on
-GPT — the three GPT-family working agents.
+Gemini; producers are kept to the Claude and GPT families so that Smith (Gemini) and
+Ghost (xAI) each sit in a family no producer uses.) Mouse and Trinity run on GPT —
+the two GPT-family working agents.
 
 This is a documented, accepted tradeoff with the following compensating controls:
 
-- **The security reviewer** runs cross-family on every generative artifact, invoked
-  directly by Neo — **Smith** (GPT) for the Claude-family majority, **Smith-Claude**
-  (Claude) for the GPT-family agents (Trinity). Neo routes by producer family
-- **Ghost** (Gemini) provides a second cross-family review independently of the
-  security reviewer
+- **Smith** (Gemini) runs cross-family on every generative artifact, invoked
+  directly by Neo — the Claude-family majority and the GPT-family implementer alike
+- **Ghost** (xAI) provides a second cross-family review independently of Smith, in
+  a family that neither the producers nor Smith use
 - **Neo's advancement decision** is based on Ghost's structured `GHOST VERDICT`
   block — a machine-readable verdict Neo reads, not prose Neo interprets. The
   shared family risk is lowest when Neo's role is verdict-reading, not artifact
@@ -661,18 +653,18 @@ non-negotiable. The purpose is to eliminate shared blindspots between model fami
 **Within-family variation:** Different models within a family may be selected for
 different agents based on task complexity, cost, and required capability.
 
-**Cross-family enforcement is by routing, not self-switching.** A running agent
-cannot change its own model, and Neo cannot override a subagent's model at invocation
-(OpenCode limitation). So the security review is split across two statically-pinned
-agents — **Smith** (GPT) and **Smith-Claude** (Claude) — and **Neo** invokes whichever
-is cross-family from the artifact's producer. Ghost (Gemini) is cross-family from the
-entire current Claude/GPT roster, so it needs no switching; its Claude-pinned alternate
-is reserved for any future agent assigned a Gemini model.
+**Cross-family enforcement is by static assignment, not self-switching.** A running
+agent cannot change its own model, and Neo cannot override a subagent's model at
+invocation (OpenCode limitation). So each reviewer is pinned to a family no producer
+uses: producers are Claude or GPT, **Smith** is Gemini, and **Ghost** is xAI. One
+Smith is cross-family from every producer, and Ghost is cross-family from every
+producer and from Smith — no routing and no switching. Ghost's Claude-pinned
+alternate is reserved for any future agent assigned an xAI model.
 
-Ghost additionally prefers to differ from the security reviewer's family for the same
-review cycle where possible — maximizing independent perspective coverage across all
-three roles (working agent, security reviewer, verification reviewer). Trinity cycles
-achieve full coverage: Trinity (GPT) + Smith-Claude (Claude) + Ghost (Gemini).
+Ghost reviews every artifact, including Smith's findings, so its family is reserved
+for Ghost alone. Every full-loop cycle therefore covers three families across the
+three roles (working agent, security reviewer, verification reviewer): for example,
+Trinity (GPT) + Smith (Gemini) + Ghost (xAI).
 
 The resolved model assignments per agent are documented in ghost.agent.md. Update
 that reference table when roster or model assignments change.
@@ -709,17 +701,14 @@ field must explicitly state that Trinity implements feature code to make Switch'
 tests pass — Trinity does not write tests. The `CONSTRAINTS` field must include
 the output directory structure and a reminder that tests must not be modified.
 
-### Neo → Smith / Smith-Claude (Security Review)
-
-Neo picks the reviewer by `PRODUCED BY` family: Smith for Claude-family, Smith-Claude
-for GPT-family.
+### Neo → Smith (Security Review)
 
 ```
-AGENT:           Smith — Security Review   (or: Smith-Claude — Security Review)
+AGENT:           Smith — Security Review
 STAGE:           [lifecycle stage being reviewed]
 CONTEXT:         [original problem statement]
 ARTIFACT:        [what is being reviewed — path]
-PRODUCED BY:     [agent name and model family — determines which reviewer Neo invokes]
+PRODUCED BY:     [agent name and model family — Smith confirms it is not Gemini]
 CRITERIA:        [security review criteria for this artifact type]
 OUTPUT:          [findings report — issues, risk levels, recommendations]
 ```
@@ -767,7 +756,7 @@ not two separate round-trips.
 REVIEW FINDINGS
 STAGE:            [lifecycle stage]
 ARTIFACT PATH:    [path the agent should revise in place]
-SECURITY FINDINGS:[Smith / Smith-Claude findings — issues, risk levels, or NONE]
+SECURITY FINDINGS:[Smith findings — issues, risk levels, or NONE]
 GHOST FINDINGS:   [gaps, coverage issues, misalignments, or NONE]
 GHOST VERDICT:    [current verdict — expected INCOMPLETE / BLOCKED if findings exist]
 ACTION:           [resolve within scope and return REVISION COMPLETE, or escalate]

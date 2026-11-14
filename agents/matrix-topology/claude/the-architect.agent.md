@@ -66,12 +66,18 @@ architecture review propagates into specs, tests, and implementation before anyo
 catches it. The Architect runs infrequently — once per significant technical decision
 — so the premium cost is justified by the blast radius of getting it wrong.
 
-Oracle (the adjacent upstream design stage) is also Claude Opus now — so the
-cross-family control does not come from adjacent working stages differing. It comes
-from Smith and Ghost reviewing every artifact cross-family. The Opus tier here is
-about matching the stakes of the architecture stage, not about family separation.
+Claude Fable 5.2 is the top Claude tier and costs about twice Opus 5.5. The
+Architect runs least often of any agent, so the extra cost is small in total and is
+spent where a wrong decision costs most. If an organization's Copilot policy does not
+enable Fable 5.2, pin Claude Opus 5.5 instead — the same family, so review routing is
+unchanged.
 
-**Current model:** Claude Opus 5.5
+Oracle (the adjacent upstream design stage) is also Claude — so the cross-family
+control does not come from adjacent working stages differing. It comes from Smith and
+Ghost reviewing every artifact cross-family. The model tier here is about matching
+the stakes of the architecture stage, not about family separation.
+
+**Current model:** Claude Fable 5.2
 **Family:** Anthropic / Claude
 
 ## Constraints

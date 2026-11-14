@@ -35,25 +35,24 @@ the next stage begins. Problems are caught at the cheapest possible moment — b
 
 ## Agent Roster
 
-14 agents. `neo` is the primary conductor; every other agent is a subagent it dispatches.
+13 agents. `neo` is the primary conductor; every other agent is a subagent it dispatches.
 
 <!-- artifact-sync:roster:start -->
 | Agent | Model | Role | Source |
 |---|---|---|---|
-| **Neo** | `github-copilot/claude-sonnet-5` | The Conductor | [neo.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/neo.md) |
-| **Apoc** | `github-copilot/claude-sonnet-5` | Tester agent | [apoc.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/apoc.md) |
-| **Dozer** | `github-copilot/claude-sonnet-5` | Diagnostics agent | [dozer.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/dozer.md) |
-| **Ghost** | `github-copilot/gemini-3.8-flash` | Review agent | [ghost.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/ghost.md) |
-| **Morpheus** | `github-copilot/claude-sonnet-5` | Spec writer agent | [morpheus.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/morpheus.md) |
-| **Mouse** | `github-copilot/gpt-6-sol` | Express-lane builder | [mouse.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/mouse.md) |
-| **Niobe** | `github-copilot/claude-sonnet-5` | Document writer agent | [niobe.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/niobe.md) |
+| **Neo** | `github-copilot/claude-sonnet-5.5` | The Conductor | [neo.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/neo.md) |
+| **Apoc** | `github-copilot/claude-sonnet-5.5` | Tester agent | [apoc.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/apoc.md) |
+| **Dozer** | `github-copilot/claude-sonnet-5.5` | Diagnostics agent | [dozer.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/dozer.md) |
+| **Ghost** | `github-copilot/grok-4.7` | Review agent | [ghost.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/ghost.md) |
+| **Morpheus** | `github-copilot/claude-sonnet-5.5` | Spec writer agent | [morpheus.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/morpheus.md) |
+| **Mouse** | `github-copilot/gpt-6.1-terra` | Express-lane builder | [mouse.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/mouse.md) |
+| **Niobe** | `github-copilot/claude-sonnet-5.5` | Document writer agent | [niobe.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/niobe.md) |
 | **Oracle** | `github-copilot/claude-opus-5.5` | Designer agent | [oracle.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/oracle.md) |
-| **Smith** | `github-copilot/gpt-6-sol` | Security agent | [smith.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/smith.md) |
-| **Smith-Claude** | `github-copilot/claude-sonnet-5` | Security agent — Claude-family variant | [smith-claude.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/smith-claude.md) |
-| **Switch** | `github-copilot/claude-sonnet-5` | Test writer agent | [switch.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/switch.md) |
-| **Tank** | `github-copilot/gpt-6-luna` | Researcher agent | [tank.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/tank.md) |
-| **The Architect** | `github-copilot/claude-opus-5.5` | Architecture agent | [the-architect.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/the-architect.md) |
-| **Trinity** | `github-copilot/gpt-6-sol` | Coder agent | [trinity.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/trinity.md) |
+| **Smith** | `github-copilot/gemini-4-carbon` | Security agent | [smith.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/smith.md) |
+| **Switch** | `github-copilot/claude-sonnet-5.5` | Test writer agent | [switch.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/switch.md) |
+| **Tank** | `github-copilot/claude-haiku-5.5` | Researcher agent | [tank.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/tank.md) |
+| **The Architect** | `github-copilot/claude-fable-5.2` | Architecture agent | [the-architect.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/the-architect.md) |
+| **Trinity** | `github-copilot/gpt-6.1-sol` | Coder agent | [trinity.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/trinity.md) |
 <!-- artifact-sync:roster:end -->
 
 ---
@@ -67,8 +66,9 @@ Research (Tank) → Design (Oracle) → Architecture (The Architect)
     → Documentation (Niobe)
 ```
 
-Smith / Smith-Claude and Ghost are **cross-cutting** — Neo invokes the correctly-familied
-security reviewer and Ghost after every generative stage, not just implementation.
+Smith and Ghost are **cross-cutting** — Neo invokes Smith (Gemini) and Ghost (xAI)
+after every generative stage, not just implementation. Each runs on a model family no
+producer uses, so both are always cross-family from the work they review.
 
 Most day-to-day work does not run the full lifecycle. The **express lane** —
 Mouse, reviewed by Ghost — is the default, faster path for small, well-scoped
@@ -126,14 +126,14 @@ mkdir -p ~/.claude/agents
 ln -sfn ~/src/ai-dev/agents/matrix-topology/claude/*.agent.md ~/.claude/agents/
 ```
 
-Agents assigned to GPT or Gemini in the canonical topology use `model: inherit`
+Agents assigned to GPT, Gemini, or xAI in the canonical topology use `model: inherit`
 because Claude Code cannot enforce those cross-family model assignments.
 
 ### GitHub Copilot
 
 <!-- artifact-sync:install:start -->
 ```bash
-# Install all 14 agents
+# Install all 13 agents
 gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/neo.agent.md
 gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/apoc.agent.md
 gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/dozer.agent.md
@@ -143,7 +143,6 @@ gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/mouse
 gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/niobe.agent.md
 gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/oracle.agent.md
 gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/smith.agent.md
-gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/smith-claude.agent.md
 gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/switch.agent.md
 gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/tank.agent.md
 gh copilot agent install CowboyLogic/ai-dev/agents/matrix-topology/copilot/the-architect.agent.md

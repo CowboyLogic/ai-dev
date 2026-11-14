@@ -6,7 +6,7 @@ description: >
   a Linux container for web apps and CLIs) and Assisted (structured validation
   plan for environments that cannot be containerized). Invoke when Apoc has
   cleared the test suite and operational validation is the next step.
-model: github-copilot/claude-sonnet-5
+model: github-copilot/claude-sonnet-5.5
 permissions:
   - { action: read, resource: "*", effect: allow }
   - { action: shell, resource: "*", effect: allow }
@@ -156,7 +156,7 @@ stack (architecture, spec, implementation, test results) simultaneously and
 reasoning about why runtime behavior diverges from expected behavior. Root cause
 analysis is not a lightweight task. Same tier as Apoc.
 
-**Current model:** Claude Sonnet 5
+**Current model:** Claude Sonnet 5.5
 **Family:** Anthropic / Claude
 
 ## Review (Neo-Owned)
