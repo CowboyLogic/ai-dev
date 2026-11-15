@@ -6,7 +6,7 @@
 
 ## Purpose
 
-This directory contains the Matrix Topology multi-agent system — a 12-agent
+This directory contains the Matrix Topology multi-agent system — a 13-agent
 orchestration pattern for AI-assisted software development. The topology is
 published across three AI client formats. This file defines the synchronization
 rules that keep all three formats consistent.
