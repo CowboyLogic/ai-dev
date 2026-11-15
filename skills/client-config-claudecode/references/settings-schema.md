@@ -146,7 +146,7 @@ claude auto-mode critique   # AI review of your custom rules
 | `emojiCompletionEnabled` | `:shortcode:` emoji autocomplete (default `true`) | `false` |
 | `promptSuggestionEnabled` | Grayed-out prompt suggestions (default `true`) | `false` |
 | `spellcheck` | *(User or managed)* `{enabled, checker: "aspell"\|"hunspell"\|"ispell"\|"auto", language, color}` (v2.1.235+) | `{"enabled": true}` |
-| `teammateMode` | Agent-team display: `"in-process"` (default)\|`"auto"`\|`"tmux"`\|`"iterm2"` | `"auto"` |
+| `teammateMode` | Agent-team display: `"in-process"` (default)\|`"auto"`\|`"tmux"`\|`"iterm2"`. Changelog only (v2.1.325): an unrecognized value is now listed as a skipped entry by `claude -p`, the startup warning and `claude doctor`, and still not applied | `"auto"` |
 | `respondToBashCommands` | Claude responds after an input-box `!` command (default `true`) | `false` |
 | `askUserQuestionTimeout` | *(User or managed)* `"60s"`\|`"5m"`\|`"10m"`\|`"never"` (default) | `"5m"` |
 | `dialogExpiry` | *(User or managed)* Deadline for dialogs forwarded to remote clients: `"60s"`\|`"5m"` (default)\|`"10m"`\|`"never"` | `"10m"` |
@@ -342,7 +342,7 @@ See `https://code.claude.com/docs/en/sub-agents.md` for the file format.
 }
 ```
 
-**Defaults**: `enabled` `false`, `autoAllowBashIfSandboxed` `true`, `allowUnsandboxedCommands` `true`, `failIfUnavailable` `false`.
+**Defaults**: `enabled` `false`, `autoAllowBashIfSandboxed` `false`, `allowUnsandboxedCommands` `true`, `failIfUnavailable` `false`. `autoAllowBashIfSandboxed` defaulted to `true` before v2.1.324 (settings-reference docs; the changelog has no 2.1.324 heading and lists the change under 2.1.325, so the exact version is a source conflict). With it `false`, sandboxed commands follow the regular permission flow; to keep them running without prompts set `sandbox.enabled` and `sandbox.autoAllowBashIfSandboxed` to `true`, and in managed settings put the key in the highest-ranking managed source. Changelog only (v2.1.325): Claude Code on the web, cloud scheduled tasks and Cowork cloud sessions start despite `sandbox.failIfUnavailable`, since the hosted container has no command sandbox.
 
 **Path prefixes**: `/` = absolute, `~/` = home-relative, `./` or no prefix = project/user-relative.
 
