@@ -2,6 +2,36 @@
 
 Changes to the `client-config-claudecode` skill, newest first.
 
+## 2026-11-15 — v2.7 (verified against Claude Code 2.1.325)
+
+Basis: Claude Code 2.1.325 (published to npm 2026-11-13; `latest` and `next`, `stable` is 2.1.311),
+the 2.1.320–2.1.325 changelog (read from the repository `CHANGELOG.md`, which has no 2.1.320 or
+2.1.324 heading), and the `code.claude.com/docs` pages fetched 2026-11-15. The Claude Code binary
+was not run. Claims only the changelog supports are labeled "changelog only".
+
+- `references/settings-schema.md`: corrects the `sandbox.autoAllowBashIfSandboxed` default from
+  `true` to `false` (settings-reference docs: the default was `true` before v2.1.324). Source
+  conflict, recorded not resolved: the docs name v2.1.324 while the changelog has no 2.1.324 heading
+  and lists the change under 2.1.325. Adds how to keep sandboxed commands unprompted. Changelog only:
+  cloud sessions start despite `sandbox.failIfUnavailable`; an unrecognized `teammateMode` value is
+  now reported as a skipped entry.
+- `references/permissions.md`: `permissions.denyInsteadOfPrompting` is now documented (settings
+  reference), so it loses its "changelog only" label and gains scope and behavior. Changelog only:
+  Bash and file-tool permission-matching fixes (wrapper commands, attached wildcards, relative deny
+  rules after `cd`, `cp`/`mv` into a directory), read-only git commands now asking in repositories
+  that are not trusted, and scheduled tasks and `/loop` asking before running a skill with
+  `allowed-tools` or hooks. `CLAUDE_CODE_AUTO_MODE_MODEL` is now in the permission-modes docs.
+- `references/hooks.md` (changelog only): `agent_id` and `agent_type` on compaction hooks for
+  subagents, `PreToolUse` `ask`/`defer` handling, the 16 MiB `mcp_tool` hook answer limit, and the
+  `claude -p` hook heartbeat.
+- `references/mcp.md` (changelog only): MCP task questions and the Esc "answer later" behavior.
+- `skills/agent-creator-claudecode/references/frontmatter-reference.md` (changelog only): subagents
+  with their own model and the `opusplan`/`haiku` model settings.
+- Not covered: the 2.1.320–2.1.325 changes to Code Mode, mods, plugin `engines`, managed
+  `extraKnownMarketplaces`, `pluginDigests` and gateway, cloud, Remote Control and VS Code surfaces,
+  none of which `sources.json` covers; environment variables only the env-vars page documents.
+- Evals: no new cases.
+
 ## 2026-11-08 — v2.6 (verified against Claude Code 2.1.319)
 
 Basis: Claude Code 2.1.319 (published to npm 2026-11-06; `latest` and `next`, `stable` is 2.1.311),
