@@ -2,6 +2,32 @@
 
 Changes to the `client-config-opencode` skill, newest first.
 
+## 2026-11-15 — v2.6 (verified against V2 2.3.0 and V1 1.19.5)
+
+Baselines: V2 2.2.6 → 2.3.0 (tags `v2.2.7`, 2026-11-10, and `v2.3.0`, 2026-11-13); V1 1.19.5 is the newest V1 tag and is
+unchanged. Sources are the tag-to-tag diff `v2.2.6...v2.3.0` of the V2 docs source (`services/site/src/docs/content`,
+16 pages changed, of which 9 bear on these skills), the V2 config schema and flag resolver source at `v2.3.0`, the V2
+`CHANGELOG.md` sections for 2.2.7 and 2.3.0, and the published `cli.json` schema. The 2.3.0 binary was **not** run, so
+binary-dependent claims keep their earlier basis.
+
+- `references/v2/config-schema.md`: warming now defaults to `interval: "auto"` (it was `"4 minutes"`), with the new
+  rules (explicit interval at or above `duration` is rejected, an `"auto"` one that long is skipped, subagent sessions are
+  not warmed, intervals count from send time, no overlap with running requests, a cache miss stops warming) and the
+  `settings.cache.warming` override now shown in the docs; the experimental flag registry grew from five to eight keys
+  (`shell_timeout_background`, `console_watches`, `mcp_events`, the last two on schema descriptions and release notes
+  alone), `codemode_vm` is deprecated and ignored because Code Mode always runs on the VM (which resolves the conflict
+  recorded in v2.5), and the flag resolver logic is unchanged; antivirus HTTPS-scanning fix via `NODE_EXTRA_CA_CERTS`.
+- `references/v2/providers.md`: new Cache lifetime (`settings.cache.ttl`) and Client certificates (`settings.tls`, mutual
+  TLS) sections, and `capabilities.freeform` (`text`, `regex`, `lark`).
+- `references/v2/permissions.md`, `references/v2/mcp.md`: denying `execute` now lists the tools Code Mode would reach as
+  direct tools (and keeps an MCP server's instructions without the Code Mode line) instead of removing them.
+- `references/v2/plugins.md`: the `-opencode.fork-notice` plugin switch for the fork notice added in 2.3.0.
+- `references/v2/cli.md`: `session.verbosity` now defaults to `low` (release notes only).
+- `sources.json`: schema source pins moved to `v2.3.0`.
+- Not changed: subagents always running in the background is recorded in `agent-creator-opencode` (agents reference)
+  because this skill has no subagent-launch coverage; Desktop, SDK, site, Console, ACP, and shell-output changes; the
+  Copilot Auto model pick and other release-note-only behavior changes with no configuration surface; V1 references.
+
 ## 2026-11-08 — v2.5 (verified against V2 2.2.6 and V1 1.19.5)
 
 Baselines: V2 2.2.5 → 2.2.6 (tag `v2.2.6`, 2026-11-06); V1 1.19.5 is the newest V1 tag and is unchanged. Sources are the

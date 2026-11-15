@@ -53,7 +53,7 @@ Sources: <https://opencode.ai/v2/docs/cli/config/>, <https://opencode.ai/v2/docs
 | `session.submit_scroll` | `bottom` \| `keep` | After sending a prompt, jump to the latest message (`bottom`) or keep your reading position (`keep`). Added in 2.2.6 (docs, published `cli.json` schema, release notes) |
 | `session.thinking` | `show` \| `hide` | Model reasoning visibility |
 | `session.grouping` | `auto` \| `none` | |
-| `session.verbosity` | `low` \| `medium` \| `high` | Transcript detail: `low` summarizes each run of tools and thoughts, `high` opens exploration and instruction groups. Not in the V2 settings page; it is in the published schema |
+| `session.verbosity` | `low` \| `medium` \| `high` | Transcript detail: `low` summarizes each run of tools and thoughts, `high` opens exploration and instruction groups. Not in the V2 settings page; it is in the published schema. The default became `low` in 2.3.0 (release notes only; a value you already set is kept) |
 | `session.image_preview` | boolean | |
 | `session.tps` | boolean | Output tokens/sec in footers |
 | `session.markdown` | `source` \| `rendered` | |

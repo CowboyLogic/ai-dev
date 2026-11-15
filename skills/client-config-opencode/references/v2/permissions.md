@@ -58,7 +58,7 @@ All three fields are required strings.
 | `websearch` | Search query |
 | `external_directory` | Canonical external directory boundary, normally ending in `/*` |
 | `<server>_<tool>` | `*` — one MCP tool (unsupported characters become `_`) |
-| `execute` | `*` — a `deny` removes Code Mode and the tools reached only through it, including MCP tools from servers that do not set `codemode: false`; nested tools still enforce their own rules (2.2.x docs) |
+| `execute` | `*` — a `deny` removes Code Mode; since 2.3.0 the tools it would reach, including MCP tools from servers that do not set `codemode: false`, are listed as direct tools (each with its full definition in every request), so deny those tools too if the agent should not have them; nested tools still enforce their own rules (2.3.0 docs; through 2.2.6 the docs said the tools were removed with Code Mode) |
 | `opencode_list_mcp_resources` | MCP server name |
 | `opencode_read_mcp_resource` | `<server>:<uri>` |
 | `experimental_image_generate` | Selected image model as `providerID/modelID`, plus `#variant` when set |

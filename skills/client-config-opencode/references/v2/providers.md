@@ -75,7 +75,7 @@ The `providers` map (plural) is keyed by the provider ID used in model reference
 | `body` | JSON merged into every request body |
 | `models` | Models to add or override, keyed by OpenCode model ID |
 
-Other documented `settings` keys: `transport` (`"websocket"` \| `"http"` for OpenAI, xAI, supported Azure
+Other documented `settings` keys: `cache.ttl`, `cache.warming` (see [Cache lifetime](#cache-lifetime)), `tls` (see [Client certificates](#client-certificates)), `transport` (`"websocket"` \| `"http"` for OpenAI, xAI, supported Azure
 Responses), `compaction.type` (`"native"` \| `"summary"`), plus provider-specific keys below.
 
 ## Packages
@@ -140,12 +140,16 @@ AI SDK package, the migration guide shows the `aisdk:` prefix (`"package": "aisd
 | `settings` / `headers` / `body` | Per-model request options |
 | `type` | What the model produces: `chat` (default), `image`, or `decision`; only chat models are offered for sessions (2.2.0) |
 | `releaseDate` | `YYYY-MM-DD` or `YYYY-MM` |
-| `capabilities` | `tools`, `input`, `output` media types, temperature support, and `reasoning` controls (see below) |
+| `capabilities` | `tools`, `input`, `output` media types, `freeform` tool-input formats, temperature support, and `reasoning` controls (see below) |
 | `compatibility` | Per-model overrides of the provider's `compatibility` (see [Compatibility](#compatibility)) |
 | `variants` | **Array** of `{ id, settings?, headers?, body? }` |
 | `cost` | Input/output and optional `cache.read`/`cache.write` per million tokens |
 | `limit` | `context`, `input`, `output` |
 | `disabled` | Hide from selection |
+
+`capabilities.freeform` (2.3.0) lists the freeform tool-input formats the model's API accepts (`text`, `regex`, `lark`; other names from
+models.dev are ignored). It is absent or empty by default, which means JSON tools only; set it to `[]` on a model if a proxy
+in front of it rejects freeform tools.
 
 `capabilities.reasoning` (2.2.x docs, models.dev v2 shape) replaces the model's reasoning variants; variants listed in
 `variants` still apply on top. Fields: `supported` (`false`, or `true` without controls, adds no variants), `toggle`
@@ -212,6 +216,55 @@ them automatically.
   },
 }
 ```
+
+## Cache lifetime
+
+OpenCode sends no cache lifetime by default, so each provider uses its own (five minutes on Anthropic). Set
+`settings.cache.ttl` on a provider or model to request another one; a model setting overrides the provider setting
+(2.3.0 docs; the 2.2.6 schema already defined it, and the warming defaults depend on it):
+
+```jsonc
+{
+  "providers": {
+    "anthropic": {
+      "settings": { "cache": { "ttl": "1h" } },
+      "models": { "claude-haiku-5-5": { "settings": { "cache": { "ttl": "5m" } } } }
+    }
+  }
+}
+```
+
+`ttl` is a number and a unit (`ms`, `s`, `m`, `h`, `d`) and is sent as given, so use a value the provider accepts:
+Anthropic Messages takes `"5m"` and `"1h"` as `cache_control.ttl`; Bedrock Converse sets `ttl` on each `cachePoint`
+(older Claude models that cache only five minutes ignore `"1h"`); OpenAI Chat and Responses send `"24h"` as
+`prompt_cache_retention` and other values as `prompt_cache_options.ttl`. Providers that cache automatically, such as
+Gemini, ignore it. A longer lifetime usually costs more to write (Anthropic charges 2x the input price for a one-hour
+write and 1.25x for a five-minute one). `interval: "auto"` in [warming](config-schema.md#warming) times its requests from
+this lifetime. Warming itself can also be set here with `settings.cache.warming`.
+
+## Client certificates
+
+`settings.tls` on a provider presents a client certificate to a gateway that requires mutual TLS (2.3.0 docs and release
+notes):
+
+```jsonc
+{
+  "providers": {
+    "company": {
+      "package": "@opencode/ai/providers/openai-compatible",
+      "settings": {
+        "baseURL": "https://llm.company.example/v1",
+        "tls": { "cert": "{file:/etc/company/client.pem}", "key": "{file:/etc/company/client.key}", "passphrase": "{env:CLIENT_KEY_PASSPHRASE}" }
+      }
+    }
+  }
+}
+```
+
+`cert` and `key` are PEM text (use `{file:...}`; a file that cannot be read leaves `tls` unset); `passphrase` is only for an
+encrypted key. It works on the Bun and Node builds, not on Cloudflare Workers. Every model request of that provider
+presents it (chat, compaction, image and decision models) over HTTP rather than WebSockets, and such requests do not
+follow redirects. Webfetch, remote MCP servers and plugin installs do not present it.
 
 ## Request encoding
 
