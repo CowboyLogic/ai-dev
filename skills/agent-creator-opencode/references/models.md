@@ -3,7 +3,7 @@
 Model ID format, variants, and common provider values for OpenCode agents. Applies
 to both V1 and V2; syntax differences are called out.
 
-**Sources (checked 2026-11-08):**
+**Sources (checked 2026-11-15):**
 
 - <https://docs.github.com/en/copilot/reference/ai-models/supported-models>
 - <https://docs.github.com/en/copilot/reference/ai-models/model-comparison>
@@ -77,7 +77,7 @@ OpenCode IDs use the `github-copilot/` provider prefix.
 
 > [!NOTE]
 > The table lists models on GitHub's supported-models page whose IDs also appear
-> under `github-copilot` in the models.dev catalog (2026-11-08). Model
+> under `github-copilot` in the models.dev catalog (2026-11-15). Model
 > availability changes often. Re-check with `/models` or `opencode models`
 > before hard-coding a model on an agent.
 
@@ -101,6 +101,8 @@ OpenCode IDs use the `github-copilot/` provider prefix.
 | `github-copilot/claude-sonnet-5.5` | Claude Sonnet 5.5 | General-purpose coding and agent tasks; completes tasks with fewer steps, tokens, and tool calls |
 | `github-copilot/gemini-3.8-flash` | Gemini 3.8 Flash | Fast, cheap analysis subagents |
 | `github-copilot/gemini-4-argon` | Gemini 4 Argon | Complex coding, agentic, and reasoning tasks; thorough work that tests edge cases before finishing |
+| `github-copilot/gemini-4-carbon` | Gemini 4 Carbon | Complex coding, agentic, and reasoning tasks; secure code generation and security-focused work (added to the catalog 2026-11-10) |
+| `github-copilot/gemini-4-hydrogen` | Gemini 4 Hydrogen | Fast, efficient agentic coding and multistep workflows; fast tool use with improved instruction following (added to the catalog 2026-11-12) |
 | `github-copilot/mai-code-1.1-flash` | MAI-Code-1.1-Flash | Fast code completions, explanations, tool use |
 | `github-copilot/kimi-k3` | Kimi K3 | Agentic coding and long-context work (open-weight; disabled by default for Business/Enterprise) |
 | `github-copilot/grok-4.5` | Grok 4.5 | General-purpose coding and agent tasks |
@@ -109,7 +111,7 @@ OpenCode IDs use the `github-copilot/` provider prefix.
 
 ### Retired — avoid for new agents
 
-| Model ID | Status on GitHub (2026-11-08) | Suggested replacement |
+| Model ID | Status on GitHub (2026-11-15) | Suggested replacement |
 |---|---|---|
 | `github-copilot/gpt-5-mini` | Retired 2026-10-19 | `gpt-6-luna` |
 | `github-copilot/gpt-5.4-mini` | Retired 2026-10-19 | `gpt-6-luna` |
@@ -124,7 +126,7 @@ OpenCode IDs use the `github-copilot/` provider prefix.
 | `claude-opus-4.5`, `claude-opus-4.6`, `claude-sonnet-4.5`, `gemini-3.1-pro-preview` | Retired 2026-09-01 | `claude-opus-5.5`, `claude-sonnet-5.5`, `gemini-3.8-flash` |
 | `gpt-4.1`, `gpt-5.2`, `gpt-5.2-codex`, `claude-sonnet-4`, `gemini-2.5-pro`, Raptor mini | Retired | See GitHub's retirement table |
 
-The models.dev catalog can lag GitHub: on 2026-11-08 it still listed `claude-opus-4.7`, `gemini-3.5-flash`,
+The models.dev catalog can lag GitHub: on 2026-11-15 it still listed `claude-opus-4.7`, `gemini-3.5-flash`,
 `gemini-3.6-flash`, `gemini-3.7-flash`, `kimi-k2.7-code`, and `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.5`, and `gpt-5-mini` (all
 flagged deprecated there) under `github-copilot` after GitHub retired them. Check GitHub's retirement table, not the catalog, before choosing a model that looks old.
 
@@ -139,6 +141,7 @@ flagged deprecated there) under `github-copilot` after GitHub retired them. Chec
 > | Claude Opus 4.8 (fast mode) (preview) | Fast-mode cost class. Not in the models.dev `github-copilot` catalog; confirm the exact ID with `/models`. |
 > | `github-copilot/claude-fable-5` | Extreme cost; not under GitHub's ZDR agreement; org enablement required |
 > | `github-copilot/claude-fable-5.1` | Same as Fable 5 |
+> | `github-copilot/claude-fable-5.2` | Same as Fable 5 (added to the catalog 2026-11-09; GitHub lists it with the same data-retention caveat) |
 > | `github-copilot/gpt-6-astra` | Priced at the Fable level in models.dev ($10/$50 per M tokens, higher above 272K context) |
 > | Any future `*-opus-*-fast` / "Opus (fast mode)" ID | Same fast-mode cost class |
 > | Any future `claude-fable-*` ID | Same Fable cost class |
@@ -176,7 +179,7 @@ flagged deprecated there) under `github-copilot` after GitHub retired them. Chec
 
 ## Other common providers
 
-IDs below appear in the models.dev catalog on 2026-11-01.
+IDs below appear in the models.dev catalog on 2026-11-15.
 
 | Provider | Example model IDs |
 |---|---|
