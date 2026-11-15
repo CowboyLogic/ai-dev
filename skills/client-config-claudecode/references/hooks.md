@@ -325,6 +325,8 @@ An **async** hook's JSON response must be alone on stdout or on one line of its 
 
 **Legacy note**: top-level `decision`/`reason` (`"approve"`/`"block"`) are deprecated for `PreToolUse` specifically — use `hookSpecificOutput.permissionDecision`. Other events (`PostToolUse`, `Stop`, etc.) still use top-level `decision`/`reason`.
 
+**Changelog only (v2.1.321–v2.1.323):** `PreCompact`, `PostCompact` and post-compaction `SessionStart` hooks now receive `agent_id` and `agent_type` when a subagent compacts; a `PreToolUse` `ask` is no longer lost when another hook's `defer` finishes first and cannot be honored; a `PreToolUse` `mcp_tool` hook whose answer is over 16 MiB now refuses the tool call instead of being skipped; and `claude -p` and SDK sessions send a progress heartbeat every 30 seconds while hooks run long.
+
 ### PermissionRequest (use `hookSpecificOutput.decision`)
 
 ```json
