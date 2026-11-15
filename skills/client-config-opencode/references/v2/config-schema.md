@@ -308,27 +308,38 @@ Credentials: `/connect` or `EXA_API_KEY`, `FIRECRAWL_API_KEY`, `PARALLEL_API_KEY
 Keeps provider prompt caches warm with periodic transient requests. Off by default; costs real tokens.
 
 ```jsonc
-{ "warming": true }   // 4-minute interval, 30-minute window
+{ "warming": true }   // warm just before each model's cache expires (2.3.0 docs), for up to 30 minutes
 { "warming": { "prompt": "Do not perform any work. Reply with exactly: OK", "interval": "5 minutes", "duration": "1 hour" } }
 ```
 
-`interval` and `duration` are duration strings that must resolve to finite values greater than zero, and `interval` must
-be shorter than `duration` or OpenCode skips warming and logs a warning (2.2.6 docs).
+`interval` and `duration` are duration strings that must resolve to finite values greater than zero. Since 2.3.0 the
+default `interval` is `"auto"` (it was `"4 minutes"` through 2.2.6): OpenCode warms at 90% of the model's `cache.ttl`
+(a `"5m"` cache is warmed every 4.5 minutes), or every 4 minutes for a model with no `cache.ttl`. The default
+`duration` is 30 minutes.
 
-Since 2.2.6 `interval` also accepts `"auto"`, which warms at 90% of the model's `cache.ttl` setting (a `"5m"` cache is
-warmed every 4.5 minutes); models without a `cache.ttl` are not warmed. Raise `duration` for long TTLs such as `"1h"`:
+- An explicit `interval` as long as or longer than `duration` is rejected with a warning. An `"auto"` interval that long
+  (for example a `"1h"` cache with the 30-minute default) is not warmed, because the cache outlives the window;
+  OpenCode logs this once per session. Raise `duration` to warm it.
+- Warming applies to top-level sessions only; subagent sessions are not warmed. Each interval counts from when the latest
+  request or warming request was sent, not from when its response finished. A compaction resets both timers.
+- No warming request is sent while a model request or compaction is running. If one is still running when the interval
+  comes due, warming waits for it and then sends, unless that request's cache has already expired.
+- A warming request that reads less from the cache than it writes (a miss) stops warming for that session until its next
+  normal request. Providers that do not report cache usage never count as a miss.
 
 ```jsonc
 {
-  "warming": { "interval": "auto", "duration": "2 hours" },
+  "warming": { "duration": "2 hours" },
   "providers": { "anthropic": { "settings": { "cache": { "ttl": "1h" } } } }
 }
 ```
 
-The 2.2.6 config schema also lets a provider or model override the top-level `warming` at
-`providers.<id>.settings.cache.warming` or `providers.<id>.models.<model>.settings.cache.warming` (boolean, or
-`{ interval, duration }`). It is a `cache` setting, not a `warming` field on the provider or model; a key written elsewhere
-is ignored. Schema source and release notes only; the docs page shows the top-level form.
+A provider or model overrides the top-level `warming` at `providers.<id>.settings.cache.warming` or
+`providers.<id>.models.<model>.settings.cache.warming` (boolean, or `{ interval, duration }`; a model setting beats the
+provider setting; fields left out come from the top-level `warming`, then the defaults; an invalid value logs a warning
+and falls back to the top-level `warming`). It is a `cache` setting, not a `warming` field on the provider or model; a
+key written elsewhere is ignored. The 2.3.0 docs show this form; the 2.2.6 docs did not (schema source only then).
+`settings.cache.ttl` requests a cache lifetime; see [Providers](providers.md#cache-lifetime).
 
 ---
 
@@ -424,7 +435,7 @@ and were in the 2.0.27 `opencode pair --help`.
 | `OPENCODE_PASSWORD` | Server HTTP Basic password (`OPENCODE_SERVER_PASSWORD` still works; `OPENCODE_SERVER_USERNAME` is no longer supported and the username is always `opencode`) |
 | `OPENCODE_CLAUDE_PATH` | Override the Claude executable used by the Claude Agent provider |
 | `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY` | Proxy; `NO_PROXY` must include `localhost,127.0.0.1,::1` |
-| `NODE_EXTRA_CA_CERTS` | Extra CA bundle (PEM) |
+| `NODE_EXTRA_CA_CERTS` | Extra CA bundle (PEM). Also the fix when antivirus "HTTPS scanning" or a corporate SSL-inspection proxy replaces server certificates and requests fail with `self signed certificate in certificate chain` (2.3.0 docs); the alternative is to exclude `opencode.ai`, `*.opencode.ai` and your provider's API host from scanning |
 
 > [!NOTE]
 > The V2 docs do not mention `OPENCODE_CONFIG`, `OPENCODE_CONFIG_CONTENT`, `OPENCODE_CONFIG_DIR`, or remote
@@ -449,26 +460,30 @@ V2 docs showed only `{env:}`; `{file:}` was verified working on the 2.0.27 binar
 
 ## Experimental
 
-All keys live under `experimental` and may change or disappear in any release. Verified against the 2.2.6 docs and
-config schema (`packages/schema/src/config/experimental.ts` and `flag.ts`). In 2.2.6 five keys (`todo`,
-`background_compaction`, `media_blob`, `schedules`, `artifacts`) come from one feature-flag registry (`flag.ts`): each is on
-in local and dev builds and off in releases. The flag resolver (`packages/core/src/flag.ts`) checks, in order,
-`OPENCODE_FLAGS` (`-key`, then `all`), then `experimental.<key>`, then `experimental.all_flags: true`, then the build
-default. So an explicit `experimental.<key>` setting beats `experimental.all_flags`, but `OPENCODE_FLAGS=all` beats config:
-to opt one flag out of an environment-wide `all`, use `OPENCODE_FLAGS=all,-background_compaction`. `all_flags: false` falls
-through and is not a kill switch. `codemode_vm` and `part_rows` are separate `experimental.ts` fields, not registry
-flags, so `all_flags` and `OPENCODE_FLAGS=all` do not enable them in the schema source; the 2.2.6 release notes nonetheless
-describe `OPENCODE_FLAGS=codemode_vm`, and that conflict is unresolved. Read from the schema and core source and release
-notes; the flag behavior was not run.
+All keys live under `experimental` and may change or disappear in any release. Verified against the 2.3.0 config
+schema (`packages/schema/src/config/experimental.ts` and `flag.ts`) and release notes. In 2.3.0 eight keys (`todo`,
+`background_compaction`, `media_blob`, `schedules`, `artifacts`, `shell_timeout_background`, `console_watches`,
+`mcp_events`) come from one feature-flag registry (`flag.ts`): each is on in local and dev builds and off in releases.
+The flag resolver (`packages/core/src/flag.ts`, logic unchanged from 2.2.6) checks, in order, `OPENCODE_FLAGS` (`-key`,
+then `all`), then `experimental.<key>`, then `experimental.all_flags: true`, then the build default. So an explicit
+`experimental.<key>` setting beats `experimental.all_flags`, but `OPENCODE_FLAGS=all` beats config: to opt one flag out of
+an environment-wide `all`, use `OPENCODE_FLAGS=all,-background_compaction`. `all_flags: false` falls through and is not
+a kill switch. `part_rows` is a separate `experimental.ts` field, not a registry flag, so `all_flags` and
+`OPENCODE_FLAGS=all` do not enable it. `codemode_vm` is deprecated and ignored since 2.3.0, because Code Mode always runs
+on the VM, which resolves the 2.2.6 conflict between the release notes and the schema over it. Read from the schema and
+core source and release notes; the flag behavior was not run.
 
 | Key | Type / default | Effect |
 |-----|----------------|--------|
 | `todo` | boolean, `false` | Gives agents the `todowrite` tool (2.1.0; todos are off by default in V2) |
 | `subagent_depth` | integer, `1` | How deeply subagents can start their own subagents |
 | `background_compaction` | boolean, `false` | Writes the compaction summary in the background; unused summaries still cost tokens. Per the 2.2.6 docs it starts 60k tokens before the threshold (on small windows, at most halfway between the first response after the last compaction and the threshold), the session waits if the summary is not finished when compaction is due, and compaction summarizes as usual if the conversation since the held summary grew past about 40% of the threshold or the model, instructions, or start of the conversation changed |
-| `codemode_vm` | boolean, `false` | Runs the Code Mode `execute` tool on the experimental bytecode VM instead of the legacy interpreter (2.2.6; not a registry flag in the schema source, but the release notes mention `OPENCODE_FLAGS=codemode_vm`) |
+| `codemode_vm` | boolean | Deprecated and ignored since 2.3.0; Code Mode always runs on the VM (in 2.2.6 it switched Code Mode to the experimental bytecode VM) |
 | `part_rows` | boolean, `false` | Writes each assistant part as its own `session_part` row instead of rewriting the whole message on every event (2.2.6, schema description only) |
-| `all_flags` | boolean | Turns the five registry flags on regardless of build channel, like `OPENCODE_FLAGS=all` but below explicit `experimental.<key>` settings (2.2.6) |
+| `shell_timeout_background` | boolean, `false` | Moves a foreground shell command to the background when its timeout expires; with it on, an explicit timeout on a background command stops it (2.3.0, schema and release notes only) |
+| `mcp_events` | boolean, `false` | Experimental support for MCP Events, a draft MCP extension: declares support to MCP servers and reads the events of servers that offer them (2.3.0, schema and release notes only) |
+| `console_watches` | boolean, `false` | Watches Slack threads, GitHub pull requests, issues, commits and Actions runs, and the workspace's MCP servers' events through OpenCode Console, and wakes sessions when they change (2.3.0, schema description only) |
+| `all_flags` | boolean | Turns the registry flags on regardless of build channel, like `OPENCODE_FLAGS=all` but below explicit `experimental.<key>` settings (2.2.6) |
 | `image_generate` | boolean or `{ model }` | Default model for `experimental_image_generate` as `providerID/modelID[#variant]`; the tool appears while a connected provider has an image model, and since 2.2.2 needs no other setup |
 | `location_idle_timeout` | duration string or `false`, `"60 minutes"` | How long a project location can be idle before its services unload; running sessions and background jobs keep it loaded; project config can override global |
 | `schedules` | boolean, `false` | Opt-in scheduled prompts (`/schedule`, agent tools); `timezone` sets the zone. Release-notes only |
