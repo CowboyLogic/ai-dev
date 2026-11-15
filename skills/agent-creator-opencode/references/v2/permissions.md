@@ -3,7 +3,7 @@
 The native V2 `permissions` array: rule shape, matching, actions, defaults, and
 policies.
 
-**Sources (checked 2026-11-08, V2 2.2.6):** <https://opencode.ai/v2/docs/permissions/> ·
+**Sources (checked 2026-11-15, V2 2.3.0):** <https://opencode.ai/v2/docs/permissions/> ·
 <https://opencode.ai/v2/docs/tools/> · <https://opencode.ai/v2/docs/policies/> ·
 <https://opencode.ai/v2/docs/skills/>
 
@@ -98,7 +98,7 @@ string.
 | `websearch` | Search query | `websearch` |
 | `external_directory` | Canonical external directory boundary, normally ending in `/*` | Paths outside the Location and project worktree |
 | `<server>_<tool>` | `*` | One MCP tool (unsupported characters become `_`) |
-| `execute` | `*` | Code Mode availability; nested tools still enforce their own rules |
+| `execute` | `*` | Code Mode availability; since 2.3.0 a deny lists the tools Code Mode would reach as direct tools instead of removing them, so deny those too; nested tools still enforce their own rules |
 
 - Action names are strings, so plugins may add actions.
 - `doom_loop` and `lsp` are **not** V2 core permission actions.
@@ -106,7 +106,7 @@ string.
   pages checked. Do not emit rules for them in native V2.
 - The tools page says a `browser` deny rule with resource `*` removes the browser
   Code Mode catalog; it is not in the permissions page's action table.
-- The tools page (as of 2.2.5; 2.2.6 removed the sentence that these utilities request no built-in permission action) lists Code Mode worktree utilities. `worktree_remove`
+- The tools page (as of 2.2.5; 2.2.6 and 2.3.0 lack the sentence that these utilities request no built-in permission action) lists Code Mode worktree utilities. `worktree_remove`
   uses `edit` with the worktree directory as the resource, so an `edit` rule that
   denies that directory blocks it for the agent (`force: true` can discard
   modified or untracked files). `worktree_create` and `worktree_list` requested no
