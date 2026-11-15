@@ -3,8 +3,8 @@
 Reference for the YAML frontmatter fields of Claude Code agent files. Load this file when
 writing, reviewing, or debugging agent frontmatter.
 
-**Source (last verified 2026-10-18 against Claude Code 2.1.302; the docs page references
-versions up to v2.1.296):**
+**Source (last verified 2026-11-15 against Claude Code 2.1.325; the docs page references
+versions up to v2.1.314):**
 <https://code.claude.com/docs/en/sub-agents#supported-frontmatter-fields>
 
 Every field in this file is in the docs table. Where a note below is labeled "changelog only",
