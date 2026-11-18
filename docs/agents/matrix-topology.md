@@ -52,7 +52,7 @@ the next stage begins. Problems are caught at the cheapest possible moment — b
 | **Switch** | `github-copilot/claude-sonnet-5.5` | Test writer agent | [switch.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/switch.md) |
 | **Tank** | `github-copilot/claude-haiku-5.5` | Researcher agent | [tank.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/tank.md) |
 | **The Architect** | `github-copilot/claude-fable-5.2` | Architecture agent | [the-architect.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/the-architect.md) |
-| **Trinity** | `github-copilot/gpt-6.1-sol` | Coder agent | [trinity.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/trinity.md) |
+| **Trinity** | `github-copilot/gpt-6.2-sol` | Coder agent | [trinity.md](https://github.com/CowboyLogic/ai-dev/blob/main/agents/matrix-topology/opencode/trinity.md) |
 <!-- artifact-sync:roster:end -->
 
 ---
