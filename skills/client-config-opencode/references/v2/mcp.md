@@ -177,8 +177,8 @@ Command text fills a prompt's arguments in order; separate them with spaces and 
   permission actions are `opencode_list_mcp_resources` (resource = server name) and `opencode_read_mcp_resource`
   (resource = `<server>:<uri>`), for example `{ "action": "opencode_read_mcp_resource", "resource": "docs:*", "effect": "allow" }`.
 - **Server instructions:** instructions a server returns during initialization are added to the system prompt inside
-  `<mcp_instructions>`. They are omitted when the agent's permissions deny every one of the server's tools, or deny
-  `execute` for a Code Mode server. Changed entries are sent as updates, not the full list (2.1.3).
+  `<mcp_instructions>`. They are omitted when the agent's permissions deny every one of the server's tools (see Code
+  Mode below for denying `execute`). Changed entries are sent as updates, not the full list (2.1.3).
 - **Input requests:** servers can ask for input during a call (MCP elicitation). OpenCode shows a form, or a link for
   URL requests; dismissing the form cancels the request. Forms appear instead of the call waiting until it times out
   (2.1.4 release notes).

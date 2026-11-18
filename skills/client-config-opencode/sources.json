@@ -71,9 +71,10 @@
         "https://raw.githubusercontent.com/anomalyco/opencode/dev/CHANGELOG.md",
         "https://raw.githubusercontent.com/anomalyco/opencode/v2.3.0/packages/schema/src/config.ts",
         "https://raw.githubusercontent.com/anomalyco/opencode/v2.3.0/packages/schema/src/config/experimental.ts",
-        "https://raw.githubusercontent.com/anomalyco/opencode/v2.3.0/packages/schema/src/config/flag.ts"
+        "https://raw.githubusercontent.com/anomalyco/opencode/v2.3.0/packages/schema/src/config/flag.ts",
+        "https://raw.githubusercontent.com/anomalyco/opencode/v2.3.0/packages/core/src/flag.ts"
       ],
-      "covers": "V2: config locations/precedence (system directory, macOS managed preferences), all top-level fields, ignored V1 fields, commands, skills, formatters, compaction (percentage buffer), media, websearch, warming, references, worktree, instructions (loaded), variable substitution, experimental settings, service env, background service and remote pairing, V2 release notes (CHANGELOG.md), pinned v2.3.0 config schema source (top-level `timezone`, experimental keys, feature-flag registry)"
+      "covers": "V2: config locations/precedence (system directory, macOS managed preferences), all top-level fields, ignored V1 fields, commands, skills, formatters, compaction (percentage buffer), media, websearch, warming, references, worktree, instructions (loaded), variable substitution, experimental settings, service env, background service and remote pairing, V2 release notes (CHANGELOG.md), pinned v2.3.0 config schema source (top-level `timezone`, experimental keys, feature-flag registry, flag resolver)"
     },
     "references/v2/permissions.md": {
       "urls": [
