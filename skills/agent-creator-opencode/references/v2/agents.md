@@ -2,7 +2,7 @@
 
 Native V2 agent fields, file locations, defaults, and merge rules.
 
-**Sources (checked 2026-11-08, V2 2.2.6):** <https://opencode.ai/v2/docs/agents/> ·
+**Sources (checked 2026-11-15, V2 2.3.0):** <https://opencode.ai/v2/docs/agents/> ·
 <https://opencode.ai/v2/docs/config/> · <https://opencode.ai/v2/docs/models/> ·
 <https://opencode.ai/v2/docs/tools/> · <https://opencode.ai/v2/docs/migrate-v1/>
 
@@ -135,7 +135,10 @@ the wrong subagent to be launched.
 | `subagent` | Runs only in a child session through the `subagent` tool. |
 | `all` | Runs either as a primary agent or a subagent. |
 
-Subagents run with fresh context in foreground or background child sessions.
+Since 2.3.0 subagents always run in the background (2.3.0 docs and release notes; through 2.2.6 the docs described foreground
+and background child sessions): the `subagent` call returns immediately with a `sessionID`, and the parent receives a report
+when the child goes idle, and again after each later round of work, so it can keep working or end its turn without
+waiting. A follow-up to a running child joins its current run. Subagents run with fresh context in their own child sessions.
 The parent's `subagent` permission controls which agents it may launch; the
 child uses its own configured permissions, not a subset of the parent's.
 

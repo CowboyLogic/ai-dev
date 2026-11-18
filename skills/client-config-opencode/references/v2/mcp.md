@@ -1,6 +1,6 @@
 # V2 MCP Servers Reference
 
-Source: <https://opencode.ai/v2/docs/mcp-servers/> (2.2.6).
+Source: <https://opencode.ai/v2/docs/mcp-servers/> (2.3.0).
 
 ## Structure
 
@@ -177,13 +177,15 @@ Command text fills a prompt's arguments in order; separate them with spaces and 
   permission actions are `opencode_list_mcp_resources` (resource = server name) and `opencode_read_mcp_resource`
   (resource = `<server>:<uri>`), for example `{ "action": "opencode_read_mcp_resource", "resource": "docs:*", "effect": "allow" }`.
 - **Server instructions:** instructions a server returns during initialization are added to the system prompt inside
-  `<mcp_instructions>`. They are omitted when the agent's permissions deny every one of the server's tools, or deny
-  `execute` for a Code Mode server. Changed entries are sent as updates, not the full list (2.1.3).
+  `<mcp_instructions>`. They are omitted when the agent's permissions deny every one of the server's tools (see Code
+  Mode below for denying `execute`). Changed entries are sent as updates, not the full list (2.1.3).
 - **Input requests:** servers can ask for input during a call (MCP elicitation). OpenCode shows a form, or a link for
   URL requests; dismissing the form cancels the request. Forms appear instead of the call waiting until it times out
   (2.1.4 release notes).
 - **Code Mode:** by default agents reach a server's tools through `execute` under the server's namespace; set
-  `codemode: false` to list them directly. Denying `execute` removes Code Mode and the tools reached only through it.
+  `codemode: false` to list them directly. Denying `execute` removes Code Mode; since 2.3.0 the server's tools are then listed directly and its instructions are
+  kept (without the Code Mode line), where through 2.2.6 they were removed. Instructions are still omitted when the agent's
+  permissions deny every one of the server's tools.
 
 ## CLI and TUI
 

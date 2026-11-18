@@ -61,9 +61,9 @@ Heavy reasoning model — experience design requires empathy, anticipation of us
 behavior, and the ability to reason about what users will misunderstand or misuse.
 
 Oracle was previously Gemini specifically for cross-family diversity at the
-design stage. It is now Claude Opus to ensure Ghost (Gemini) can satisfy the
-cross-family review requirement across all agents. The reasoning capability is
-equivalent; the cross-family coverage is better.
+design stage. It is now Claude Opus so that no producer shares a family with
+Smith (Gemini) or Ghost (xAI), which keeps the cross-family review requirement
+satisfied across all agents without routing.
 
 **Current model:** Claude Opus 5.5
 **Family:** Anthropic / Claude
