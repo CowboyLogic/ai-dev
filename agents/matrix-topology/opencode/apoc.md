@@ -4,7 +4,7 @@ description: >
   specifications. Invoke when implementation is complete and test execution
   is the next step. Apoc is methodical — every test runs, every result
   is recorded, every failure is investigated.
-model: github-copilot/claude-sonnet-5
+model: github-copilot/claude-sonnet-5.5
 permissions:
   - { action: read, resource: "*", effect: allow }
   - { action: edit, resource: "*", effect: allow }
@@ -67,7 +67,7 @@ CONSTRAINTS: [test environment, framework, and any known exclusions]
 Methodical execution focus — Apoc needs to be thorough and systematic rather
 than creative. A capable reasoning model that follows structured processes reliably.
 
-**Current model:** Claude Sonnet 5
+**Current model:** Claude Sonnet 5.5
 **Family:** Anthropic / Claude
 
 ## Constraints

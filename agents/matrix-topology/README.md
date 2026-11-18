@@ -101,7 +101,7 @@ The cost of the same flaw found in production is an incident.
 
 The Conductor (Neo) owns the review loop, and it runs flat — one level deep. When The
 Architect produces an architecture document, it writes the artifact and returns it to
-Neo. Neo invokes the security reviewer (Smith or Smith-Claude) and Ghost directly,
+Neo. Neo invokes Smith (security) and Ghost directly,
 batches their findings back to The Architect for one resolution pass, and re-verifies
 until Ghost approves. Working agents never invoke reviewers themselves.
 
@@ -124,11 +124,11 @@ handles.
 
 ## 3. Meet the Crew
 
-The topology has fourteen agents. One is the Conductor (Neo). Ten are specialists in
-a specific development function. Three are cross-cutting participants who appear at
-every generative stage — Ghost, plus the security reviewer in two model-pinned
-variants (Smith on GPT, Smith-Claude on Claude) so it is always cross-family from the
-artifact's producer.
+The topology has thirteen agents. One is the Conductor (Neo). Ten are specialists in
+a specific development function. Two are cross-cutting participants who appear at
+every generative stage — Smith (security, on Gemini) and Ghost (verification, on
+xAI), each pinned to a family that no producer uses so both are always cross-family
+from the artifact's producer.
 
 Most day-to-day work does not convene the full crew — it runs the **express lane**
 (Neo + Mouse + Ghost; see §4). The full roster below is the **full loop**, reserved
@@ -238,7 +238,7 @@ code is not outdated — it is wrong.
 These two agents do not sit in a linear sequence. They intercept at every stage
 that produces a generative artifact.
 
-**Agent Smith / Smith-Claude** — *Security*
+**Agent Smith** — *Security*
 
 Smith is adversarial by design. He approaches every artifact as an attacker would —
 looking for what should not be there, what was missed, what can be exploited, and
@@ -246,12 +246,10 @@ what the working agent was too close to see. He is not a gate at the end of the
 process. He is a participant at every generative stage, from architecture through
 implementation.
 
-The security role runs in two model-pinned variants so it is always cross-family from
-the artifact's producer: **Smith** on GPT reviews the Claude-family agents, and
-**Smith-Claude** on Claude reviews the GPT-family agents (in the full loop, Trinity).
-Neo picks the right one by the producer's family. Both are the same role — a running
-agent cannot change its own model, so the invariant is met by two pins plus routing,
-not by one agent switching.
+Smith runs on Gemini, and every producer on the roster is Claude or GPT family, so
+one Smith is cross-family from every artifact it reviews. A running agent cannot
+change its own model, so the invariant is met by the static assignment, not by
+routing or switching.
 
 Security is not optional. It is not a second thought. It is built in from the
 beginning.
@@ -312,9 +310,9 @@ reliably in the OpenCode harness.
 ```markdown
 Working Agent produces artifact → returns ARTIFACT READY to Neo
             ↓
-   Neo invokes the security reviewer
-   (Smith for Claude artifacts,
-    Smith-Claude for GPT artifacts)
+   Neo invokes Smith
+   (security — Gemini, cross-family
+    from every producer)
             ↓
    Neo invokes Ghost
    (verification + gap finding,
@@ -349,7 +347,7 @@ has already produced a reviewed UX concept that Neo passes in as prior art):
 3. Neo briefs The Architect with the problem statement, Oracle's design, and the task
 4. The Architect produces an architecture document with ADs and extension points,
    writes it to disk, and returns `ARTIFACT READY` to Neo
-5. Neo invokes Smith (GPT — cross-family from The Architect's Claude) — Smith reviews
+5. Neo invokes Smith (Gemini — cross-family from The Architect's Claude) — Smith reviews
    for threat model and security implications of the structural decisions
 6. Neo invokes Ghost — Ghost verifies coverage, completeness, and alignment with the
    problem statement, and also verifies Smith's review was thorough
@@ -478,10 +476,10 @@ need it is risk.
 
 The security reviewer and Ghost must always run on a different model family than the
 agent whose work they are reviewing. Because a running agent cannot change its own
-model, this is enforced by **routing**, not self-switching: the security review is
-split across **Smith** (GPT, for Claude-family artifacts) and **Smith-Claude** (Claude,
-for GPT-family artifacts), and Neo invokes whichever is cross-family from the producer.
-Ghost (Gemini) is cross-family from the whole Claude/GPT roster, so it needs no switch.
+model, this is enforced by **static assignment**, not self-switching: producers run on
+Claude or GPT, **Smith** runs on Gemini, and **Ghost** runs on xAI. Each reviewer sits
+in a family no producer uses, and Ghost also differs from Smith, so no routing or
+switching is needed.
 
 This is non-negotiable, and here is why: models within the same family share
 training approaches, data sources, and inherent tendencies. When a model reviews
@@ -490,8 +488,8 @@ blindspots. The flaw that the working agent missed is often the same flaw the
 reviewer misses — not because either model is bad, but because they are looking
 at the problem through the same lens.
 
-Cross-family review eliminates that shared blindspot. An OpenAI model reviewing
-Claude output, or a Gemini model reviewing GPT output, brings a genuinely different
+Cross-family review eliminates that shared blindspot. A Gemini model reviewing
+Claude output, or an xAI model reviewing GPT output, brings a genuinely different
 perspective. That difference is the control.
 
 ### Model Assignments Are Configurable
@@ -518,7 +516,7 @@ as well. The roles are what matter. Name them whatever makes your team productiv
 
 ### Adapting the Roster
 
-The fourteen-agent roster reflects one person's development workflow developed over
+The thirteen-agent roster reflects one person's development workflow developed over
 time. Your workflow may differ. Some agents you may not need. Others you may want
 to add.
 
@@ -558,8 +556,8 @@ on day one. Start with three:
 3. **Ghost** — verification review that Neo invokes on everything Smith reviews
 
 That trio alone will catch more problems earlier than any single-agent workflow.
-(Add **Smith-Claude** when you introduce a GPT-family working agent, so the security
-review stays cross-family — see §6.) Once you're comfortable with the Neo-owned review
+(Keep Smith and Ghost on families your working agents don't use, so review stays
+cross-family — see §6.) Once you're comfortable with the Neo-owned review
 loop pattern, add the specialist agents
 one at a time, starting with whichever role is the most painful bottleneck in
 your current workflow.
@@ -588,8 +586,7 @@ agents/matrix-topology/
     dozer.md                  ← Operational Validation
     tank.md                   ← Research
     niobe.md                  ← Documentation
-    smith.md                  ← Security — GPT (reviews Claude-family artifacts)
-    smith-claude.md           ← Security — Claude (reviews GPT-family artifacts)
+    smith.md                  ← Security — Gemini (reviews every producer)
     ghost.md                  ← Review (cross-cutting)
   claude/                     ← Claude Code variants (parallel set)
   copilot/                    ← GitHub Copilot variants (parallel set)
