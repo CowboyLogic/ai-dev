@@ -4,7 +4,7 @@ description: >
   Invoke when specs, architecture, and executable tests exist and implementation
   is the next step. Trinity does not design, does not write tests — she builds
   what has been designed, precisely, against tests already written.
-model: github-copilot/gpt-6.1-sol
+model: github-copilot/gpt-6.2-sol
 permissions:
   - { action: read, resource: "*", effect: allow }
   - { action: edit, resource: "*", effect: allow }
@@ -99,10 +99,10 @@ in context before writing. The failure mode is a tool execution abort on large w
 
 Heavy reasoning model — implementation requires understanding the full context
 of specs, tests, and architecture simultaneously, and catching specification gaps
-before they become bugs. GPT-6.1 Sol is the GPT family's strongest coding model at
+before they become bugs. GPT-6.2 Sol is the GPT family's strongest coding model at
 the balanced price, so it gives Trinity the most capability per dollar.
 
-**Current model:** GPT-6.1 Sol
+**Current model:** GPT-6.2 Sol
 **Family:** OpenAI / GPT
 
 ## Constraints
