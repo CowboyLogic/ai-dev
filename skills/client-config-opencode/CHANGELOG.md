@@ -23,7 +23,8 @@ binary-dependent claims keep their earlier basis.
   direct tools (and keeps an MCP server's instructions without the Code Mode line) instead of removing them.
 - `references/v2/plugins.md`: the `-opencode.fork-notice` plugin switch for the fork notice added in 2.3.0.
 - `references/v2/cli.md`: `session.verbosity` now defaults to `low` (release notes only).
-- `sources.json`: schema source pins moved to `v2.3.0`.
+- `sources.json`: schema source pins moved to `v2.3.0`, and the flag resolver source (`packages/core/src/flag.ts`) is now
+  pinned so a refresh stages it.
 - Not changed: subagents always running in the background is recorded in `agent-creator-opencode` (agents reference)
   because this skill has no subagent-launch coverage; Desktop, SDK, site, Console, ACP, and shell-output changes; the
   Copilot Auto model pick and other release-note-only behavior changes with no configuration surface; V1 references.
