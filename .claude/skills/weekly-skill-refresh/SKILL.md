@@ -146,62 +146,34 @@ Every run produces a PR, because the verification date and basis change every ru
 5. Only if there is no diff at all (dates already match today), skip the PR: comment on the
    issue with the basis and sources checked, then close it as completed.
 
-## 6. Answer the review
+## 6. Answer the review and verify merge readiness
 
-Opening the PR starts the review; it is not the end. Copilot reviews once and does not
-re-review. Codex reviews code and security and re-reviews after each push. Work in rounds
-and stop after 3 rounds in total. Wait at most 10 minutes in total for any one review; if
-it has not landed, stop waiting, report the PR link, and say the review is pending. Never
-call the PR clean in that case.
+Follow `.agents/skills/pr-review-cycle/SKILL.md` for the review cycle and the merge-readiness
+check. It defines the reviewers, the 10-minute wait limit, finding classification, commits,
+replies, the 3-cycle cap and the readiness conditions. Only these differences apply to this
+run:
 
-GraphQL is blocked in cloud. Use GitHub MCP `pull_request_read` (methods for review
-comments, reviews and review threads) to read; `add_reply_to_pull_request_comment` to
-reply; `resolve_review_thread` to resolve. REST via `gh api repos/CowboyLogic/ai-dev/pulls/<n>/...`
-is the fallback. Page through every result.
+- **Tools.** GraphQL is blocked in cloud. Use GitHub MCP `pull_request_read` (methods for
+  reviews, review comments, review threads, PR details and status) to read;
+  `add_reply_to_pull_request_comment` to reply; `resolve_review_thread` to resolve. REST via
+  `gh api repos/CowboyLogic/ai-dev/pulls/<n>/...` is the fallback. Page through every result.
+  In REST and MCP results, the readiness conditions are `mergeable: true` and
+  `mergeable_state: clean`.
+- **First read.** Wait 2 to 3 minutes after the PR opens or after a push before reading
+  reviews. This counts toward the 10-minute limit.
+- **Deferrals.** No human is present to approve an issue. Draft it in `.agent-output/`,
+  report it as a deferral in the final report instead of posting it, and leave its thread
+  unresolved, saying so. The PR is then unfinished, not ready.
+- **Draft state.** The PR must not be a draft unless the routine said draft.
+- **Conflicts.** Check `git merge-tree --write-tree origin/main HEAD` exits 0 after
+  `git fetch origin +refs/heads/main:refs/remotes/origin/main`. If it conflicts, merge
+  `origin/main` into `refresh/<client>`, resolve, rerun the validators, push, and repeat
+  this section on the new head.
 
-Each round is one pass, with one push at the end:
-
-1. Wait 2 to 3 minutes after the PR opens or after a push, then read all reviews: inline
-   threads and findings that appear only in a review summary.
-2. Classify every finding before changing anything, checking each against the code:
-   - **Valid:** fix it in its own commit, with the validator or test that covers it.
-     Findings with one cause are one fix and one commit.
-   - **Invalid or inapplicable:** no change; note what you checked.
-   - **Valid but out of scope:** no change; note why. Follow `AGENTS.md` "Planned work"
-     (draft the issue in `.agent-output/`, and because no human is present to approve,
-     report it as a deferral in the final report instead of posting it; do not resolve that
-     thread until an issue exists, and say so).
-3. Run the applicable validators on the final tree, then push once. Never amend or rebase
-   reviewed commits. Never push while a review is pending or while findings from the same
-   round are unaddressed.
-4. Reply on every thread (name the fix commit, or give the reason), then resolve it,
-   except as noted for deferrals. Check resolution state, not comment presence.
-5. If Codex reviews the push with new findings, that is the next round, up to 3 total.
-   After the third round's push, check the resulting review but do not respond to a fourth;
-   report its findings or pending status for human direction.
-
-## 7. Merge-readiness bar
-
-Before reporting, verify on the current PR head (`pull_request_read` get and
-status methods; `gh api repos/CowboyLogic/ai-dev/pulls/<n>` as fallback):
-
-- Not a draft unless the routine said draft; `mergeable` is true and `mergeable_state` is
-  `clean`; required checks pass. Unknown, pending or failing is unverified, not clean.
-- **Rebaseable onto `main` with no conflicts.** `git fetch origin +refs/heads/main:refs/remotes/origin/main` and check
-  `git merge-tree --write-tree origin/main HEAD` exits 0. If `main` moved and conflicts,
-  merge `origin/main` into `refresh/<client>` (never rebase a reviewed branch), resolve,
-  rerun the validators, push, and repeat sections 6 and 7 on the new head. Pushes count
-  toward the 3-round cap.
-- **No unresolved review threads from any reviewer**, outdated ones included, every page.
-
-If a condition cannot be met within this procedure, report the exact blocker and the PR
-link as unfinished. Never claim mergeable or ready while anything is unresolved or
-unverified. Never merge.
-
-## 8. Final report
+## 7. Final report
 
 Also post this as a final comment on the PR (the maintainer reads the PR, not the session),
-and update the PR body if the review rounds changed its content.
-State: client and version, issue and PR links, whether the PR is draft or ready, rounds
+and update the PR body if the review cycles changed its content.
+State: client and version, issue and PR links, whether the PR is draft or ready, review cycles
 used, fixes (with commits), refutations, deferrals, and the merge-readiness result with
 anything unverified.
