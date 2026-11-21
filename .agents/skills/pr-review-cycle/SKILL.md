@@ -23,7 +23,7 @@ Copilot review effort is controlled by the user, normally **Balanced**. Never ch
 2. Read each complete review and classify every finding before changing anything. Check each against the code; do not blindly apply or dismiss suggestions. For each comment, fix the issue, refute it with a reason grounded in what was checked, or defer a valid out-of-scope finding to a tracked GitHub issue. Explain why it is out of scope and follow [Planned work](../../../AGENTS.md#planned-work), including approval before posting an issue. Do not resolve the thread until the issue exists.
 3. Commit each distinct fix separately, including an applicable test or validator; findings sharing a cause are one fix. Do not amend or rebase reviewed commits. After all findings in the available reviews are addressed, run applicable [validators](../../../AGENTS.md#python-environment-and-build-commands) on the final tree and push fixes together, not one push per finding or while a review is pending.
 4. Reply to every thread with the fix commit, the reason for refuting it, or the linked issue and reason for deferral, then resolve it. Check thread resolution state rather than comment presence. Address summary-only findings too. Check all threads, including those from other reviewers; unresolved threads block merging.
-5. Each fix push triggers another Codex review. Follow this process for at most three review cycles, counting the initial review as cycle one. After a third cycle fix push, check the resulting review but do not respond to a fourth cycle; stop and report its findings or pending status and any unresolved threads for human direction. Stop earlier when the latest push has been reviewed and all threads are resolved. Do not wait for, read or answer a second Copilot review.
+5. Each push triggers another Codex review, so every push to the PR, including a merge from the base branch, starts a new cycle. Follow this process for at most three review cycles, counting the initial review as cycle one. After a third cycle fix push, check the resulting review but do not respond to a fourth cycle; stop and report its findings or pending status and any unresolved threads for human direction. Stop earlier when the latest push has been reviewed and all threads are resolved. Do not wait for, read or answer a second Copilot review.
 6. After the final push and reviews, verify [merge readiness](#merge-readiness) on the current PR head. Report the PR link, fixes, refutations, deferrals and any remaining blockers. Work is not done until every thread is resolved and the PR is clean to merge. The cycle cap and review timeout still require stopping and reporting unfinished work, not calling it ready; merging remains a human action.
 
 ## Merge readiness
@@ -37,7 +37,7 @@ Before reporting a PR ready to merge, verify its latest head on GitHub, not just
 
 ## Thread commands
 
-List and resolve threads with `gh api graphql` (paginate if needed):
+List and resolve threads with `gh api graphql` (paginate if needed). Where GraphQL is unavailable, use the environment's GitHub tools or REST endpoints that list, reply to and resolve review threads, paging through every result.
 
 ```bash
 gh api graphql -F owner='{owner}' -F repo='{repo}' \
