@@ -9,7 +9,7 @@ Hand a bounded task to GitHub Copilot, keep working, and verify what comes back.
 You plan, verify, and own Git. Copilot does the bulk work.
 
 The script is `scripts/copilot_worker.py` in this skill's directory. It drives Copilot
-through the GitHub Copilot SDK, which `uv` installs from the script's own header; the
+through the Microsoft Copilot SDK, which `uv` installs from the script's own header; the
 first run also downloads the Copilot runtime the SDK pins. Below, `WORKER` stands for
 `uv run <this skill's directory>/scripts/copilot_worker.py`. Always launch it with
 `uv run`, never `python3`.

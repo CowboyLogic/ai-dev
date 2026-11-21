@@ -13,7 +13,7 @@ to the Copilot subscription instead of Claude tokens.
   server to install and no time limit imposed by the client.
 - Each run leaves a directory with the task, the worker's final message, usage, a log of
   every tool call it asked for, and a `result.json`.
-- It drives Copilot through the official GitHub Copilot SDK, which pins its own Copilot
+- It drives Copilot through the official Microsoft Copilot SDK, which pins its own Copilot
   runtime. Updates to the `copilot` command-line tool cannot break it.
 - The script decides every permission request itself: workers can only read and write
   inside their workspace, and a deny list rejects `git push`, `gh`, and similar commands
@@ -22,9 +22,10 @@ to the Copilot subscription instead of Claude tokens.
 ## Requirements
 
 - [`uv`](https://docs.astral.sh/uv/). It installs Python 3.11 or later and the pinned
-  `github-copilot-sdk` from the script's header on first run.
+  `microsoft-copilot-sdk` from the script's header on first run.
 - A GitHub Copilot login on the machine. Signing in once with the Copilot CLI
-  (`copilot login`) is enough; the worker reuses that login.
+  (`copilot login`) is enough; the worker reuses that login and stops with a manual
+  sign-in instruction if the runtime reports no native login.
 - Git
 - macOS, Linux, or Windows (x64 or ARM64). Inside WSL it runs as it does on Linux.
 
@@ -37,7 +38,7 @@ The first run downloads the Copilot runtime the SDK pins, into the SDK's cache.
 
 The SDK, the runtime it carries, and every package it needs are pinned to exact
 versions (`scripts/pins.json` and the header of `scripts/copilot_worker.py`). The current
-SDK/runtime pair is **1.0.28 / 1.0.105**. The worker
+SDK/runtime pair is **2.0.1 / 1.0.114**. The worker
 refuses to start when the installed versions differ, and `check` reports it. Upgrading is a
 deliberate change; [references/upgrading.md](references/upgrading.md) has the procedure.
 

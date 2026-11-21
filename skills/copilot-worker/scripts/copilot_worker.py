@@ -7,11 +7,11 @@
 #     "annotated-types==0.8.0",
 #     "anyio==4.15.1",
 #     "certifi==2026.10.23",
-#     "github-copilot-sdk==1.0.28",
 #     "h11==0.16.0",
 #     "httpcore==1.0.9",
 #     "httpx==0.28.1",
 #     "idna==3.20",
+#     "microsoft-copilot-sdk==2.0.1",
 #     "pydantic==2.14.1",
 #     "pydantic-core==2.50.1",
 #     "python-dateutil==3.0.0",
@@ -24,7 +24,7 @@
 """Run GitHub Copilot as a bounded worker for Claude Code.
 
 This supervisor is standard-library Python. It starts worker_engine.py, which drives
-the GitHub Copilot SDK, and enforces the timeout, worktree, and branch rules around it.
+the Microsoft Copilot SDK, and enforces the timeout, worktree, and branch rules around it.
 Run it with `uv run` so the SDK dependency declared above is available to the engine.
 """
 
@@ -558,7 +558,10 @@ def load_result(run_id: str) -> dict[str, Any]:
 def _runtime_version(run_dir: Path) -> str:
     try:
         info = json.loads((run_dir / "runtime.json").read_text(encoding="utf-8"))
-        return f"github-copilot-sdk {info['sdkVersion']} (runtime {info['runtimeVersion']})"
+        sdk_version = info["sdkVersion"]
+        # Retain the correct distribution name for artifacts from pre-v2 runs.
+        sdk_package = "github-copilot-sdk" if sdk_version.startswith("1.") else "microsoft-copilot-sdk"
+        return f"{sdk_package} {sdk_version} (runtime {info['runtimeVersion']})"
     except (OSError, ValueError, KeyError):
         return copilot_version()
 

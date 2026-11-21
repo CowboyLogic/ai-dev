@@ -64,7 +64,7 @@ import json, os, signal, subprocess, sys, time
 
 args = sys.argv[1:]
 if args == ["--version"]:
-    print("github-copilot-sdk 0.0.0-fake (runtime fake)")
+    print("microsoft-copilot-sdk 0.0.0-fake (runtime fake)")
     sys.exit(0)
 if args == ["--check-pins"]:
     if os.environ.get("FAKE_COPILOT_PINS") == "mismatch":
@@ -293,7 +293,7 @@ class PromptAndConfigTests(WorkerTestCase):
         header = SCRIPT.read_text().split("# ///", 2)[1]
         pins = json.loads((SCRIPT.parent / "pins.json").read_text(encoding="utf-8"))
         self.assertIn('requires-python = ">=3.11"', header)
-        self.assertIn(f'"github-copilot-sdk=={pins["sdk"]}"', header)
+        self.assertIn(f'"microsoft-copilot-sdk=={pins["sdk"]}"', header)
 
     def test_every_dependency_in_the_script_header_is_pinned_exactly(self) -> None:
         header = SCRIPT.read_text().split("# ///", 2)[1]
@@ -331,6 +331,13 @@ class RunTests(WorkerTestCase):
             for path in sorted((self.home / "runs").glob("*/result.json"))
         ]
 
+    def test_runtime_version_preserves_the_v1_distribution_for_old_runs(self) -> None:
+        run_dir = self.repo.parent
+        (run_dir / "runtime.json").write_text(
+            '{"sdkVersion": "1.0.28", "runtimeVersion": "1.0.105"}', encoding="utf-8",
+        )
+        self.assertEqual(worker._runtime_version(run_dir), "github-copilot-sdk 1.0.28 (runtime 1.0.105)")
+
     def test_research_run_completes_in_the_live_checkout(self) -> None:
         result = self.run_mode("research")
         run_dir = Path(result["runDir"])
@@ -341,7 +348,7 @@ class RunTests(WorkerTestCase):
         self.assertIsNone(result["branch"])
         self.assertIsNone(result["baseCommit"])
         self.assertEqual(result["changedFiles"], {"uncommitted": [], "commits": []})
-        self.assertEqual(result["copilotVersion"], "github-copilot-sdk 0.0.0-fake (runtime fake)")
+        self.assertEqual(result["copilotVersion"], "microsoft-copilot-sdk 0.0.0-fake (runtime fake)")
         self.assertRegex(result["runId"], worker.RUN_ID_PATTERN)
         self.assertEqual((run_dir / "response.md").read_text(), "worker final answer")
         self.assertEqual(json.loads((run_dir / "usage.json").read_text()), {"aiCredits": 1.0})
@@ -795,7 +802,7 @@ class CleanAndCheckTests(WorkerTestCase):
     def test_check_reports_the_version_and_repository(self) -> None:
         code, stdout, _ = self.main("check")
         self.assertEqual(code, 0)
-        self.assertIn("github-copilot-sdk 0.0.0-fake (runtime fake)", stdout)
+        self.assertIn("microsoft-copilot-sdk 0.0.0-fake (runtime fake)", stdout)
         self.assertIn("pins: pins ok", stdout)
         self.assertIn(str(self.repo), stdout)
         self.assertEqual(self.calls(), [])
