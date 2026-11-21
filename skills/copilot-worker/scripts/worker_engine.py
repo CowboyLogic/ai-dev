@@ -983,11 +983,14 @@ def model_entry(model: Any) -> dict:
     }
 
 
-async def require_native_login(client: Any) -> None:
+async def require_native_login(client: Any, copilot_home: str) -> None:
     """Check the headless runtime's local status without initiating sign-in."""
     status = await client.get_auth_status()
     if not status.is_authenticated:
-        raise RuntimeError("Copilot is not signed in. Run `copilot login` in your terminal and retry.")
+        raise RuntimeError(
+            f'Copilot is not signed in. Set COPILOT_HOME to "{copilot_home}" for '
+            "`copilot login` in your terminal, then retry."
+        )
 
 
 async def list_models(copilot_home: str) -> list[dict]:
@@ -1000,7 +1003,7 @@ async def list_models(copilot_home: str) -> list[dict]:
 
     config = {"workspace": os.getcwd(), "copilotHome": copilot_home}
     async with CopilotClient(**client_options(config, env)) as client:
-        await require_native_login(client)
+        await require_native_login(client, copilot_home)
         return [model_entry(model) for model in await client.list_models()]
 
 
@@ -1050,7 +1053,7 @@ async def drive(run_dir: Path) -> None:
             tools.add_builtin(tool)
         try:
             async with CopilotClient(**client_options(config, env)) as client:
-                await require_native_login(client)
+                await require_native_login(client, config["copilotHome"])
                 session = await client.create_session(
                     **session_kwargs(config, on_permission, on_event, tools)
                 )
