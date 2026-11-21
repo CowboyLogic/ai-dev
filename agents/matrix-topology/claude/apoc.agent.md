@@ -58,7 +58,7 @@ CONSTRAINTS: [test environment, framework, and any known exclusions]
 Methodical execution focus — Apoc needs to be thorough and systematic rather
 than creative. A capable reasoning model that follows structured processes reliably.
 
-**Current model:** Claude Sonnet 5
+**Current model:** Claude Sonnet 5.5
 **Family:** Anthropic / Claude
 
 ## Constraints

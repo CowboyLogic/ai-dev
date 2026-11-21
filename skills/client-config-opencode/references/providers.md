@@ -335,6 +335,7 @@ Fields under `provider.<id>.models.<model-id>` (from the V1 schema):
 | `provider` | object | Per-model `npm` / `api` override |
 | `options` | object | Provider-specific model options |
 | `headers` | object | Per-model HTTP headers |
+| `reasoning_options` | array | Reasoning controls the model accepts (models.dev shape): `{ "type": "effort", "values": [...] }`, `{ "type": "toggle" }`, `{ "type": "budget_tokens", "min", "max" }`. Configured options replace the catalog's reasoning variants; entries in `variants` still apply on top. Added in 1.19.3; source and commit only, not on the V1 docs pages |
 | `variants` | object | Variant name → config; `{"disabled": true}` disables one |
 
 ## Model whitelist / blacklist

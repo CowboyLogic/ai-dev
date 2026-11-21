@@ -25,7 +25,7 @@ import worker_engine as engine  # noqa: E402
 
 try:
     import copilot
-    import copilot.generated.session_events as events
+    import copilot.session_events as events
     import copilot.rpc as rpc
 except ImportError:
     if os.environ.get("REQUIRE_SDK_CONTRACT"):
@@ -61,7 +61,7 @@ def _parameters(callable_: object) -> set[str]:
     return set(inspect.signature(callable_).parameters)
 
 
-@unittest.skipIf(copilot is None, "github-copilot-sdk is not installed")
+@unittest.skipIf(copilot is None, "microsoft-copilot-sdk is not installed")
 class SdkContractTests(unittest.TestCase):
     def test_installed_sdk_and_runtime_are_the_pinned_ones(self) -> None:
         self.assertIsNone(engine.pin_problem(engine.versions(), engine.load_pins()))
@@ -69,7 +69,7 @@ class SdkContractTests(unittest.TestCase):
     def test_script_header_pins_every_package_the_sdk_pulls_in(self) -> None:
         pins = _header_pins()
         seen: set[str] = set()
-        pending = ["github-copilot-sdk"]
+        pending = ["microsoft-copilot-sdk"]
         while pending:
             name = _normalize(pending.pop())
             if name in seen:
@@ -91,19 +91,42 @@ class SdkContractTests(unittest.TestCase):
         options = engine.client_options(SAMPLE_CONFIG, {})
         self.assertLessEqual(set(options), _parameters(copilot.CopilotClient.__init__))
 
+    def test_client_uses_explicit_spawned_runtime_with_isolated_process_options(self) -> None:
+        env = {"PATH": "/bin"}
+        opts = engine.client_options(SAMPLE_CONFIG, env)
+        expected_type = typing.get_type_hints(copilot.RuntimeConnection.for_spawned_stdio)["return"]
+        runtime = opts["runtime"]
+        self.assertIsInstance(runtime, expected_type)
+        self.assertEqual(opts["mode"], "coding-agent")
+        self.assertIs(runtime.env, env)
+        self.assertEqual(runtime.working_directory, SAMPLE_CONFIG["workspace"])
+        self.assertEqual(runtime.base_directory, SAMPLE_CONFIG["copilotHome"])
+
     def test_create_session_accepts_every_option_the_engine_passes(self) -> None:
-        kwargs = engine.session_kwargs(SAMPLE_CONFIG, lambda *_: None, lambda *_: None, object())
-        self.assertLessEqual(set(kwargs), _parameters(copilot.CopilotClient.create_session))
+        kwargs = engine.session_kwargs(SAMPLE_CONFIG, lambda *_: None, lambda *_: None, copilot.ToolSet())
+        method = copilot.CopilotClient.create_session
+        self.assertLessEqual(set(kwargs), _parameters(method))
+        hints = typing.get_type_hints(method)
+        for name, value in kwargs.items():
+            if isinstance(value, dict):
+                typ = next(arg for arg in typing.get_args(hints[name]) if arg is not type(None))
+                self.assertLessEqual(set(value), set(typing.get_type_hints(typ)), name)
 
     def test_session_limits_use_a_field_the_sdk_defines(self) -> None:
-        limits = engine.session_options(SAMPLE_CONFIG)["session_limits"]
-        config_type = typing.get_type_hints(copilot.CopilotClient.create_session)["session_limits"]
+        limits = engine.session_options(SAMPLE_CONFIG)["execution"]["limits"]
+        config_type = typing.get_type_hints(copilot.SessionExecutionOptions)["limits"]
         limit_type = next(arg for arg in typing.get_args(config_type) if arg is not type(None))
         fields = (
             {field.name for field in dataclasses.fields(limit_type)}
             if dataclasses.is_dataclass(limit_type) else set(typing.get_type_hints(limit_type))
         )
         self.assertLessEqual(set(limits), fields)
+
+    def test_the_sdk_reports_native_login_status(self) -> None:
+        method = copilot.CopilotClient.get_auth_status
+        self.assertTrue(inspect.iscoroutinefunction(method))
+        status = typing.get_type_hints(method)["return"]
+        self.assertIs(typing.get_type_hints(status)["is_authenticated"], bool)
 
     def test_the_model_catalog_still_carries_what_a_profile_is_checked_against(self) -> None:
         self.assertTrue(inspect.iscoroutinefunction(copilot.CopilotClient.list_models))
@@ -112,10 +135,11 @@ class SdkContractTests(unittest.TestCase):
         fields = {field.name for field in dataclasses.fields(item)}
         self.assertLessEqual({"id", "supported_reasoning_efforts", "default_reasoning_effort"}, fields)
 
-    def test_the_sdk_still_accepts_every_effort_the_worker_allows(self) -> None:
-        from copilot.session import ReasoningEffort
-
-        self.assertLessEqual(set(engine_efforts()), set(typing.get_args(ReasoningEffort)))
+    def test_v2_session_options_carry_worker_efforts_as_strings(self) -> None:
+        effort_type = typing.get_type_hints(copilot.SessionInferenceOptions)["reasoning_effort"]
+        for effort in engine_efforts():
+            options = engine.session_options({**SAMPLE_CONFIG, "effort": effort})
+            self.assertIsInstance(options["inference"]["reasoning_effort"], effort_type)
 
     def test_send_and_wait_accepts_the_timeout_the_engine_passes(self) -> None:
         self.assertLessEqual(set(engine.send_options(SAMPLE_CONFIG)), _parameters(copilot.CopilotSession.send_and_wait))
@@ -145,6 +169,14 @@ class SdkContractTests(unittest.TestCase):
         self.assertLessEqual({"full_command_text", "identifier"}, names("PermissionRequestShellCommandSegment"))
         self.assertTrue({"resolved_path", "path"} & names("PermissionRequestRead"))
         self.assertTrue({"resolved_path", "file_name"} & names("PermissionRequestWrite"))
+
+    def test_missing_v2_usage_counters_still_produce_usage_artifacts(self) -> None:
+        usage = engine.summarize_usage([engine._usage_call(events.AssistantUsageData(model="model"))])
+        self.assertEqual({k: usage[k] for k in ("inputTokens", "outputTokens", "cacheReadTokens",
+                                               "cacheWriteTokens", "aiCredits")},
+                         {"inputTokens": 0, "outputTokens": 0, "cacheReadTokens": 0,
+                          "cacheWriteTokens": 0, "aiCredits": 0.0})
+        self.assertEqual(usage["models"], ["model"])
 
     def test_events_still_carry_the_fields_usage_and_the_response_come_from(self) -> None:
         def names(class_name: str) -> set[str]:

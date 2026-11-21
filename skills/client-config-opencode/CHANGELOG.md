@@ -2,6 +2,104 @@
 
 Changes to the `client-config-opencode` skill, newest first.
 
+## 2026-11-15 — v2.6 (verified against V2 2.3.0 and V1 1.19.5)
+
+Baselines: V2 2.2.6 → 2.3.0 (tags `v2.2.7`, 2026-11-10, and `v2.3.0`, 2026-11-13); V1 1.19.5 is the newest V1 tag and is
+unchanged. Sources are the tag-to-tag diff `v2.2.6...v2.3.0` of the V2 docs source (`services/site/src/docs/content`,
+16 pages changed, of which 9 bear on these skills), the V2 config schema and flag resolver source at `v2.3.0`, the V2
+`CHANGELOG.md` sections for 2.2.7 and 2.3.0, and the published `cli.json` schema. The 2.3.0 binary was **not** run, so
+binary-dependent claims keep their earlier basis.
+
+- `references/v2/config-schema.md`: warming now defaults to `interval: "auto"` (it was `"4 minutes"`), with the new
+  rules (explicit interval at or above `duration` is rejected, an `"auto"` one that long is skipped, subagent sessions are
+  not warmed, intervals count from send time, no overlap with running requests, a cache miss stops warming) and the
+  `settings.cache.warming` override now shown in the docs; the experimental flag registry grew from five to eight keys
+  (`shell_timeout_background`, `console_watches`, `mcp_events`, the last two on schema descriptions and release notes
+  alone), `codemode_vm` is deprecated and ignored because Code Mode always runs on the VM (which resolves the conflict
+  recorded in v2.5), and the flag resolver logic is unchanged; antivirus HTTPS-scanning fix via `NODE_EXTRA_CA_CERTS`.
+- `references/v2/providers.md`: new Cache lifetime (`settings.cache.ttl`) and Client certificates (`settings.tls`, mutual
+  TLS) sections, and `capabilities.freeform` (`text`, `regex`, `lark`).
+- `references/v2/permissions.md`, `references/v2/mcp.md`: denying `execute` now lists the tools Code Mode would reach as
+  direct tools (and keeps an MCP server's instructions without the Code Mode line) instead of removing them.
+- `references/v2/plugins.md`: the `-opencode.fork-notice` plugin switch for the fork notice added in 2.3.0.
+- `references/v2/cli.md`: `session.verbosity` now defaults to `low` (release notes only).
+- `sources.json`: schema source pins moved to `v2.3.0`, and the flag resolver source (`packages/core/src/flag.ts`) is now
+  pinned so a refresh stages it.
+- Not changed: subagents always running in the background is recorded in `agent-creator-opencode` (agents reference)
+  because this skill has no subagent-launch coverage; Desktop, SDK, site, Console, ACP, and shell-output changes; the
+  Copilot Auto model pick and other release-note-only behavior changes with no configuration surface; V1 references.
+
+## 2026-11-08 — v2.5 (verified against V2 2.2.6 and V1 1.19.5)
+
+Baselines: V2 2.2.5 → 2.2.6 (tag `v2.2.6`, 2026-11-06); V1 1.19.5 is the newest V1 tag and is unchanged. Sources are the
+tag-to-tag diff `v2.2.5...v2.2.6` of the V2 docs source (now `services/site/src/docs/content`; it moved from
+`services/www` in this release, with 14 content pages changed besides the Console, SDK, and GUI-plugin build pages), the
+V2 config schema source at `v2.2.6`, and the V2 `CHANGELOG.md` entry for 2.2.6. The 2.2.6 binary was **not** run, so
+binary-dependent claims keep their earlier basis.
+
+- `references/v2/mcp.md`: new `pool` option and a Shared connections section (docs and schema); pasting the browser
+  redirect URL into the sign-in prompt when OpenCode runs on another machine (docs; release notes say the same).
+- `references/v2/permissions.md`: new `websearch.use` policy action with provider-ID resources (docs, schema, release
+  notes). The tools page dropped its sentence that the `opencode` Code Mode namespace utilities request no built-in
+  permission action, so the worktree-permission note now says it rests on the 2.2.5 page and is unverified for 2.2.6.
+- `references/v2/config-schema.md`: warming `interval: "auto"` (90% of `cache.ttl`), the `interval` shorter than
+  `duration` rule, and the provider and model `settings.cache.warming` override (schema and release notes only); the five registry feature flags
+  now resolve through `OPENCODE_FLAGS`, `experimental.<key>`, and `all_flags` (with the new `all_flags` key), and the new
+  `codemode_vm` and `part_rows` keys are separate fields;
+  background compaction details (starts 60k tokens before the threshold, waits for an unfinished summary, falls back past
+  about 40% of the threshold); `websearch.use` in the `policies` row.
+- `references/v2/cli.md`: `session.submit_scroll` (`bottom` or `keep`, also present in the published `cli.json`) and
+  the `dialog.integration.copy` keybind (docs).
+- `references/v2/plugins.md`: GUI plugins can add themes, code block rendering and actions, and native settings and menu
+  components (release notes and the changed GUI build page; not exercised); verification basis 2.2.6.
+- `sources.json`: schema source pins moved to `v2.2.6`, `config/flag.ts` added, `covers` text updated.
+- Not changed: Desktop, site, Console, and SDK changes; `opencode run --archived` and `--worktree` (CLI flags, not
+  configuration surface); other `run` and ACP fixes; Azure Messages support for Foundry Claude models (release notes
+  only, no configuration surface to verify); V1 references (no newer V1 tag).
+
+## 2026-11-01 — v2.4 (verified against V2 2.2.5 and V1 1.19.5)
+
+Baselines: V2 2.0.29 → 2.2.5 (2.0.30, 2.0.31, 2.0.32, 2.1.0 to 2.1.4, 2.2.0 to 2.2.5; tags through `v2.2.5`, 2026-10-30);
+V1 1.19.0 → 1.19.5 (tag `v1.19.5`, 2026-10-28). Sources are the tag-to-tag diff `v2.0.29...v2.2.5` of the V2 docs
+source (`services/www/src/docs/content`, 63 pages changed), the V2 config schema source at `v2.2.5`, the V2
+`CHANGELOG.md`, and the `v1.19.0...v1.19.5` diff and commit log (the V1 GitHub release notes were not reachable from
+this run, so V1 claims rest on commits). Neither binary was run, so binary-dependent claims keep their 2.0.27 basis.
+
+- `references/v2/permissions.md`: `external_directory` is allowed by default (the `ask` rule was removed from the base
+  policy; V1 asked); `explore` and `build` defaults updated; the shell scanner is always on and
+  `experimental.portable_shell_scanner` is deprecated; `execute` deny semantics; new actions
+  `opencode_list_mcp_resources`, `opencode_read_mcp_resource`, `experimental_image_generate`. Policies: new
+  `integration.connect`, `mcp.use`, `skill.use`, `plugin.use`; `integration.use` now covers integrations only (breaking
+  change in 2.2.3, with the migration warning); policy precedence puts managed preferences and the system file above the
+  Console workspace.
+- `references/v2/config-schema.md`: `compaction.buffer` percentages and the new `"15%"` default; summaries cover the
+  whole conversation; `agents.compaction.model`; `instructions` now loads (2.0.30); documented `{env:}`/`{file:}`
+  substitution; new Experimental section (`todo`, `subagent_depth`, `background_compaction`, `image_generate`,
+  `location_idle_timeout`, `schedules`, `artifacts`, `media_blob`); top-level `timezone`; skill discovery rules;
+  `share` no longer functional; `OPENCODE_PASSWORD`, `OPENCODE_CLAUDE_PATH`, `OPENCODE_DISABLE_FREE_MODELS`; default
+  server ports.
+- `references/v2/mcp.md`: client registration order (pre-registered, CIMD, DCR), updated OAuth field semantics,
+  resources and their permission actions, server instructions, input requests (elicitation), `mcp auth` without a name,
+  `--env` and `--header` flags, global timeouts apply to config-file servers.
+- `references/v2/providers.md`: ChatGPT sign-in context caps and the `openai-context-caps` plugin, the Claude Agent
+  provider, model `type`, `releaseDate`, and `capabilities.reasoning`, compatibility `streamUsage` and `mediaInput`; the
+  streamed-chunk timeout conflict between the 2.0.29 docs (five minutes) and the 2.2.5 docs (fifteen) is recorded.
+- `references/v2/plugins.md`: configured local paths must be directories; desktop (GUI) plugins; OpenTUI 0.8; new
+  session, instruction-entry, idle, and artifact plugin APIs (release notes only); 2.1.0 provider replay data renamed to
+  `native`.
+- `references/v2/agents.md`, `references/v2/migration.md`: agent files are read as one format; agent `request.body` is
+  not sent so V1 `temperature`/`top_p`/`options` need a model variant; server authentication variables; `external_directory`
+  and todo defaults.
+- `references/v2/cli.md`: unknown `cli.json` settings and keybind IDs are now ignored (not rejected); `diff.toggle_fullscreen`
+  and `location.reload` keybinds.
+- V1 references (source and commits only): session sharing was discontinued in 1.19.1; `reasoning_options` on provider
+  models in 1.19.3.
+- `SKILL.md`, `sources.json`: instructions row, policy example, `{file:}` note, new source pages (Claude Agent, plugin
+  server and GUI pages), `covers` text.
+- Not changed: Desktop, GUI-plugin build details, SDK package, and TUI behavior; CLI command flags that are not config
+  surface (`opencode run --session`, `stats --project`, `uninstall`); and V1 changes with no config surface (1.19.2
+  keeps updates on 1.x; CI and Bun 1.4.4 changes).
+
 ## 2026-10-14 — v2.3 (verified against V2 2.0.29 and V1 1.19.0)
 
 Baselines: V2 2.0.27 → 2.0.29 (108 commits; 11 docs pages changed); V1 1.19.0 is unchanged. Sources are

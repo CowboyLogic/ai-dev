@@ -35,7 +35,7 @@ You help the user manage OpenCode configuration. OpenCode has two config formats
 
 | What | V2 | V1 |
 |------|----|----|
-| Core settings (system, managed) | macOS `/Library/Application Support/opencode`, Linux `/etc/opencode`, Windows `%ProgramData%\opencode`; highest precedence (2.0.29 docs) | same directories; see `references/config-schema.md` (Managed / enterprise) |
+| Core settings (system, managed) | macOS `/Library/Application Support/opencode`, Linux `/etc/opencode`, Windows `%ProgramData%\opencode`; highest precedence (2.2.5 docs) | same directories; see `references/config-schema.md` (Managed / enterprise) |
 | Core settings (global) | `~/.config/opencode/opencode.json(c)` | same |
 | Core settings (project) | `opencode.json(c)` and `.opencode/opencode.json(c)`, searched cwd → filesystem root; `.opencode/` files override direct ones | `opencode.json` in cwd or nearest up to the Git root |
 | Terminal client (theme, keybinds) | `~/.config/opencode/cli.json` — global only | `~/.config/opencode/tui.json` + project `tui.json` |
@@ -44,7 +44,7 @@ You help the user manage OpenCode configuration. OpenCode has two config formats
 | Skills | `.opencode/skills/<id>/SKILL.md` (+ `.claude/skills`, `.agents/skills`) | same |
 | Plugins | `.opencode/plugins/`, `~/.config/opencode/plugins/` | same |
 | Themes | `~/.config/opencode/themes/*.json`, `.opencode/themes/*.json` (new V2 format) | same dirs, V1 format |
-| Instructions | `AGENTS.md` only (`instructions` array is not loaded) | `AGENTS.md`, `CLAUDE.md` fallback, `instructions` array |
+| Instructions | `AGENTS.md`, then the `instructions` array (files, globs, HTTP(S) URLs; loaded since 2.0.30); `CLAUDE.md` is not discovered | `AGENTS.md`, `CLAUDE.md` fallback, `instructions` array |
 | Credentials | SQLite DB (`opencode debug paths db`) — use `/connect` / `opencode auth` | `~/.local/share/opencode/auth.json` — use `/connect` / `opencode auth` |
 
 Schemas: `https://opencode.ai/config.json` (both formats use this URL; it currently validates only the V1 shape, so
@@ -78,7 +78,7 @@ Merge behavior: config files merge; later/closer files override conflicting keys
 { "formatter": true }                                             // same in V1
 { "websearch": { "provider": "random" } }                         // V2 only
 { "permissions": [{ "action": "shell", "resource": "git push *", "effect": "ask" }] }
-{ "policies": [{ "action": "provider.use", "resource": "openai", "effect": "deny" }] }   // 2.0.29+; was "experimental.policies"
+{ "policies": [{ "action": "provider.use", "resource": "openai", "effect": "deny" }] }   // 2.0.29+; was "experimental.policies". MCP/skill/plugin policies use mcp.use / skill.use / plugin.use (2.2.3+)
 { "tool_output": { "max_lines": 2000, "max_bytes": 51200 } }      // same in V1
 ```
 
@@ -87,12 +87,13 @@ V1 equivalents for provider filtering: `"enabled_providers": [...]`, `"disabled_
 
 > [!NOTE]
 > V1 deprecations: `autoshare` → `share`; agent `maxSteps` → `steps`; `tools` → `permission`; `mode` → `agent`.
-> In V2, `share` is accepted but session sharing is not supported yet.
+> In V2, `share` is accepted but session sharing was removed (V2 2.0.30, V1 1.19.1).
+> V2 `external_directory` is allowed by default (V1 asked); add an `ask` rule to restore the prompt.
 
 ## Variable substitution
 
 - `{env:MY_API_KEY}` — environment variable (V1 and V2)
-- `{file:~/.secrets/key.txt}` — file contents (documented for V1; not shown in V2 docs, but verified working in V2 2.0.27 for agent `system`)
+- `{file:~/.secrets/key.txt}` — file contents (documented for V1 and, since the 2.2.5 docs, V2; also verified working in V2 2.0.27 for agent `system`)
 
 V2 runs a shared background server: env vars must reach it (`opencode service set env NAME value`, or run
 `opencode --standalone` from a shell that has them).

@@ -2,7 +2,7 @@
 
 Covers the Codex configuration directory, `config.toml` layers, profile files, project trust,
 model providers, feature flags, telemetry and notifications, managed configuration, environment
-variables, and authentication. Verified against `codex-cli 0.163.0`.
+variables, and authentication. Verified against `codex-cli 0.163.0`; 0.164.0-0.166.0 additions are marked inline.
 
 Permissions and sandboxing (`[permissions.<name>]`, network proxy rules) are in `permissions.md`.
 CLI commands and flags are in `cli-commands.md`. Hooks, MCP, skills, agents, and plugins have their
@@ -222,6 +222,11 @@ set = { MY_FLAG = "1" }
   default `true`. It does not control compatibility errors.
 - `tui.terminal_resize_reflow_max_rows`: caps resize-reflow replay to the most recent rendered rows;
   `0` keeps all rows, omitted uses a terminal-specific default.
+- `tui.presets.<slot>`: reusable prompts and slash commands (new in 0.164.0; source only). `<slot>` is
+  one digit `0`-`9`; each takes `input` (required; at most 8,000 UTF-8 bytes; a leading `!` shell
+  command is rejected) and `label` (optional picker name). `/presets` opens the picker and saves to the
+  user config only; a slot defined in another config layer is read-only there. Bind the picker with
+  `tui.keymap.chat.open_presets`.
 - `tui.keymap.<context>.<action>`: string or `string[]`; `[]` unbinds.
 - `tui.keymap.global.leader`: one prefix key for persistent, context-aware shortcut menus (new in
   0.163.0; also set from `/keymap`). The 0.163.0 release notes give the default as `Ctrl+X`. The
@@ -289,7 +294,8 @@ trust_level = "trusted"   # or "untrusted"
 ## Model providers
 
 Define providers under `[model_providers.<id>]` and select one with `model_provider`. Reserved ids
-that cannot be redefined: `openai`, `ollama`, `lmstudio`, `amazon-bedrock`.
+that cannot be redefined: `openai`, `ollama`, `lmstudio`, `amazon-bedrock`. `gcp` is a built-in provider
+(Google Cloud Vertex AI, 0.165.0) that accepts only limited overrides; see below.
 
 | Key | Purpose |
 |-----|---------|
@@ -346,6 +352,22 @@ model = "<bedrock-model-id>"
 [model_providers.amazon-bedrock.aws]
 profile = "default"
 region = "eu-central-1"
+```
+
+Google Cloud Vertex AI is built in as provider `gcp` (new in 0.165.0; not in the published docs, taken
+from `codex-rs/model-provider-info` at `rust-v0.166.0`). Overriding `[model_providers.gcp]` supports
+only `base_url`, `auth`, `http_headers`, `project_id`, `location`, and `credential_file`; any other
+non-default field is rejected at load. `project_id` takes precedence over `GOOGLE_CLOUD_PROJECT`;
+`location` over `GOOGLE_CLOUD_LOCATION` and defaults to `global`; `credential_file` is an absolute
+path to a Google ADC file that overrides `GOOGLE_APPLICATION_CREDENTIALS` for the auth command only.
+
+```toml
+model_provider = "gcp"
+model = "<vertex-model-id>"
+
+[model_providers.gcp]
+project_id = "my-project"
+location = "global"
 ```
 
 Data residency (API projects): set `openai_base_url = "https://us.api.openai.com/v1"` (replace `us`
@@ -577,7 +599,7 @@ These tables constrain the desktop app's agent-driven browser and native-app con
   normal precedence instead.
 - The 0.163.0 model catalog (`codex debug models`) no longer lists `gpt-5.5`, which the earlier
   guidance said was retiring on 2026-10-14. A managed default that still pins it must move to a
-  model the catalog lists (`gpt-6.1-sol`, `gpt-6-sol`, `gpt-6-astra`, `gpt-6-luna`, or a
+  model the catalog lists (`gpt-6.1-sol`, `gpt-6.1-terra` (added to the bundled catalog in 0.165.0), `gpt-6-sol`, `gpt-6-astra`, `gpt-6-luna`, or a
   `gpt-5.6-*` model there). Use whichever the admin has enabled.
 
 > [!NOTE]

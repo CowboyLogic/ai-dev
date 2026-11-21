@@ -1,6 +1,6 @@
 # V2 MCP Servers Reference
 
-Source: <https://opencode.ai/v2/docs/mcp-servers/>.
+Source: <https://opencode.ai/v2/docs/mcp-servers/> (2.3.0).
 
 ## Structure
 
@@ -46,6 +46,7 @@ field in an override, or use a different name.
 | `codemode` | No | `false` exposes tools directly instead of through Code Mode (default `true`) |
 | `timeout` | No | Per-server `{startup, catalog, execution}` overrides |
 | `protocol` | No | `legacy` (default), `auto`, or `2026-07-28` |
+| `pool` | No | `true` shares one connection across directories with identical settings (default `false`; 2.2.6). See [Shared connections](#shared-connections) |
 
 ## Remote (Streamable HTTP)
 
@@ -68,11 +69,13 @@ field in an override, or use a different name.
 | `codemode` | No | `false` to skip Code Mode |
 | `timeout` | No | Per-server timeout overrides |
 | `protocol` | No | `legacy` \| `auto` \| `2026-07-28` |
+| `pool` | No | `true` shares one connection across directories with identical settings (default `false`; 2.2.6) |
 
 ## OAuth
 
 OAuth is **on by default** for remote servers unless `oauth: false`. OpenCode discovers the authorization server,
-uses PKCE, refreshes tokens, and tries dynamic client registration. For dynamic registration, configure only the URL:
+signs in with PKCE, and refreshes tokens; credentials are stored outside project configuration. Most servers need only
+the URL:
 
 ```jsonc
 "sentry": { "type": "remote", "url": "https://mcp.sentry.dev/mcp" }
@@ -96,18 +99,48 @@ Pre-registered clients use **snake_case** fields (V1 used camelCase):
 
 | Field | Description |
 |-------|-------------|
-| `client_id` | Pre-registered client ID; omit to attempt dynamic registration |
-| `client_secret` | Secret for a pre-registered client |
-| `scope` | Space-delimited scopes |
-| `callback_port` | Local callback port 1–65535 (default: an available ephemeral port) |
-| `redirect_uri` | Pre-registered loopback URI reaching the local callback listener |
+| `client_id` | Pre-registered client ID; takes priority over CIMD and DCR |
+| `client_secret` | Secret for a confidential client, sent in the token request body; omit for public clients |
+| `scope` | Space-delimited scopes; defaults to the scope the server names when it rejects an unauthenticated request |
+| `callback_port` | Local callback port 1–65535 (default: the `redirect_uri` port, then an available ephemeral port) |
+| `redirect_uri` | Pre-registered loopback URI reaching the local callback listener; setting it disables CIMD |
 | `auth_server_metadata_url` | OAuth/OIDC metadata URL when the server doesn't publish protected-resource metadata |
 
 Use `oauth: false` only when the server authenticates purely with a header credential.
 
+### Client registration
+
+OpenCode identifies itself with the first method that applies (2.2.5 docs):
+
+| Method | Used when |
+|--------|-----------|
+| Pre-registered client | `oauth.client_id` is configured |
+| Client ID Metadata Document (CIMD) | The authorization server supports CIMD and public clients (`client_id_metadata_document_supported` and token auth method `none`), and `oauth.redirect_uri` is not set; OpenCode sends its metadata document URL as the `client_id` |
+| Dynamic client registration (DCR) | Neither applies; OpenCode registers a client and reuses it on later sign-ins |
+
+CIMD allows loopback redirects without a port (`http://127.0.0.1/callback`, `http://localhost/callback`), so
+`callback_port` works with CIMD; a custom `redirect_uri` does not, and OpenCode falls back to DCR. If the server
+supports neither CIMD nor DCR, configure a pre-registered client.
+
+## Shared connections
+
+Since 2.2.6, one OpenCode server with many directories open can share an MCP connection instead of opening one per
+directory. Set `pool: true` on the server (docs and schema):
+
+- Only connections that negotiate the `2026-07-28` protocol revision are shared. With `pool` set, an unset `protocol`
+  means `auto`; a server that answers with an older revision, or one set to `legacy`, keeps one connection per directory.
+- Directories share a connection only when everything that changes it matches: URL, headers, OAuth settings and signed-in
+  account for a remote server; command, working directory and environment for a local one; timeouts and `protocol`.
+  The server's name need not match, but sign-ins are stored per name, so an OAuth server is shared only under the same name.
+- A local server is shared only between directories on this machine, not ones in a workspace. Sharing it across projects
+  needs a fixed `cwd` such as `"~"`; without one each project gets its own and OpenCode logs a warning.
+- A shared connection has no roots. When a tool asks for input, the request appears in the directory that called it.
+- The connection closes as soon as the last directory using it closes or disconnects the server.
+
 ## Timeouts
 
-Positive integer milliseconds. Defaults under `mcp.timeout`; a server's `timeout` object overrides matching keys.
+Positive integer milliseconds. Defaults under `mcp.timeout` apply to servers defined in configuration files; a
+server's `timeout` object overrides matching keys.
 
 | Timeout | Default | Applies to |
 |---------|---------|------------|
@@ -135,7 +168,30 @@ MCP prompts become commands `/<server>:<prompt>`. Hide or gate tools with permis
 { "permissions": [{ "action": "context7_*", "resource": "*", "effect": "deny" }] }
 ```
 
+Command text fills a prompt's arguments in order; separate them with spaces and quote values that contain spaces
+(`/context_7:find_docs react "server components"`).
+
+## Resources, instructions, and input requests
+
+- **Resources:** agents read MCP resources through the built-in `list_mcp_resources` and `read_mcp_resource` tools. The
+  permission actions are `opencode_list_mcp_resources` (resource = server name) and `opencode_read_mcp_resource`
+  (resource = `<server>:<uri>`), for example `{ "action": "opencode_read_mcp_resource", "resource": "docs:*", "effect": "allow" }`.
+- **Server instructions:** instructions a server returns during initialization are added to the system prompt inside
+  `<mcp_instructions>`. They are omitted when the agent's permissions deny every one of the server's tools (see Code
+  Mode below for denying `execute`). Changed entries are sent as updates, not the full list (2.1.3).
+- **Input requests:** servers can ask for input during a call (MCP elicitation). OpenCode shows a form, or a link for
+  URL requests; dismissing the form cancels the request. Forms appear instead of the call waiting until it times out
+  (2.1.4 release notes).
+- **Code Mode:** by default agents reach a server's tools through `execute` under the server's namespace; set
+  `codemode: false` to list them directly. Denying `execute` removes Code Mode; since 2.3.0 the server's tools are then listed directly and its instructions are
+  kept (without the Code Mode line), where through 2.2.6 they were removed. Instructions are still omitted when the agent's
+  permissions deny every one of the server's tools.
+
 ## CLI and TUI
+
+When OpenCode runs over SSH, in a container, or on a remote server, the browser cannot reach it after sign-in. Since 2.2.6
+you can copy the failed page's URL (`http://127.0.0.1:<port>/callback?code=...&state=...`) and paste it into the sign-in
+prompt in `/mcps`, `opencode mcp auth`, or the desktop and web app's sign-in dialog (docs; not run).
 
 ```bash
 opencode mcp add context7 --url https://mcp.context7.com/mcp                  # writes project config
@@ -145,8 +201,11 @@ opencode mcp add everything --env LOG_LEVEL=debug -- npx -y @modelcontextprotoco
 opencode mcp add context7 --url https://mcp.context7.com/mcp --header CONTEXT7_API_KEY=secret
 opencode mcp list
 opencode mcp auth sentry
+opencode mcp auth                                                             # pick from OAuth-capable servers
 opencode mcp logout sentry
 ```
 
-In the TUI, `/mcps` views, connects, disconnects, or authenticates servers. To remove a server, delete its entry
-from the config where it was added.
+In the TUI, `/mcps` views, connects, disconnects, or authenticates servers. Disconnecting there does not change
+configuration; edit configuration for OAuth client settings, timeouts, working directories, or to keep a server
+disconnected. To remove a server, delete its entry from the config where it was added. Quote `{env:NAME}` header values
+in the shell (`--header 'CONTEXT7_API_KEY={env:CONTEXT7_API_KEY}'`) so they are written literally.

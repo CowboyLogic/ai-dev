@@ -3,8 +3,8 @@
 Reference for the YAML frontmatter fields of Claude Code agent files. Load this file when
 writing, reviewing, or debugging agent frontmatter.
 
-**Source (last verified 2026-10-18 against Claude Code 2.1.302; the docs page references
-versions up to v2.1.296):**
+**Source (last verified 2026-11-15 against Claude Code 2.1.325; the docs page references
+versions up to v2.1.314):**
 <https://code.claude.com/docs/en/sub-agents#supported-frontmatter-fields>
 
 Every field in this file is in the docs table. Where a note below is labeled "changelog only",
@@ -238,7 +238,7 @@ the session effort while the agent is active, but not the `CLAUDE_CODE_EFFORT_LE
 environment variable. When Claude runs a non-fork subagent it can also pass an `effort`
 parameter for that one invocation (v2.1.292+): it overrides this field, persists when the
 subagent is resumed, and is itself overridden by `CLAUDE_CODE_EFFORT_LEVEL`. `/tasks` shows
-the effort set for a running subagent.
+the effort set for a running subagent. A subagent with no `effort` of its own that runs on a different model than the main conversation does not inherit the session's level (sub-agents and model-config docs); changelog only (v2.1.317): it uses that model's saved effort level or its default. Changelog only (v2.1.325): a subagent with its own `model` is no longer moved to the plan-mode model when the session's `model` setting is `opusplan` or `haiku`, and a subagent on a different model sizes file reads and MCP results for its own model, not the main session's. Changelog only (v2.1.316): `CLAUDE_CODE_SUBAGENT_EFFORT` sets the effort level subagents run at when nothing else names one, instead of inheriting the session's.
 
 ### `isolation`
 
@@ -263,8 +263,9 @@ user prompt. Ignored for plugin agents. Does nothing when the file is used as a 
 
 Lets this agent auto-compact earlier than the main conversation's window (requires v2.1.296
 or later; supported in frontmatter and `--agents` definitions). A token count from `100000`
-to `1000000`. If `CLAUDE_CODE_AUTO_COMPACT_WINDOW` is set to a positive integer, the agent
-uses that variable's window and the field has no effect.
+to `1000000`. If `CLAUDE_CODE_AUTO_COMPACT_WINDOW` is set to a positive integer, its window is
+the upper bound for the agent: the field can lower it but never raise it (changelog only,
+v2.1.312). Before v2.1.312 the field had no effect when the variable was set.
 
 Write a plain integer such as `200000`: in frontmatter `200k` is read as 200, which is out of
 range. An out-of-range value is ignored (the agent still loads and compacts as if the field

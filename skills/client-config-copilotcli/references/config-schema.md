@@ -118,6 +118,7 @@ the shared cross-tool subset (such as `companyAnnouncements`, `disableAllHooks`,
 | `continueOnAutoMode` | boolean | `false` | Switch to auto mode on eligible rate limits (not global limits or BYOK) |
 | `copyOnSelect` | boolean | `true` macOS, else `false` | Copy mouse selection to clipboard |
 | `customAgents.defaultLocalOnly` | boolean | `false` | Only local custom agents (no org/enterprise agents) |
+| `defaultPermissionMode` | `"manual"` \| `"assisted"` \| `"allow-all"` | varies | Permission mode for new **interactive** sessions; a managed `permissions.defaultMode` wins; deny rules and enterprise restrictions still apply; resumed sessions keep their own mode; not applied to non-interactive runs or remote sessions; an unavailable or blocked mode falls back to manual approval |
 | `deniedUrls` | `string[]` | `[]` | Always-denied URLs; deny beats allow |
 | `disableAllHooks` | boolean | `false` | Disable repository and user hooks |
 | `disabledMcpServers` | `string[]` | `[]` | Configured but not started |
@@ -273,13 +274,24 @@ On POSIX, file-based managed settings are rejected if they are symlinks, not own
 world-writable.
 
 Supported keys: `allowedMcpServers`, `autoTier`, `deniedMcpServers`, `enabledPlugins`,
-`extraKnownMarketplaces`, `forceLoginOrgs`, `forceRemoteSettingsRefresh`, `model`, `permissions`
-(including `disableBypassPermissionsMode`, `deny`/`ask`/`allow` rules, and `limitTo`),
+`extraKnownMarketplaces`, `forceLoginOrgs`, `forceRemoteSettingsRefresh`, `fusionTier`, `model`, `permissions`
+(including `disableAssistedPermissionsMode`, `defaultMode`, `disableBypassPermissionsMode`, `deny`/`ask`/`allow` rules, and `limitTo`),
 `policyHelper`, `remoteControl`, `requireBase64ImageAttachments`, `sandbox`, `shellShortcut`,
 `strictKnownMarketplaces`, `telemetry`. See `permissions.md` for managed permission rules and `mcp.md` for the MCP
 allow/deny list.
 
 - `model` is a top-level key; the legacy nested `permissions.model` still works as a fallback.
+  Besides a model ID or `"auto"`, it accepts `"fusion"` (Copilot Fusion) as the default.
+- `fusionTier` sets the default effort level when `model` is `"fusion"`: `"standard"`, `"high"`, `"max"`, or
+  `"unmanaged"` (most to least restrictive). A bare string other than `"unmanaged"` locks the level;
+  `{"overridable": "standard"}` sets a default that teams may override. It does not select the model.
+  Requires Copilot CLI 1.0.104-3 or later (VS Code 1.144.0, GitHub Copilot app 1.1.33-4).
+  The v1.0.104 release notes add that a managed `fusion` model starts sessions on Auto and applies
+  `fusionTier` (release notes only).
+- `permissions.disableAssistedPermissionsMode: true` stops users enabling assisted permissions and does
+  not disable bypass mode. `permissions.defaultMode` (`"manual"`, `"assisted"`, `"allow-all"`) is a
+  managed default, not a lock; an explicit permitted choice for a session wins, and it takes precedence
+  over the user's `defaultPermissionMode`.
 - `autoTier` as a bare string locks the tier; `{"overridable": "TIER"}` sets an organization
   default users and repositories may still override.
 - `policyHelper` registrations are validated, but the docs say the runtime doesn't yet invoke the
@@ -351,7 +363,8 @@ allow/deny list.
 | `COPILOT_LARGE_OUTPUT_THRESHOLD_BYTES` | Max tool output returned directly to the model (default `20480`) |
 | `COPILOT_PLAN_THEN_AUTOPILOT` | Truthy = `--plan --mode autopilot` |
 | `COPILOT_SUBAGENT_MAX_CONCURRENT` / `COPILOT_SUBAGENT_MAX_DEPTH` | Subagent limits (defaults `32` / `4` per this table; see note) |
-| `COPILOT_TASK_WAIT_TIMEOUT_SECONDS` | How long `-p` waits for background work (default `600`) |
+| `COPILOT_TASK_WAIT_TIMEOUT_SECONDS` | Max seconds `-p` and `-p --autopilot` wait for pending background agents or shell commands before exiting (default `600`; `0` exits immediately). **v1.0.104 release notes only:** interactive and SDK Autopilot sessions keep waiting for attached background tasks instead of stopping at this timeout |
+| `COPILOT_ASSISTED_APPROVAL` | `true` turns on assisted permissions for a non-interactive run (same as `--assisted-approval`) |
 | `COPILOT_ENABLE_HTTP2` | `1`/`true` opts into HTTP/2 |
 | `COPILOT_ENABLE_INTERRUPTED_SESSION_RESTORE` | `1` enables restoring crashed sessions |
 | `COPILOT_PROMPT_FRAME` | `1`/`0` toggles the prompt frame |
@@ -585,6 +598,18 @@ export COPILOT_MODEL=YOUR-MODEL-NAME
   `max` is Anthropic-only) or the `effortLevel` setting.
 - Context tier: `--context default|long_context`. Latest models offer a 1M-token extended context
   and configurable reasoning; both consume more AI credits, so default to regular settings.
+- Copilot Fusion: selecting `fusion` (or **Copilot Fusion** in `/model`) picks a model or execution
+  pattern automatically; its effort level is Standard, High, or Max. v1.0.105 release notes: choosing
+  Fusion High or Max now works from long-context sessions (release notes only). When a saved Auto
+  preference is no longer available, Auto falls back to its default instead of failing each turn
+  (v1.0.104 release notes only).
+- Local models (public preview, needs `--experimental` or `/experimental on`): on a Windows PC with an
+  NVIDIA GPU (not AMD), `/model` lists MAI Code 1.1 Flash (96 GB combined RAM, 60 GB storage) and Flint
+  NVFP4 (48 GB, 23 GB) under "Local and self-hosted" as "Download required". They need llama.cpp
+  (build b11669 or later for MAI Code, b11803 or later for Flint) with `LLAMACPP_SERVER_PATH` pointing
+  to `llama-server.exe`. Only MAI Code 1.1 Flash is used by Fusion Standard. Do not load the same local
+  model from several Copilot surfaces at once (each loads its own copy into memory). Local models can
+  also be assigned to a custom agent.
 - Auto routing tier: `autoTier` setting or `/model auto TIER` (`efficiency`, `balance`,
   `intelligence`).
 - The supported-model roster changes often and retired models stop resolving; check the

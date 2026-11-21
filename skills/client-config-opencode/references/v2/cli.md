@@ -15,7 +15,7 @@ Sources: <https://opencode.ai/v2/docs/cli/config/>, <https://opencode.ai/v2/docs
 | `$XDG_CONFIG_HOME/opencode/cli.json` | Used when `XDG_CONFIG_HOME` is set |
 
 - There is **no project-local** CLI settings file.
-- **Unknown settings are rejected.** Valid edits hot-reload while the TUI runs.
+- **Unknown settings are ignored** in the 2.2.5 docs (the 2.0.29 docs said they are rejected); keep `$schema` so your editor flags invalid values. Valid edits hot-reload while the TUI runs.
 - On first V2 startup without `cli.json`, OpenCode migrates supported **global** `tui.json` settings (V1 files are
   left unchanged; project-local `tui.json` is not migrated).
 - `OPENCODE_CLI_CONFIG_CONTENT='{"tabs":{"mode":"off"}}' opencode` merges inline JSON over `cli.json` (objects
@@ -50,9 +50,10 @@ Sources: <https://opencode.ai/v2/docs/cli/config/>, <https://opencode.ai/v2/docs
 | `prompt.image_preview` | boolean | Image previews above the prompt |
 | `session.sidebar` | `auto` \| `hide` | |
 | `session.scrollbar` | boolean | |
+| `session.submit_scroll` | `bottom` \| `keep` | After sending a prompt, jump to the latest message (`bottom`) or keep your reading position (`keep`). Added in 2.2.6 (docs, published `cli.json` schema, release notes) |
 | `session.thinking` | `show` \| `hide` | Model reasoning visibility |
 | `session.grouping` | `auto` \| `none` | |
-| `session.verbosity` | `low` \| `medium` \| `high` | Transcript detail: `low` summarizes each run of tools and thoughts, `high` opens exploration and instruction groups. Not in the V2 settings page; it is in the published schema |
+| `session.verbosity` | `low` \| `medium` \| `high` | Transcript detail: `low` summarizes each run of tools and thoughts, `high` opens exploration and instruction groups. Not in the V2 settings page; it is in the published schema. The default became `low` in 2.3.0 (release notes only; a value you already set is kept) |
 | `session.image_preview` | boolean | |
 | `session.tps` | boolean | Output tokens/sec in footers |
 | `session.markdown` | `source` \| `rendered` | |
@@ -126,7 +127,7 @@ equivalent.
   (`key`, `event` = `press`/`release`, `preventDefault`, `fallthrough`).
 - Disable with `"none"` or `false`.
 - `leader` defaults to `ctrl+x`; `<leader>` refers to it.
-- **Unknown command IDs are rejected.** V2 IDs are dotted (V1 used snake_case).
+- **Unknown command IDs are ignored** (2.2.5 docs; earlier docs said rejected). V2 IDs are dotted (V1 used snake_case).
 
 Common IDs and defaults:
 
@@ -158,7 +159,8 @@ default) queues the prompt.
 
 For the full list (diff viewer, input editing, composer, dialogs, which-key), see
 <https://opencode.ai/v2/docs/cli/keybinds/>. Retired diff IDs (`diff.toggle`, `diff.expand`, `diff.expand_all`,
-`diff.collapse`, `diff.switch_focus`) are accepted but register nothing.
+`diff.collapse`, `diff.switch_focus`) are accepted but register nothing. Added after 2.0.29: `diff.toggle_fullscreen`
+(default `f`, docked `/diff` viewer, 2.0.30) and `location.reload` (default `none`, reloads configuration). The 2.2.6 docs add `dialog.integration.copy` (default `tab`, copies the authorization link).
 
 > [!NOTE]
 > The `permission.mode` keybind (auto-approve toggle) and the plugin install IDs `plugins.install` and

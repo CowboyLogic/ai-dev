@@ -6,7 +6,7 @@ MCP servers, hooks, skills, plugins, model providers, and `AGENTS.md` instructio
 
 - **Skill name:** `client-config-codex`
 - **Source:** [skills/client-config-codex](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-codex)
-- **Codex version:** verified against [Codex CLI 0.163.0](https://github.com/openai/codex/releases/tag/rust-v0.163.0) (released 2026-10-15)
+- **Codex version:** verified against [Codex CLI 0.166.0](https://github.com/openai/codex/releases/tag/rust-v0.166.0) (released 2026-10-29; last verified 2026-11-01)
 
 ---
 

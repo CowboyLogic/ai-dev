@@ -35,7 +35,7 @@ TUI schema: `https://opencode.ai/tui.json`
 | `small_model` | string | Model for lightweight tasks like title generation; defaults to a cheaper model from your provider if available, else the main model | `"anthropic/claude-haiku-4-5"` |
 | `default_agent` | string | Default primary agent (must be `primary` mode; falls back to `build` with a warning if invalid). Applies across TUI, `opencode run`, desktop app, GitHub Action | `"build"` |
 | `subagent_depth` | integer | Max subagent nesting depth (default `1`: primary can launch subagents, they can't launch more; `0` blocks all subagent launches) | `2` |
-| `share` | enum | `"manual"` (default) \| `"auto"` \| `"disabled"` | `"manual"` |
+| `share` | enum | `"manual"` (default) \| `"auto"` \| `"disabled"`. Session sharing was discontinued in 1.19.1 (release commit "discontinue session sharing"; the share menu is hidden), so the setting is still accepted but has no sharing backend; the V1 docs pages were not updated | `"manual"` |
 | `autoupdate` | bool \| `"notify"` | Update checks and notices. Since 1.19.0 updates are never installed automatically: `true` and `"notify"` keep the default (a notice, installed with `/update` or `opencode upgrade`); `false` turns checks and notices off. The published JSON schema description still says `true` auto-updates; the docs and release notes say otherwise | `"notify"` |
 | `snapshot` | boolean | Track filesystem changes for undo/revert (default `true`); disable on large repos to avoid slow indexing | `true` |
 | `logLevel` | enum | `"DEBUG"` \| `"INFO"` \| `"WARN"` \| `"ERROR"` | `"INFO"` |

@@ -5,7 +5,7 @@ description: >
   need to be formally defined. Morpheus does not write code — he defines what
   code must do and what it must not do.
 tools: ["read", "edit"]
-model: Claude Sonnet 5 (copilot)
+model: Claude Sonnet 5.5 (copilot)
 user-invocable: false
 ---
 
@@ -61,7 +61,7 @@ CONSTRAINTS: [interface constraints from architecture]
 Heavy reasoning model — specification writing requires precision, anticipation of
 implementation edge cases, and the ability to find gaps before they become code.
 
-**Current model:** Claude Sonnet 5
+**Current model:** Claude Sonnet 5.5
 **Family:** Anthropic / Claude
 
 ## Constraints

@@ -1,7 +1,7 @@
 # CLI Commands, Options, and Slash Commands
 
 Run `codex --help` or `codex <command> -h` for built-in help. Run `/` in a session to open the
-slash-command popup. Flag tables below were verified against `codex-cli 0.163.0`; slash commands come
+slash-command popup. Flag tables below were verified against `codex-cli 0.163.0`; the `0.164.0`-`0.166.0` additions marked in the tables come from the release notes and the `rust-v0.166.0` source, and the binary was not run; slash commands come
 from the Codex docs and release notes and cannot be listed from the terminal.
 
 > [!NOTE]
@@ -128,7 +128,7 @@ For low-friction local work, use `--sandbox workspace-write --ask-for-approval o
 | `codex fork [SESSION] [PROMPT]` | Fork into a new chat; picker by default, `--last` for the newest |
 | `codex archive SESSION` / `codex unarchive SESSION` | Hide or restore a session without deleting the transcript |
 | `codex delete SESSION [--force]` | Permanently delete a session |
-| `codex queue --thread SESSION --message TEXT` | Queue a message for an existing session |
+| `codex queue --thread SESSION --message TEXT [--resume]` | Queue a message for an existing session. `--resume` (0.166.0) then tries to resume the thread on the local daemon or the selected `--remote` server; a failed resume only warns and the command still succeeds |
 
 ```bash
 codex resume --last
@@ -195,7 +195,7 @@ in CI to capture progress and a final summary.
 
 | Command | Notes |
 |---------|-------|
-| `codex doctor` | Checks install, config, auth, runtime, Git, terminal, app-server, and thread inventory. Flags: `--json` (redacted report), `--summary`, `--all` (expand long lists), `--no-color`, `--ascii` |
+| `codex doctor` | Checks install, config, auth, runtime, Git, terminal, app-server, and thread inventory. Flags: `--json` (redacted report), `--network-only` (0.166.0: only config, network environment, provider HTTP, and Responses WebSocket checks), `--summary`, `--all` (expand long lists), `--no-color`, `--ascii` |
 | `codex features list` | Known features with stage and effective state |
 | `codex features enable FEATURE` / `disable FEATURE` | Persist to `$CODEX_HOME/config.toml` for future sessions |
 | `codex debug models [--bundled]` | Raw model catalog as JSON; `--bundled` skips the remote refresh |
@@ -272,7 +272,8 @@ Availability varies by model, platform, and state. Codex hides `/fast` when the 
 
 | Command | Purpose |
 |---------|---------|
-| `/model` | Choose model and reasoning effort |
+| `/model [ARGS]` | Choose model and reasoning effort; accepts inline arguments (0.164.0 release notes; `supports_inline_args` in the 0.166.0 source) |
+| `/presets` | Run or save reusable prompts and slash commands in numbered slots `0`-`9`, stored under `[tui.presets.<slot>]` (0.164.0; source only, not in the published docs). See `references/config-schema.md` |
 | `/fast` | Toggle the Fast service tier when the model catalog offers one |
 | `/plan [PROMPT]` | Plan mode; unavailable while Codex is working |
 | `/goal [OBJECTIVE\|edit\|pause\|resume\|clear]` | Persistent task goal, max 4,000 characters |
@@ -286,7 +287,7 @@ Availability varies by model, platform, and state. Codex hides `/fast` when the 
 
 | Command | Purpose |
 |---------|---------|
-| `/permissions` | Change approval preset mid-session (for example Auto or Read Only), including named custom profiles |
+| `/permissions [ARGS]` | Change approval preset mid-session (for example Auto or Read Only), including named custom profiles; accepts inline arguments (same sourcing as `/model`) |
 | `/approve` | Retry one recently denied action from the automatic reviewer |
 | `/hooks` | Inspect, trust, or disable non-managed lifecycle hooks; managed hooks cannot be disabled |
 | `/setup-default-sandbox`, `/sandbox-add-read-dir PATH` | Windows only: elevated sandbox setup / read access to an extra directory |

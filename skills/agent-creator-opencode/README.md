@@ -6,15 +6,16 @@ on V1 or their existing files are V1-shaped.
 
 > [!NOTE]
 > **OpenCode version:** verified against OpenCode V2
-> [2.0.29](https://github.com/anomalyco/opencode/tree/v2.0.29) (tagged 2026-10-14) and V1
-> [1.19.0](https://github.com/anomalyco/opencode/releases/tag/v1.19.0) (released 2026-10-11),
-> checked 2026-10-14. Against the previous baseline (V2 2.0.27) the V2 agents and migration docs are
-> unchanged; the permissions page moved policies from `experimental.policies` to top-level `policies`,
-> noted in `references/v2/permissions.md`. No V1 release has shipped since 1.19.0. The Copilot model
-> table in `references/models.md` was re-checked against GitHub's model data and the models.dev catalog
-> on the same date and gained Gemini 4 Argon. The 2.0.29 binary was not run for this check, so V2
-> notes that were verified on the 2.0.27 binary keep that basis. Re-verify when either line ships a
-> new release.
+> [2.3.0](https://github.com/anomalyco/opencode/tree/v2.3.0) (tagged 2026-11-13) and V1
+> [1.19.5](https://github.com/anomalyco/opencode/tree/v1.19.5) (tagged 2026-10-28),
+> checked 2026-11-15. Since the previous refresh (V2 2.2.6) the V2 agents and permissions docs changed: subagents always
+> run in the background (the parent gets a report when a child goes idle), and denying `execute` now lists the tools Code
+> Mode would reach as direct tools instead of removing them. The migration docs are unchanged. V1 has no newer tag. The
+> Copilot model table in `references/models.md` was re-checked against GitHub's supported-models and
+> retirement pages and the models.dev `github-copilot` catalog on 2026-11-15: Gemini 4 Carbon and Gemini 4 Hydrogen were
+> added, and Claude Fable 5.2 was added to the gated extreme-cost list; nothing was retired. Neither binary was
+> run for this check, so V2 notes that were verified on the 2.0.27 binary keep that basis. Re-verify when either
+> line ships a new release.
 
 ## When to Load This Skill
 

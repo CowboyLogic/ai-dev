@@ -13,7 +13,7 @@ to the Copilot subscription instead of Claude tokens.
   server to install and no time limit imposed by the client.
 - Each run leaves a directory with the task, the worker's final message, usage, a log of
   every tool call it asked for, and a `result.json`.
-- It drives Copilot through the official GitHub Copilot SDK, which pins its own Copilot
+- It drives Copilot through the official Microsoft Copilot SDK, which pins its own Copilot
   runtime. Updates to the `copilot` command-line tool cannot break it.
 - The script decides every permission request itself: workers can only read and write
   inside their workspace, and a deny list rejects `git push`, `gh`, and similar commands
@@ -22,9 +22,10 @@ to the Copilot subscription instead of Claude tokens.
 ## Requirements
 
 - [`uv`](https://docs.astral.sh/uv/). It installs Python 3.11 or later and the pinned
-  `github-copilot-sdk` from the script's header on first run.
-- A GitHub Copilot login on the machine. Signing in once with the Copilot CLI
-  (`copilot login`) is enough; the worker reuses that login.
+  `microsoft-copilot-sdk` from the script's header on first run.
+- A GitHub Copilot login available to the worker. A keychain-backed Copilot CLI
+  login may already be available. If the worker reports that it is signed out,
+  [sign in using the worker's Copilot home](#sign-in-if-the-worker-is-signed-out).
 - Git
 - macOS, Linux, or Windows (x64 or ARM64). Inside WSL it runs as it does on Linux.
 
@@ -37,7 +38,7 @@ The first run downloads the Copilot runtime the SDK pins, into the SDK's cache.
 
 The SDK, the runtime it carries, and every package it needs are pinned to exact
 versions (`scripts/pins.json` and the header of `scripts/copilot_worker.py`). The current
-SDK/runtime pair is **1.0.28 / 1.0.105**. The worker
+SDK/runtime pair is **2.0.1 / 1.0.114**. The worker
 refuses to start when the installed versions differ, and `check` reports it. Upgrading is a
 deliberate change; [references/upgrading.md](references/upgrading.md) has the procedure.
 
@@ -57,6 +58,42 @@ uv run ~/.claude/skills/copilot-worker/scripts/copilot_worker.py check --live
 
 `check` confirms the SDK, its runtime version, and the repository. `--live` also checks that the model catalog offers each profile's model and effort, then sends one small prompt
 to each of the four profiles, which uses Copilot credits.
+
+## Sign in if the worker is signed out
+
+The worker uses an isolated Copilot home, so it doesn't load the regular CLI's
+hooks, skills or MCP configuration. GitHub Copilot CLI normally stores credentials
+in your operating system keychain. If the keychain is unavailable, its
+[file-backed login](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference#copilot-login)
+is stored in the CLI's selected configuration directory. Signing in to the default
+CLI home does not put those credentials in the worker's home.
+
+Run `check --live` as shown above to initialize the private worker directory and
+see the exact path if sign-in is needed. Then run the regular interactive CLI's
+`copilot login` from your own terminal with `COPILOT_HOME` set just for the login.
+Use the same absolute `COPILOT_WORKER_HOME` as the worker if you configured one.
+
+macOS, Linux or Git Bash:
+
+```bash
+COPILOT_HOME="${COPILOT_WORKER_HOME:-$HOME/.copilot-worker}/copilot-home" copilot login
+```
+
+Windows PowerShell:
+
+```powershell
+$workerState = if ($env:COPILOT_WORKER_HOME) { $env:COPILOT_WORKER_HOME } else { Join-Path $HOME '.copilot-worker' }
+$previousCopilotHome = $env:COPILOT_HOME
+try {
+    $env:COPILOT_HOME = Join-Path $workerState 'copilot-home'
+    copilot login
+} finally {
+    $env:COPILOT_HOME = $previousCopilotHome
+}
+```
+
+Complete the CLI's sign-in prompts yourself and rerun the check. The worker never
+initiates login or copies credentials or settings from your regular Copilot home.
 
 ## Make delegation reliable
 

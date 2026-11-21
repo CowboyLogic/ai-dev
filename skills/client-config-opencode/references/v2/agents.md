@@ -1,12 +1,12 @@
 # V2 Agents Reference
 
-Source: <https://opencode.ai/v2/docs/agents/>. Permission rules: [permissions.md](permissions.md).
+Source: <https://opencode.ai/v2/docs/agents/> (2.2.5). Permission rules: [permissions.md](permissions.md).
 
 ## Built-in agents
 
 | Agent | Mode | Purpose |
 |-------|------|---------|
-| `build` | `primary` | Default coding agent; tools allowed, `.env` reads and external dirs ask |
+| `build` | `primary` | Default coding agent; tools and access outside the workspace are allowed, `.env` reads ask (external dirs asked in the 2.0.29 docs) |
 | `plan` | `primary` | Explores and plans; no edits to normal project files (may write OpenCode plan files) |
 | `general` | `subagent` | Research and multi-step work; cannot launch more subagents |
 | `explore` | `subagent` | Searches and reads code or web sources without editing |
@@ -82,6 +82,11 @@ Review the current changes. List findings in severity order with file and line r
 | `request` | `headers` and JSON `body` overlays (temperature, top_p, provider options). **Preserved but not yet sent** with model requests in V2 — set active request settings on the provider, model, or a model variant instead |
 
 > [!WARNING]
+> V1 agent frontmatter is deprecated. Each agent file is read as one format: a file that uses any of `permissions`,
+> `request`, `system`, or `disabled` is read as V2, and V1 fields in it (`name`, `tools`, `permission`, `temperature`,
+> and so on) are ignored with a warning in the log; other files that use V1 fields are read as V1 (2.2.x docs). Convert
+> frontmatter all at once rather than mixing the two formats.
+>
 > Do not use V1 agent fields in new V2 agents: `prompt`, `permission`, `tools`, `disable`, `maxSteps`,
 > `temperature`, `top_p`, `variant`, `options`, or `name`. Nested agent entries are not format-inferred — keep
 > each entry entirely V1 or entirely V2.

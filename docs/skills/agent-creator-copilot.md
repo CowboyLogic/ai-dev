@@ -6,7 +6,7 @@ per-surface compatibility, tool aliases and VS Code tool names, model selection,
 subagents, hooks, and MCP servers.
 
 - **Skill name:** `agent-creator-copilot`
-- **Associated Copilot CLI version:** v1.0.103
+- **Associated Copilot CLI version:** v1.0.105
 - **Source:** [skills/agent-creator-copilot](https://github.com/CowboyLogic/ai-dev/tree/main/skills/agent-creator-copilot)
 
 ---

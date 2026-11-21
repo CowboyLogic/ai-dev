@@ -26,8 +26,10 @@ string inside the TOML.
 > configuration". The Codex source and its tests at `rust-v0.163.0` agree: a role "must not
 > control" them. See [What a Role File Can Set](#what-a-role-file-can-set).
 
-Verified against **Codex CLI 0.163.0** (released 2026-10-15, the latest stable release when
-this skill was last reviewed).
+Verified against **Codex CLI 0.166.0** (released 2026-10-29, the latest stable release when
+this skill was last reviewed on 2026-11-01). Role-file behavior was re-checked in the source at
+`rust-v0.166.0` against `rust-v0.163.0`; the CLI behavior checks with `codex doctor` were run on 0.163.0
+and the 0.166.0 binary was not run.
 
 Official docs: <https://developers.openai.com/codex/subagents> (redirects to
 `learn.chatgpt.com/docs/agent-configuration/subagents`). Config keys:

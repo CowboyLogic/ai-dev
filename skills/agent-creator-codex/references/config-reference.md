@@ -22,7 +22,9 @@ One agent per `.toml` file in `.codex/agents/` (project, trusted projects only) 
 
 Verified in `codex-rs/core/src/agent/role.rs` at tag `rust-v0.163.0` (identical to
 `rust-v0.162.1`; `role_tests.rs` differs only in dropping its `main_execve_wrapper_exe`
-assertions), which describes the mechanism as
+assertions). At `rust-v0.166.0` the role-application logic is unchanged: `role.rs` gains two lines
+that carry managed-config plumbing (`with_mcp_ema_cancellation`, `with_applied_config_server`) into the
+child, `role_tests.rs` adds a matching assertion, and `child_config.rs` is unchanged. The source describes the mechanism as
 "bounded agent-role overrides": roles "may customize the child or reduce its capabilities, but
 never replace the parent session's authority."
 

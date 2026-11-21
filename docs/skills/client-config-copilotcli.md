@@ -6,7 +6,7 @@ hooks, skills, custom agents, custom instructions, BYOK models, authentication,
 and session management.
 
 - **Skill name:** `client-config-copilotcli`
-- **Associated Copilot CLI version:** v1.0.103
+- **Associated Copilot CLI version:** v1.0.105
 - **Source:** [skills/client-config-copilotcli](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-copilotcli)
 
 ---

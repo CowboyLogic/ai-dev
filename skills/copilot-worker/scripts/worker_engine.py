@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Drive one GitHub Copilot SDK session for the copilot-worker supervisor.
+"""Drive one Microsoft Copilot SDK session for the copilot-worker supervisor.
 
 The policy in this module is pure and imports nothing from the SDK, so it can be
 tested on its own. Only the driver imports the SDK.
@@ -875,7 +875,7 @@ def scrub_environment(environ: dict) -> dict:
     }
 
 
-def client_options(config: dict, env: dict) -> dict:
+def runtime_options(config: dict, env: dict) -> dict:
     # An isolated Copilot home keeps the user's hooks, skills, and MCP config out.
     return {
         "working_directory": config["workspace"],
@@ -884,19 +884,30 @@ def client_options(config: dict, env: dict) -> dict:
     }
 
 
+def client_options(config: dict, env: dict) -> dict:
+    from copilot import RuntimeConnection
+
+    # Explicit spawned stdio preserves process isolation, the scrubbed child
+    # environment, and ownership of the SDK-pinned runtime. v2 defaults to in-process.
+    return {
+        "mode": "coding-agent",
+        "runtime": RuntimeConnection.for_spawned_stdio(**runtime_options(config, env)),
+    }
+
+
 def session_options(config: dict) -> dict:
     options = {
         "model": config["model"],
         "working_directory": config["workspace"],
-        "available_tools": TOOLS[config["mode"]],
-        "session_limits": {"max_ai_credits": config["credits"]},
-        "enable_skills": False,
+        "tools": {"available_tools": TOOLS[config["mode"]]},
+        "execution": {"limits": {"max_ai_credits": config["credits"]}},
+        "skills": {"enabled": False},
         # Repository .github/hooks would run commands and could settle permissions first.
-        "enable_file_hooks": False,
-        "disabled_mcp_servers": ["github-mcp-server"],
+        "hooks": {"enable_repository_hooks": False},
+        "mcp": {"disabled_servers": ["github-mcp-server"]},
     }
     if config.get("effort"):
-        options["reasoning_effort"] = config["effort"]
+        options["inference"] = {"reasoning_effort": config["effort"]}
     return options
 
 
@@ -904,9 +915,9 @@ def session_kwargs(config: dict, on_permission: Any, on_event: Any, tools: Any) 
     """Everything create_session receives. drive() passes exactly this."""
     return {
         **session_options(config),
-        "available_tools": tools,
-        "on_permission_request": on_permission,
-        "on_event": on_event,
+        "tools": {"available_tools": tools},
+        "permissions": {"on_request": on_permission},
+        "events": {"on_event": on_event},
     }
 
 
@@ -931,10 +942,10 @@ def _usage_call(data: Any) -> dict:
     copilot_usage = getattr(data, "copilot_usage", None)
     return {
         "totalNanoAiu": getattr(copilot_usage, "total_nano_aiu", 0) or 0,
-        "inputTokens": getattr(data, "input_tokens", 0),
-        "outputTokens": getattr(data, "output_tokens", 0),
-        "cacheReadTokens": getattr(data, "cache_read_tokens", 0),
-        "cacheWriteTokens": getattr(data, "cache_write_tokens", 0),
+        "inputTokens": getattr(data, "input_tokens", 0) or 0,
+        "outputTokens": getattr(data, "output_tokens", 0) or 0,
+        "cacheReadTokens": getattr(data, "cache_read_tokens", 0) or 0,
+        "cacheWriteTokens": getattr(data, "cache_write_tokens", 0) or 0,
         "model": getattr(data, "model", None),
     }
 
@@ -948,7 +959,7 @@ def pin_problem(info: dict, pins: dict) -> str | None:
     differences = [
         f"{label} is {info.get(installed)}, pinned to {pins.get(pinned)}"
         for label, installed, pinned in (
-            ("github-copilot-sdk", "sdkVersion", "sdk"), ("runtime", "runtimeVersion", "runtime"),
+            ("microsoft-copilot-sdk", "sdkVersion", "sdk"), ("runtime", "runtimeVersion", "runtime"),
         )
         if info.get(installed) != pins.get(pinned)
     ]
@@ -960,7 +971,7 @@ def versions() -> dict:
 
     from copilot._cli_version import CLI_VERSION
 
-    return {"sdkVersion": version("github-copilot-sdk"), "runtimeVersion": CLI_VERSION}
+    return {"sdkVersion": version("microsoft-copilot-sdk"), "runtimeVersion": CLI_VERSION}
 
 
 def model_entry(model: Any) -> dict:
@@ -970,6 +981,16 @@ def model_entry(model: Any) -> dict:
         "supportedReasoningEfforts": getattr(model, "supported_reasoning_efforts", None),
         "defaultReasoningEffort": getattr(model, "default_reasoning_effort", None),
     }
+
+
+async def require_native_login(client: Any, copilot_home: str) -> None:
+    """Check the headless runtime's local status without initiating sign-in."""
+    status = await client.get_auth_status()
+    if not status.is_authenticated:
+        raise RuntimeError(
+            f'Copilot is not signed in. Set COPILOT_HOME to "{copilot_home}" for '
+            "`copilot login` in your terminal, then retry."
+        )
 
 
 async def list_models(copilot_home: str) -> list[dict]:
@@ -982,6 +1003,7 @@ async def list_models(copilot_home: str) -> list[dict]:
 
     config = {"workspace": os.getcwd(), "copilotHome": copilot_home}
     async with CopilotClient(**client_options(config, env)) as client:
+        await require_native_login(client, copilot_home)
         return [model_entry(model) for model in await client.list_models()]
 
 
@@ -1031,6 +1053,7 @@ async def drive(run_dir: Path) -> None:
             tools.add_builtin(tool)
         try:
             async with CopilotClient(**client_options(config, env)) as client:
+                await require_native_login(client, config["copilotHome"])
                 session = await client.create_session(
                     **session_kwargs(config, on_permission, on_event, tools)
                 )
@@ -1044,7 +1067,7 @@ async def drive(run_dir: Path) -> None:
 def main(argv: list[str]) -> int:
     if argv == ["--version"]:
         info = versions()
-        print(f"github-copilot-sdk {info['sdkVersion']} (runtime {info['runtimeVersion']})")
+        print(f"microsoft-copilot-sdk {info['sdkVersion']} (runtime {info['runtimeVersion']})")
         return 0
     if argv == ["--check-pins"]:
         problem = pin_problem(versions(), load_pins())

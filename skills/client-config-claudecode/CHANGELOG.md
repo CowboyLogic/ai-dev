@@ -2,6 +2,100 @@
 
 Changes to the `client-config-claudecode` skill, newest first.
 
+## 2026-11-15 — v2.7 (verified against Claude Code 2.1.325)
+
+Basis: Claude Code 2.1.325 (published to npm 2026-11-13; `latest` and `next`, `stable` is 2.1.311),
+the 2.1.320–2.1.325 changelog (read from the repository `CHANGELOG.md`, which has no 2.1.320 or
+2.1.324 heading), and the `code.claude.com/docs` pages fetched 2026-11-15. The Claude Code binary
+was not run. Claims only the changelog supports are labeled "changelog only".
+
+- `references/settings-schema.md`: corrects the `sandbox.autoAllowBashIfSandboxed` default from
+  `true` to `false` (settings-reference docs: the default was `true` before v2.1.324). Source
+  conflict, recorded not resolved: the docs name v2.1.324 while the changelog has no 2.1.324 heading
+  and lists the change under 2.1.325. Adds how to keep sandboxed commands unprompted. Changelog only:
+  cloud sessions start despite `sandbox.failIfUnavailable`; an unrecognized `teammateMode` value is
+  now reported as a skipped entry.
+- `references/permissions.md`: `permissions.denyInsteadOfPrompting` is now documented (settings
+  reference), so it loses its "changelog only" label and gains scope and behavior. Changelog only:
+  Bash and file-tool permission-matching fixes (wrapper commands, attached wildcards, relative deny
+  rules after `cd`, `cp`/`mv` into a directory), read-only git commands now asking in repositories
+  that are not trusted, and scheduled tasks and `/loop` asking before running a skill with
+  `allowed-tools` or hooks. `CLAUDE_CODE_AUTO_MODE_MODEL` is now in the permission-modes docs.
+- `references/hooks.md` (changelog only): `agent_id` and `agent_type` on compaction hooks for
+  subagents, `PreToolUse` `ask`/`defer` handling, the 16 MiB `mcp_tool` hook answer limit, and the
+  `claude -p` hook heartbeat.
+- `references/mcp.md` (changelog only): MCP task questions and the Esc "answer later" behavior.
+- `skills/agent-creator-claudecode/references/frontmatter-reference.md` (changelog only): subagents
+  with their own model and the `opusplan`/`haiku` model settings.
+- Not covered: the 2.1.320–2.1.325 changes to Code Mode, mods, plugin `engines`, managed
+  `extraKnownMarketplaces`, `pluginDigests` and gateway, cloud, Remote Control and VS Code surfaces,
+  none of which `sources.json` covers; environment variables only the env-vars page documents.
+- Evals: no new cases.
+
+## 2026-11-08 — v2.6 (verified against Claude Code 2.1.319)
+
+Basis: Claude Code 2.1.319 (published to npm 2026-11-06; `latest` and `next`, `stable` is 2.1.311),
+the 2.1.317–2.1.319 changelog (read from the repository `CHANGELOG.md`), and the
+`code.claude.com/docs` pages fetched 2026-11-08. The Claude Code binary was not run. Claims only
+the changelog supports are labeled "changelog only".
+
+- `references/permissions.md`: adds `permissions.denyInsteadOfPrompting` (changelog only, v2.1.319;
+  absent from the settings reference and permissions docs). Documents auto mode behind an LLM
+  gateway or with telemetry or feature flags off (changelog only, v2.1.319): calls the server-side
+  check cannot review are asked about or denied, and `CLAUDE_CODE_AUTO_MODE_SERVER=0` (documented
+  in the env-vars page) keeps the built-in classifier. Notes the fix for Bash `deny` and `ask`
+  rules missing quoted-word commands, the explanation auto mode now gives when very large
+  permission rules or `autoMode` settings make it refuse, and the `claude -p` exit 1 on such
+  refusals (all changelog only, v2.1.319). Adds `denyInsteadOfPrompting` to the example block.
+- `scripts/validate-settings.py` and `scripts/show-settings.py`: recognize
+  `permissions.denyInsteadOfPrompting` (Boolean).
+- `references/mcp.md`: adds MCP tasks and `CLAUDE_CODE_DISABLE_MCP_TASK_BACKGROUND` (MCP docs
+  page; the docs page still requires feature-flag fetching, which the v2.1.319 changelog drops and
+  replaces with `CLAUDE_CODE_DISABLE_MCP_TASKS=1`, recorded as changelog only), the stdio version-probe handling (v2.1.318) and the empty `AWS_BEARER_TOKEN_BEDROCK`
+  handling (v2.1.317), both changelog only, and the v2.1.318 change that makes `deniedMcpServers`
+  `serverUrl` entries also block Anthropic-provided servers and cloud connectors (changelog only).
+- Checked and unchanged: `references/hooks.md` (no hook event or handler change in the window; the
+  v2.1.317 `onFailure: "block"` option is for Agent SDK hook callbacks, not settings hooks) and
+  `references/settings-schema.md`.
+- Not covered: environment variables that only the env-vars page documents, for example
+  `CLAUDE_CODE_DISABLE_FEATURE_FLAGS` (v2.1.319) and `CLAUDE_CODE_DISABLE_NESTED_SESSION_ID`
+  (v2.1.317): that page is not in `sources.json`.
+- Evals: no new cases.
+
+## 2026-11-01 — v2.5 (verified against Claude Code 2.1.316)
+
+Basis: Claude Code 2.1.316 (released 2026-10-31; npm `latest` and `next`, `stable` is 2.1.309),
+the 2.1.303–2.1.316 changelog (read from the repository `CHANGELOG.md`; the GitHub releases API
+was not reachable), and the `code.claude.com/docs` pages fetched 2026-11-01. The Claude Code
+binary was not run. Claims only the changelog supports are labeled "changelog only".
+
+- `references/mcp.md`: corrects tool search behind an `ANTHROPIC_BASE_URL` gateway. It is on by
+  default from v2.1.304 (it was off unless `ENABLE_TOOL_SEARCH` was `true`, `auto` or `auto:N`),
+  and from v2.1.305 a request rejected with a `400` or `422` of unknown cause is retried without
+  it; the old text said Claude Code fell back to loading every tool upfront on a non-first-party
+  host. Also documents that the `allowedMcpServers` allowlist checks a `managed-mcp.json` server
+  only when it uses `${VAR}` expansion outside `env` (v2.1.305).
+- `references/settings-schema.md`: adds `sandbox.allowNestedUserNamespaces` (v2.1.305; user or
+  managed) and `sshHostCommands` (Desktop; the Edit tool accepts it from v2.1.307), both with
+  the validator's key and scope tables. Changelog only: fast mode for Opus 4.8 is deprecated
+  (v2.1.316), `DISABLE_COMPACT` in a settings file can only turn compaction off (v2.1.311), and
+  an `autoMode.allow` list without `"$defaults"` keeps the built-in scheduled-task rule (v2.1.316).
+- `references/permissions.md` and the scripts: adds `permissions.blockWritesOutsideWorkingDirectories`
+  (changelog only, v2.1.314) to the reference, `validate-settings.py` and `show-settings.py`.
+- `references/hooks.md`: adds the per-source skill hook limits (1,024 hooks, 16,384 matcher
+  characters; v2.1.304, in the hooks docs). Changelog only: the `prompt`/`agent` hook cap is now
+  24 per session plus 12 that waited past their timeout, with a sub-second `timeout` counting as 1
+  second (v2.1.312), and `if` conditions such as `Monitor(tail *)` match Monitor commands like
+  Bash (v2.1.314).
+- Checked and unchanged: all 247 settings-reference index keys are now in the references and the
+  validator (the two gaps, `sandbox.allowNestedUserNamespaces` and `sshHostCommands`, are added above).
+- Not covered: environment variables that only the env-vars page documents
+  (`CLAUDE_CODE_DISABLE_ULTRATHINK`, `CLAUDE_CODE_RETRY_WATCHDOG_USAGE_LIMIT_RECHECK_MS`,
+  `CLAUDE_CODE_DISABLE_LOOPED_CROSS_CERT_DROP`, `CLAUDE_CODE_SIMPLE_SYSTEM_PROMPT`,
+  `CLAUDE_CODE_MODEL_CATALOG`): that page is not in `sources.json`, so the claims stay
+  unreferenced.
+- Evals: no new cases.
+
 ## 2026-10-18 — v2.4 (verified against Claude Code 2.1.302)
 
 Basis: Claude Code 2.1.302 (released 2026-10-16; npm `latest` and `next`, `stable` is

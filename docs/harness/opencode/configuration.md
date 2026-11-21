@@ -136,8 +136,8 @@ replace earlier ones, and permission rules append.
 
 > [!NOTE]
 > **Temperature is not active per agent in V2.** V1's `temperature`, `top_p`, and
-> provider options move under `request.body`, which V2 preserves but does not yet send
-> with model requests. Configure request settings on a provider, model, or model
+> provider options have no agent-level equivalent: an agent's `request.body` is kept but
+> not sent with model requests (V2 2.2.x docs). Configure request settings on a provider, model, or model
 > variant instead, and select the variant with `model: provider/model#variant`. The
 > samples in this repository no longer set a temperature.
 
@@ -198,10 +198,11 @@ above as frontmatter and the body as the template.
   automatically (`autoupdate: true` only notifies), so `"notify"`, not `"auto"`, is the
   V2 setting that matches it.
 - `policies` is a separate top-level array of `allow`/`deny` statements (`provider.use`,
-  `tool.use`, `integration.use`). Policies never prompt and only tighten what permissions and
+  `tool.use`, `integration.connect`, `integration.use`, `mcp.use`, `skill.use`, `plugin.use`;
+  all but `provider.use` and `tool.use` need V2 2.2.3 or newer, and older clients ignore them). Policies never prompt and only tighten what permissions and
   providers allow, and statements from broader configuration win over project ones. Releases
   before 2.0.29 read it from `experimental.policies`, which still works.
-- `share` is accepted, but session sharing is not supported yet in V2.
+- `share` is accepted, but session sharing was removed (V2 2.0.30, V1 1.19.1).
 - `theme` and keybinds are not `opencode.json` fields in V2. They live in the terminal
   client config, `~/.config/opencode/cli.json`, which V2 migrates from `tui.json` on
   first start.
@@ -253,7 +254,8 @@ OpenCode discovers Markdown agents from `~/.config/opencode/agents/` and from ev
 > [!CAUTION]
 > Agents are **not** loaded through `instructions`. Older versions of this guide
 > listed `"instructions": ["agent/*.md"]` as the discovery mechanism. That never
-> registered agents, and in V2 `instructions` entries are not loaded at all.
+> registered agents. In V2 `instructions` entries load as extra guidance after `AGENTS.md`
+> files (2.0.30 and later), not as agent definitions.
 
 ### Agent file format
 
@@ -325,7 +327,7 @@ so `git status *` matches `git status`.
 | `read`, `glob`, `grep` | Local discovery tools |
 | `webfetch`, `websearch` | Web tools |
 | `skill` | Skill loading; resource is the skill ID |
-| `external_directory` | Paths outside the project |
+| `external_directory` | Paths outside the project (allowed by default since the 2.2.x docs) |
 | `<server>_<tool>` | An MCP tool |
 
 ### The default is allow
@@ -336,12 +338,16 @@ it:
 ```json
 [
   { "action": "*", "resource": "*", "effect": "allow" },
-  { "action": "external_directory", "resource": "*", "effect": "ask" },
   { "action": "read", "resource": "*.env", "effect": "ask" },
   { "action": "read", "resource": "*.env.*", "effect": "ask" },
   { "action": "read", "resource": "*.env.example", "effect": "allow" }
 ]
 ```
+
+There is no `external_directory` rule in the base policy, so reads and edits outside
+the project proceed without a prompt (V1 asked, and the 2.0.29 docs listed an `ask`
+rule). To be asked before any access outside the project, append
+`{ "action": "external_directory", "resource": "*", "effect": "ask" }`.
 
 **An action you do not mention is allowed.** Denying only `edit` and `shell` does not make
 an agent read-only: `subagent`, `skill`, `question`, web, and MCP actions stay open. For a
@@ -454,7 +460,7 @@ tools for an agent with `{ "action": "github_*", "resource": "*", "effect": "den
 
 ## Instructions and AGENTS.md
 
-V2 loads project guidance from `AGENTS.md` files only:
+V2 loads project guidance from `AGENTS.md` files, then from the `instructions` array (2.0.30 and later). `AGENTS.md` discovery:
 
 - the global `~/.config/opencode/AGENTS.md`, then
 - every `AGENTS.md` from the current workspace up toward the home directory. For a
@@ -463,11 +469,15 @@ V2 loads project guidance from `AGENTS.md` files only:
 Nested `AGENTS.md` files below the workspace are loaded as the agent reads files in
 that area. V2 does not fall back to `CLAUDE.md`.
 
-> [!CAUTION]
-> **`instructions` is accepted but not loaded in V2.** A V1 config that loaded
-> guardrails or rules through `"instructions": ["guardrails.md"]` silently stops
-> applying them under V2. Move that guidance into an `AGENTS.md` that V2 discovers,
-> for example by linking the file to `~/.config/opencode/AGENTS.md`.
+The `instructions` array adds files, glob patterns, and HTTP(S) URLs after the
+discovered `AGENTS.md` files, in listed order. Relative entries are searched from the
+workspace up to the project root, `~/` entries resolve from the home directory, and
+URLs are fetched when config loads.
+
+> [!WARNING]
+> Before V2 2.0.30, `instructions` was accepted but not loaded, so guardrails listed
+> there silently stopped applying. On 2.0.30 or later they load; on older V2 builds,
+> move that guidance into an `AGENTS.md` that V2 discovers.
 
 ---
 
@@ -507,7 +517,7 @@ file to native V2:
 | `disable` | `disabled` |
 | `maxSteps` | `steps` |
 | `model` + `variant` | `model: provider/model#variant` |
-| `temperature`, `top_p`, options | `request.body` (preserved, not yet sent) |
+| `temperature`, `top_p`, options | A model variant (agent `request.body` is kept but not sent) |
 | `tools` + `permission` maps | ordered `permissions` rules |
 | `bash`, `task`, `write`/`patch` actions | `shell`, `subagent`, `edit` |
 | `command`, `subtask` | `commands`, `subagent` |
@@ -562,7 +572,7 @@ Run it again.
 | Delegation to `x` fails, but `x.agent` exists | File is named `x.agent.md`. Rename it to `x.md` |
 | Read-only agent edited a file or launched a subagent | No catch-all deny. Omitted actions are allowed |
 | Scoped edit grant denies everything | Catch-all `"*"` rule placed after the specific rule |
-| Rules in `guardrails.md` are ignored | Loaded through `instructions`, which V2 does not load. Use `AGENTS.md` |
+| Rules in `guardrails.md` are ignored | Loaded through `instructions` on a V2 build older than 2.0.30, which did not load it. Upgrade, or use `AGENTS.md` |
 | Editor flags `agents` or `permissions` | The published schema is V1-only. See the warning at the top |
 | Model request fails | Pinned model is retired or not enabled for your Copilot plan |
 
