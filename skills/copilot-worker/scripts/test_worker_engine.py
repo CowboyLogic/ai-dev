@@ -698,7 +698,7 @@ class NativeLoginTests(unittest.IsolatedAsyncioTestCase):
 
         client = AsyncMock()
         client.get_auth_status.return_value = SimpleNamespace(is_authenticated=True)
-        await engine.require_native_login(client)
+        await engine.require_native_login(client, "/worker-state/copilot-home")
         client.get_auth_status.assert_awaited_once_with()
 
     async def test_missing_native_login_fails_with_manual_login_instruction(self) -> None:
@@ -707,8 +707,10 @@ class NativeLoginTests(unittest.IsolatedAsyncioTestCase):
 
         client = AsyncMock()
         client.get_auth_status.return_value = SimpleNamespace(is_authenticated=False)
-        with self.assertRaisesRegex(RuntimeError, "copilot login"):
-            await engine.require_native_login(client)
+        home = "/custom worker state/copilot-home"
+        with self.assertRaisesRegex(RuntimeError, "copilot login") as error:
+            await engine.require_native_login(client, home)
+        self.assertIn(f'COPILOT_HOME to "{home}"', str(error.exception))
         client.get_auth_status.assert_awaited_once_with()
 
 

@@ -41,7 +41,8 @@ implementation, reconnaissance, or an independent review done on Copilot capacit
 > still reach files outside it, including your live checkout.
 
 It requires `uv`, a GitHub Copilot login, and Git, on macOS, Linux, or Windows. `uv`
-provides Python 3.11 or later and the SDK on first run. On Windows an implementation
+provides Python 3.11 or later and the SDK on first run. For file-backed CLI logins,
+see the [skill's sign-in instructions](https://github.com/CowboyLogic/ai-dev/blob/main/skills/copilot-worker/README.md#sign-in-if-the-worker-is-signed-out). On Windows an implementation
 worker's shell is PowerShell, and the deny list checks PowerShell and `cmd.exe` commands
 as well as POSIX ones.
 
