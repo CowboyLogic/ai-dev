@@ -37,7 +37,7 @@ Before reporting a PR ready to merge, verify its latest head on GitHub, not just
 
 ## Thread commands
 
-List and resolve threads with `gh api graphql` (paginate if needed). Where GraphQL is unavailable, use the environment's GitHub tools or REST endpoints that list, reply to and resolve review threads, paging through every result.
+List and resolve threads with `gh api graphql` (paginate if needed). Where GraphQL is unavailable, use the environment's GitHub tools that list, reply to and resolve review threads, paging through every result. REST can list and reply to review comments but cannot resolve threads; if no available tool can resolve them, report the unresolved threads as a blocker.
 
 ```bash
 gh api graphql -F owner='{owner}' -F repo='{repo}' \

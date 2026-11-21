@@ -156,7 +156,8 @@ run:
 - **Tools.** GraphQL is blocked in cloud. Use GitHub MCP `pull_request_read` (methods for
   reviews, review comments, review threads, PR details and status) to read;
   `add_reply_to_pull_request_comment` to reply; `resolve_review_thread` to resolve. REST via
-  `gh api repos/CowboyLogic/ai-dev/pulls/<n>/...` is the fallback. Page through every result.
+  `gh api repos/CowboyLogic/ai-dev/pulls/<n>/...` is the fallback for reading and replying
+  only; REST cannot resolve threads. Page through every result.
   In REST and MCP results, the readiness conditions are `mergeable: true` and
   `mergeable_state: clean`.
 - **First read.** Wait 2 to 3 minutes after the PR opens or after a push before reading
