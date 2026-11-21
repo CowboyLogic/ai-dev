@@ -37,15 +37,16 @@ Before reporting a PR ready to merge, verify its latest head on GitHub, not just
 
 ## Thread commands
 
-List and resolve threads with `gh api graphql` (paginate if needed). Where GraphQL is unavailable, use the environment's GitHub tools that list, reply to and resolve review threads, paging through every result. REST can list and reply to review comments but cannot resolve threads; if no available tool can resolve them, report the unresolved threads as a blocker.
+List and resolve threads with `gh api graphql`; the list query pages through every thread. Where GraphQL is unavailable, use the environment's GitHub tools that list, reply to and resolve review threads, paging through every result. REST can list and reply to review comments but cannot resolve threads; if no available tool can resolve them, report the unresolved threads as a blocker.
 
 ```bash
-gh api graphql -F owner='{owner}' -F repo='{repo}' \
+gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' \
   -F pr="$(gh pr view --json number --jq .number)" -f query='
-  query($owner: String!, $repo: String!, $pr: Int!) {
+  query($owner: String!, $repo: String!, $pr: Int!, $endCursor: String) {
     repository(owner: $owner, name: $repo) {
       pullRequest(number: $pr) {
-        reviewThreads(first: 100) {
+        reviewThreads(first: 100, after: $endCursor) {
+          pageInfo { hasNextPage endCursor }
           nodes { id isResolved comments(first: 1) { nodes { author { login } path line body } } }
         }
       }
