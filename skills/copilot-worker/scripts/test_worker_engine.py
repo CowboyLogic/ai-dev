@@ -29,7 +29,7 @@ class PinTests(unittest.TestCase):
     def test_a_different_sdk_is_reported(self) -> None:
         info = {"sdkVersion": "1.0.29", "runtimeVersion": "1.0.105"}
         problem = engine.pin_problem(info, self.PINS)
-        self.assertIn("github-copilot-sdk is 1.0.29, pinned to 1.0.28", problem)
+        self.assertIn("microsoft-copilot-sdk is 1.0.29, pinned to 1.0.28", problem)
         self.assertNotIn("runtime", problem)
 
     def test_a_different_runtime_is_reported(self) -> None:
@@ -39,7 +39,7 @@ class PinTests(unittest.TestCase):
     def test_both_differences_are_reported_together(self) -> None:
         info = {"sdkVersion": "2.0.0", "runtimeVersion": "2.0.1"}
         problem = engine.pin_problem(info, self.PINS)
-        self.assertIn("github-copilot-sdk", problem)
+        self.assertIn("microsoft-copilot-sdk", problem)
         self.assertIn("runtime", problem)
 
     def test_a_pins_file_missing_a_key_is_a_problem_not_a_pass(self) -> None:
@@ -624,15 +624,15 @@ class HelperTests(unittest.TestCase):
         options = engine.session_options(self.config)
         self.assertEqual(options["model"], "gpt-6.1-sol")
         self.assertEqual(options["working_directory"], "/w")
-        self.assertEqual(options["session_limits"], {"max_ai_credits": 60})
-        self.assertEqual(options["available_tools"], engine.TOOLS["implement"])
-        self.assertIs(options["enable_skills"], False)
+        self.assertEqual(options["execution"]["limits"], {"max_ai_credits": 60})
+        self.assertEqual(options["tools"]["available_tools"], engine.TOOLS["implement"])
+        self.assertIs(options["skills"]["enabled"], False)
         # Repository .github/hooks would otherwise run, and could settle permissions first.
-        self.assertIs(options["enable_file_hooks"], False)
-        self.assertEqual(options["disabled_mcp_servers"], ["github-mcp-server"])
-        self.assertNotIn("reasoning_effort", options)
+        self.assertIs(options["hooks"]["enable_repository_hooks"], False)
+        self.assertEqual(options["mcp"]["disabled_servers"], ["github-mcp-server"])
+        self.assertNotIn("inference", options)
         with_effort = engine.session_options({**self.config, "effort": "high"})
-        self.assertEqual(with_effort["reasoning_effort"], "high")
+        self.assertEqual(with_effort["inference"]["reasoning_effort"], "high")
 
     def test_session_kwargs_wire_in_our_handler_events_and_tool_set(self) -> None:
         def on_permission(request, invocation):
@@ -643,10 +643,10 @@ class HelperTests(unittest.TestCase):
 
         sentinel_tools = object()
         kwargs = engine.session_kwargs(self.config, on_permission, on_event, sentinel_tools)
-        self.assertIs(kwargs["on_permission_request"], on_permission)
-        self.assertIs(kwargs["on_event"], on_event)
-        self.assertIs(kwargs["available_tools"], sentinel_tools)
-        self.assertIs(kwargs["enable_file_hooks"], False)
+        self.assertIs(kwargs["permissions"]["on_request"], on_permission)
+        self.assertIs(kwargs["events"]["on_event"], on_event)
+        self.assertIs(kwargs["tools"]["available_tools"], sentinel_tools)
+        self.assertIs(kwargs["hooks"]["enable_repository_hooks"], False)
 
     def test_environment_is_scrubbed_of_copilot_overrides(self) -> None:
         # COPILOT_ALLOW_ALL could pre-approve tools; COPILOT_CLI_PATH would replace the pinned runtime.
@@ -662,10 +662,10 @@ class HelperTests(unittest.TestCase):
 
     def test_client_gets_the_scrubbed_environment(self) -> None:
         env = {"PATH": "/bin"}
-        self.assertIs(engine.client_options(self.config, env)["env"], env)
+        self.assertIs(engine.runtime_options(self.config, env)["env"], env)
 
     def test_client_uses_the_isolated_copilot_home(self) -> None:
-        options = engine.client_options(self.config, {})
+        options = engine.runtime_options(self.config, {})
         self.assertEqual(options["base_directory"], "/home/state/copilot-home")
         self.assertEqual(options["working_directory"], "/w")
 
@@ -689,6 +689,27 @@ class HelperTests(unittest.TestCase):
 
     def test_usage_of_a_run_with_no_model_calls_is_zero(self) -> None:
         self.assertEqual(engine.summarize_usage([])["aiCredits"], 0)
+
+
+class NativeLoginTests(unittest.IsolatedAsyncioTestCase):
+    async def test_native_login_is_reused(self) -> None:
+        from types import SimpleNamespace
+        from unittest.mock import AsyncMock
+
+        client = AsyncMock()
+        client.get_auth_status.return_value = SimpleNamespace(is_authenticated=True)
+        await engine.require_native_login(client)
+        client.get_auth_status.assert_awaited_once_with()
+
+    async def test_missing_native_login_fails_with_manual_login_instruction(self) -> None:
+        from types import SimpleNamespace
+        from unittest.mock import AsyncMock
+
+        client = AsyncMock()
+        client.get_auth_status.return_value = SimpleNamespace(is_authenticated=False)
+        with self.assertRaisesRegex(RuntimeError, "copilot login"):
+            await engine.require_native_login(client)
+        client.get_auth_status.assert_awaited_once_with()
 
 
 if __name__ == "__main__":

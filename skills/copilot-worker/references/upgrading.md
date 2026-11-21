@@ -1,19 +1,22 @@
 # Upgrading the Copilot SDK and runtime
 
-The worker is pinned to one GitHub Copilot SDK and the one Copilot runtime that SDK
-carries. Upgrading either is a deliberate change made with this procedure, never a side
-effect of running the script.
+The worker is pinned to one Microsoft Copilot SDK and the one Copilot runtime that SDK
+carries. The worker chooses the SDK-owned stdio subprocess explicitly so the
+private Copilot home and scrubbed child environment remain in effect. See the
+[SDK v2 migration guide](https://github.com/microsoft/copilot-sdk/blob/main/docs/v2-breaking-changes.md)
+for the package move and protocol changes. Upgrading either is a deliberate change
+made with this procedure, never a side effect of running the script.
 
 ## What is pinned, and where
 
 | What | Where |
 | --- | --- |
-| The SDK version | `scripts/pins.json` (`sdk`) and the `github-copilot-sdk==` line in the header of `scripts/copilot_worker.py` |
+| The SDK version | `scripts/pins.json` (`sdk`) and the `microsoft-copilot-sdk==` line in the header of `scripts/copilot_worker.py` |
 | The runtime version | `scripts/pins.json` (`runtime`). Each SDK release carries its own runtime and downloads it, checked against published checksums, so the two always move together |
 | Every package the SDK needs | The same header, each at an exact `==` version |
 
 The header lists the whole dependency set, not only the SDK, because the SDK's own
-requirements are loose ranges (`pydantic>=2.0`, `httpx>=0.24`) that would otherwise float.
+requirements are loose ranges (`pydantic>=2.11`, `httpx>=0.24`) that would otherwise float.
 
 > [!NOTE]
 > A lockfile (`uv lock --script`) was tried and rejected. It records the `exclude-newer`
@@ -36,9 +39,9 @@ requirements are loose ranges (`pydantic>=2.0`, `httpx>=0.24`) that would otherw
 2. **Find its runtime and its dependency set:**
 
    ```bash
-   uv run --no-project --no-config --with github-copilot-sdk==NEW \
+   uv run --no-project --no-config --with microsoft-copilot-sdk==NEW \
      python -c "from copilot._cli_version import CLI_VERSION; print(CLI_VERSION)"
-   echo "github-copilot-sdk==NEW" | uv pip compile - --no-config --no-header --no-annotate
+   echo "microsoft-copilot-sdk==NEW" | uv pip compile - --no-config --no-header --no-annotate --universal
    ```
 
 3. **Update the header** in `scripts/copilot_worker.py` with the compiled list, and
@@ -84,6 +87,6 @@ requirements are loose ranges (`pydantic>=2.0`, `httpx>=0.24`) that would otherw
 ## Housekeeping
 
 The SDK keeps each runtime it has downloaded in its cache directory
-(`~/Library/Caches/github-copilot-sdk/cli/` on macOS, `~/.cache/github-copilot-sdk/cli/`
-on Linux, `%LOCALAPPDATA%\github-copilot-sdk\cli\` on Windows). Old versions stay there unused after an
+(`~/Library/Caches/copilot-sdk/cli/` on macOS, `~/.cache/copilot-sdk/cli/`
+on Linux, `%LOCALAPPDATA%\copilot-sdk\cli\` on Windows). Old versions stay there unused after an
 upgrade and can be deleted.
