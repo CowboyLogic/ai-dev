@@ -6,14 +6,15 @@ on V1 or their existing files are V1-shaped.
 
 > [!NOTE]
 > **OpenCode version:** verified against OpenCode V2
-> [2.3.0](https://github.com/anomalyco/opencode/tree/v2.3.0) (tagged 2026-11-13) and V1
-> [1.19.5](https://github.com/anomalyco/opencode/tree/v1.19.5) (tagged 2026-10-28),
-> checked 2026-11-15. Since the previous refresh (V2 2.2.6) the V2 agents and permissions docs changed: subagents always
-> run in the background (the parent gets a report when a child goes idle), and denying `execute` now lists the tools Code
-> Mode would reach as direct tools instead of removing them. The migration docs are unchanged. V1 has no newer tag. The
-> Copilot model table in `references/models.md` was re-checked against GitHub's supported-models and
-> retirement pages and the models.dev `github-copilot` catalog on 2026-11-15: Gemini 4 Carbon and Gemini 4 Hydrogen were
-> added, and Claude Fable 5.2 was added to the gated extreme-cost list; nothing was retired. Neither binary was
+> [2.3.2](https://github.com/anomalyco/opencode/tree/v2.3.2) (tagged 2026-11-18) and V1
+> [1.19.6](https://github.com/anomalyco/opencode/tree/v1.19.6) (tagged 2026-11-17),
+> checked 2026-11-22. Since the previous refresh (V2 2.3.0) the agent-authoring surface changed in one place: V2 now
+> falls back to `CLAUDE.md` in a directory with no `AGENTS.md` (2.3.2), reversing the earlier "AGENTS.md only" note in the
+> V2 migration reference; the agents and permissions docs only gained descriptions. V1 1.19.6 changed CI, desktop, and
+> image history handling only. The Copilot model table in `references/models.md` was re-checked against GitHub's
+> supported-models, comparison, and retirement pages and the models.dev `github-copilot` catalog on 2026-11-22: GPT-6.2
+> Sol, Gemini 4 Neon, MAI Code 2, and MAI Code 2 Flash were added, GPT-6.2 Astra joined the gated extreme-cost list, and
+> Claude Opus 4.8, Claude Opus 5, and GPT-5.6 Terra were retired on 2026-11-16. Neither binary was
 > run for this check, so V2 notes that were verified on the 2.0.27 binary keep that basis. Re-verify when either
 > line ships a new release.
 
