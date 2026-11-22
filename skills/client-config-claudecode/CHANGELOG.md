@@ -2,6 +2,28 @@
 
 Changes to the `client-config-claudecode` skill, newest first.
 
+## 2026-11-22 — v2.8 (verified against Claude Code 2.1.330)
+
+Basis: Claude Code 2.1.330 (published to npm 2026-11-20; `latest` and `next`, `stable` is 2.1.323),
+the 2.1.326–2.1.330 changelog (read from the repository `CHANGELOG.md`), and the
+`code.claude.com/docs` pages fetched 2026-11-22. The Claude Code binary was not run. Claims only
+the changelog supports are labeled "changelog only".
+
+- `references/hooks.md`: `onFailure` now applies to `mcp_tool` hooks from v2.1.328 (the docs say so;
+  the skill had said they do not accept it). Changelog only: in Code Mode a `PreToolUse` hook that
+  errors no longer refuses a script's tool call (v2.1.329); `prompt` hook `model` accepts aliases
+  such as `haiku` (v2.1.330); `Stop` and `SubagentStop` list a Monitor's script as `monitor` in
+  `background_tasks` (v2.1.329).
+- `references/permissions.md`: auto mode on Bedrock, Google Cloud's Agent Platform, Foundry and
+  Claude apps gateway for Opus 4.6 and Sonnet 4.6 (v2.1.328; the permission-modes docs list the
+  supported models).
+- `references/mcp.md` (changelog only): a `deniedMcpServers` name entry hides only the named
+  claude.ai connector, not others at its URL (v2.1.330).
+- `skills/agent-creator-claudecode`: notes the v2.1.330 subagent model-fallback and skill `model`
+  behavior (changelog only) and refreshes the verification banners.
+- Not covered: the 2.1.326–2.1.330 changes to Code Mode, mods, plugins, self-hosted runners, the
+  gateway and the terminal UI.
+
 ## 2026-11-15 — v2.7 (verified against Claude Code 2.1.325)
 
 Basis: Claude Code 2.1.325 (published to npm 2026-11-13; `latest` and `next`, `stable` is 2.1.311),

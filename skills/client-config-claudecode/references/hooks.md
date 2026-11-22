@@ -139,7 +139,7 @@ The `if` field holds exactly one permission rule (no `&&`/`||`/lists) and is onl
 - `asyncRewake: true` — run in background, wake Claude on exit code 2
 - `shell` — `"bash"` (default; `"powershell"` on Windows without Git Bash) or `"powershell"`; ignored when `args` is set
 - `args` — **exec form**: when present, `command` is spawned directly as an executable with `args` as argv (no shell, no quoting issues). Omit `args` for shell form (pipes, `&&`, globs)
-- `onFailure` — `"continue"` (default) or `"block"`; see [Block the action when a hook fails](#block-the-action-when-a-hook-fails) (v2.1.295+; `command` and `http` only)
+- `onFailure` — `"continue"` (default) or `"block"`; see [Block the action when a hook fails](#block-the-action-when-a-hook-fails) (v2.1.295+ for `command` and `http`; v2.1.328+ for `mcp_tool`)
 
 ```json
 { "type": "command", "command": "node", "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/format.js", "--fix"] }
@@ -212,7 +212,7 @@ Optional `model` (defaults to the model Claude Code uses for background function
 
 Same response schema as `prompt`. Agent can use Read, Grep, Glob to inspect the codebase.
 
-Changelog only: from v2.1.300 an agent hook honors its `model` (an alias such as `haiku` resolves, a subagent's own model no longer overrides it, and an unavailable model falls back to the caller's model instead of allowing the action). From v2.1.302 at most 12 `prompt` or `agent` hooks of one event run at a time; the rest wait their turn. From v2.1.312 the cap is at most 24 at a time per session, subagents included, plus at most 12 that have waited longer than their event's timeout, and a `timeout` under 1 second counts as 1 second.
+Changelog only: from v2.1.300 an agent hook honors its `model` (an alias such as `haiku` resolves, a subagent's own model no longer overrides it, and an unavailable model falls back to the caller's model instead of allowing the action). From v2.1.330 a `prompt` hook's `model` field also accepts an alias such as `haiku` or `sonnet`. From v2.1.329 `Stop` and `SubagentStop` hooks list a Monitor's script as `monitor`, not `shell`, in `background_tasks`. From v2.1.302 at most 12 `prompt` or `agent` hooks of one event run at a time; the rest wait their turn. From v2.1.312 the cap is at most 24 at a time per session, subagents included, plus at most 12 that have waited longer than their event's timeout, and a `timeout` under 1 second counts as 1 second.
 
 ---
 
@@ -253,7 +253,7 @@ Stdout is parsed as JSON on every exit code when it starts with `{` and ends wit
 
 ### Block the action when a hook fails
 
-Requires v2.1.295+. By default a hook that can't start, times out, or exits with a code other than 0 or 2 is a **non-blocking** error — the action goes ahead, so a policy hook with a mistyped path lets everything through. Set `"onFailure": "block"` on a `command` or `http` hook to make a failure do what exit code 2 does on that event (on `PermissionRequest` it denies the request).
+Requires v2.1.295+ (v2.1.328+ for `mcp_tool` hooks). By default a hook that can't start, times out, or exits with a code other than 0 or 2 is a **non-blocking** error — the action goes ahead, so a policy hook with a mistyped path lets everything through. Set `"onFailure": "block"` on a `command`, `http` or `mcp_tool` hook to make a failure do what exit code 2 does on that event (on `PermissionRequest` it denies the request).
 
 ```json
 {
@@ -266,7 +266,7 @@ Requires v2.1.295+. By default a hook that can't start, times out, or exits with
 
 A failure is: the hook can't start; exit code other than 0 or 2 (even if it printed JSON that allows the action — exit 0 to return a JSON decision); an HTTP connection failure or non-2xx status; a timeout; or JSON output that can't be parsed or fails schema validation. Plain-text stdout from a command hook is not a failure.
 
-`onFailure` has no effect on `Stop`, `SubagentStop`, `TaskCompleted`, and `TeammateIdle` hooks (exit 2 there sends Claude back to work, and Claude can't repair a hook that won't run) or on background command hooks (`async`/`asyncRewake`). A timed-out `command`, `http`, or `mcp_tool` hook on `PreToolUse` does **not** block the call. Set `onFailure: "block"` on a `command` or `http` hook to make a timeout block; `mcp_tool` hooks don't accept `onFailure`, so a timed-out one always lets the call continue.
+`onFailure` has no effect on `Stop`, `SubagentStop`, `TaskCompleted`, and `TeammateIdle` hooks (exit 2 there sends Claude back to work, and Claude can't repair a hook that won't run) or on background command hooks (`async`/`asyncRewake`). A timed-out `command`, `http`, or `mcp_tool` hook on `PreToolUse` does **not** block the call. Set `onFailure: "block"` on a `command`, `http` or `mcp_tool` hook (`mcp_tool` from v2.1.328) to make a timeout block. Changelog only (v2.1.329): in Code Mode a `PreToolUse` hook that errors no longer refuses a script's tool call, as outside Code Mode; set `"onFailure": "block"` on a command, HTTP or MCP tool hook that must refuse.
 
 **Changelog only (v2.1.299), three fail-closed changes:**
 
