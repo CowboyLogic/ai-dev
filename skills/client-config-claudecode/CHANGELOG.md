@@ -14,6 +14,7 @@ the changelog supports are labeled "changelog only".
   errors no longer refuses a script's tool call (v2.1.329); `prompt` hook `model` accepts aliases
   such as `haiku` (v2.1.330); `Stop` and `SubagentStop` list a Monitor's script as `monitor` in
   `background_tasks` (v2.1.329).
+- `scripts/validate-settings.py`: no longer warns that `onFailure` is ignored on `mcp_tool` hooks.
 - `references/permissions.md`: auto mode on Bedrock, Google Cloud's Agent Platform, Foundry and
   Claude apps gateway for Opus 4.6 and Sonnet 4.6 (v2.1.328; the permission-modes docs list the
   supported models).
