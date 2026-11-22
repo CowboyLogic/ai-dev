@@ -359,8 +359,8 @@ def validate_hook_handler(handler, path, event):
     if "onFailure" in handler:
         if handler["onFailure"] not in ("continue", "block"):
             err(f"{path}.onFailure: must be \"continue\" or \"block\"")
-        elif htype not in {"command", "http"}:
-            warn(f"{path}.onFailure: only command and http hooks accept it (v2.1.295+); ignored on {htype}")
+        elif htype not in {"command", "http", "mcp_tool"}:
+            warn(f"{path}.onFailure: only command, http and mcp_tool hooks accept it (mcp_tool from v2.1.328); ignored on {htype}")
         elif handler["onFailure"] == "block" and event in ONFAILURE_NO_EFFECT_EVENTS:
             warn(f"{path}.onFailure: has no effect on {event} hooks")
         elif handler["onFailure"] == "block" and htype == "command" and (handler.get("async") or handler.get("asyncRewake")):
