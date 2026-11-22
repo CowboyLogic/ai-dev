@@ -3,8 +3,8 @@
 Reference for the YAML frontmatter fields of Claude Code agent files. Load this file when
 writing, reviewing, or debugging agent frontmatter.
 
-**Source (last verified 2026-11-15 against Claude Code 2.1.325; the docs page references
-versions up to v2.1.314):**
+**Source (last verified 2026-11-22 against Claude Code 2.1.330; the docs page references
+versions up to v2.1.319):**
 <https://code.claude.com/docs/en/sub-agents#supported-frontmatter-fields>
 
 Every field in this file is in the docs table. Where a note below is labeled "changelog only",
@@ -119,7 +119,10 @@ A per-invocation `model` also applies when the subagent is resumed or sent a fol
 and forks and `model: inherit` skills that run in a subagent still use the main
 conversation's model. `CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL` (v2.1.296; changelog only, not
 yet on the docs pages) runs every workflow agent on one model while other subagents keep
-theirs.
+theirs. Changelog only (v2.1.330): a subagent's model fallback carries over, so agents with no
+`model` and forks it then starts run on the fallback, and the agents they start use its Bedrock
+region; and a skill Claude runs with a `model` setting (other than `context: fork`) leaves
+subagents, forks, compaction and `/recap` on the session's model.
 
 Before v2.1.251, `CLAUDE_CODE_SUBAGENT_MODEL` came first in the order. Values are checked
 against the organization's `availableModels` allowlist and substituted with a warning if

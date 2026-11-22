@@ -8,7 +8,7 @@ Reports the conditions under which Claude Code silently skips an agent file, plu
 unknown or mis-cased fields, bad enum values, and fields ignored in a given scope.
 Requires PyYAML. Exit status is 1 when any error is found (or any warning with --strict).
 
-Field list last verified 2026-11-15 against Claude Code 2.1.325:
+Field list last verified 2026-11-22 against Claude Code 2.1.330:
 https://code.claude.com/docs/en/sub-agents#supported-frontmatter-fields
 """
 
