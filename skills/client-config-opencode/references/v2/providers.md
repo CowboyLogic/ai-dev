@@ -138,7 +138,7 @@ AI SDK package, the migration guide shows the `aisdk:` prefix (`"package": "aisd
 | `family` | Grouping |
 | `package` | Per-model runtime override |
 | `settings` / `headers` / `body` | Per-model request options |
-| `type` | What the model produces: `chat` (default), `image`, or `decision`; only chat models are offered for sessions (2.2.0) |
+| `type` | What the model produces: `chat` (default), `image`, `video` (added to the 2.3.2 schema; schema only), or `decision`; only chat models are offered for sessions (2.2.0) |
 | `releaseDate` | `YYYY-MM-DD` or `YYYY-MM` |
 | `capabilities` | `tools`, `input`, `output` media types, `freeform` tool-input formats, temperature support, and `reasoning` controls (see below) |
 | `compatibility` | Per-model overrides of the provider's `compatibility` (see [Compatibility](#compatibility)) |

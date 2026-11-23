@@ -217,7 +217,7 @@ map; `tools` is deprecated. Built-ins: `build`, `plan`, `general`, `explore`,
 - **Scope creep prevention**: State what is out of scope
 - In V2, project instructions (`AGENTS.md`), skills, and references are still
   added when an agent sets its own prompt, so do not repeat repo rules in the
-  agent. V2 reads `AGENTS.md` only, not `CLAUDE.md`
+  agent. V2 reads `AGENTS.md`, and since 2.3.2 falls back to `CLAUDE.md` in a directory that has no `AGENTS.md`
 
 ---
 

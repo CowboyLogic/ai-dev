@@ -3,7 +3,7 @@
 Model ID format, variants, and common provider values for OpenCode agents. Applies
 to both V1 and V2; syntax differences are called out.
 
-**Sources (checked 2026-11-15):**
+**Sources (checked 2026-11-22):**
 
 - <https://docs.github.com/en/copilot/reference/ai-models/supported-models>
 - <https://docs.github.com/en/copilot/reference/ai-models/model-comparison>
@@ -77,7 +77,7 @@ OpenCode IDs use the `github-copilot/` provider prefix.
 
 > [!NOTE]
 > The table lists models on GitHub's supported-models page whose IDs also appear
-> under `github-copilot` in the models.dev catalog (2026-11-15). Model
+> under `github-copilot` in the models.dev catalog (2026-11-22). Model
 > availability changes often. Re-check with `/models` or `opencode models`
 > before hard-coding a model on an agent.
 
@@ -87,22 +87,23 @@ OpenCode IDs use the `github-copilot/` provider prefix.
 | `github-copilot/gpt-5.4-nano` | GPT-5.4 nano | GitHub lists it for the Codex VS Code extension only (Pro+); may not appear |
 | `github-copilot/gpt-5.6-luna` | GPT-5.6 Luna | Quick, cost-efficient simple or repetitive tasks |
 | `github-copilot/gpt-5.6-sol` | GPT-5.6 Sol | Complex reasoning over large codebases; long agentic work |
-| `github-copilot/gpt-5.6-terra` | GPT-5.6 Terra | Balanced everyday interactive and agentic coding |
 | `github-copilot/gpt-6-luna` | GPT-6 Luna | Quick, cost-efficient smaller tasks |
 | `github-copilot/gpt-6-sol` | GPT-6 Sol | Development tasks that need careful multistep validation |
 | `github-copilot/gpt-6.1-sol` | GPT-6.1 Sol | Complex coding tasks; advanced, efficient reasoning |
 | `github-copilot/gpt-6.1-terra` | GPT-6.1 Terra | Everyday agentic coding and terminal work (added to the catalog 2026-10-26) |
+| `github-copilot/gpt-6.2-sol` | GPT-6.2 Sol | Complex coding tasks; advanced, efficient reasoning (added to the catalog 2026-11-17) |
 | `github-copilot/claude-haiku-4.5` | Claude Haiku 4.5 | Fast, cheap analysis and lightweight subagents |
 | `github-copilot/claude-haiku-5.5` | Claude Haiku 5.5 | Fast, reliable answers to lightweight coding questions; simple or repetitive tasks |
-| `github-copilot/claude-opus-4.8` | Claude Opus 4.8 | Deep reasoning and debugging |
-| `github-copilot/claude-opus-5` | Claude Opus 5 | Deep reasoning and debugging |
 | `github-copilot/claude-opus-5.5` | Claude Opus 5.5 | Long-running agentic coding and knowledge work |
 | `github-copilot/claude-sonnet-5` | Claude Sonnet 5 | Orchestrators, general coding and agent tasks |
 | `github-copilot/claude-sonnet-5.5` | Claude Sonnet 5.5 | General-purpose coding and agent tasks; completes tasks with fewer steps, tokens, and tool calls |
 | `github-copilot/gemini-3.8-flash` | Gemini 3.8 Flash | Fast, cheap analysis subagents |
 | `github-copilot/gemini-4-argon` | Gemini 4 Argon | Complex coding, agentic, and reasoning tasks; thorough work that tests edge cases before finishing |
 | `github-copilot/gemini-4-carbon` | Gemini 4 Carbon | Complex coding, agentic, and reasoning tasks; secure code generation and security-focused work (added to the catalog 2026-11-10) |
+| `github-copilot/gemini-4-neon` | Gemini 4 Neon | Agentic coding, multistep tool use, and knowledge work; near Gemini 4 Carbon quality at a lower token cost per task (in the models.dev catalog 2026-11-18 and listed GA on GitHub's supported-models page, but the comparison page still says "coming soon"; confirm with `/models`) |
 | `github-copilot/gemini-4-hydrogen` | Gemini 4 Hydrogen | Fast, efficient agentic coding and multistep workflows; fast tool use with improved instruction following (added to the catalog 2026-11-12) |
+| `github-copilot/mai-code-2` | MAI Code 2 | Deep reasoning and complex multi-step coding tasks that need high reasoning (added to the catalog 2026-11-17) |
+| `github-copilot/mai-code-2-flash` | MAI Code 2 Flash | General-purpose coding and writing, image understanding; fast completions, explanations, and tool use (added to the catalog 2026-11-17) |
 | `github-copilot/mai-code-1.1-flash` | MAI-Code-1.1-Flash | Fast code completions, explanations, tool use |
 | `github-copilot/kimi-k3` | Kimi K3 | Agentic coding and long-context work (open-weight; disabled by default for Business/Enterprise) |
 | `github-copilot/grok-4.5` | Grok 4.5 | General-purpose coding and agent tasks |
@@ -111,8 +112,10 @@ OpenCode IDs use the `github-copilot/` provider prefix.
 
 ### Retired — avoid for new agents
 
-| Model ID | Status on GitHub (2026-11-15) | Suggested replacement |
+| Model ID | Status on GitHub (2026-11-22) | Suggested replacement |
 |---|---|---|
+| `github-copilot/claude-opus-4.8`, `github-copilot/claude-opus-5` | Retired 2026-11-16 | `claude-opus-5.5` |
+| `github-copilot/gpt-5.6-terra` | Retired 2026-11-16 | `gpt-6.1-terra` |
 | `github-copilot/gpt-5-mini` | Retired 2026-10-19 | `gpt-6-luna` |
 | `github-copilot/gpt-5.4-mini` | Retired 2026-10-19 | `gpt-6-luna` |
 | `github-copilot/gpt-5.4`, `github-copilot/gpt-5.5` | Retired 2026-10-19 | `gpt-6.1-sol` |
@@ -126,7 +129,7 @@ OpenCode IDs use the `github-copilot/` provider prefix.
 | `claude-opus-4.5`, `claude-opus-4.6`, `claude-sonnet-4.5`, `gemini-3.1-pro-preview` | Retired 2026-09-01 | `claude-opus-5.5`, `claude-sonnet-5.5`, `gemini-3.8-flash` |
 | `gpt-4.1`, `gpt-5.2`, `gpt-5.2-codex`, `claude-sonnet-4`, `gemini-2.5-pro`, Raptor mini | Retired | See GitHub's retirement table |
 
-The models.dev catalog can lag GitHub: on 2026-11-15 it still listed `claude-opus-4.7`, `gemini-3.5-flash`,
+The models.dev catalog can lag GitHub: on 2026-11-22 it still listed `claude-opus-4.8`, `claude-opus-5`, `gpt-5.6-terra` (not flagged deprecated there) and `claude-opus-4.7`, `gemini-3.5-flash`,
 `gemini-3.6-flash`, `gemini-3.7-flash`, `kimi-k2.7-code`, and `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.5`, and `gpt-5-mini` (all
 flagged deprecated there) under `github-copilot` after GitHub retired them. Check GitHub's retirement table, not the catalog, before choosing a model that looks old.
 
@@ -142,6 +145,7 @@ flagged deprecated there) under `github-copilot` after GitHub retired them. Chec
 > | `github-copilot/claude-fable-5` | Extreme cost; not under GitHub's ZDR agreement; org enablement required |
 > | `github-copilot/claude-fable-5.1` | Same as Fable 5 |
 > | `github-copilot/claude-fable-5.2` | Same as Fable 5 (added to the catalog 2026-11-09; GitHub lists it with the same data-retention caveat) |
+> | `github-copilot/gpt-6.2-astra` | Priced at the Fable level in models.dev ($8/$40 per M tokens, higher above 272K context); added to the catalog 2026-11-17 |
 > | `github-copilot/gpt-6-astra` | Priced at the Fable level in models.dev ($10/$50 per M tokens, higher above 272K context) |
 > | Any future `*-opus-*-fast` / "Opus (fast mode)" ID | Same fast-mode cost class |
 > | Any future `claude-fable-*` ID | Same Fable cost class |
@@ -156,8 +160,8 @@ flagged deprecated there) under `github-copilot` after GitHub retired them. Chec
 > 3. If the user asks for "faster Opus," "Opus fast," "Fable," or similar without
 >    clear cost acceptance, **stop and require confirmation** before proceeding.
 >    Explain that these are premium cost multipliers, not free upgrades.
-> 4. Prefer standard Opus IDs (`claude-opus-4.8`, `claude-opus-5`,
->    `claude-opus-5.5`) or a Sonnet / GPT alternative unless the user opts in.
+> 4. Prefer the standard Opus ID (`claude-opus-5.5`; `claude-opus-4.8` and
+>    `claude-opus-5` were retired on GitHub 2026-11-16) or a Sonnet / GPT alternative unless the user opts in.
 >
 > Required confirmation (user must clearly accept cost) before any use:
 >
@@ -170,7 +174,7 @@ flagged deprecated there) under `github-copilot` after GitHub retired them. Chec
 | Agent role | Good starting models |
 |---|---|
 | Orchestrator / primary | `claude-sonnet-5.5`, `claude-sonnet-5`, `gpt-6.1-terra` |
-| Complex reasoning / architecture | `claude-opus-5`, `claude-opus-5.5`, `gpt-5.6-sol` |
+| Complex reasoning / architecture | `claude-opus-5.5`, `gpt-6.1-sol`, `gpt-5.6-sol` |
 | Code generation / agentic coding | `gpt-5.3-codex`, `claude-sonnet-5.5`, `gpt-6.1-sol` |
 | Fast / cheap subagent | `claude-haiku-5.5`, `gpt-5.6-luna`, `gemini-3.8-flash` |
 | Read-only review / analysis | `gpt-6.1-terra`, `claude-sonnet-5.5`, `gpt-6-luna` |
@@ -179,7 +183,7 @@ flagged deprecated there) under `github-copilot` after GitHub retired them. Chec
 
 ## Other common providers
 
-IDs below appear in the models.dev catalog on 2026-11-15.
+IDs below appear in the models.dev catalog on 2026-11-22.
 
 | Provider | Example model IDs |
 |---|---|

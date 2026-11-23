@@ -44,7 +44,7 @@ You help the user manage OpenCode configuration. OpenCode has two config formats
 | Skills | `.opencode/skills/<id>/SKILL.md` (+ `.claude/skills`, `.agents/skills`) | same |
 | Plugins | `.opencode/plugins/`, `~/.config/opencode/plugins/` | same |
 | Themes | `~/.config/opencode/themes/*.json`, `.opencode/themes/*.json` (new V2 format) | same dirs, V1 format |
-| Instructions | `AGENTS.md`, then the `instructions` array (files, globs, HTTP(S) URLs; loaded since 2.0.30); `CLAUDE.md` is not discovered | `AGENTS.md`, `CLAUDE.md` fallback, `instructions` array |
+| Instructions | `AGENTS.md`, then the `instructions` array (files, globs, HTTP(S) URLs; loaded since 2.0.30); `CLAUDE.md` not read through 2.3.0 | `AGENTS.md`, `CLAUDE.md` fallback, `instructions` array; since 2.3.2 V2 also falls back to `CLAUDE.md` where a directory has no `AGENTS.md` |
 | Credentials | SQLite DB (`opencode debug paths db`) — use `/connect` / `opencode auth` | `~/.local/share/opencode/auth.json` — use `/connect` / `opencode auth` |
 
 Schemas: `https://opencode.ai/config.json` (both formats use this URL; it currently validates only the V1 shape, so

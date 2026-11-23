@@ -128,7 +128,7 @@ effect: "deny" }`.
 ignored with a warning.
 
 V2 `buffer` defaults to `"15%"` with a 16k floor in the 2.2.5 docs (10% in the 2.0.29 docs) and also accepts percentages (see [config-schema.md](config-schema.md#compaction)), so a V1
-`reserved` value is only carried over when it was set explicitly.
+`reserved` value is only carried over when it was set explicitly. V2 also writes compaction summaries in the background by default since 2.3.2 (`compaction.background`).
 
 ## Providers and models
 
@@ -159,7 +159,7 @@ hand.
 | Skills | `skill/`, `skills/` | `skills/<id>/SKILL.md` (move the whole directory) |
 | Plugins | `plugin/`, `plugins/` | `plugins/` |
 
-`CLAUDE.md` is not discovered in V2 — move that guidance into `AGENTS.md`.
+Through 2.3.0 V2 did not discover `CLAUDE.md`; since 2.3.2 it falls back to `CLAUDE.md` in a directory with no `AGENTS.md` (and to `~/.claude/CLAUDE.md` with no global `AGENTS.md`). `AGENTS.md` wins when both exist, and `OPENCODE_DISABLE_CLAUDE_CODE_PROMPT=1` skips every `CLAUDE.md`. `OPENCODE_DISABLE_CLAUDE_CODE` skips every `CLAUDE.md` too. V2 picks per directory, so unlike V1 (which stopped at the first file name found anywhere up the tree) an `AGENTS.md` at the root no longer hides a nested `CLAUDE.md` (2.3.2 docs).
 
 ## Credentials
 

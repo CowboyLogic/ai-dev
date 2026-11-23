@@ -78,7 +78,7 @@ Settings merge; non-conflicting keys are preserved. Exceptions to "closest wins"
 | `default_agent` | string | Must exist, be visible, and be primary-capable; else falls back to `build`, then first visible primary agent | [agents.md](agents.md) |
 | `update` | `"disable"` \| `"notify"` \| `"auto"` | Default `"notify"`. Global config only. `auto` does not restart a running server | — |
 | `share` | `"manual"` \| `"auto"` \| `"disabled"` | Accepted by the schema, but the session-sharing backend and `/share` command were removed in 2.0.30 and the 2.2.5 docs drop the field | — |
-| `timezone` | string | IANA time zone for schedules (for example `America/Los_Angeles`); defaults to the server's zone. In the 2.2.5 config schema, not in the docs pages | — |
+| `timezone` | string | IANA time zone for automations and schedules (for example `America/Los_Angeles`); defaults to the server's zone. In the 2.2.5 config schema, not in the docs pages | — |
 | `username` | string | Accepted but not displayed in conversations | — |
 | `permissions` | array of `{action, resource, effect}` | Ordered, last match wins | [permissions.md](permissions.md) |
 | `agents` | object | Agent definitions keyed by ID | [agents.md](agents.md) |
@@ -201,7 +201,8 @@ Template syntax:
   frontmatter `name` is a display label only. In an HTTP catalog each downloaded skill directory becomes a source root
   named after the entry, so `git-release.md` and a root-level `SKILL.md` both get the ID `git-release`.
 - `OPENCODE_DISABLE_CLAUDE_CODE` and `OPENCODE_DISABLE_CLAUDE_CODE_SKILLS` are honored when discovering `.claude`
-  skills (2.0.30 release notes).
+  skills (2.0.30 release notes). `OPENCODE_DISABLE_CLAUDE_CODE` also disables the `CLAUDE.md` fallback (see
+  [Instructions](#instructions)).
 - Frontmatter: `name`, `description` (required for the model to see it), `metadata.opencode/autoinvoke` (`false`
   hides the skill from the model's list), and `disable-model-invocation` (`true` has the same effect; if both are
   set, `opencode/autoinvoke` wins). The skill stays registered and can still be loaded explicitly by ID, or in a
@@ -265,9 +266,15 @@ The 2.0.16 docs gave `buffer` a fixed default of `20000` and the 2.0.29 docs sai
 Summaries cover the entire current conversation and keep the most recent `keep.tokens` beside the summary; sending the
 full conversation lets the summary request reuse the normal request's prompt cache where the provider supports it
 (2.1.0 notes, 2.2.5 docs). Set `agents.compaction.model` to write summaries with a different model than the session's.
-`experimental.background_compaction: true` (2.1.4) prepares a summary in the background as a session nears its
-threshold; summaries that are never used still cost tokens. The 2.2.6 docs start it 60k tokens before the threshold and
-let the session wait for an unfinished summary (details in [Experimental](#experimental)).
+`compaction.background` (default `true` since 2.3.2) prepares a summary in the background as a session nears its
+threshold, so automatic compaction does not pause the session; summaries that are never used still cost tokens. It was
+`experimental.background_compaction` (opt-in) from 2.1.4 to 2.3.0 and is no longer an experimental flag. The docs start
+it 60k tokens before the threshold (on small windows, at most halfway between the first response after the last
+compaction and the threshold) and let the session wait for an unfinished summary. It falls back to a normal summary if
+the conversation since the held summary grew past about 40% of the threshold or the start of the conversation changed
+(the 2.2.6 docs also listed a model or instructions change; the 2.3.2 docs do not). It is not used for native
+compaction, and after a model switch or a break longer than the prompt cache lifetime it starts from the next response.
+Set `compaction.background: false` to write the summary only when compaction is due.
 
 Native provider compaction is opt-in per provider or model:
 `providers.<id>.settings.compaction.type` = `"native"` or `"summary"` (model setting overrides provider). Native
@@ -382,9 +389,14 @@ under the server data directory at `worktree/<first-six-project-ID-characters>`.
 
 ## Instructions
 
-V2 loads `AGENTS.md` files only: `~/.config/opencode/AGENTS.md` plus every `AGENTS.md` from the workspace up to
+V2 loads `AGENTS.md` files (with the `CLAUDE.md` fallback below): `~/.config/opencode/AGENTS.md` plus every `AGENTS.md` from the workspace up to
 home (stops at the project root for workspaces outside home). Nested `AGENTS.md` files load as the agent reads
-those areas. `CLAUDE.md` is **not** discovered in V2.
+those areas. Since 2.3.2, a directory without an `AGENTS.md` falls back to its `CLAUDE.md`, and without a global
+`~/.config/opencode/AGENTS.md` V2 reads `~/.claude/CLAUDE.md`; a directory's `AGENTS.md` always wins over its
+`CLAUDE.md`, so a symlink between the two loads once. Through 2.3.0 V2 did not read `CLAUDE.md` at all. Set
+`OPENCODE_DISABLE_CLAUDE_CODE_PROMPT=1` to skip every `CLAUDE.md`, or `OPENCODE_DISABLE_CLAUDE_CODE=1` to skip every
+`CLAUDE.md` and the `.claude` skills; the server reads both when it starts, so for the background service persist them
+with `opencode service set env` and run `opencode service restart` (2.3.2 docs and source).
 
 The `instructions` array (2.0.30+; earlier releases accepted it without loading it) adds files, globs, or HTTP(S) URLs
 that load **after** the discovered `AGENTS.md` files, in listed order; entries from every config document combine:
@@ -460,34 +472,39 @@ V2 docs showed only `{env:}`; `{file:}` was verified working on the 2.0.27 binar
 
 ## Experimental
 
-All keys live under `experimental` and may change or disappear in any release. Verified against the 2.3.0 config
-schema (`packages/schema/src/config/experimental.ts` and `flag.ts`) and release notes. In 2.3.0 eight keys (`todo`,
-`background_compaction`, `media_blob`, `schedules`, `artifacts`, `shell_timeout_background`, `console_watches`,
-`mcp_events`) come from one feature-flag registry (`flag.ts`): each is on in local and dev builds and off in releases.
-The flag resolver (`packages/core/src/flag.ts`, logic unchanged from 2.2.6) checks, in order, `OPENCODE_FLAGS` (`-key`,
-then `all`), then `experimental.<key>`, then `experimental.all_flags: true`, then the build default. So an explicit
-`experimental.<key>` setting beats `experimental.all_flags`, but `OPENCODE_FLAGS=all` beats config: to opt one flag out of
-an environment-wide `all`, use `OPENCODE_FLAGS=all,-background_compaction`. `all_flags: false` falls through and is not
-a kill switch. `part_rows` is a separate `experimental.ts` field, not a registry flag, so `all_flags` and
-`OPENCODE_FLAGS=all` do not enable it. `codemode_vm` is deprecated and ignored since 2.3.0, because Code Mode always runs
-on the VM, which resolves the 2.2.6 conflict between the release notes and the schema over it. Read from the schema and
-core source and release notes; the flag behavior was not run.
+All keys live under `experimental` and may change or disappear in any release. Verified against the 2.3.2 config
+schema (`packages/schema/src/config/experimental.ts` and `flag.ts`) and release notes. In 2.3.2 eight keys (`todo`,
+`media_blob`, `automations`, `artifacts`, `video_generate`, `console_watches`, `mcp_events`, `full_codemode`) come from
+one feature-flag registry (`flag.ts`): each is on in local and dev builds and off in releases, except `full_codemode`,
+which is opt-in only and off in every build. `schedules` is a deprecated alias for `automations`, still read from
+`experimental.schedules` and `OPENCODE_FLAGS` when the new key is unset. The resolver (`packages/core/src/flag.ts`)
+checks, in order, `OPENCODE_FLAGS` (`key`, `-key`, then `all`), then `experimental.<key>` (or its old alias), then
+`experimental.all_flags: true`, then the build default. `all` and `all_flags` skip opt-in-only flags, so name
+`full_codemode` explicitly. An explicit `experimental.<key>` setting beats `experimental.all_flags`, but
+`OPENCODE_FLAGS=all` beats config: to opt one flag out of an environment-wide `all`, use `OPENCODE_FLAGS=all,-media_blob`.
+`all_flags: false` falls through and is not a kill switch. `part_rows` is a separate `experimental.ts` field, not a
+registry flag, so `all_flags` and `OPENCODE_FLAGS=all` do not enable it. `codemode_vm` and `portable_shell_scanner` are
+deprecated and ignored (Code Mode always runs on the VM; the shell permission scanner is always on). Read from the
+schema and core source and release notes; the flag behavior was not run. `shell_timeout_background` (2.3.0 release
+notes: moves a foreground shell command to the background when its timeout expires) is absent from the 2.3.2 schema,
+registry, and code, although the 2.3.2 `CHANGELOG.md` still lists it under 2.3.0; treat it as removed or unverified.
 
 | Key | Type / default | Effect |
 |-----|----------------|--------|
 | `todo` | boolean, `false` | Gives agents the `todowrite` tool (2.1.0; todos are off by default in V2) |
 | `subagent_depth` | integer, `1` | How deeply subagents can start their own subagents |
-| `background_compaction` | boolean, `false` | Writes the compaction summary in the background; unused summaries still cost tokens. Per the 2.2.6 docs it starts 60k tokens before the threshold (on small windows, at most halfway between the first response after the last compaction and the threshold), the session waits if the summary is not finished when compaction is due, and compaction summarizes as usual if the conversation since the held summary grew past about 40% of the threshold or the model, instructions, or start of the conversation changed |
 | `codemode_vm` | boolean | Deprecated and ignored since 2.3.0; Code Mode always runs on the VM (in 2.2.6 it switched Code Mode to the experimental bytecode VM) |
 | `part_rows` | boolean, `false` | Writes each assistant part as its own `session_part` row instead of rewriting the whole message on every event (2.2.6, schema description only) |
-| `shell_timeout_background` | boolean, `false` | Moves a foreground shell command to the background when its timeout expires; with it on, an explicit timeout on a background command stops it (2.3.0, schema and release notes only) |
 | `mcp_events` | boolean, `false` | Experimental support for MCP Events, a draft MCP extension: declares support to MCP servers and reads the events of servers that offer them (2.3.0, schema and release notes only) |
 | `console_watches` | boolean, `false` | Watches Slack threads, GitHub pull requests, issues, commits and Actions runs, and the workspace's MCP servers' events through OpenCode Console, and wakes sessions when they change (2.3.0, schema description only) |
-| `all_flags` | boolean | Turns the registry flags on regardless of build channel, like `OPENCODE_FLAGS=all` but below explicit `experimental.<key>` settings (2.2.6) |
+| `all_flags` | boolean | Turns the registry flags on regardless of build channel, except opt-in-only flags, like `OPENCODE_FLAGS=all` but below explicit `experimental.<key>` settings (2.2.6) |
 | `image_generate` | boolean or `{ model }` | Default model for `experimental_image_generate` as `providerID/modelID[#variant]`; the tool appears while a connected provider has an image model, and since 2.2.2 needs no other setup |
 | `location_idle_timeout` | duration string or `false`, `"60 minutes"` | How long a project location can be idle before its services unload; running sessions and background jobs keep it loaded; project config can override global |
-| `schedules` | boolean, `false` | Opt-in scheduled prompts (`/schedule`, agent tools); `timezone` sets the zone. Release-notes only |
+| `automations` | boolean, `false` | Runs a prompt or Code Mode action on a timer, or on a connected MCP server's push event when `mcp_events` is on; `timezone` sets the schedule zone. Renamed from `schedules` in 2.3.2 (release notes and schema description only) |
+| `schedules` | boolean | Deprecated alias for `automations` (2.3.2) |
 | `artifacts` | boolean, `false` | Opt-in `artifact_create`/`artifact_read`/`artifact_update`/`artifact_delete` with a local static-file provider (2.2.4). Release-notes and schema only |
+| `video_generate` | boolean, `false` | Enables the experimental video generation API (2.3.2, schema description only) |
+| `full_codemode` | boolean, off in every build | Enables the full Code Mode work in progress; opt-in only, skipped by `all` and `all_flags` (2.3.2, schema description only) |
 | `media_blob` | boolean, `false` | Stores new session media once in a deduplicated blob table (2.2.0). Schema and release notes only |
 | `policies` | array | Deprecated; use top-level `policies` |
 | `portable_shell_scanner` | boolean | Deprecated; the scanner is always on |

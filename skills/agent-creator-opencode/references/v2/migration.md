@@ -3,7 +3,7 @@
 Field-by-field mapping for converting V1 agent definitions to the native V2
 format.
 
-**Sources (checked 2026-11-15, V2 2.3.0):** <https://opencode.ai/v2/docs/migrate-v1/> ·
+**Sources (checked 2026-11-22, V2 2.3.2):** <https://opencode.ai/v2/docs/migrate-v1/> ·
 <https://opencode.ai/v2/docs/agents/> · <https://opencode.ai/v2/docs/permissions/>
 
 Load this file when converting an existing V1 agent, or when a user on V1 asks
@@ -224,7 +224,7 @@ bare command, which is the usual intent.
 |---|---|
 | `.opencode/agent/`, `.opencode/agents/` | `.opencode/agents/` (both still discovered; path-derived ID unchanged) |
 | `.opencode/mode/`, `.opencode/modes/` | `.opencode/agents/` plus `mode: primary` in frontmatter |
-| `CLAUDE.md` fallback for instructions | `AGENTS.md` only. V2 does not read `CLAUDE.md`. |
+| `CLAUDE.md` fallback for instructions | `AGENTS.md`. V2 did not read `CLAUDE.md` through 2.3.0; since 2.3.2 it falls back to `CLAUDE.md` where a directory has no `AGENTS.md`. |
 
 ---
 

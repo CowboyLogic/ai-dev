@@ -7,7 +7,7 @@ formatters, commands, instructions, compaction, and enterprise settings.
 
 - **Skill name:** `client-config-opencode`
 - **Source:** [skills/client-config-opencode](https://github.com/CowboyLogic/ai-dev/tree/main/skills/client-config-opencode)
-- **OpenCode version:** verified against OpenCode V2 [2.3.0](https://github.com/anomalyco/opencode/tree/v2.3.0) (tagged 2026-11-13) and V1 [1.19.5](https://github.com/anomalyco/opencode/tree/v1.19.5) (tagged 2026-10-28)
+- **OpenCode version:** verified against OpenCode V2 [2.3.2](https://github.com/anomalyco/opencode/tree/v2.3.2) (tagged 2026-11-18) and V1 [1.19.6](https://github.com/anomalyco/opencode/tree/v1.19.6) (tagged 2026-11-17)
 
 ---
 

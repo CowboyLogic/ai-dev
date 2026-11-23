@@ -2,6 +2,33 @@
 
 Changes to the `client-config-opencode` skill, newest first.
 
+## 2026-11-22 — v2.7 (verified against V2 2.3.2 and V1 1.19.6)
+
+Baselines: V2 2.3.0 → 2.3.2 (tags `v2.3.1`/`v2.3.2`, the latter 2026-11-18; `CHANGELOG.md` has a 2.3.2 section only); V1
+1.19.5 → 1.19.6 (tagged 2026-11-17). Sources are the tag diff `v2.3.0...v2.3.2` of the V2 docs source
+(`services/site/src/docs/content`, 4 pages bear on these skills: `compaction`, `config`, `instructions`, `migrate-v1`),
+the V2 config schema and flag source at `v2.3.2` (`packages/schema/src/config/{experimental,flag,compaction}.ts`), the
+core commits behind the changes, and the V2 `CHANGELOG.md`. V1 changes come from the `v1.19.5...v1.19.6` commit log.
+Neither binary was run, so binary-dependent claims keep their earlier basis.
+
+- `references/v2/config-schema.md`: background compaction is now `compaction.background`, on by default, and no longer an
+  experimental flag; the fallback and skip rules changed (a model or instructions change no longer forces a normal
+  summary). V2 now falls back to `CLAUDE.md` where a directory has no `AGENTS.md` and to `~/.claude/CLAUDE.md` without a
+  global `AGENTS.md`, reversing the earlier "not discovered" statement; `OPENCODE_DISABLE_CLAUDE_CODE_PROMPT` and
+  `OPENCODE_DISABLE_CLAUDE_CODE` both skip every `CLAUDE.md`. The experimental registry is now `todo`, `media_blob`,
+  `automations`, `artifacts`, `video_generate`, `console_watches`, `mcp_events`, and `full_codemode`; `schedules` is a
+  deprecated alias of `automations`; `full_codemode` is opt-in only and skipped by `all` and `all_flags`; the resolver
+  also reads aliases. `shell_timeout_background` is absent from the 2.3.2 schema, registry, and code while the 2.3.2
+  release notes still list it under 2.3.0, so it is recorded as a conflict, not resolved.
+- `references/v2/migration.md`, `SKILL.md`: `CLAUDE.md` fallback and per-directory picking (an `AGENTS.md` at the root no
+  longer hides a nested `CLAUDE.md`, unlike V1), and the compaction default.
+- `references/v2/providers.md`: the model `type` field also accepts `video` (2.3.2 schema).
+- `sources.json`: schema source pins moved to `v2.3.2` and `compaction.ts` is now pinned.
+- Not changed: Console model and pricing pages, desktop, SDK, plugin-authoring and site changes, the GPT-6.2 system prompt
+  caching fix (release notes only, no configuration surface), V1 1.19.6 (CI, a desktop upgrade offer, and a cap on images
+  re-sent from history, with no config or agent-authoring surface), the video generation API itself and `mcp_events`
+  details beyond the flag rows.
+
 ## 2026-11-15 — v2.6 (verified against V2 2.3.0 and V1 1.19.5)
 
 Baselines: V2 2.2.6 → 2.3.0 (tags `v2.2.7`, 2026-11-10, and `v2.3.0`, 2026-11-13); V1 1.19.5 is the newest V1 tag and is
